@@ -1,0 +1,155 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "[Web] Dev Server",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/web"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^([^\\s].*)\\((\\d+|\\d+,\\d+|\\d+,\\d+,\\d+,\\d+)\\):\\s+(error|warning|info)\\s+(TS\\d+)\\s*:\\s*(.*)$",
+          "file": 1,
+          "location": 2,
+          "severity": 3,
+          "code": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "VITE.*ready in",
+          "endsPattern": "Local:.*"
+        }
+      },
+      "icon": {
+        "id": "rocket",
+        "color": "terminal.ansiCyan"
+      }
+    },
+    {
+      "label": "[Web] Test Watch",
+      "type": "shell",
+      "command": "npm run test:watch",
+      "options": {
+        "cwd": "${workspaceFolder}/web"
+      },
+      "isBackground": true,
+      "problemMatcher": [],
+      "icon": {
+        "id": "beaker",
+        "color": "terminal.ansiCyan"
+      }
+    },
+    {
+      "label": "[Web] Build",
+      "type": "shell",
+      "command": "npm run build",
+      "options": {
+        "cwd": "${workspaceFolder}/web"
+      },
+      "problemMatcher": ["$tsc"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "icon": {
+        "id": "package",
+        "color": "terminal.ansiCyan"
+      }
+    },
+    {
+      "label": "[Web] Lint",
+      "type": "shell",
+      "command": "npm run lint",
+      "options": {
+        "cwd": "${workspaceFolder}/web"
+      },
+      "problemMatcher": ["$eslint-stylish"],
+      "icon": {
+        "id": "checklist",
+        "color": "terminal.ansiCyan"
+      }
+    },
+    {
+      "label": "[API] Watch",
+      "type": "shell",
+      "command": "dotnet watch run",
+      "options": {
+        "cwd": "${workspaceFolder}/api/F1CompanionApi"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^(.*)$",
+          "file": 1
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Building.*$",
+          "endsPattern": "^.*Application started.*|^.*Now listening on.*$"
+        }
+      },
+      "icon": {
+        "id": "eye-watch",
+        "color": "terminal.ansiMagenta"
+      }
+    },
+    {
+      "label": "[API] Build",
+      "type": "shell",
+      "command": "dotnet build",
+      "options": {
+        "cwd": "${workspaceFolder}/api/F1CompanionApi"
+      },
+      "problemMatcher": ["$msCompile"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "icon": {
+        "id": "package",
+        "color": "terminal.ansiMagenta"
+      }
+    },
+    {
+      "label": "[API] Test",
+      "type": "shell",
+      "command": "dotnet test",
+      "options": {
+        "cwd": "${workspaceFolder}/api/F1CompanionApi.UnitTests"
+      },
+      "problemMatcher": ["$msCompile"],
+      "icon": {
+        "id": "beaker",
+        "color": "terminal.ansiMagenta"
+      }
+    },
+    {
+      "label": "Start All Servers",
+      "dependsOn": ["[Web] Dev Server", "[API] Watch"],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "icon": {
+        "id": "rocket",
+        "color": "terminal.ansiGreen"
+      }
+    },
+    {
+      "label": "Build All",
+      "dependsOn": ["[Web] Build", "[API] Build"],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "icon": {
+        "id": "package",
+        "color": "terminal.ansiGreen"
+      }
+    }
+  ]
+}

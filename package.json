@@ -1,0 +1,24 @@
+{
+  "name": "f1fantasyapp",
+  "version": "1.0.0",
+  "description": "F1 Fantasy Sports - Full Stack Monorepo",
+  "private": true,
+  "scripts": {
+    "web:install": "cd web && npm install",
+    "web:dev": "cd web && npm run dev",
+    "web:build": "cd web && npm run build",
+    "web:lint": "cd web && npm run lint",
+    "web:test": "cd web && npm test",
+    "web:test:watch": "cd web && npm run test:watch",
+    "web:coverage": "cd web && npm run test:coverage",
+    "api:build": "dotnet build api/F1CompanionApi/F1CompanionApi.csproj",
+    "api:run": "dotnet run --project api/F1CompanionApi/F1CompanionApi.csproj",
+    "api:watch": "dotnet watch run --project api/F1CompanionApi/F1CompanionApi.csproj",
+    "api:test": "dotnet test api/F1CompanionApi.UnitTests/F1CompanionApi.UnitTests.csproj",
+    "test:all": "npm run web:test && npm run api:test",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

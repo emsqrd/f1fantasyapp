@@ -1,0 +1,47 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Web: Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/web",
+      "preLaunchTask": "[Web] Dev Server"
+    },
+    {
+      "name": "API: .NET Launch",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "[API] Build",
+      "program": "${workspaceFolder}/api/F1CompanionApi/bin/Debug/net9.0/F1CompanionApi.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/api/F1CompanionApi",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "API: .NET Attach",
+      "type": "coreclr",
+      "request": "attach"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack (Web + API)",
+      "configurations": ["Web: Chrome", "API: .NET Launch"],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "fullstack",
+        "order": 1
+      }
+    }
+  ]
+}

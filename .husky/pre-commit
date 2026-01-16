@@ -1,0 +1,22 @@
+#!/bin/sh
+
+echo "🔨 Running pre-commit checks..."
+
+echo ""
+echo "📦 Web: Building..."
+npm run web:build || exit 1
+
+echo ""
+echo "🔍 Web: Linting..."
+npm run web:lint || exit 1
+
+echo ""
+echo "🧪 Web: Testing..."
+npm run web:test || exit 1
+
+echo ""
+echo "🧪 API: Testing..."
+npm run api:test || exit 1
+
+echo ""
+echo "✅ All checks passed!"

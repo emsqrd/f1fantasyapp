@@ -1,0 +1,115 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "[API] Test",
+      "type": "shell",
+      "command": "dotnet test F1CompanionApi.UnitTests/F1CompanionApi.UnitTests.csproj",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile",
+      "icon": {
+        "id": "beaker",
+        "color": "terminal.ansiMagenta"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "[API] Test with Coverage",
+      "type": "shell",
+      "command": "./run-coverage.sh",
+      "group": "test",
+      "problemMatcher": [],
+      "icon": {
+        "id": "graph",
+        "color": "terminal.ansiMagenta"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "[API] Test Coverage (Open Report)",
+      "type": "shell",
+      "command": "./run-coverage.sh --open",
+      "group": "test",
+      "problemMatcher": [],
+      "icon": {
+        "id": "graph-line",
+        "color": "terminal.ansiMagenta"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "[API] Build",
+      "type": "shell",
+      "command": "dotnet build F1CompanionApi/F1CompanionApi.csproj",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile",
+      "icon": {
+        "id": "package",
+        "color": "terminal.ansiMagenta"
+      }
+    },
+    {
+      "label": "[API] Run",
+      "type": "shell",
+      "command": "dotnet run --project F1CompanionApi/F1CompanionApi.csproj",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "custom",
+        "pattern": {
+          "regexp": "^$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Building.*$",
+          "endsPattern": "^.*Application started.*$"
+        }
+      },
+      "icon": {
+        "id": "server",
+        "color": "terminal.ansiMagenta"
+      }
+    },
+    {
+      "label": "[API] Watch",
+      "type": "shell",
+      "command": "dotnet watch run --project F1CompanionApi/F1CompanionApi.csproj",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "custom",
+        "pattern": {
+          "regexp": "^$",
+          "file": 1,
+          "location": 2,
+          "message": 3
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Building.*$",
+          "endsPattern": "^.*Application started.*$"
+        }
+      },
+      "icon": {
+        "id": "eye-watch",
+        "color": "terminal.ansiMagenta"
+      }
+    }
+  ]
+}

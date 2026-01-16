@@ -1,0 +1,17 @@
+{
+  "name": "f1-companion-api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "dotnet test F1CompanionApi.UnitTests/F1CompanionApi.UnitTests.csproj",
+    "test:quick": "dotnet test F1CompanionApi.UnitTests/F1CompanionApi.UnitTests.csproj --no-restore --verbosity minimal",
+    "test:coverage": "./run-coverage.sh",
+    "test:coverage:open": "./run-coverage.sh --open",
+    "build": "dotnet build F1CompanionApi/F1CompanionApi.csproj",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "supabase": "^2.48.3"
+  }
+}

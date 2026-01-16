@@ -1,0 +1,34 @@
+# === Shared ===
+.DS_Store
+node_modules/
+coverage/
+*.log
+logs/
+.env
+.env.local
+
+# === Web (React/Vite) ===
+web/dist/
+web/dist-ssr/
+web/*.local
+web/.vscode/*
+!web/.vscode/extensions.json
+
+# === API (.NET) ===
+api/**/[Bb]in/
+api/**/[Oo]bj/
+api/**/[Dd]ebug/
+api/**/[Rr]elease/
+api/**/artifacts/
+api/**/*.nupkg
+api/**/*.snupkg
+api/**/*.binlog
+api/**/TestResults/
+api/**/CodeCoverage/
+
+# Editor
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sw?
