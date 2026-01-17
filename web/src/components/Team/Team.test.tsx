@@ -83,8 +83,13 @@ describe('Team Component', () => {
     it('displays drivers content by default', () => {
       render(<Team />);
 
+      // Both pickers are mounted (for state preservation)
       expect(screen.getByTestId('driver-picker')).toBeInTheDocument();
-      expect(screen.queryByTestId('constructor-picker')).not.toBeInTheDocument();
+      expect(screen.getByTestId('constructor-picker')).toBeInTheDocument();
+
+      // But only drivers tab content should be visible to the user
+      expect(screen.getByTestId('driver-picker')).toBeVisible();
+      expect(screen.getByTestId('constructor-picker')).not.toBeVisible();
     });
 
     it('renders both tab options', () => {
@@ -126,8 +131,13 @@ describe('Team Component', () => {
       const constructorsTab = screen.getByRole('tab', { name: /constructors/i });
       await user.click(constructorsTab);
 
+      // Both pickers remain mounted
+      expect(screen.getByTestId('driver-picker')).toBeInTheDocument();
       expect(screen.getByTestId('constructor-picker')).toBeInTheDocument();
-      expect(screen.queryByTestId('driver-picker')).not.toBeInTheDocument();
+
+      // But visibility is controlled to show only constructors
+      expect(screen.getByTestId('driver-picker')).not.toBeVisible();
+      expect(screen.getByTestId('constructor-picker')).toBeVisible();
     });
 
     it('switches back to drivers tab when clicked', async () => {
@@ -145,8 +155,9 @@ describe('Team Component', () => {
       expect(driversTab).toHaveAttribute('aria-selected', 'true');
       expect(constructorsTab).toHaveAttribute('aria-selected', 'false');
 
-      expect(screen.getByTestId('driver-picker')).toBeInTheDocument();
-      expect(screen.queryByTestId('constructor-picker')).not.toBeInTheDocument();
+      // Verify drivers content is visible again
+      expect(screen.getByTestId('driver-picker')).toBeVisible();
+      expect(screen.getByTestId('constructor-picker')).not.toBeVisible();
     });
   });
 
@@ -175,24 +186,24 @@ describe('Team Component', () => {
       render(<Team />);
 
       // Initially only drivers content should be visible
-      expect(screen.getByTestId('driver-picker')).toBeInTheDocument();
-      expect(screen.queryByTestId('constructor-picker')).not.toBeInTheDocument();
+      expect(screen.getByTestId('driver-picker')).toBeVisible();
+      expect(screen.getByTestId('constructor-picker')).not.toBeVisible();
 
       // Switch to constructors
       const constructorsTab = screen.getByRole('tab', { name: /constructors/i });
       await user.click(constructorsTab);
 
       // Now only constructors content should be visible
-      expect(screen.queryByTestId('driver-picker')).not.toBeInTheDocument();
-      expect(screen.getByTestId('constructor-picker')).toBeInTheDocument();
+      expect(screen.getByTestId('driver-picker')).not.toBeVisible();
+      expect(screen.getByTestId('constructor-picker')).toBeVisible();
 
       // Switch back to drivers
       const driversTab = screen.getByRole('tab', { name: /drivers/i });
       await user.click(driversTab);
 
       // Back to drivers content only
-      expect(screen.getByTestId('driver-picker')).toBeInTheDocument();
-      expect(screen.queryByTestId('constructor-picker')).not.toBeInTheDocument();
+      expect(screen.getByTestId('driver-picker')).toBeVisible();
+      expect(screen.getByTestId('constructor-picker')).not.toBeVisible();
     });
   });
 
@@ -213,8 +224,8 @@ describe('Team Component', () => {
       // Final state should be consistent
       expect(driversTab).toHaveAttribute('aria-selected', 'true');
       expect(constructorsTab).toHaveAttribute('aria-selected', 'false');
-      expect(screen.getByTestId('driver-picker')).toBeInTheDocument();
-      expect(screen.queryByTestId('constructor-picker')).not.toBeInTheDocument();
+      expect(screen.getByTestId('driver-picker')).toBeVisible();
+      expect(screen.getByTestId('constructor-picker')).not.toBeVisible();
     });
 
     it('provides clear indication of current tab selection', () => {

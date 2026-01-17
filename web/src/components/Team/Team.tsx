@@ -2,7 +2,7 @@ import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team as TeamType } from '@/contracts/Team';
 import { Link, useLoaderData } from '@tanstack/react-router';
 import { ChevronLeft } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import { AppContainer } from '../AppContainer/AppContainer';
 import { ConstructorPicker } from '../ConstructorPicker/ConstructorPicker';
@@ -47,6 +47,9 @@ export function Team() {
       return teamConstructor ? { ...teamConstructor, type: 'constructor' as const } : null;
     }) as (Constructor | null)[];
   }, [team?.constructors]);
+
+  // Track active tab to control visibility while keeping both tabs mounted
+  const [activeTab, setActiveTab] = useState('drivers');
 
   return (
     <AppContainer maxWidth="md">
@@ -121,19 +124,27 @@ export function Team() {
           </Card>
         </div>
       </div>
-      <Tabs defaultValue="drivers">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full">
           <TabsTrigger value="drivers">Drivers</TabsTrigger>
           <TabsTrigger value="constructors">Constructors</TabsTrigger>
         </TabsList>
-        <TabsContent value="drivers">
+        <TabsContent
+          value="drivers"
+          forceMount
+          style={{ display: activeTab !== 'drivers' ? 'none' : undefined }}
+        >
           <Card className="py-4">
             <CardContent className="px-4">
               <DriverPicker lineupSize={5} initialDrivers={initialDriverSlots} />
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent value="constructors">
+        <TabsContent
+          value="constructors"
+          forceMount
+          style={{ display: activeTab !== 'constructors' ? 'none' : undefined }}
+        >
           <Card className="py-4">
             <CardContent className="px-4">
               <ConstructorPicker lineupSize={2} initialConstructors={initialConstructorSlots} />
