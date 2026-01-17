@@ -32,14 +32,10 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[csharp]": {
-    "editor.defaultFormatter": "ms-dotnettools.csharp"
+    "editor.defaultFormatter": "ms-dotnettools.csharp",
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
   },
-  "cSpell.words": [
-    "COTA",
-    "dotnet",
-    "refetches",
-    "supabase",
-    "vite",
-    "vitest"
-  ]
+  "cSpell.words": ["COTA", "dotnet", "refetches", "supabase", "vite", "vitest"]
 }

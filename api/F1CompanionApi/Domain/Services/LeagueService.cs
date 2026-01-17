@@ -15,6 +15,7 @@ public interface ILeagueService
         int ownerId
     );
     Task<IEnumerable<LeagueResponse>> GetLeaguesAsync();
+    Task<IEnumerable<LeagueResponse>> GetPublicLeaguesAsync(string? searchTerm = null);
     Task<LeagueDetailsResponse?> GetLeagueByIdAsync(int id);
     Task<IEnumerable<LeagueResponse>> GetLeaguesByOwnerIdAsync(int ownerId);
 }
@@ -52,13 +53,13 @@ public class LeagueService : ILeagueService
         {
             Name = createLeagueRequest.Name,
             Description = createLeagueRequest.Description,
+            IsPrivate = createLeagueRequest.IsPrivate,
             OwnerId = ownerId,
             CreatedBy = ownerId,
             CreatedAt = DateTime.UtcNow,
         };
 
         await _dbContext.Leagues.AddAsync(newLeague);
-        await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation("Successfully created league {LeagueId} with name {LeagueName} for owner {OwnerId}",
             newLeague.Id, newLeague.Name, ownerId);
@@ -95,6 +96,31 @@ public class LeagueService : ILeagueService
         _logger.LogDebug("Fetching all leagues");
         var leagues = await _dbContext.Leagues.Include(x => x.Owner).ToListAsync();
         _logger.LogDebug("Retrieved {LeagueCount} leagues", leagues.Count);
+        return leagues.Select(league => league.ToResponseModel());
+    }
+
+    public async Task<IEnumerable<LeagueResponse>> GetPublicLeaguesAsync(string? searchTerm = null)
+    {
+        _logger.LogDebug("Fetching all public leagues");
+
+        var query = _dbContext.Leagues
+            .Include(x => x.Owner)
+            .Where(x => !x.IsPrivate);
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var lowerSearchTerm = searchTerm.ToLower();
+
+            query = query.Where(x =>
+                x.Name.ToLower().Contains(lowerSearchTerm) ||
+                (x.Description != null && x.Description.ToLower().Contains(lowerSearchTerm))
+            );
+        }
+
+        var leagues = await query.ToListAsync();
+
+        _logger.LogDebug("Retreived {LeagueCount} public leagues", leagues.Count);
+
         return leagues.Select(league => league.ToResponseModel());
     }
 

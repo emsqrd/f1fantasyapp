@@ -1,13 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Domain.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace F1CompanionApi.Api.Endpoints;
 
 public static class LeagueEndpoints
 {
+    [ExcludeFromCodeCoverage]
     public static IEndpointRouteBuilder MapLeagueEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapPost("/leagues", CreateLeagueAsync)
@@ -21,6 +21,12 @@ public static class LeagueEndpoints
             .WithName("GetLeagues")
             .WithOpenApi()
             .WithDescription("Gets all leagues");
+
+        app.MapGet("/leagues/public", GetPublicLeaguesAsync)
+            .RequireAuthorization()
+            .WithName("GetPublicLeagues")
+            .WithOpenApi()
+            .WithDescription("Gets all public leagues");
 
         app.MapGet("/leagues/{id}", GetLeagueByIdAsync)
             .RequireAuthorization()
@@ -75,6 +81,17 @@ public static class LeagueEndpoints
     {
         logger.LogDebug("Fetching all leagues");
         var leagues = await leagueService.GetLeaguesAsync();
+
+        return Results.Ok(leagues);
+    }
+
+    private static async Task<IResult> GetPublicLeaguesAsync(
+        ILeagueService leagueService,
+        [FromQuery] string? searchTerm,
+        [FromServices] ILogger logger)
+    {
+        logger.LogDebug("Fetching all public leagues");
+        var leagues = await leagueService.GetPublicLeaguesAsync(searchTerm);
 
         return Results.Ok(leagues);
     }

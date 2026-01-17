@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Domain.Services;
 using F1CompanionApi.Extensions;
@@ -9,6 +10,7 @@ public static class MeEndpoints
 {
     public record RegisterUserRequest(string? DisplayName);
 
+    [ExcludeFromCodeCoverage]
     public static IEndpointRouteBuilder MapMeEndpoints(this IEndpointRouteBuilder app)
     {
         var meGroup = app.MapGroup("/me")

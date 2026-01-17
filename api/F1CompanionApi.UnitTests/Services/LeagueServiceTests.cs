@@ -57,7 +57,8 @@ public class LeagueServiceTests
         var request = new CreateLeagueRequest
         {
             Name = "Test League",
-            Description = "Test Description"
+            Description = "Test Description",
+            IsPrivate = true,
         };
 
         // Act
@@ -102,18 +103,41 @@ public class LeagueServiceTests
         var request = new CreateLeagueRequest
         {
             Name = "Persistent League",
-            Description = "Should be saved"
+            Description = "Should be saved",
+            IsPrivate = true,
         };
+
+        var beforeCreation = DateTime.UtcNow;
 
         // Act
         await service.CreateLeagueAsync(request, owner.Id);
 
-        // Assert
-        var savedLeague = await context.Leagues.FirstOrDefaultAsync();
+        // Assert - League is persisted
+        var savedLeague = await context.Leagues
+            .Include(l => l.LeagueTeams)
+                .ThenInclude(lt => lt.Team)
+            .FirstOrDefaultAsync();
+
         Assert.NotNull(savedLeague);
         Assert.Equal("Persistent League", savedLeague.Name);
         Assert.Equal("Should be saved", savedLeague.Description);
         Assert.Equal(owner.Id, savedLeague.OwnerId);
+        Assert.True(savedLeague.IsPrivate);
+
+        // Assert - LeagueTeam is created and persisted
+        Assert.Single(savedLeague.LeagueTeams);
+
+        var leagueTeam = savedLeague.LeagueTeams.First();
+        Assert.Equal(savedLeague.Id, leagueTeam.LeagueId);
+        Assert.Equal(team.Id, leagueTeam.TeamId);
+        Assert.NotNull(leagueTeam.Team);
+
+        // Assert - LeagueTeam has correct audit fields
+        Assert.Equal(owner.Id, leagueTeam.CreatedBy);
+        Assert.True(leagueTeam.CreatedAt >= beforeCreation);
+        Assert.True(leagueTeam.JoinedAt >= beforeCreation);
+        Assert.True(leagueTeam.CreatedAt <= DateTime.UtcNow);
+        Assert.True(leagueTeam.JoinedAt <= DateTime.UtcNow);
     }
 
     [Fact]
@@ -346,6 +370,442 @@ public class LeagueServiceTests
         // Assert
         Assert.NotNull(result);
         Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetPublicLeaguesAsync_OnlyPublicLeagues_ReturnsAllLeagues()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "test-account",
+            Email = "owner@test.com",
+            FirstName = "Test",
+            LastName = "Owner"
+        };
+        context.UserProfiles.Add(owner);
+
+        var publicLeague1 = new League
+        {
+            Name = "Public League 1",
+            Description = "First public league",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        var publicLeague2 = new League
+        {
+            Name = "Public League 2",
+            Description = "Second public league",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.AddRange(publicLeague1, publicLeague2);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetPublicLeaguesAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count());
+    }
+
+    [Fact]
+    public async Task GetPublicLeaguesAsync_MixedPublicAndPrivate_ReturnsOnlyPublicLeagues()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "test-account",
+            Email = "owner@test.com",
+            FirstName = "Test",
+            LastName = "Owner"
+        };
+        context.UserProfiles.Add(owner);
+
+        var publicLeague = new League
+        {
+            Name = "Public League",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        var privateLeague1 = new League
+        {
+            Name = "Private League 1",
+            IsPrivate = true,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        var privateLeague2 = new League
+        {
+            Name = "Private League 2",
+            IsPrivate = true,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.AddRange(publicLeague, privateLeague1, privateLeague2);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetPublicLeaguesAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("Public League", result.First().Name);
+    }
+
+    [Fact]
+    public async Task GetPublicLeaguesAsync_SearchByName_ReturnsMatchingLeagues()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "test-account",
+            Email = "owner@test.com",
+            FirstName = "Test",
+            LastName = "Owner"
+        };
+        context.UserProfiles.Add(owner);
+
+        var premierLeague = new League
+        {
+            Name = "Premier League Champions",
+            Description = "For the best players",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        var casualLeague = new League
+        {
+            Name = "Casual Sunday League",
+            Description = "Just for fun",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        var eliteLeague = new League
+        {
+            Name = "Elite Competition",
+            Description = "Top tier only",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.AddRange(premierLeague, casualLeague, eliteLeague);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetPublicLeaguesAsync("League");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count());
+        Assert.Contains(result, l => l.Name == "Premier League Champions");
+        Assert.Contains(result, l => l.Name == "Casual Sunday League");
+    }
+
+    [Fact]
+    public async Task GetPublicLeaguesAsync_SearchByDescription_ReturnsMatchingLeagues()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "test-account",
+            Email = "owner@test.com",
+            FirstName = "Test",
+            LastName = "Owner"
+        };
+        context.UserProfiles.Add(owner);
+
+        var competitiveLeague = new League
+        {
+            Name = "Alpha League",
+            Description = "For competitive players only",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        var casualLeague = new League
+        {
+            Name = "Beta League",
+            Description = "Casual and fun environment",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.AddRange(competitiveLeague, casualLeague);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetPublicLeaguesAsync("competitive");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("Alpha League", result.First().Name);
+    }
+
+    [Fact]
+    public async Task GetPublicLeaguesAsync_SearchCaseInsensitive_ReturnsMatchingLeagues()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "test-account",
+            Email = "owner@test.com",
+            FirstName = "Test",
+            LastName = "Owner"
+        };
+        context.UserProfiles.Add(owner);
+
+        var league = new League
+        {
+            Name = "PREMIER League",
+            Description = "Elite COMPETITION",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.Add(league);
+        await context.SaveChangesAsync();
+
+        // Act - Search with different casing
+        var resultLower = await service.GetPublicLeaguesAsync("premier");
+        var resultDescUpper = await service.GetPublicLeaguesAsync("COMPETITION");
+
+        // Assert
+        Assert.Single(resultLower);
+        Assert.Single(resultDescUpper);
+    }
+
+    [Fact]
+    public async Task GetPublicLeaguesAsync_SearchWithNoMatches_ReturnsEmptyCollection()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "test-account",
+            Email = "owner@test.com",
+            FirstName = "Test",
+            LastName = "Owner"
+        };
+        context.UserProfiles.Add(owner);
+
+        var league = new League
+        {
+            Name = "Premier League",
+            Description = "Top tier competition",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.Add(league);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetPublicLeaguesAsync("nonexistent");
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetPublicLeaguesAsync_NullOrWhitespaceSearchTerm_ReturnsAllPublicLeagues()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "test-account",
+            Email = "owner@test.com",
+            FirstName = "Test",
+            LastName = "Owner"
+        };
+        context.UserProfiles.Add(owner);
+
+        var league1 = new League
+        {
+            Name = "League 1",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        var league2 = new League
+        {
+            Name = "League 2",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.AddRange(league1, league2);
+        await context.SaveChangesAsync();
+
+        // Act - Test both null and whitespace
+        var resultNull = await service.GetPublicLeaguesAsync(null);
+        var resultWhitespace = await service.GetPublicLeaguesAsync("   ");
+
+        // Assert
+        Assert.NotNull(resultNull);
+        Assert.Equal(2, resultNull.Count());
+        Assert.NotNull(resultWhitespace);
+        Assert.Equal(2, resultWhitespace.Count());
+    }
+
+    [Fact]
+    public async Task GetPublicLeaguesAsync_NullDescription_DoesNotThrowException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "test-account",
+            Email = "owner@test.com",
+            FirstName = "Test",
+            LastName = "Owner"
+        };
+        context.UserProfiles.Add(owner);
+
+        var leagueWithoutDescription = new League
+        {
+            Name = "No Description League",
+            Description = null,
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.Add(leagueWithoutDescription);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetPublicLeaguesAsync("xyz");
+
+        // Assert - Should not throw when searching leagues with null descriptions
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetPublicLeaguesAsync_IncludesOwnerInformation()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "test-account",
+            Email = "owner@test.com",
+            FirstName = "John",
+            LastName = "Doe"
+        };
+        context.UserProfiles.Add(owner);
+
+        var league = new League
+        {
+            Name = "Test League",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.Add(league);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetPublicLeaguesAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        var leagueResponse = result.First();
+        Assert.Equal("John Doe", leagueResponse.OwnerName);
+    }
+
+    [Fact]
+    public async Task GetPublicLeaguesAsync_SearchFiltersOutPrivateLeagues()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "test-account",
+            Email = "owner@test.com",
+            FirstName = "Test",
+            LastName = "Owner"
+        };
+        context.UserProfiles.Add(owner);
+
+        var publicLeague = new League
+        {
+            Name = "Champions League",
+            Description = "Public competition",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        var privateLeague = new League
+        {
+            Name = "Champions Private",
+            Description = "Private competition",
+            IsPrivate = true,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.AddRange(publicLeague, privateLeague);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetPublicLeaguesAsync("Champions");
+
+        // Assert - Should only return public league even though both match search
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("Champions League", result.First().Name);
     }
 
     [Fact]

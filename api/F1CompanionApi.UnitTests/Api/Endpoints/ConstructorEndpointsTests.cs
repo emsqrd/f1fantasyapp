@@ -232,6 +232,7 @@ public class ConstructorEndpointsTests
         Assert.NotNull(okResult.Value);
         Assert.Equal("constructor", okResult.Value.Type);
         Assert.NotEmpty(okResult.Value.Name);
+        Assert.NotNull(okResult.Value.FullName);
         Assert.NotEmpty(okResult.Value.FullName);
         Assert.NotEmpty(okResult.Value.CountryAbbreviation);
     }
@@ -245,7 +246,7 @@ public class ConstructorEndpointsTests
 
         var task = (Task<IResult>)method!.Invoke(
             null,
-            new object?[] { _mockConstructorService.Object, activeOnly, _mockLogger.Object }
+            [_mockConstructorService.Object, activeOnly, _mockLogger.Object]
         )!;
 
         return await task;

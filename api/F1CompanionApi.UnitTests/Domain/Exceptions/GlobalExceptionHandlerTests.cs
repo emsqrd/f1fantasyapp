@@ -319,6 +319,40 @@ public class GlobalExceptionHandlerTests
     }
 
     [Fact]
+    public async Task TryHandleAsync_TeamNotFoundException_Returns400WithTeamRequired()
+    {
+        // Arrange
+        var ex = new TeamNotFoundException(userId: 123);
+
+        // Act
+        var result = await _handler.TryHandleAsync(_httpContext, ex, CancellationToken.None);
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal(StatusCodes.Status400BadRequest, _httpContext.Response.StatusCode);
+
+        _mockProblemDetailsService.Verify(x => x.WriteAsync(
+            It.Is<ProblemDetailsContext>(ctx =>
+                ctx.ProblemDetails.Status == 400 &&
+                ctx.ProblemDetails.Title == "Team Required" &&
+                ctx.ProblemDetails.Detail == "Please create a team before creating a league." &&
+                ctx.ProblemDetails.Type == "https://httpstatuses.com/400" &&
+                ctx.Exception == null // 4xx does not include exception
+            )
+        ), Times.Once);
+
+        // Verify warning logging for 4xx
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                ex,
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task TryHandleAsync_TeamOwnershipException_Returns403WithPermissionDenied()
     {
         // Arrange

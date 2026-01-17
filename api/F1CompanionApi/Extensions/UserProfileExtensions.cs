@@ -12,8 +12,9 @@ public static class UserProfileExtensions
     /// <returns>Full name with proper spacing, or empty string if both names are null/whitespace</returns>
     public static string GetFullName(this UserProfile profile)
     {
-        return string.Join(" ", new[] { profile.FirstName, profile.LastName }
-            .Where(s => !string.IsNullOrWhiteSpace(s))
-            .Select(s => s.Trim()));
+        return string.Join(" ",
+            from s in new[] { profile.FirstName, profile.LastName }
+            where s != null && !string.IsNullOrWhiteSpace(s)
+            select s.Trim());
     }
 }

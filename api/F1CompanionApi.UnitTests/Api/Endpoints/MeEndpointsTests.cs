@@ -377,6 +377,372 @@ public class MeEndpointsTests
         Assert.IsType<Ok>(result);
     }
 
+    [Fact]
+    public async Task GetUserProfileAsync_UserExists_ReturnsOkWithProfile()
+    {
+        // Arrange
+        var userProfile = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            DisplayName = "Test User",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _mockUserProfileService
+            .Setup(x => x.GetCurrentUserProfileAsync())
+            .ReturnsAsync(userProfile);
+
+        // Act
+        var result = await InvokeGetUserProfileAsync();
+
+        // Assert
+        Assert.IsType<Ok<UserProfileResponse>>(result);
+        var okResult = (Ok<UserProfileResponse>)result;
+        Assert.Equal(userProfile, okResult.Value);
+    }
+
+    [Fact]
+    public async Task GetUserProfileAsync_UserNotFound_ReturnsNotFound()
+    {
+        // Arrange
+        _mockUserProfileService
+            .Setup(x => x.GetCurrentUserProfileAsync())
+            .ReturnsAsync((UserProfileResponse?)null);
+
+        // Act
+        var result = await InvokeGetUserProfileAsync();
+
+        // Assert
+        Assert.IsType<ProblemHttpResult>(result);
+        var problemResult = (ProblemHttpResult)result;
+        Assert.Equal(StatusCodes.Status404NotFound, problemResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_Success_ReturnsNoContent()
+    {
+        // Arrange
+        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
+        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var request = new AddDriverToTeamRequest { DriverId = 5, SlotPosition = 1 };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.GetUserTeamAsync(user.Id))
+            .ReturnsAsync(team);
+
+        _mockTeamService
+            .Setup(x => x.AddDriverToTeamAsync(team.Id, request.DriverId, request.SlotPosition, user.Id))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await InvokeAddDriverToTeamAsync(request);
+
+        // Assert
+        Assert.IsType<NoContent>(result);
+        _mockTeamService.Verify(x => x.AddDriverToTeamAsync(team.Id, request.DriverId, request.SlotPosition, user.Id), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_UserHasNoTeam_ReturnsBadRequest()
+    {
+        // Arrange
+        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
+        var request = new AddDriverToTeamRequest { DriverId = 5, SlotPosition = 1 };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.GetUserTeamAsync(user.Id))
+            .ReturnsAsync((TeamDetailsResponse?)null);
+
+        // Act
+        var result = await InvokeAddDriverToTeamAsync(request);
+
+        // Assert
+        Assert.IsType<ProblemHttpResult>(result);
+        var problemResult = (ProblemHttpResult)result;
+        Assert.Equal(StatusCodes.Status400BadRequest, problemResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_ServiceThrowsInvalidOperation_ReturnsBadRequest()
+    {
+        // Arrange
+        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
+        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var request = new AddDriverToTeamRequest { DriverId = 5, SlotPosition = 1 };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.GetUserTeamAsync(user.Id))
+            .ReturnsAsync(team);
+
+        _mockTeamService
+            .Setup(x => x.AddDriverToTeamAsync(team.Id, request.DriverId, request.SlotPosition, user.Id))
+            .ThrowsAsync(new InvalidOperationException("Slot already occupied"));
+
+        // Act
+        var result = await InvokeAddDriverToTeamAsync(request);
+
+        // Assert
+        Assert.IsType<BadRequest<string>>(result);
+        var badRequestResult = (BadRequest<string>)result;
+        Assert.Equal("Slot already occupied", badRequestResult.Value);
+    }
+
+    [Fact]
+    public async Task RemoveDriverFromTeamAsync_Success_ReturnsNoContent()
+    {
+        // Arrange
+        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
+        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        int slotPosition = 1;
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.GetUserTeamAsync(user.Id))
+            .ReturnsAsync(team);
+
+        _mockTeamService
+            .Setup(x => x.RemoveDriverFromTeamAsync(team.Id, slotPosition, user.Id))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await InvokeRemoveDriverFromTeamAsync(slotPosition);
+
+        // Assert
+        Assert.IsType<NoContent>(result);
+        _mockTeamService.Verify(x => x.RemoveDriverFromTeamAsync(team.Id, slotPosition, user.Id), Times.Once);
+    }
+
+    [Fact]
+    public async Task RemoveDriverFromTeamAsync_UserHasNoTeam_ReturnsBadRequest()
+    {
+        // Arrange
+        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
+        int slotPosition = 1;
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.GetUserTeamAsync(user.Id))
+            .ReturnsAsync((TeamDetailsResponse?)null);
+
+        // Act
+        var result = await InvokeRemoveDriverFromTeamAsync(slotPosition);
+
+        // Assert
+        Assert.IsType<ProblemHttpResult>(result);
+        var problemResult = (ProblemHttpResult)result;
+        Assert.Equal(StatusCodes.Status400BadRequest, problemResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task RemoveDriverFromTeamAsync_ServiceThrowsInvalidOperation_ReturnsBadRequest()
+    {
+        // Arrange
+        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
+        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        int slotPosition = 1;
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.GetUserTeamAsync(user.Id))
+            .ReturnsAsync(team);
+
+        _mockTeamService
+            .Setup(x => x.RemoveDriverFromTeamAsync(team.Id, slotPosition, user.Id))
+            .ThrowsAsync(new InvalidOperationException("Slot is empty"));
+
+        // Act
+        var result = await InvokeRemoveDriverFromTeamAsync(slotPosition);
+
+        // Assert
+        Assert.IsType<BadRequest<string>>(result);
+        var badRequestResult = (BadRequest<string>)result;
+        Assert.Equal("Slot is empty", badRequestResult.Value);
+    }
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_Success_ReturnsNoContent()
+    {
+        // Arrange
+        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
+        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var request = new AddConstructorToTeamRequest { ConstructorId = 3, SlotPosition = 1 };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.GetUserTeamAsync(user.Id))
+            .ReturnsAsync(team);
+
+        _mockTeamService
+            .Setup(x => x.AddConstructorToTeamAsync(team.Id, request.ConstructorId, request.SlotPosition, user.Id))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await InvokeAddConstructorToTeamAsync(request);
+
+        // Assert
+        Assert.IsType<NoContent>(result);
+        _mockTeamService.Verify(x => x.AddConstructorToTeamAsync(team.Id, request.ConstructorId, request.SlotPosition, user.Id), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_UserHasNoTeam_ReturnsBadRequest()
+    {
+        // Arrange
+        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
+        var request = new AddConstructorToTeamRequest { ConstructorId = 3, SlotPosition = 1 };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.GetUserTeamAsync(user.Id))
+            .ReturnsAsync((TeamDetailsResponse?)null);
+
+        // Act
+        var result = await InvokeAddConstructorToTeamAsync(request);
+
+        // Assert
+        Assert.IsType<ProblemHttpResult>(result);
+        var problemResult = (ProblemHttpResult)result;
+        Assert.Equal(StatusCodes.Status400BadRequest, problemResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_ServiceThrowsInvalidOperation_ReturnsBadRequest()
+    {
+        // Arrange
+        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
+        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var request = new AddConstructorToTeamRequest { ConstructorId = 3, SlotPosition = 1 };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.GetUserTeamAsync(user.Id))
+            .ReturnsAsync(team);
+
+        _mockTeamService
+            .Setup(x => x.AddConstructorToTeamAsync(team.Id, request.ConstructorId, request.SlotPosition, user.Id))
+            .ThrowsAsync(new InvalidOperationException("Constructor slot already occupied"));
+
+        // Act
+        var result = await InvokeAddConstructorToTeamAsync(request);
+
+        // Assert
+        Assert.IsType<BadRequest<string>>(result);
+        var badRequestResult = (BadRequest<string>)result;
+        Assert.Equal("Constructor slot already occupied", badRequestResult.Value);
+    }
+
+    [Fact]
+    public async Task RemoveConstructorFromTeamAsync_Success_ReturnsNoContent()
+    {
+        // Arrange
+        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
+        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        int slotPosition = 1;
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.GetUserTeamAsync(user.Id))
+            .ReturnsAsync(team);
+
+        _mockTeamService
+            .Setup(x => x.RemoveConstructorFromTeamAsync(team.Id, slotPosition, user.Id))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await InvokeRemoveConstructorFromTeamAsync(slotPosition);
+
+        // Assert
+        Assert.IsType<NoContent>(result);
+        _mockTeamService.Verify(x => x.RemoveConstructorFromTeamAsync(team.Id, slotPosition, user.Id), Times.Once);
+    }
+
+    [Fact]
+    public async Task RemoveConstructorFromTeamAsync_UserHasNoTeam_ReturnsBadRequest()
+    {
+        // Arrange
+        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
+        int slotPosition = 1;
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.GetUserTeamAsync(user.Id))
+            .ReturnsAsync((TeamDetailsResponse?)null);
+
+        // Act
+        var result = await InvokeRemoveConstructorFromTeamAsync(slotPosition);
+
+        // Assert
+        Assert.IsType<ProblemHttpResult>(result);
+        var problemResult = (ProblemHttpResult)result;
+        Assert.Equal(StatusCodes.Status400BadRequest, problemResult.StatusCode);
+    }
+
+    [Fact]
+    public async Task RemoveConstructorFromTeamAsync_ServiceThrowsInvalidOperation_ReturnsBadRequest()
+    {
+        // Arrange
+        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
+        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        int slotPosition = 1;
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.GetUserTeamAsync(user.Id))
+            .ReturnsAsync(team);
+
+        _mockTeamService
+            .Setup(x => x.RemoveConstructorFromTeamAsync(team.Id, slotPosition, user.Id))
+            .ThrowsAsync(new InvalidOperationException("Constructor slot is empty"));
+
+        // Act
+        var result = await InvokeRemoveConstructorFromTeamAsync(slotPosition);
+
+        // Assert
+        Assert.IsType<BadRequest<string>>(result);
+        var badRequestResult = (BadRequest<string>)result;
+        Assert.Equal("Constructor slot is empty", badRequestResult.Value);
+    }
+
     // Helper methods to invoke private endpoint methods via reflection
     private async Task<IResult> InvokeRegisterUserAsync(MeEndpoints.RegisterUserRequest request)
     {
@@ -455,6 +821,109 @@ public class MeEndpointsTests
             null,
             new object[]
             {
+                _mockTeamService.Object,
+                _mockUserProfileService.Object,
+                _mockLogger.Object
+            }
+        )!;
+
+        return await task;
+    }
+
+    private async Task<IResult> InvokeGetUserProfileAsync()
+    {
+        var method = typeof(MeEndpoints).GetMethod(
+            "GetUserProfileAsync",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+        );
+
+        var task = (Task<IResult>)method!.Invoke(
+            null,
+            new object[]
+            {
+                _mockUserProfileService.Object,
+                _mockLogger.Object
+            }
+        )!;
+
+        return await task;
+    }
+
+    private async Task<IResult> InvokeAddDriverToTeamAsync(AddDriverToTeamRequest request)
+    {
+        var method = typeof(MeEndpoints).GetMethod(
+            "AddDriverToTeamAsync",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+        );
+
+        var task = (Task<IResult>)method!.Invoke(
+            null,
+            new object[]
+            {
+                request,
+                _mockTeamService.Object,
+                _mockUserProfileService.Object,
+                _mockLogger.Object
+            }
+        )!;
+
+        return await task;
+    }
+
+    private async Task<IResult> InvokeRemoveDriverFromTeamAsync(int slotPosition)
+    {
+        var method = typeof(MeEndpoints).GetMethod(
+            "RemoveDriverFromTeamAsync",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+        );
+
+        var task = (Task<IResult>)method!.Invoke(
+            null,
+            new object[]
+            {
+                slotPosition,
+                _mockTeamService.Object,
+                _mockUserProfileService.Object,
+                _mockLogger.Object
+            }
+        )!;
+
+        return await task;
+    }
+
+    private async Task<IResult> InvokeAddConstructorToTeamAsync(AddConstructorToTeamRequest request)
+    {
+        var method = typeof(MeEndpoints).GetMethod(
+            "AddConstructorToTeamAsync",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+        );
+
+        var task = (Task<IResult>)method!.Invoke(
+            null,
+            new object[]
+            {
+                request,
+                _mockTeamService.Object,
+                _mockUserProfileService.Object,
+                _mockLogger.Object
+            }
+        )!;
+
+        return await task;
+    }
+
+    private async Task<IResult> InvokeRemoveConstructorFromTeamAsync(int slotPosition)
+    {
+        var method = typeof(MeEndpoints).GetMethod(
+            "RemoveConstructorFromTeamAsync",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+        );
+
+        var task = (Task<IResult>)method!.Invoke(
+            null,
+            new object[]
+            {
+                slotPosition,
                 _mockTeamService.Object,
                 _mockUserProfileService.Object,
                 _mockLogger.Object

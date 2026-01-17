@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using F1CompanionApi.Api.Mappers;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
@@ -9,6 +10,7 @@ namespace F1CompanionApi.Api.Endpoints;
 
 public static class TeamEndpoints
 {
+    [ExcludeFromCodeCoverage]
     public static IEndpointRouteBuilder MapTeamEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapPost("/teams", CreateTeamAsync)

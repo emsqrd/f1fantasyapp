@@ -96,6 +96,38 @@ public class LeagueEndpointsTests
     }
 
     [Fact]
+    public async Task CreateLeagueAsync_UnexpectedExceptionThrown_RethrowsException()
+    {
+        // Arrange
+        var userProfile = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            FirstName = "John",
+            LastName = "Doe",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var request = new CreateLeagueRequest
+        {
+            Name = "Test League"
+        };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(userProfile);
+
+        _mockLeagueService
+            .Setup(x => x.CreateLeagueAsync(request, userProfile.Id))
+            .ThrowsAsync(new Exception("Database connection failed"));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<Exception>(
+            () => InvokeCreateLeagueAsync(request)
+        );
+    }
+
+    [Fact]
     public async Task GetLeaguesAsync_LeaguesExist_ReturnsOkWithLeagues()
     {
         // Arrange
@@ -220,6 +252,77 @@ public class LeagueEndpointsTests
         Assert.Equal(StatusCodes.Status404NotFound, problemResult.StatusCode);
     }
 
+    [Fact]
+    public async Task GetPublicLeaguesAsync_WithoutSearchTerm_ReturnsOkWithLeagues()
+    {
+        // Arrange
+        var publicLeagues = new List<LeagueResponse>
+        {
+            new LeagueResponse
+            {
+                Id = 1,
+                Name = "Public League 1",
+                OwnerName = "John Doe",
+                MaxTeams = 15,
+                IsPrivate = false
+            },
+            new LeagueResponse
+            {
+                Id = 2,
+                Name = "Public League 2",
+                OwnerName = "Jane Smith",
+                MaxTeams = 20,
+                IsPrivate = false
+            }
+        };
+
+        _mockLeagueService
+            .Setup(x => x.GetPublicLeaguesAsync(null))
+            .ReturnsAsync(publicLeagues);
+
+        // Act
+        var result = await InvokeGetPublicLeaguesAsync(null);
+
+        // Assert
+        Assert.IsType<Ok<IEnumerable<LeagueResponse>>>(result);
+        var okResult = (Ok<IEnumerable<LeagueResponse>>)result;
+        Assert.NotNull(okResult.Value);
+        Assert.Equal(publicLeagues, okResult.Value);
+        _mockLeagueService.Verify(x => x.GetPublicLeaguesAsync(null), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetPublicLeaguesAsync_WithSearchTerm_ReturnsOkWithLeagues()
+    {
+        // Arrange
+        var searchTerm = "Championship";
+        var filteredLeagues = new List<LeagueResponse>
+        {
+            new LeagueResponse
+            {
+                Id = 3,
+                Name = "World Championship League",
+                OwnerName = "Admin User",
+                MaxTeams = 30,
+                IsPrivate = false
+            }
+        };
+
+        _mockLeagueService
+            .Setup(x => x.GetPublicLeaguesAsync(searchTerm))
+            .ReturnsAsync(filteredLeagues);
+
+        // Act
+        var result = await InvokeGetPublicLeaguesAsync(searchTerm);
+
+        // Assert
+        Assert.IsType<Ok<IEnumerable<LeagueResponse>>>(result);
+        var okResult = (Ok<IEnumerable<LeagueResponse>>)result;
+        Assert.NotNull(okResult.Value);
+        Assert.Equal(filteredLeagues, okResult.Value);
+        _mockLeagueService.Verify(x => x.GetPublicLeaguesAsync(searchTerm), Times.Once);
+    }
+
     // Helper methods to invoke private endpoint methods via reflection
     private async Task<IResult> InvokeCreateLeagueAsync(CreateLeagueRequest request)
     {
@@ -269,6 +372,21 @@ public class LeagueEndpointsTests
         var task = (Task<IResult>)method!.Invoke(
             null,
             new object[] { _mockLeagueService.Object, id, _mockLogger.Object }
+        )!;
+
+        return await task;
+    }
+
+    private async Task<IResult> InvokeGetPublicLeaguesAsync(string? searchTerm)
+    {
+        var method = typeof(LeagueEndpoints).GetMethod(
+            "GetPublicLeaguesAsync",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+        );
+
+        var task = (Task<IResult>)method!.Invoke(
+            null,
+            new object?[] { _mockLeagueService.Object, searchTerm, _mockLogger.Object }
         )!;
 
         return await task;

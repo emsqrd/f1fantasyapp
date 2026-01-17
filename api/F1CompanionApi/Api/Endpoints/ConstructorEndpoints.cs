@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using F1CompanionApi.Domain.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,6 +7,7 @@ namespace F1CompanionApi.Api.Endpoints;
 
 public static class ConstructorEndpoints
 {
+    [ExcludeFromCodeCoverage]
     public static IEndpointRouteBuilder MapConstructorEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet("/constructors", GetConstructorsAsync)
