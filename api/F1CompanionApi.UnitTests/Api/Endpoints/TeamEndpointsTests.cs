@@ -34,34 +34,50 @@ public class TeamEndpointsTests
     }
 
     [Fact]
-    public async Task GetTeams_MultipleTeams_ReturnsAllTeams()
+    public async Task GetTeamsAsync_MultipleTeams_ReturnsAllTeams()
     {
         // Arrange
         using var context = CreateInMemoryContext();
+        var owners = new List<UserProfile>
+        {
+            new UserProfile
+            {
+                AccountId = Guid.NewGuid().ToString(),
+                Email = "owner1@test.com",
+                FirstName = "Owner",
+                LastName = "One"
+            },
+            new UserProfile
+            {
+                AccountId = Guid.NewGuid().ToString(),
+                Email = "owner2@test.com",
+                FirstName = "Owner",
+                LastName = "Two"
+            },
+            new UserProfile
+            {
+                AccountId = Guid.NewGuid().ToString(),
+                Email = "owner3@test.com",
+                FirstName = "Owner",
+                LastName = "Three"
+            }
+        };
+
+        context.UserProfiles.AddRange(owners);
+        await context.SaveChangesAsync();
+
         var teams = new List<Team>
         {
-            new Team
-            {
-                Id = 1,
-                Name = "Team Alpha",
-            },
-            new Team
-            {
-                Id = 2,
-                Name = "Team Beta",
-            },
-            new Team
-            {
-                Id = 3,
-                Name = "Team Gamma",
-            }
+            new Team { Name = "Team Alpha", UserId = owners[0].Id, CreatedBy = owners[0].Id },
+            new Team { Name = "Team Beta", UserId = owners[1].Id, CreatedBy = owners[1].Id },
+            new Team { Name = "Team Gamma", UserId = owners[2].Id, CreatedBy = owners[2].Id }
         };
 
         context.Teams.AddRange(teams);
         await context.SaveChangesAsync();
 
         // Act
-        var result = await InvokeGetTeams(context);
+        var result = await InvokeGetTeamsAsync(context);
 
         // Assert
         Assert.NotNull(result);
@@ -242,7 +258,7 @@ public class TeamEndpointsTests
         using var context = CreateInMemoryContext();
 
         // Act
-        var result = await InvokeGetTeams(context);
+        var result = await InvokeGetTeamsAsync(context);
 
         // Assert
         Assert.NotNull(result);
@@ -336,19 +352,21 @@ public class TeamEndpointsTests
     }
 
     // Helper methods to invoke private endpoint methods via reflection
-    private async Task<IEnumerable<Team>> InvokeGetTeams(ApplicationDbContext db)
+    private async Task<IEnumerable<TeamResponse>> InvokeGetTeamsAsync(ApplicationDbContext db)
     {
         var method = typeof(TeamEndpoints).GetMethod(
-            "GetTeams",
+            "GetTeamsAsync",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IEnumerable<Team>>)method!.Invoke(
+        var task = (Task<IResult>)method!.Invoke(
             null,
             new object[] { db, _mockLogger.Object }
         )!;
 
-        return await task;
+        var result = await task;
+        var okResult = (Ok<IEnumerable<TeamResponse>>)result;
+        return okResult.Value!;
     }
 
     private async Task<IResult> InvokeGetTeamByIdAsync(int id, ApplicationDbContext db)

@@ -1,12 +1,9 @@
 using F1CompanionApi.Api.Mappers;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
-using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace F1CompanionApi.Api.Endpoints;
 
@@ -20,7 +17,7 @@ public static class TeamEndpoints
             .WithOpenApi()
             .WithDescription("Create a new team for the current user");
 
-        app.MapGet("/teams", GetTeams)
+        app.MapGet("/teams", GetTeamsAsync)
             .WithName("GetTeams")
             .WithOpenApi()
             .WithDescription("Gets all teams");
@@ -55,14 +52,14 @@ public static class TeamEndpoints
         }
     }
 
-    private static async Task<IEnumerable<Team>> GetTeams(
+    private static async Task<IResult> GetTeamsAsync(
         ApplicationDbContext db,
         [FromServices] ILogger logger)
     {
         logger.LogDebug("Fetching all teams");
-        var teams = await db.Teams.ToListAsync() ?? [];
+        var teams = await db.Teams.Include(t => t.Owner).ToListAsync() ?? [];
         logger.LogDebug("Retrieved {TeamCount} teams", teams.Count);
-        return teams;
+        return Results.Ok(teams.Select(t => t.ToResponseModel()));
     }
 
     private static async Task<IResult> GetTeamByIdAsync(
@@ -71,7 +68,7 @@ public static class TeamEndpoints
         [FromServices] ILogger logger)
     {
         logger.LogDebug("Fetching team {TeamId}", id);
-        
+
         var team = await db.Teams
             .Include(t => t.Owner)
             .Include(t => t.TeamDrivers)

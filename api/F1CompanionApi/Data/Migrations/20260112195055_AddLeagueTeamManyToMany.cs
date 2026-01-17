@@ -12,18 +12,6 @@ namespace F1CompanionApi.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Teams_Leagues_LeagueId",
-                table: "Teams");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Teams_LeagueId",
-                table: "Teams");
-
-            migrationBuilder.DropColumn(
-                name: "LeagueId",
-                table: "Teams");
-
             migrationBuilder.CreateTable(
                 name: "LeagueTeams",
                 columns: table => new

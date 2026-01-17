@@ -82,10 +82,7 @@
       },
       "isBackground": true,
       "problemMatcher": {
-        "pattern": {
-          "regexp": "^(.*)$",
-          "file": 1
-        },
+        "base": "$msCompile",
         "background": {
           "activeOnStart": true,
           "beginsPattern": "^.*Building.*$",
