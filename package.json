@@ -14,6 +14,8 @@
     "api:build": "dotnet build api/F1CompanionApi/F1CompanionApi.csproj",
     "api:run": "dotnet run --project api/F1CompanionApi/F1CompanionApi.csproj",
     "api:watch": "dotnet watch run --project api/F1CompanionApi/F1CompanionApi.csproj",
+    "api:format": "dotnet format api/ --exclude **/Migrations/** --exclude **/obj/** --exclude **/bin/**",
+    "api:format:check": "dotnet format api/ --verify-no-changes --exclude **/Migrations/** --exclude **/obj/** --exclude **/bin/**",
     "api:test": "dotnet test api/F1CompanionApi.UnitTests/F1CompanionApi.UnitTests.csproj",
     "test:all": "npm run web:test && npm run api:test",
     "prepare": "husky"

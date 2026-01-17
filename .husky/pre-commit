@@ -2,21 +2,45 @@
 
 echo "🔨 Running pre-commit checks..."
 
-echo ""
-echo "📦 Web: Building..."
-npm run web:build || exit 1
+# Detect which directories have changes
+WEB_CHANGED=$(git diff --cached --name-only | grep '^web/' || true)
+API_CHANGED=$(git diff --cached --name-only | grep '^api/' || true)
 
-echo ""
-echo "🔍 Web: Linting..."
-npm run web:lint || exit 1
+# Run web checks only if web files changed
+if [ -n "$WEB_CHANGED" ]; then
+  echo ""
+  echo "📦 Web: Building..."
+  npm run web:build || exit 1
 
-echo ""
-echo "🧪 Web: Testing..."
-npm run web:test || exit 1
+  echo ""
+  echo "🔍 Web: Linting..."
+  npm run web:lint || exit 1
 
-echo ""
-echo "🧪 API: Testing..."
-npm run api:test || exit 1
+  echo ""
+  echo "🧪 Web: Testing..."
+  npm run web:test || exit 1
+else
+  echo ""
+  echo "⏭️  Web: No changes detected, skipping checks"
+fi
+
+# Run API checks only if API files changed
+if [ -n "$API_CHANGED" ]; then
+  echo ""
+  echo "📦 API: Building..."
+  npm run api:build || exit 1
+
+  echo ""
+  echo "🎨 API: Formatting check..."
+  npm run api:format:check || exit 1
+
+  echo ""
+  echo "🧪 API: Testing..."
+  npm run api:test || exit 1
+else
+  echo ""
+  echo "⏭️  API: No changes detected, skipping checks"
+fi
 
 echo ""
 echo "✅ All checks passed!"
