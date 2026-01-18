@@ -158,7 +158,7 @@ class ApiClient {
 
   async post<T, D = Record<string, unknown>>(
     endpoint: string,
-    data: D,
+    data?: D,
     errorContext?: string,
   ): Promise<T> {
     return this.makeRequest<T, D>(endpoint, { method: 'POST', data, errorContext });

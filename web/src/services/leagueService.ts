@@ -39,3 +39,29 @@ export async function getLeagueById(id: number): Promise<League | null> {
     throw error;
   }
 }
+
+export async function getPublicLeagues(searchTerm?: string): Promise<League[]> {
+  const params = new URLSearchParams();
+
+  if (searchTerm) {
+    params.append('search', searchTerm);
+  }
+
+  const endpoint = `/leagues/public${params.toString() ? `?${params.toString()}` : ''}`;
+  return apiClient.get<League[]>(endpoint, 'get public leagues');
+}
+
+export async function joinLeague(leagueId: number): Promise<League> {
+  const joinedLeague = await apiClient.post<League>(
+    `/leagues/${leagueId}/join`,
+    undefined,
+    'join league',
+  );
+
+  Sentry.logger.info('Joined league', {
+    leagueId: joinedLeague.id,
+    leagueName: joinedLeague.name,
+  });
+
+  return joinedLeague;
+}
