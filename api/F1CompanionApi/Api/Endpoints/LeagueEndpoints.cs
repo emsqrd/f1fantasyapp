@@ -23,9 +23,9 @@ public static class LeagueEndpoints
             .WithName("GetLeagues")
             .WithDescription("Get all leagues");
 
-        leaguesGroup.MapGet("/public", GetPublicLeaguesAsync)
-            .WithName("GetPublicLeagues")
-            .WithDescription("Get all public leagues");
+        leaguesGroup.MapGet("/available", GetAvailableLeaguesAsync)
+            .WithName("GetAvailableLeagues")
+            .WithDescription("Get all available leagues");
 
         leaguesGroup.MapGet("/{id}", GetLeagueByIdAsync)
             .WithName("GetLeagueById")
@@ -68,13 +68,16 @@ public static class LeagueEndpoints
         return Results.Ok(leagues);
     }
 
-    private static async Task<IResult> GetPublicLeaguesAsync(
+    private static async Task<IResult> GetAvailableLeaguesAsync(
         ILeagueService leagueService,
+        IUserProfileService userProfileService,
         [FromQuery] string? searchTerm,
         [FromServices] ILogger logger)
     {
-        logger.LogDebug("Fetching all public leagues");
-        var leagues = await leagueService.GetPublicLeaguesAsync(searchTerm);
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+
+        logger.LogDebug("Fetching available leagues for user {UserId}", user.Id);
+        var leagues = await leagueService.GetAvailableLeaguesAsync(user.Id, searchTerm);
 
         return Results.Ok(leagues);
     }

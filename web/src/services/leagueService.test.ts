@@ -8,10 +8,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   createLeague,
+  getAvailableLeagues,
   getLeagueById,
   getLeagues,
   getMyLeagues,
-  getPublicLeagues,
   joinLeague,
 } from './leagueService';
 
@@ -210,9 +210,9 @@ describe('leagueService', () => {
 
       mockApiClient.get.mockResolvedValue(mockLeagues);
 
-      const result = await getPublicLeagues();
+      const result = await getAvailableLeagues();
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/leagues/public', 'get public leagues');
+      expect(mockApiClient.get).toHaveBeenCalledWith('/leagues/available', 'get available leagues');
       expect(result).toEqual(mockLeagues);
     });
 
@@ -224,11 +224,11 @@ describe('leagueService', () => {
 
       mockApiClient.get.mockResolvedValue(mockLeagues);
 
-      const result = await getPublicLeagues('Formula');
+      const result = await getAvailableLeagues('Formula');
 
       expect(mockApiClient.get).toHaveBeenCalledWith(
-        '/leagues/public?search=Formula',
-        'get public leagues',
+        '/leagues/available?search=Formula',
+        'get available leagues',
       );
       expect(result).toEqual(mockLeagues);
     });

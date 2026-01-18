@@ -11,7 +11,7 @@ public interface ILeagueService
 {
     Task<LeagueResponse> CreateLeagueAsync(CreateLeagueRequest createLeagueRequest, int ownerId);
     Task<IEnumerable<LeagueResponse>> GetLeaguesAsync();
-    Task<IEnumerable<LeagueResponse>> GetPublicLeaguesAsync(string? searchTerm = null);
+    Task<IEnumerable<LeagueResponse>> GetAvailableLeaguesAsync(int userId, string? searchTerm = null);
     Task<LeagueDetailsResponse?> GetLeagueByIdAsync(int id);
     Task<IEnumerable<LeagueResponse>> GetLeaguesByOwnerIdAsync(int ownerId);
     Task<IEnumerable<LeagueResponse>> GetLeaguesForUserAsync(int userId);
@@ -101,14 +101,20 @@ public class LeagueService : ILeagueService
         return leagues.Select(league => league.ToResponseModel());
     }
 
-    public async Task<IEnumerable<LeagueResponse>> GetPublicLeaguesAsync(string? searchTerm = null)
+    public async Task<IEnumerable<LeagueResponse>> GetAvailableLeaguesAsync(int userId, string? searchTerm = null)
     {
         _logger.LogDebug("Fetching all public leagues");
 
+        // available = has capacity && user not already joined
         var query = _dbContext.Leagues
             .Include(x => x.Owner)
-            .Where(x => !x.IsPrivate);
+            .Include(x => x.LeagueTeams)
+            .Where(x =>
+                x.LeagueTeams.Count < x.MaxTeams &&
+                !x.LeagueTeams.Any(lt => lt.Team.UserId == userId)
+            );
 
+        // apply search filter if provided
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             var lowerSearchTerm = searchTerm.ToLower();
@@ -150,19 +156,22 @@ public class LeagueService : ILeagueService
         _logger.LogDebug("Fetching leagues for owner {OwnerId}", ownerId);
         var leagues = await _dbContext.Leagues
             .Include(x => x.Owner)
+            .Include(x => x.LeagueTeams)
             .Where(x => x.OwnerId == ownerId)
             .ToListAsync();
         _logger.LogDebug("Retrieved {LeagueCount} leagues for owner {OwnerId}", leagues.Count, ownerId);
         return leagues.Select(league => league.ToResponseModel());
     }
 
+    //TODO: rename to something like GetUserJoinedLeagues or GetLeaguesJoinedByUser
     public async Task<IEnumerable<LeagueResponse>> GetLeaguesForUserAsync(int userId)
     {
         _logger.LogDebug("Fetching leagues for user {UserId}", userId);
 
         var leagues = await _dbContext.Leagues
             .Include(x => x.Owner)
-            .Where(x => x.OwnerId == userId || x.LeagueTeams.Any(lt => lt.Team.UserId == userId))
+            .Include(x => x.LeagueTeams)
+            .Where(x => x.LeagueTeams.Any(lt => lt.Team.UserId == userId))
             .Distinct()
             .ToListAsync();
 

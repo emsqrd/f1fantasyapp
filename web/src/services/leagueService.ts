@@ -40,15 +40,15 @@ export async function getLeagueById(id: number): Promise<League | null> {
   }
 }
 
-export async function getPublicLeagues(searchTerm?: string): Promise<League[]> {
+export async function getAvailableLeagues(searchTerm?: string): Promise<League[]> {
   const params = new URLSearchParams();
 
   if (searchTerm) {
     params.append('search', searchTerm);
   }
 
-  const endpoint = `/leagues/public${params.toString() ? `?${params.toString()}` : ''}`;
-  return apiClient.get<League[]>(endpoint, 'get public leagues');
+  const endpoint = `/leagues/available${params.toString() ? `?${params.toString()}` : ''}`;
+  return apiClient.get<League[]>(endpoint, 'get available leagues');
 }
 
 export async function joinLeague(leagueId: number): Promise<League> {

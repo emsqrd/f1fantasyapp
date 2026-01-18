@@ -373,7 +373,7 @@ public class LeagueServiceTests
     }
 
     [Fact]
-    public async Task GetPublicLeaguesAsync_OnlyPublicLeagues_ReturnsAllLeagues()
+    public async Task GetAvailableLeaguesAsync_LeaguesWithCapacity_ReturnsAvailableLeagues()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -386,31 +386,39 @@ public class LeagueServiceTests
             FirstName = "Test",
             LastName = "Owner"
         };
-        context.UserProfiles.Add(owner);
+        var requestingUser = new UserProfile
+        {
+            AccountId = "requesting-account",
+            Email = "requesting@test.com",
+            FirstName = "Requesting",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, requestingUser);
+        await context.SaveChangesAsync();
 
-        var publicLeague1 = new League
+        var league1 = new League
         {
-            Name = "Public League 1",
-            Description = "First public league",
+            Name = "League 1",
+            Description = "First league",
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
             CreatedAt = DateTime.UtcNow
         };
-        var publicLeague2 = new League
+        var league2 = new League
         {
-            Name = "Public League 2",
-            Description = "Second public league",
+            Name = "League 2",
+            Description = "Second league",
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
             CreatedAt = DateTime.UtcNow
         };
-        context.Leagues.AddRange(publicLeague1, publicLeague2);
+        context.Leagues.AddRange(league1, league2);
         await context.SaveChangesAsync();
 
         // Act
-        var result = await service.GetPublicLeaguesAsync();
+        var result = await service.GetAvailableLeaguesAsync(requestingUser.Id);
 
         // Assert
         Assert.NotNull(result);
@@ -418,7 +426,7 @@ public class LeagueServiceTests
     }
 
     [Fact]
-    public async Task GetPublicLeaguesAsync_MixedPublicAndPrivate_ReturnsOnlyPublicLeagues()
+    public async Task GetAvailableLeaguesAsync_MixedPublicAndPrivate_ReturnsBothTypes()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -431,7 +439,15 @@ public class LeagueServiceTests
             FirstName = "Test",
             LastName = "Owner"
         };
-        context.UserProfiles.Add(owner);
+        var requestingUser = new UserProfile
+        {
+            AccountId = "requesting-account",
+            Email = "requesting@test.com",
+            FirstName = "Requesting",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, requestingUser);
+        await context.SaveChangesAsync();
 
         var publicLeague = new League
         {
@@ -461,16 +477,15 @@ public class LeagueServiceTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await service.GetPublicLeaguesAsync();
+        var result = await service.GetAvailableLeaguesAsync(requestingUser.Id);
 
-        // Assert
+        // Assert - Returns both public and private leagues with capacity
         Assert.NotNull(result);
-        Assert.Single(result);
-        Assert.Equal("Public League", result.First().Name);
+        Assert.Equal(3, result.Count());
     }
 
     [Fact]
-    public async Task GetPublicLeaguesAsync_SearchByName_ReturnsMatchingLeagues()
+    public async Task GetAvailableLeaguesAsync_SearchByName_ReturnsMatchingLeagues()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -483,7 +498,15 @@ public class LeagueServiceTests
             FirstName = "Test",
             LastName = "Owner"
         };
-        context.UserProfiles.Add(owner);
+        var requestingUser = new UserProfile
+        {
+            AccountId = "requesting-account",
+            Email = "requesting@test.com",
+            FirstName = "Requesting",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, requestingUser);
+        await context.SaveChangesAsync();
 
         var premierLeague = new League
         {
@@ -516,7 +539,7 @@ public class LeagueServiceTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await service.GetPublicLeaguesAsync("League");
+        var result = await service.GetAvailableLeaguesAsync(requestingUser.Id, "League");
 
         // Assert
         Assert.NotNull(result);
@@ -526,7 +549,7 @@ public class LeagueServiceTests
     }
 
     [Fact]
-    public async Task GetPublicLeaguesAsync_SearchByDescription_ReturnsMatchingLeagues()
+    public async Task GetAvailableLeaguesAsync_SearchByDescription_ReturnsMatchingLeagues()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -539,7 +562,15 @@ public class LeagueServiceTests
             FirstName = "Test",
             LastName = "Owner"
         };
-        context.UserProfiles.Add(owner);
+        var requestingUser = new UserProfile
+        {
+            AccountId = "requesting-account",
+            Email = "requesting@test.com",
+            FirstName = "Requesting",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, requestingUser);
+        await context.SaveChangesAsync();
 
         var competitiveLeague = new League
         {
@@ -563,7 +594,7 @@ public class LeagueServiceTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await service.GetPublicLeaguesAsync("competitive");
+        var result = await service.GetAvailableLeaguesAsync(requestingUser.Id, "competitive");
 
         // Assert
         Assert.NotNull(result);
@@ -572,7 +603,7 @@ public class LeagueServiceTests
     }
 
     [Fact]
-    public async Task GetPublicLeaguesAsync_SearchCaseInsensitive_ReturnsMatchingLeagues()
+    public async Task GetAvailableLeaguesAsync_SearchCaseInsensitive_ReturnsMatchingLeagues()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -585,7 +616,15 @@ public class LeagueServiceTests
             FirstName = "Test",
             LastName = "Owner"
         };
-        context.UserProfiles.Add(owner);
+        var requestingUser = new UserProfile
+        {
+            AccountId = "requesting-account",
+            Email = "requesting@test.com",
+            FirstName = "Requesting",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, requestingUser);
+        await context.SaveChangesAsync();
 
         var league = new League
         {
@@ -600,8 +639,8 @@ public class LeagueServiceTests
         await context.SaveChangesAsync();
 
         // Act - Search with different casing
-        var resultLower = await service.GetPublicLeaguesAsync("premier");
-        var resultDescUpper = await service.GetPublicLeaguesAsync("COMPETITION");
+        var resultLower = await service.GetAvailableLeaguesAsync(requestingUser.Id, "premier");
+        var resultDescUpper = await service.GetAvailableLeaguesAsync(requestingUser.Id, "COMPETITION");
 
         // Assert
         Assert.Single(resultLower);
@@ -609,7 +648,7 @@ public class LeagueServiceTests
     }
 
     [Fact]
-    public async Task GetPublicLeaguesAsync_SearchWithNoMatches_ReturnsEmptyCollection()
+    public async Task GetAvailableLeaguesAsync_SearchWithNoMatches_ReturnsEmptyCollection()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -622,7 +661,15 @@ public class LeagueServiceTests
             FirstName = "Test",
             LastName = "Owner"
         };
-        context.UserProfiles.Add(owner);
+        var requestingUser = new UserProfile
+        {
+            AccountId = "requesting-account",
+            Email = "requesting@test.com",
+            FirstName = "Requesting",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, requestingUser);
+        await context.SaveChangesAsync();
 
         var league = new League
         {
@@ -637,7 +684,7 @@ public class LeagueServiceTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await service.GetPublicLeaguesAsync("nonexistent");
+        var result = await service.GetAvailableLeaguesAsync(requestingUser.Id, "nonexistent");
 
         // Assert
         Assert.NotNull(result);
@@ -645,7 +692,7 @@ public class LeagueServiceTests
     }
 
     [Fact]
-    public async Task GetPublicLeaguesAsync_NullOrWhitespaceSearchTerm_ReturnsAllPublicLeagues()
+    public async Task GetAvailableLeaguesAsync_NullOrWhitespaceSearchTerm_ReturnsAllAvailableLeagues()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -658,7 +705,15 @@ public class LeagueServiceTests
             FirstName = "Test",
             LastName = "Owner"
         };
-        context.UserProfiles.Add(owner);
+        var requestingUser = new UserProfile
+        {
+            AccountId = "requesting-account",
+            Email = "requesting@test.com",
+            FirstName = "Requesting",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, requestingUser);
+        await context.SaveChangesAsync();
 
         var league1 = new League
         {
@@ -680,8 +735,8 @@ public class LeagueServiceTests
         await context.SaveChangesAsync();
 
         // Act - Test both null and whitespace
-        var resultNull = await service.GetPublicLeaguesAsync(null);
-        var resultWhitespace = await service.GetPublicLeaguesAsync("   ");
+        var resultNull = await service.GetAvailableLeaguesAsync(requestingUser.Id, null);
+        var resultWhitespace = await service.GetAvailableLeaguesAsync(requestingUser.Id, "   ");
 
         // Assert
         Assert.NotNull(resultNull);
@@ -691,7 +746,7 @@ public class LeagueServiceTests
     }
 
     [Fact]
-    public async Task GetPublicLeaguesAsync_NullDescription_DoesNotThrowException()
+    public async Task GetAvailableLeaguesAsync_NullDescription_DoesNotThrowException()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -704,7 +759,15 @@ public class LeagueServiceTests
             FirstName = "Test",
             LastName = "Owner"
         };
-        context.UserProfiles.Add(owner);
+        var requestingUser = new UserProfile
+        {
+            AccountId = "requesting-account",
+            Email = "requesting@test.com",
+            FirstName = "Requesting",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, requestingUser);
+        await context.SaveChangesAsync();
 
         var leagueWithoutDescription = new League
         {
@@ -719,7 +782,7 @@ public class LeagueServiceTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await service.GetPublicLeaguesAsync("xyz");
+        var result = await service.GetAvailableLeaguesAsync(requestingUser.Id, "xyz");
 
         // Assert - Should not throw when searching leagues with null descriptions
         Assert.NotNull(result);
@@ -727,7 +790,7 @@ public class LeagueServiceTests
     }
 
     [Fact]
-    public async Task GetPublicLeaguesAsync_IncludesOwnerInformation()
+    public async Task GetAvailableLeaguesAsync_IncludesOwnerInformation()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -740,7 +803,15 @@ public class LeagueServiceTests
             FirstName = "John",
             LastName = "Doe"
         };
-        context.UserProfiles.Add(owner);
+        var requestingUser = new UserProfile
+        {
+            AccountId = "requesting-account",
+            Email = "requesting@test.com",
+            FirstName = "Requesting",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, requestingUser);
+        await context.SaveChangesAsync();
 
         var league = new League
         {
@@ -754,7 +825,7 @@ public class LeagueServiceTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await service.GetPublicLeaguesAsync();
+        var result = await service.GetAvailableLeaguesAsync(requestingUser.Id);
 
         // Assert
         Assert.NotNull(result);
@@ -763,7 +834,7 @@ public class LeagueServiceTests
     }
 
     [Fact]
-    public async Task GetPublicLeaguesAsync_SearchFiltersOutPrivateLeagues()
+    public async Task GetAvailableLeaguesAsync_SearchIncludesPrivateLeagues()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -776,7 +847,15 @@ public class LeagueServiceTests
             FirstName = "Test",
             LastName = "Owner"
         };
-        context.UserProfiles.Add(owner);
+        var requestingUser = new UserProfile
+        {
+            AccountId = "requesting-account",
+            Email = "requesting@test.com",
+            FirstName = "Requesting",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, requestingUser);
+        await context.SaveChangesAsync();
 
         var publicLeague = new League
         {
@@ -800,12 +879,176 @@ public class LeagueServiceTests
         await context.SaveChangesAsync();
 
         // Act
-        var result = await service.GetPublicLeaguesAsync("Champions");
+        var result = await service.GetAvailableLeaguesAsync(requestingUser.Id, "Champions");
 
-        // Assert - Should only return public league even though both match search
+        // Assert - Should return both public and private leagues that match search
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count());
+        Assert.Contains(result, l => l.Name == "Champions League");
+        Assert.Contains(result, l => l.Name == "Champions Private");
+    }
+
+    [Fact]
+    public async Task GetAvailableLeaguesAsync_FullLeague_ExcludesFromResults()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "owner-account",
+            Email = "owner@test.com",
+            FirstName = "Owner",
+            LastName = "User"
+        };
+        var requestingUser = new UserProfile
+        {
+            AccountId = "requesting-account",
+            Email = "requesting@test.com",
+            FirstName = "Requesting",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, requestingUser);
+        await context.SaveChangesAsync();
+
+        var availableLeague = new League
+        {
+            Name = "Available League",
+            MaxTeams = 5,
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        var fullLeague = new League
+        {
+            Name = "Full League",
+            MaxTeams = 2,
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.AddRange(availableLeague, fullLeague);
+        await context.SaveChangesAsync();
+
+        // Fill the second league to capacity
+        for (int i = 0; i < 2; i++)
+        {
+            var dummyUser = new UserProfile
+            {
+                AccountId = $"dummy-{i}",
+                Email = $"dummy{i}@test.com",
+                FirstName = "Dummy",
+                LastName = $"User{i}"
+            };
+            context.UserProfiles.Add(dummyUser);
+            await context.SaveChangesAsync();
+
+            var dummyTeam = new Team
+            {
+                Name = $"Dummy Team {i}",
+                UserId = dummyUser.Id,
+                CreatedBy = dummyUser.Id,
+                CreatedAt = DateTime.UtcNow
+            };
+            context.Teams.Add(dummyTeam);
+            await context.SaveChangesAsync();
+
+            var leagueTeam = new LeagueTeam
+            {
+                LeagueId = fullLeague.Id,
+                TeamId = dummyTeam.Id,
+                JoinedAt = DateTime.UtcNow,
+                CreatedBy = dummyUser.Id,
+                CreatedAt = DateTime.UtcNow
+            };
+            context.LeagueTeams.Add(leagueTeam);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var result = await service.GetAvailableLeaguesAsync(requestingUser.Id);
+
+        // Assert - Should only return the league with capacity
         Assert.NotNull(result);
         Assert.Single(result);
-        Assert.Equal("Champions League", result.First().Name);
+        Assert.Equal("Available League", result.First().Name);
+    }
+
+    [Fact]
+    public async Task GetAvailableLeaguesAsync_UserAlreadyJoined_ExcludesFromResults()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "owner-account",
+            Email = "owner@test.com",
+            FirstName = "Owner",
+            LastName = "User"
+        };
+        var requestingUser = new UserProfile
+        {
+            AccountId = "requesting-account",
+            Email = "requesting@test.com",
+            FirstName = "Requesting",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, requestingUser);
+        await context.SaveChangesAsync();
+
+        var requestingUserTeam = new Team
+        {
+            Name = "Requesting User Team",
+            UserId = requestingUser.Id,
+            CreatedBy = requestingUser.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Teams.Add(requestingUserTeam);
+        await context.SaveChangesAsync();
+
+        var joinableLeague = new League
+        {
+            Name = "Joinable League",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        var alreadyJoinedLeague = new League
+        {
+            Name = "Already Joined League",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.AddRange(joinableLeague, alreadyJoinedLeague);
+        await context.SaveChangesAsync();
+
+        // User already in second league
+        var existingMembership = new LeagueTeam
+        {
+            LeagueId = alreadyJoinedLeague.Id,
+            TeamId = requestingUserTeam.Id,
+            JoinedAt = DateTime.UtcNow,
+            CreatedBy = requestingUser.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.LeagueTeams.Add(existingMembership);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetAvailableLeaguesAsync(requestingUser.Id);
+
+        // Assert - Should only return the league user hasn't joined
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("Joinable League", result.First().Name);
     }
 
     [Fact]
@@ -816,65 +1059,6 @@ public class LeagueServiceTests
     }
 
     #region GetLeaguesForUserAsync Tests
-
-    [Fact]
-    public async Task GetLeaguesForUserAsync_UserOwnsLeagues_ReturnsOwnedLeagues()
-    {
-        // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new LeagueService(context, _mockLogger.Object);
-
-        var owner = new UserProfile
-        {
-            AccountId = "owner-account",
-            Email = "owner@test.com",
-            FirstName = "League",
-            LastName = "Owner"
-        };
-        var otherUser = new UserProfile
-        {
-            AccountId = "other-account",
-            Email = "other@test.com",
-            FirstName = "Other",
-            LastName = "User"
-        };
-        context.UserProfiles.AddRange(owner, otherUser);
-        await context.SaveChangesAsync();
-
-        var ownedLeague1 = new League
-        {
-            Name = "Owned League 1",
-            OwnerId = owner.Id,
-            CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
-        };
-        var ownedLeague2 = new League
-        {
-            Name = "Owned League 2",
-            OwnerId = owner.Id,
-            CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
-        };
-        var otherLeague = new League
-        {
-            Name = "Other League",
-            OwnerId = otherUser.Id,
-            CreatedBy = otherUser.Id,
-            CreatedAt = DateTime.UtcNow
-        };
-        context.Leagues.AddRange(ownedLeague1, ownedLeague2, otherLeague);
-        await context.SaveChangesAsync();
-
-        // Act
-        var result = await service.GetLeaguesForUserAsync(owner.Id);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Count());
-        Assert.Contains(result, l => l.Name == "Owned League 1");
-        Assert.Contains(result, l => l.Name == "Owned League 2");
-        Assert.DoesNotContain(result, l => l.Name == "Other League");
-    }
 
     [Fact]
     public async Task GetLeaguesForUserAsync_UserIsMemberOnly_ReturnsMemberLeagues()
@@ -946,78 +1130,6 @@ public class LeagueServiceTests
         Assert.NotNull(result);
         Assert.Single(result);
         Assert.Equal("League 1", result.First().Name);
-    }
-
-    [Fact]
-    public async Task GetLeaguesForUserAsync_UserIsOwnerAndMember_ReturnsDistinctLeagues()
-    {
-        // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new LeagueService(context, _mockLogger.Object);
-
-        var user = new UserProfile
-        {
-            AccountId = "user-account",
-            Email = "user@test.com",
-            FirstName = "Test",
-            LastName = "User"
-        };
-        var otherOwner = new UserProfile
-        {
-            AccountId = "other-account",
-            Email = "other@test.com",
-            FirstName = "Other",
-            LastName = "Owner"
-        };
-        context.UserProfiles.AddRange(user, otherOwner);
-        await context.SaveChangesAsync();
-
-        var userTeam = new Team
-        {
-            Name = "User Team",
-            UserId = user.Id,
-            CreatedBy = user.Id,
-            CreatedAt = DateTime.UtcNow
-        };
-        context.Teams.Add(userTeam);
-        await context.SaveChangesAsync();
-
-        var ownedLeague = new League
-        {
-            Name = "Owned League",
-            OwnerId = user.Id,
-            CreatedBy = user.Id,
-            CreatedAt = DateTime.UtcNow
-        };
-        var joinedLeague = new League
-        {
-            Name = "Joined League",
-            OwnerId = otherOwner.Id,
-            CreatedBy = otherOwner.Id,
-            CreatedAt = DateTime.UtcNow
-        };
-        context.Leagues.AddRange(ownedLeague, joinedLeague);
-        await context.SaveChangesAsync();
-
-        var leagueTeam = new LeagueTeam
-        {
-            LeagueId = joinedLeague.Id,
-            TeamId = userTeam.Id,
-            JoinedAt = DateTime.UtcNow,
-            CreatedBy = user.Id,
-            CreatedAt = DateTime.UtcNow
-        };
-        context.LeagueTeams.Add(leagueTeam);
-        await context.SaveChangesAsync();
-
-        // Act
-        var result = await service.GetLeaguesForUserAsync(user.Id);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Count());
-        Assert.Contains(result, l => l.Name == "Owned League");
-        Assert.Contains(result, l => l.Name == "Joined League");
     }
 
     #endregion
