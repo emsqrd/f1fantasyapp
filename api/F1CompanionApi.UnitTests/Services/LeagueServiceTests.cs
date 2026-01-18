@@ -814,4 +814,583 @@ public class LeagueServiceTests
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => new LeagueService(null!, _mockLogger.Object));
     }
+
+    #region GetLeaguesForUserAsync Tests
+
+    [Fact]
+    public async Task GetLeaguesForUserAsync_UserOwnsLeagues_ReturnsOwnedLeagues()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "owner-account",
+            Email = "owner@test.com",
+            FirstName = "League",
+            LastName = "Owner"
+        };
+        var otherUser = new UserProfile
+        {
+            AccountId = "other-account",
+            Email = "other@test.com",
+            FirstName = "Other",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, otherUser);
+        await context.SaveChangesAsync();
+
+        var ownedLeague1 = new League
+        {
+            Name = "Owned League 1",
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        var ownedLeague2 = new League
+        {
+            Name = "Owned League 2",
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        var otherLeague = new League
+        {
+            Name = "Other League",
+            OwnerId = otherUser.Id,
+            CreatedBy = otherUser.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.AddRange(ownedLeague1, ownedLeague2, otherLeague);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetLeaguesForUserAsync(owner.Id);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count());
+        Assert.Contains(result, l => l.Name == "Owned League 1");
+        Assert.Contains(result, l => l.Name == "Owned League 2");
+        Assert.DoesNotContain(result, l => l.Name == "Other League");
+    }
+
+    [Fact]
+    public async Task GetLeaguesForUserAsync_UserIsMemberOnly_ReturnsMemberLeagues()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var leagueOwner = new UserProfile
+        {
+            AccountId = "owner-account",
+            Email = "owner@test.com",
+            FirstName = "League",
+            LastName = "Owner"
+        };
+        var member = new UserProfile
+        {
+            AccountId = "member-account",
+            Email = "member@test.com",
+            FirstName = "Member",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(leagueOwner, member);
+        await context.SaveChangesAsync();
+
+        var memberTeam = new Team
+        {
+            Name = "Member Team",
+            UserId = member.Id,
+            CreatedBy = member.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Teams.Add(memberTeam);
+        await context.SaveChangesAsync();
+
+        var league1 = new League
+        {
+            Name = "League 1",
+            OwnerId = leagueOwner.Id,
+            CreatedBy = leagueOwner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        var league2 = new League
+        {
+            Name = "League 2",
+            OwnerId = leagueOwner.Id,
+            CreatedBy = leagueOwner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.AddRange(league1, league2);
+        await context.SaveChangesAsync();
+
+        // Add member's team to league1 only
+        var leagueTeam = new LeagueTeam
+        {
+            LeagueId = league1.Id,
+            TeamId = memberTeam.Id,
+            JoinedAt = DateTime.UtcNow,
+            CreatedBy = member.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.LeagueTeams.Add(leagueTeam);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetLeaguesForUserAsync(member.Id);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("League 1", result.First().Name);
+    }
+
+    [Fact]
+    public async Task GetLeaguesForUserAsync_UserIsOwnerAndMember_ReturnsDistinctLeagues()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var user = new UserProfile
+        {
+            AccountId = "user-account",
+            Email = "user@test.com",
+            FirstName = "Test",
+            LastName = "User"
+        };
+        var otherOwner = new UserProfile
+        {
+            AccountId = "other-account",
+            Email = "other@test.com",
+            FirstName = "Other",
+            LastName = "Owner"
+        };
+        context.UserProfiles.AddRange(user, otherOwner);
+        await context.SaveChangesAsync();
+
+        var userTeam = new Team
+        {
+            Name = "User Team",
+            UserId = user.Id,
+            CreatedBy = user.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Teams.Add(userTeam);
+        await context.SaveChangesAsync();
+
+        var ownedLeague = new League
+        {
+            Name = "Owned League",
+            OwnerId = user.Id,
+            CreatedBy = user.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        var joinedLeague = new League
+        {
+            Name = "Joined League",
+            OwnerId = otherOwner.Id,
+            CreatedBy = otherOwner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.AddRange(ownedLeague, joinedLeague);
+        await context.SaveChangesAsync();
+
+        var leagueTeam = new LeagueTeam
+        {
+            LeagueId = joinedLeague.Id,
+            TeamId = userTeam.Id,
+            JoinedAt = DateTime.UtcNow,
+            CreatedBy = user.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.LeagueTeams.Add(leagueTeam);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetLeaguesForUserAsync(user.Id);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count());
+        Assert.Contains(result, l => l.Name == "Owned League");
+        Assert.Contains(result, l => l.Name == "Joined League");
+    }
+
+    #endregion
+
+    #region JoinLeagueAsync Tests
+
+    [Fact]
+    public async Task JoinLeagueAsync_ValidRequest_CreatesLeagueTeamAndReturnsLeague()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "owner-account",
+            Email = "owner@test.com",
+            FirstName = "League",
+            LastName = "Owner"
+        };
+        var joiningUser = new UserProfile
+        {
+            AccountId = "user-account",
+            Email = "user@test.com",
+            FirstName = "Joining",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, joiningUser);
+        await context.SaveChangesAsync();
+
+        var userTeam = new Team
+        {
+            Name = "User Team",
+            UserId = joiningUser.Id,
+            CreatedBy = joiningUser.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Teams.Add(userTeam);
+        await context.SaveChangesAsync();
+
+        var league = new League
+        {
+            Name = "Public League",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.Add(league);
+        await context.SaveChangesAsync();
+
+        var beforeJoin = DateTime.UtcNow;
+
+        // Act
+        var result = await service.JoinLeagueAsync(league.Id, joiningUser.Id);
+
+        // Assert - Returns league response
+        Assert.NotNull(result);
+        Assert.Equal("Public League", result.Name);
+
+        // Assert - LeagueTeam is persisted
+        var leagueTeam = await context.LeagueTeams
+            .FirstOrDefaultAsync(lt => lt.LeagueId == league.Id && lt.TeamId == userTeam.Id);
+
+        Assert.NotNull(leagueTeam);
+        Assert.Equal(league.Id, leagueTeam.LeagueId);
+        Assert.Equal(userTeam.Id, leagueTeam.TeamId);
+        Assert.Equal(joiningUser.Id, leagueTeam.CreatedBy);
+        Assert.True(leagueTeam.JoinedAt >= beforeJoin);
+        Assert.True(leagueTeam.CreatedAt >= beforeJoin);
+    }
+
+    [Fact]
+    public async Task JoinLeagueAsync_InvalidLeagueId_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+            () => service.JoinLeagueAsync(0, 1)
+        );
+        Assert.Equal("leagueId", exception.ParamName);
+    }
+
+    [Fact]
+    public async Task JoinLeagueAsync_InvalidUserId_ThrowsArgumentOutOfRangeException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+            () => service.JoinLeagueAsync(1, 0)
+        );
+        Assert.Equal("userId", exception.ParamName);
+    }
+
+    [Fact]
+    public async Task JoinLeagueAsync_LeagueNotFound_ThrowsLeagueNotFoundException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var user = new UserProfile
+        {
+            AccountId = "user-account",
+            Email = "user@test.com",
+            FirstName = "Test",
+            LastName = "User"
+        };
+        context.UserProfiles.Add(user);
+        await context.SaveChangesAsync();
+
+        var nonExistentLeagueId = 9999;
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<LeagueNotFoundException>(
+            () => service.JoinLeagueAsync(nonExistentLeagueId, user.Id)
+        );
+        Assert.Equal(nonExistentLeagueId, exception.LeagueId);
+    }
+
+    [Fact]
+    public async Task JoinLeagueAsync_PrivateLeague_ThrowsLeagueIsPrivateException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "owner-account",
+            Email = "owner@test.com",
+            FirstName = "Owner",
+            LastName = "User"
+        };
+        var joiningUser = new UserProfile
+        {
+            AccountId = "user-account",
+            Email = "user@test.com",
+            FirstName = "Joining",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, joiningUser);
+        await context.SaveChangesAsync();
+
+        var userTeam = new Team
+        {
+            Name = "User Team",
+            UserId = joiningUser.Id,
+            CreatedBy = joiningUser.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Teams.Add(userTeam);
+        await context.SaveChangesAsync();
+
+        var privateLeague = new League
+        {
+            Name = "Private League",
+            IsPrivate = true,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.Add(privateLeague);
+        await context.SaveChangesAsync();
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<LeagueIsPrivateException>(
+            () => service.JoinLeagueAsync(privateLeague.Id, joiningUser.Id)
+        );
+        Assert.Equal(privateLeague.Id, exception.LeagueId);
+    }
+
+    [Fact]
+    public async Task JoinLeagueAsync_FullLeague_ThrowsLeagueFullException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "owner-account",
+            Email = "owner@test.com",
+            FirstName = "Owner",
+            LastName = "User"
+        };
+        var joiningUser = new UserProfile
+        {
+            AccountId = "user-account",
+            Email = "user@test.com",
+            FirstName = "Joining",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, joiningUser);
+        await context.SaveChangesAsync();
+
+        var userTeam = new Team
+        {
+            Name = "User Team",
+            UserId = joiningUser.Id,
+            CreatedBy = joiningUser.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Teams.Add(userTeam);
+        await context.SaveChangesAsync();
+
+        var league = new League
+        {
+            Name = "Full League",
+            IsPrivate = false,
+            MaxTeams = 2,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.Add(league);
+        await context.SaveChangesAsync();
+
+        // Fill the league to capacity with dummy teams
+        for (int i = 0; i < 2; i++)
+        {
+            var dummyUser = new UserProfile
+            {
+                AccountId = $"dummy-{i}",
+                Email = $"dummy{i}@test.com",
+                FirstName = "Dummy",
+                LastName = $"User{i}"
+            };
+            context.UserProfiles.Add(dummyUser);
+            await context.SaveChangesAsync();
+
+            var dummyTeam = new Team
+            {
+                Name = $"Dummy Team {i}",
+                UserId = dummyUser.Id,
+                CreatedBy = dummyUser.Id,
+                CreatedAt = DateTime.UtcNow
+            };
+            context.Teams.Add(dummyTeam);
+            await context.SaveChangesAsync();
+
+            var leagueTeam = new LeagueTeam
+            {
+                LeagueId = league.Id,
+                TeamId = dummyTeam.Id,
+                JoinedAt = DateTime.UtcNow,
+                CreatedBy = dummyUser.Id,
+                CreatedAt = DateTime.UtcNow
+            };
+            context.LeagueTeams.Add(leagueTeam);
+            await context.SaveChangesAsync();
+        }
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<LeagueFullException>(
+            () => service.JoinLeagueAsync(league.Id, joiningUser.Id)
+        );
+        Assert.Equal(league.Id, exception.LeagueId);
+        Assert.Equal(2, exception.MaxTeams);
+    }
+
+    [Fact]
+    public async Task JoinLeagueAsync_UserHasNoTeam_ThrowsTeamNotFoundException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "owner-account",
+            Email = "owner@test.com",
+            FirstName = "Owner",
+            LastName = "User"
+        };
+        var userWithoutTeam = new UserProfile
+        {
+            AccountId = "user-account",
+            Email = "user@test.com",
+            FirstName = "No",
+            LastName = "Team"
+        };
+        context.UserProfiles.AddRange(owner, userWithoutTeam);
+        await context.SaveChangesAsync();
+
+        var league = new League
+        {
+            Name = "Public League",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.Add(league);
+        await context.SaveChangesAsync();
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<TeamNotFoundException>(
+            () => service.JoinLeagueAsync(league.Id, userWithoutTeam.Id)
+        );
+        Assert.Equal(userWithoutTeam.Id, exception.UserId);
+    }
+
+    [Fact]
+    public async Task JoinLeagueAsync_AlreadyInLeague_ThrowsAlreadyInLeagueException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var owner = new UserProfile
+        {
+            AccountId = "owner-account",
+            Email = "owner@test.com",
+            FirstName = "Owner",
+            LastName = "User"
+        };
+        var user = new UserProfile
+        {
+            AccountId = "user-account",
+            Email = "user@test.com",
+            FirstName = "Test",
+            LastName = "User"
+        };
+        context.UserProfiles.AddRange(owner, user);
+        await context.SaveChangesAsync();
+
+        var userTeam = new Team
+        {
+            Name = "User Team",
+            UserId = user.Id,
+            CreatedBy = user.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Teams.Add(userTeam);
+        await context.SaveChangesAsync();
+
+        var league = new League
+        {
+            Name = "Public League",
+            IsPrivate = false,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.Add(league);
+        await context.SaveChangesAsync();
+
+        // User already in league
+        var existingLeagueTeam = new LeagueTeam
+        {
+            LeagueId = league.Id,
+            TeamId = userTeam.Id,
+            JoinedAt = DateTime.UtcNow,
+            CreatedBy = user.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.LeagueTeams.Add(existingLeagueTeam);
+        await context.SaveChangesAsync();
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<AlreadyInLeagueException>(
+            () => service.JoinLeagueAsync(league.Id, user.Id)
+        );
+        Assert.Equal(league.Id, exception.LeagueId);
+        Assert.Equal(userTeam.Id, exception.TeamId);
+    }
+
+    #endregion
 }

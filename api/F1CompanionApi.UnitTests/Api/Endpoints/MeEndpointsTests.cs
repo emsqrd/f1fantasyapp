@@ -222,8 +222,8 @@ public class MeEndpointsTests
             new LeagueResponse
             {
                 Id = 1,
-                Name = "League 1",
-                Description = "Description 1",
+                Name = "Owned League",
+                Description = "League I own",
                 OwnerName = "John Doe",
                 MaxTeams = 15,
                 IsPrivate = true
@@ -231,9 +231,9 @@ public class MeEndpointsTests
             new LeagueResponse
             {
                 Id = 2,
-                Name = "League 2",
-                Description = "Description 2",
-                OwnerName = "John Doe",
+                Name = "Joined League",
+                Description = "League I joined",
+                OwnerName = "Jane Smith",
                 MaxTeams = 20,
                 IsPrivate = false
             }
@@ -244,7 +244,7 @@ public class MeEndpointsTests
             .ReturnsAsync(userProfileResponse);
 
         _mockLeagueService
-            .Setup(x => x.GetLeaguesByOwnerIdAsync(userProfileResponse.Id))
+            .Setup(x => x.GetLeaguesForUserAsync(userProfileResponse.Id))
             .ReturnsAsync(leagues);
 
         // Act
@@ -255,9 +255,9 @@ public class MeEndpointsTests
         var okResult = (Ok<IEnumerable<LeagueResponse>>)result;
         var leagueList = okResult.Value!.ToList();
         Assert.Equal(2, leagueList.Count);
-        Assert.Equal("League 1", leagueList[0].Name);
+        Assert.Equal("Owned League", leagueList[0].Name);
         Assert.Equal("John Doe", leagueList[0].OwnerName);
-        Assert.Equal("League 2", leagueList[1].Name);
+        Assert.Equal("Joined League", leagueList[1].Name);
         Assert.Equal(20, leagueList[1].MaxTeams);
     }
 
@@ -279,7 +279,7 @@ public class MeEndpointsTests
             .ReturnsAsync(userProfile);
 
         _mockLeagueService
-            .Setup(x => x.GetLeaguesByOwnerIdAsync(userProfile.Id))
+            .Setup(x => x.GetLeaguesForUserAsync(userProfile.Id))
             .ReturnsAsync(new List<LeagueResponse>());
 
         // Act

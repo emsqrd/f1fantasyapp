@@ -196,7 +196,7 @@ public static class MeEndpoints
         try
         {
             var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
-            var leagues = await leagueService.GetLeaguesByOwnerIdAsync(user.Id);
+            var leagues = await leagueService.GetLeaguesForUserAsync(user.Id);
 
             logger.LogDebug("Retrieved {LeagueCount} leagues for current user", leagues.Count());
 
