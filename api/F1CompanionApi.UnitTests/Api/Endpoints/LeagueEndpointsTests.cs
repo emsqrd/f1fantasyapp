@@ -1,6 +1,7 @@
 using F1CompanionApi.Api.Endpoints;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data.Entities;
+using F1CompanionApi.Domain.Exceptions;
 using F1CompanionApi.Domain.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -74,9 +75,18 @@ public class LeagueEndpointsTests
     }
 
     [Fact]
-    public async Task CreateLeagueAsync_UserProfileServiceThrows_ReturnsBadRequest()
+    public async Task CreateLeagueAsync_UnexpectedExceptionThrown_RethrowsException()
     {
         // Arrange
+        var userProfile = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            FirstName = "John",
+            LastName = "Doe",
+            CreatedAt = DateTime.UtcNow
+        };
+
         var request = new CreateLeagueRequest
         {
             Name = "Test League"
@@ -84,15 +94,16 @@ public class LeagueEndpointsTests
 
         _mockUserProfileService
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
-            .ThrowsAsync(new InvalidOperationException("User not found"));
+            .ReturnsAsync(userProfile);
 
-        // Act
-        var result = await InvokeCreateLeagueAsync(request);
+        _mockLeagueService
+            .Setup(x => x.CreateLeagueAsync(request, userProfile.Id))
+            .ThrowsAsync(new Exception("Database connection failed"));
 
-        // Assert
-        Assert.IsType<ProblemHttpResult>(result);
-        var problemResult = (ProblemHttpResult)result;
-        Assert.Equal(StatusCodes.Status400BadRequest, problemResult.StatusCode);
+        // Act & Assert
+        await Assert.ThrowsAsync<Exception>(
+            () => InvokeCreateLeagueAsync(request)
+        );
     }
 
     [Fact]
@@ -220,6 +231,284 @@ public class LeagueEndpointsTests
         Assert.Equal(StatusCodes.Status404NotFound, problemResult.StatusCode);
     }
 
+    [Fact]
+    public async Task GetPublicLeaguesAsync_WithoutSearchTerm_ReturnsOkWithAvailableLeagues()
+    {
+        // Arrange
+        var userProfile = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            FirstName = "John",
+            LastName = "Doe",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var availableLeagues = new List<LeagueResponse>
+        {
+            new LeagueResponse
+            {
+                Id = 1,
+                Name = "Available League 1",
+                OwnerName = "John Doe",
+                MaxTeams = 15,
+                TeamCount = 5,
+                IsPrivate = false
+            },
+            new LeagueResponse
+            {
+                Id = 2,
+                Name = "Available League 2",
+                OwnerName = "Jane Smith",
+                MaxTeams = 20,
+                TeamCount = 10,
+                IsPrivate = false
+            }
+        };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(userProfile);
+
+        _mockLeagueService
+            .Setup(x => x.GetAvailableLeaguesAsync(userProfile.Id, null))
+            .ReturnsAsync(availableLeagues);
+
+        // Act
+        var result = await InvokeGetPublicLeaguesAsync(null);
+
+        // Assert
+        Assert.IsType<Ok<IEnumerable<LeagueResponse>>>(result);
+        var okResult = (Ok<IEnumerable<LeagueResponse>>)result;
+        Assert.NotNull(okResult.Value);
+        Assert.Equal(availableLeagues, okResult.Value);
+        _mockLeagueService.Verify(x => x.GetAvailableLeaguesAsync(userProfile.Id, null), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetPublicLeaguesAsync_WithSearchTerm_ReturnsOkWithFilteredLeagues()
+    {
+        // Arrange
+        var userProfile = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            FirstName = "John",
+            LastName = "Doe",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var searchTerm = "Championship";
+        var filteredLeagues = new List<LeagueResponse>
+        {
+            new LeagueResponse
+            {
+                Id = 3,
+                Name = "World Championship League",
+                OwnerName = "Admin User",
+                MaxTeams = 30,
+                TeamCount = 15,
+                IsPrivate = false
+            }
+        };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(userProfile);
+
+        _mockLeagueService
+            .Setup(x => x.GetAvailableLeaguesAsync(userProfile.Id, searchTerm))
+            .ReturnsAsync(filteredLeagues);
+
+        // Act
+        var result = await InvokeGetPublicLeaguesAsync(searchTerm);
+
+        // Assert
+        Assert.IsType<Ok<IEnumerable<LeagueResponse>>>(result);
+        var okResult = (Ok<IEnumerable<LeagueResponse>>)result;
+        Assert.NotNull(okResult.Value);
+        Assert.Equal(filteredLeagues, okResult.Value);
+        _mockLeagueService.Verify(x => x.GetAvailableLeaguesAsync(userProfile.Id, searchTerm), Times.Once);
+    }
+
+    [Fact]
+    public async Task JoinLeagueAsync_ValidRequest_ReturnsOkWithLeague()
+    {
+        // Arrange
+        var userProfile = new UserProfileResponse
+        {
+            Id = 5,
+            Email = "joiner@test.com",
+            FirstName = "Jane",
+            LastName = "Joiner",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var leagueResponse = new LeagueResponse
+        {
+            Id = 10,
+            Name = "Public League",
+            Description = "Open to all",
+            OwnerName = "League Owner",
+            MaxTeams = 15,
+            IsPrivate = false
+        };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(userProfile);
+
+        _mockLeagueService
+            .Setup(x => x.JoinLeagueAsync(10, userProfile.Id))
+            .ReturnsAsync(leagueResponse);
+
+        // Act
+        var result = await InvokeJoinLeagueAsync(10);
+
+        // Assert
+        Assert.IsType<Ok<LeagueResponse>>(result);
+        var okResult = (Ok<LeagueResponse>)result;
+        Assert.NotNull(okResult.Value);
+        Assert.Equal(10, okResult.Value.Id);
+        Assert.Equal("Public League", okResult.Value.Name);
+        _mockLeagueService.Verify(x => x.JoinLeagueAsync(10, userProfile.Id), Times.Once);
+    }
+
+    [Fact]
+    public async Task JoinLeagueAsync_LeagueNotFound_ThrowsLeagueNotFoundException()
+    {
+        // Arrange
+        var userProfile = new UserProfileResponse
+        {
+            Id = 5,
+            Email = "joiner@test.com",
+            FirstName = "Jane",
+            LastName = "Joiner",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(userProfile);
+
+        _mockLeagueService
+            .Setup(x => x.JoinLeagueAsync(999, userProfile.Id))
+            .ThrowsAsync(new LeagueNotFoundException(999));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<LeagueNotFoundException>(
+            () => InvokeJoinLeagueAsync(999)
+        );
+    }
+
+    [Fact]
+    public async Task JoinLeagueAsync_PrivateLeague_ThrowsLeagueIsPrivateException()
+    {
+        // Arrange
+        var userProfile = new UserProfileResponse
+        {
+            Id = 5,
+            Email = "joiner@test.com",
+            FirstName = "Jane",
+            LastName = "Joiner",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(userProfile);
+
+        _mockLeagueService
+            .Setup(x => x.JoinLeagueAsync(10, userProfile.Id))
+            .ThrowsAsync(new LeagueIsPrivateException(10));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<LeagueIsPrivateException>(
+            () => InvokeJoinLeagueAsync(10)
+        );
+    }
+
+    [Fact]
+    public async Task JoinLeagueAsync_LeagueFull_ThrowsLeagueFullException()
+    {
+        // Arrange
+        var userProfile = new UserProfileResponse
+        {
+            Id = 5,
+            Email = "joiner@test.com",
+            FirstName = "Jane",
+            LastName = "Joiner",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(userProfile);
+
+        _mockLeagueService
+            .Setup(x => x.JoinLeagueAsync(10, userProfile.Id))
+            .ThrowsAsync(new LeagueFullException(10, 15));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<LeagueFullException>(
+            () => InvokeJoinLeagueAsync(10)
+        );
+    }
+
+    [Fact]
+    public async Task JoinLeagueAsync_AlreadyInLeague_ThrowsAlreadyInLeagueException()
+    {
+        // Arrange
+        var userProfile = new UserProfileResponse
+        {
+            Id = 5,
+            Email = "joiner@test.com",
+            FirstName = "Jane",
+            LastName = "Joiner",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(userProfile);
+
+        _mockLeagueService
+            .Setup(x => x.JoinLeagueAsync(10, userProfile.Id))
+            .ThrowsAsync(new AlreadyInLeagueException(10, 20));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<AlreadyInLeagueException>(
+            () => InvokeJoinLeagueAsync(10)
+        );
+    }
+
+    [Fact]
+    public async Task JoinLeagueAsync_UserHasNoTeam_ThrowsTeamNotFoundException()
+    {
+        // Arrange
+        var userProfile = new UserProfileResponse
+        {
+            Id = 5,
+            Email = "joiner@test.com",
+            FirstName = "Jane",
+            LastName = "Joiner",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(userProfile);
+
+        _mockLeagueService
+            .Setup(x => x.JoinLeagueAsync(10, userProfile.Id))
+            .ThrowsAsync(new TeamNotFoundException(userProfile.Id));
+
+        // Act & Assert
+        await Assert.ThrowsAsync<TeamNotFoundException>(
+            () => InvokeJoinLeagueAsync(10)
+        );
+    }
+
     // Helper methods to invoke private endpoint methods via reflection
     private async Task<IResult> InvokeCreateLeagueAsync(CreateLeagueRequest request)
     {
@@ -269,6 +558,42 @@ public class LeagueEndpointsTests
         var task = (Task<IResult>)method!.Invoke(
             null,
             new object[] { _mockLeagueService.Object, id, _mockLogger.Object }
+        )!;
+
+        return await task;
+    }
+
+    private async Task<IResult> InvokeGetPublicLeaguesAsync(string? searchTerm)
+    {
+        var method = typeof(LeagueEndpoints).GetMethod(
+            "GetAvailableLeaguesAsync",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+        );
+
+        var task = (Task<IResult>)method!.Invoke(
+            null,
+            new object?[] { _mockLeagueService.Object, _mockUserProfileService.Object, searchTerm, _mockLogger.Object }
+        )!;
+
+        return await task;
+    }
+
+    private async Task<IResult> InvokeJoinLeagueAsync(int leagueId)
+    {
+        var method = typeof(LeagueEndpoints).GetMethod(
+            "JoinLeagueAsync",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+        );
+
+        var task = (Task<IResult>)method!.Invoke(
+            null,
+            new object[]
+            {
+                _mockLeagueService.Object,
+                _mockUserProfileService.Object,
+                leagueId,
+                _mockLogger.Object
+            }
         )!;
 
         return await task;

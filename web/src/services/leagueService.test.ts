@@ -6,7 +6,14 @@ import type { ApiError } from '@/utils/errors';
 import * as Sentry from '@sentry/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createLeague, getLeagueById, getLeagues, getMyLeagues } from './leagueService';
+import {
+  createLeague,
+  getAvailableLeagues,
+  getLeagueById,
+  getLeagues,
+  getMyLeagues,
+  joinLeague,
+} from './leagueService';
 
 vi.mock('@/lib/api', () => ({
   apiClient: {
@@ -191,6 +198,65 @@ describe('leagueService', () => {
         status: 500,
       });
       expect(mockApiClient.get).toHaveBeenCalledWith('/leagues/1', 'get league');
+    });
+  });
+
+  describe('getPublicLeagues', () => {
+    it('calls apiClient.get with correct endpoint when no search term provided', async () => {
+      const mockLeagues: League[] = createMockLeagueList(3, (i) => ({
+        isPrivate: false,
+        name: `Public League ${i}`,
+      }));
+
+      mockApiClient.get.mockResolvedValue(mockLeagues);
+
+      const result = await getAvailableLeagues();
+
+      expect(mockApiClient.get).toHaveBeenCalledWith('/leagues/available', 'get available leagues');
+      expect(result).toEqual(mockLeagues);
+    });
+
+    it('calls apiClient.get with search query parameter when search term provided', async () => {
+      const mockLeagues: League[] = createMockLeagueList(2, () => ({
+        isPrivate: false,
+        name: 'Formula League',
+      }));
+
+      mockApiClient.get.mockResolvedValue(mockLeagues);
+
+      const result = await getAvailableLeagues('Formula');
+
+      expect(mockApiClient.get).toHaveBeenCalledWith(
+        '/leagues/available?search=Formula',
+        'get available leagues',
+      );
+      expect(result).toEqual(mockLeagues);
+    });
+  });
+
+  describe('joinLeague', () => {
+    it('calls apiClient.post with correct endpoint and league id', async () => {
+      const mockLeague: League = createMockLeague({
+        id: 42,
+        name: 'F1 Enthusiasts',
+        isPrivate: false,
+      });
+
+      mockApiClient.post.mockResolvedValue(mockLeague);
+
+      const result = await joinLeague(42);
+
+      expect(mockApiClient.post).toHaveBeenCalledWith('/leagues/42/join', undefined, 'join league');
+      expect(result).toEqual(mockLeague);
+    });
+
+    it('does not log to Sentry when join fails', async () => {
+      const mockError = new Error('Already in league');
+
+      mockApiClient.post.mockRejectedValue(mockError);
+
+      await expect(joinLeague(1)).rejects.toThrow();
+      expect(mockSentryLogger.info).not.toHaveBeenCalled();
     });
   });
 });

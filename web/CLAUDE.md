@@ -162,6 +162,21 @@ function LeagueComponent() {
 
 **Philosophy:** Test user-facing behavior, not implementation details
 
+**Documentation & Best Practices:**
+
+When writing or reviewing tests, use Context7 MCP to validate approaches against official documentation:
+
+- **React Testing Library**: `/testing-library/react-testing-library` - RTL best practices, query priorities, and patterns
+- **Vitest**: `/vitest-dev/vitest` - Test runner features, mocking patterns, and configuration
+- **React 19**: `/facebook/react` - React 19-specific features (new hooks, Server Components, Actions, etc.)
+- **TanStack Router**: `/tanstack/router` - Route loader testing, guard patterns, and router mocking
+
+Consult these sources when:
+- Implementing unfamiliar testing patterns
+- Deciding between testing approaches (e.g., when to mock, query strategies)
+- Troubleshooting test failures or flaky tests
+- Ensuring alignment with current industry standards
+
 **What to test:**
 - User interactions and workflows
 - Business logic specific to your component
@@ -315,6 +330,30 @@ src/
 3. Mock router hooks (`useLoaderData`, `useNavigate`) if needed
 4. Test user behavior, not implementation
 5. Run `npm run test:coverage` to verify coverage
+
+### Quick Test Generation Workflows
+
+**For new test files** (no existing tests):
+```
+Generate high-value tests for this file following our testing guidelines.
+- Keep it lean (~10-15 tests)
+- After writing tests, review for duplicate assertions or test cases
+- Run all tests to ensure they pass
+- Run the linter to ensure there are no linting errors
+- Run the build to ensure no type errors
+- Run code coverage and ensure that coverage is at an excellent level
+- Verify all tests provide high value per our testing philosophy
+```
+
+**For existing test files** (adding new tests):
+```
+Add tests for the new [describe feature/functionality] following our testing guidelines.
+- Review existing tests to understand current coverage and patterns
+- Add only tests for the new functionality, avoiding duplicates
+- Follow the existing test file's naming conventions and organization
+- Run tests to ensure they pass alongside existing tests
+- Verify new tests cover the added functionality
+```
 
 ## Environment Variables
 

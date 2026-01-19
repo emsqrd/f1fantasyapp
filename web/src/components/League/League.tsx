@@ -17,6 +17,7 @@ export function League() {
     from: '/_authenticated/_team-required/league/$leagueId',
   }) as LeagueLoaderData;
 
+  //TODO: How do I send them back to browse leagues from here?
   return (
     <AppContainer maxWidth="md">
       <header className="m-4">
@@ -27,7 +28,7 @@ export function League() {
             preload="intent"
           >
             <ChevronLeft />
-            Back to Leagues
+            Back to My Leagues
           </Link>
         </nav>
       </header>

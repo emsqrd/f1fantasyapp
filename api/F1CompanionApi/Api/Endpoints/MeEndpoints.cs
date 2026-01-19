@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Domain.Services;
 using F1CompanionApi.Extensions;
@@ -9,6 +10,7 @@ public static class MeEndpoints
 {
     public record RegisterUserRequest(string? DisplayName);
 
+    [ExcludeFromCodeCoverage]
     public static IEndpointRouteBuilder MapMeEndpoints(this IEndpointRouteBuilder app)
     {
         var meGroup = app.MapGroup("/me")
@@ -194,7 +196,7 @@ public static class MeEndpoints
         try
         {
             var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
-            var leagues = await leagueService.GetLeaguesByOwnerIdAsync(user.Id);
+            var leagues = await leagueService.GetLeaguesForUserAsync(user.Id);
 
             logger.LogDebug("Retrieved {LeagueCount} leagues for current user", leagues.Count());
 

@@ -8,7 +8,7 @@ public class League : UserOwnedEntity
     public required string Name { get; set; }
     public string? Description { get; set; }
     public int MaxTeams { get; set; } = 15;
-    public bool IsPrivate { get; set; } = true;
+    public bool IsPrivate { get; set; }
     public required int OwnerId { get; set; }
 
     public UserProfile Owner { get; set; } = null!;

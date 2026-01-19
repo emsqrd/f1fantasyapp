@@ -53,6 +53,40 @@ describe('InnerApp', () => {
     vi.resetAllMocks();
   });
 
+  describe('loading state', () => {
+    it('displays loading message when auth is loading', () => {
+      mockUseAuth.mockReturnValue(createMockAuthContext({ id: 'user-a' }, true));
+
+      const { getByText } = render(<InnerApp />);
+
+      expect(getByText('Loading...')).toBeInTheDocument();
+    });
+
+    it('announces loading state to screen readers', () => {
+      mockUseAuth.mockReturnValue(createMockAuthContext({ id: 'user-a' }, true));
+
+      const { getByRole } = render(<InnerApp />);
+
+      expect(getByRole('status')).toBeInTheDocument();
+    });
+
+    it('hides loading message when auth finishes loading', () => {
+      mockUseAuth.mockReturnValue(createMockAuthContext({ id: 'user-a' }, true));
+
+      const { getByText, queryByText, rerender } = render(<InnerApp />);
+
+      // Initially loading
+      expect(getByText('Loading...')).toBeInTheDocument();
+
+      // Auth finishes loading
+      mockUseAuth.mockReturnValue(createMockAuthContext({ id: 'user-a' }, false));
+      rerender(<InnerApp />);
+
+      // Loading message should be gone
+      expect(queryByText('Loading...')).not.toBeInTheDocument();
+    });
+  });
+
   describe('router cache invalidation', () => {
     it('does not invalidate on initial render', () => {
       mockUseAuth.mockReturnValue(createMockAuthContext({ id: 'user-a' }));

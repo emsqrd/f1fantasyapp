@@ -28,6 +28,12 @@ public class GlobalExceptionHandler : IExceptionHandler
         // Handle different exception types
         var (statusCode, title, detail) = exception switch
         {
+            // Custom Domain Exceptions - Resource Not Found
+            LeagueNotFoundException ex =>
+                (StatusCodes.Status404NotFound,
+                 "League Not Found",
+                 ex.Message),
+
             // Custom Domain Exceptions - Authentication/Authorization
             UserProfileNotFoundException _ =>
                 (StatusCodes.Status400BadRequest,
@@ -44,6 +50,11 @@ public class GlobalExceptionHandler : IExceptionHandler
                  "Permission Denied",
                  "You do not have permission to modify this team."),
 
+            LeagueIsPrivateException ex =>
+                (StatusCodes.Status403Forbidden,
+                 "Private League",
+                 ex.Message),
+
             // Custom Domain Exceptions - Resource Conflicts
             SlotOccupiedException ex =>
                 (StatusCodes.Status409Conflict,
@@ -58,6 +69,16 @@ public class GlobalExceptionHandler : IExceptionHandler
             EntityAlreadyOnTeamException ex =>
                 (StatusCodes.Status409Conflict,
                  "Entity Already on Team",
+                 ex.Message),
+
+            AlreadyInLeagueException ex =>
+                (StatusCodes.Status409Conflict,
+                 "Already in League",
+                 ex.Message),
+
+            LeagueFullException ex =>
+                (StatusCodes.Status409Conflict,
+                 "League Full",
                  ex.Message),
 
             // Custom Domain Exceptions - Validation Failures

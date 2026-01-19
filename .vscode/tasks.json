@@ -44,6 +44,23 @@
       }
     },
     {
+      "label": "[Web] Test Coverage",
+      "type": "shell",
+      "command": "npm run test:coverage",
+      "options": {
+        "cwd": "${workspaceFolder}/web"
+      },
+      "problemMatcher": [],
+      "icon": {
+        "id": "graph",
+        "color": "terminal.ansiCyan"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
       "label": "[Web] Build",
       "type": "shell",
       "command": "npm run build",
@@ -121,6 +138,61 @@
       "problemMatcher": ["$msCompile"],
       "icon": {
         "id": "beaker",
+        "color": "terminal.ansiMagenta"
+      }
+    },
+    {
+      "label": "[API] Test with Coverage",
+      "type": "shell",
+      "command": "./run-coverage.sh",
+      "options": {
+        "cwd": "${workspaceFolder}/api"
+      },
+      "problemMatcher": [],
+      "icon": {
+        "id": "graph",
+        "color": "terminal.ansiMagenta"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "[API] Test Coverage (Open Report)",
+      "type": "shell",
+      "command": "./run-coverage.sh --open",
+      "options": {
+        "cwd": "${workspaceFolder}/api"
+      },
+      "problemMatcher": [],
+      "icon": {
+        "id": "graph-line",
+        "color": "terminal.ansiMagenta"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "[API] Run",
+      "type": "shell",
+      "command": "dotnet run --project F1CompanionApi/F1CompanionApi.csproj",
+      "options": {
+        "cwd": "${workspaceFolder}/api"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "base": "$msCompile",
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^.*Building.*$",
+          "endsPattern": "^.*Application started.*|^.*Now listening on.*$"
+        }
+      },
+      "icon": {
+        "id": "server",
         "color": "terminal.ansiMagenta"
       }
     },

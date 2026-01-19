@@ -13,7 +13,7 @@ import type { Team as TeamType } from '@/contracts/Team';
 import type { UserProfile } from '@/contracts/UserProfile';
 import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
-import { getLeagueById, getMyLeagues } from '@/services/leagueService';
+import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
 import { getMyTeam, getTeamById } from '@/services/teamService';
 import { userProfileService } from '@/services/userProfileService';
 import * as Sentry from '@sentry/react';
@@ -28,6 +28,8 @@ import {
 } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { z } from 'zod';
+
+import { BrowseLeagues } from './components/BrowseLeagues/BrowseLeagues';
 
 /**
  * Zod schema for validating league ID route parameter.
@@ -353,6 +355,32 @@ const leaguesRoute = createRoute({
   ),
 });
 
+const browseLeaguesRoute = createRoute({
+  getParentRoute: () => teamRequiredLayoutRoute,
+  path: 'browse-leagues',
+  loader: async () => {
+    const leagues = await getAvailableLeagues();
+    return { leagues };
+  },
+  component: BrowseLeagues,
+  pendingComponent: () => (
+    <div role="status" className="flex w-full items-center justify-center p-8 md:min-h-screen">
+      <div className="text-center">
+        <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+        <p className="text-muted-foreground">Loading leagues...</p>
+      </div>
+    </div>
+  ),
+  pendingMs: 200, // Show pending after 200ms to prevent flash for fast loads
+  staleTime: 10_000, // Consider fresh for 10 seconds
+  gcTime: 5 * 60_000, // Keep in memory for 5 minutes
+  errorComponent: ({ error }) => (
+    <ErrorBoundary level="page">
+      <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
+    </ErrorBoundary>
+  ),
+});
+
 /**
  * League detail route - displays a specific league with leaderboard.
  *
@@ -508,7 +536,7 @@ const routeTree = rootRoute.addChildren([
   signUpRoute,
   authenticatedLayoutRoute.addChildren([
     accountRoute,
-    teamRequiredLayoutRoute.addChildren([leaguesRoute, leagueRoute, teamRoute]),
+    teamRequiredLayoutRoute.addChildren([leaguesRoute, browseLeaguesRoute, leagueRoute, teamRoute]),
   ]),
   noTeamLayoutRoute.addChildren([createTeamRoute]),
 ]);

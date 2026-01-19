@@ -1,32 +1,39 @@
+using System.Diagnostics.CodeAnalysis;
 using F1CompanionApi.Api.Models;
+using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace F1CompanionApi.Api.Endpoints;
 
 public static class LeagueEndpoints
 {
+    [ExcludeFromCodeCoverage]
     public static IEndpointRouteBuilder MapLeagueEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/leagues", CreateLeagueAsync)
+        var leaguesGroup = app.MapGroup("/leagues")
             .RequireAuthorization()
+            .WithOpenApi();
+
+        leaguesGroup.MapPost("/", CreateLeagueAsync)
             .WithName("CreateLeague")
-            .WithOpenApi()
-            .WithDescription("Create a new League");
+            .WithDescription("Create a new league");
 
-        app.MapGet("/leagues", GetLeaguesAsync)
-            .RequireAuthorization()
+        leaguesGroup.MapGet("/", GetLeaguesAsync)
             .WithName("GetLeagues")
-            .WithOpenApi()
-            .WithDescription("Gets all leagues");
+            .WithDescription("Get all leagues");
 
-        app.MapGet("/leagues/{id}", GetLeagueByIdAsync)
-            .RequireAuthorization()
-            .WithName("GetLeaguesById")
-            .WithOpenApi()
-            .WithDescription("Get League By Id");
+        leaguesGroup.MapGet("/available", GetAvailableLeaguesAsync)
+            .WithName("GetAvailableLeagues")
+            .WithDescription("Get all available leagues");
+
+        leaguesGroup.MapGet("/{id}", GetLeagueByIdAsync)
+            .WithName("GetLeagueById")
+            .WithDescription("Get a league by ID");
+
+        leaguesGroup.MapPost("/{id}/join", JoinLeagueAsync)
+            .WithName("JoinLeague")
+            .WithDescription("Join a league");
 
         return app;
     }
@@ -42,31 +49,13 @@ public static class LeagueEndpoints
     {
         logger.LogInformation("Creating league {LeagueName}", createLeagueRequest.Name);
 
-        try
-        {
-            var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
-            var leagueResponse = await leagueService.CreateLeagueAsync(createLeagueRequest, user.Id);
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+        var leagueResponse = await leagueService.CreateLeagueAsync(createLeagueRequest, user.Id);
 
-            logger.LogInformation("Successfully created league {LeagueId} for user {UserId}",
-                leagueResponse.Id, user.Id);
+        logger.LogInformation("Successfully created league {LeagueId} for user {UserId}",
+            leagueResponse.Id, user.Id);
 
-            return Results.Created($"/leagues/{leagueResponse.Id}", leagueResponse);
-        }
-        catch (InvalidOperationException ex)
-        {
-            logger.LogWarning(ex, "Invalid operation when creating league {LeagueName}",
-                createLeagueRequest.Name);
-            return Results.Problem(
-                detail: ex.Message,
-                statusCode: StatusCodes.Status400BadRequest
-            );
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Unexpected error creating league {LeagueName}",
-                createLeagueRequest.Name);
-            throw;
-        }
+        return Results.Created($"/leagues/{leagueResponse.Id}", leagueResponse);
     }
 
     private static async Task<IResult> GetLeaguesAsync(
@@ -75,6 +64,20 @@ public static class LeagueEndpoints
     {
         logger.LogDebug("Fetching all leagues");
         var leagues = await leagueService.GetLeaguesAsync();
+
+        return Results.Ok(leagues);
+    }
+
+    private static async Task<IResult> GetAvailableLeaguesAsync(
+        ILeagueService leagueService,
+        IUserProfileService userProfileService,
+        [FromQuery] string? searchTerm,
+        [FromServices] ILogger logger)
+    {
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+
+        logger.LogDebug("Fetching available leagues for user {UserId}", user.Id);
+        var leagues = await leagueService.GetAvailableLeaguesAsync(user.Id, searchTerm);
 
         return Results.Ok(leagues);
     }
@@ -96,6 +99,24 @@ public static class LeagueEndpoints
                 statusCode: StatusCodes.Status404NotFound
             );
         }
+
+        return Results.Ok(league);
+    }
+
+    private static async Task<IResult> JoinLeagueAsync(
+        ILeagueService leagueService,
+        IUserProfileService userProfileService,
+        int id,
+        [FromServices] ILogger logger
+    )
+    {
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+
+        logger.LogInformation("User {UserId} attempting to join league {LeagueId}", user.Id, id);
+
+        var league = await leagueService.JoinLeagueAsync(id, user.Id);
+
+        logger.LogInformation("User {UserId} successfully joined league {LeagueId}", user.Id, id);
 
         return Results.Ok(league);
     }

@@ -14,6 +14,7 @@ public static class LeagueResponseMapper
             Name = league.Name,
             Description = league.Description,
             OwnerName = league.Owner.GetFullName(),
+            TeamCount = league.LeagueTeams.Count,
             MaxTeams = league.MaxTeams,
             IsPrivate = league.IsPrivate,
         };
@@ -27,6 +28,7 @@ public static class LeagueResponseMapper
             Name = league.Name,
             Description = league.Description,
             OwnerName = league.Owner.GetFullName(),
+            TeamCount = league.LeagueTeams.Count,
             MaxTeams = league.MaxTeams,
             IsPrivate = league.IsPrivate,
             Teams = league.LeagueTeams
