@@ -127,7 +127,7 @@ public class LeagueService : ILeagueService
 
         var leagues = await query.ToListAsync();
 
-        _logger.LogDebug("Retreived {LeagueCount} public leagues", leagues.Count);
+        _logger.LogDebug("Retrieved {LeagueCount} public leagues", leagues.Count);
 
         return leagues.Select(league => league.ToResponseModel());
     }
