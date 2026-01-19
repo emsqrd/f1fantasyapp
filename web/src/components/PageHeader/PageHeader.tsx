@@ -2,7 +2,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTeam } from '@/hooks/useTeam';
 import { avatarEvents } from '@/lib/avatarEvents';
 import { useLocation, useMatches, useNavigate } from '@tanstack/react-router';
-import { CircleUser, Loader2, Trophy } from 'lucide-react';
+import { Check, CircleUser, Loader2, Monitor, Moon, Sun, Trophy } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -11,12 +12,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 
 export function PageHeader() {
   const { user, signOut, loading } = useAuth();
   const { hasTeam, myTeamId } = useTeam();
+  const { theme, setTheme } = useTheme();
 
   // Get profile from route context (fetched at root route level)
   const matches = useMatches();
@@ -100,10 +104,8 @@ export function PageHeader() {
             }}
             aria-label="Navigate to home page"
           >
-            <Trophy className="text-primary h-8 w-8" />
-            <span className="from-primary to-primary/70 bg-gradient-to-r bg-clip-text text-xl font-bold text-transparent">
-              F1 Fantasy Sports
-            </span>
+            <Trophy className="h-8 w-8" />
+            <span className="bg-clip-text text-xl font-bold">F1 Fantasy Sports</span>
           </div>
           <div className="flex space-x-4">
             <div className="items-center">
@@ -151,6 +153,24 @@ export function PageHeader() {
                             Create Team
                           </DropdownMenuItem>
                         )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Theme</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => setTheme('light')}>
+                          <Sun className="mr-2 size-4" />
+                          Light
+                          {theme === 'light' && <Check className="ml-auto size-4" />}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setTheme('dark')}>
+                          <Moon className="mr-2 size-4" />
+                          Dark
+                          {theme === 'dark' && <Check className="ml-auto size-4" />}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setTheme('system')}>
+                          <Monitor className="mr-2 size-4" />
+                          System
+                          {theme === 'system' && <Check className="ml-auto size-4" />}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleSignOut}>Sign Out</DropdownMenuItem>
                       </>
                     ) : (

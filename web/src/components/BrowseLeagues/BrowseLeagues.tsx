@@ -113,7 +113,7 @@ export function BrowseLeagues() {
                   {/* League Header */}
                   <div className="mb-3 flex items-start justify-between gap-3">
                     <h3 className="text-lg font-semibold">{league.name}</h3>
-                    <Badge className="gap-1 bg-blue-500 text-white dark:bg-blue-600">
+                    <Badge className="gap-1" variant="secondary">
                       {league.isPrivate ? (
                         <>
                           <Lock className="h-3 w-3" aria-hidden="true" />
