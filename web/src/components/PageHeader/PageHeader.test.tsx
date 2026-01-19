@@ -302,6 +302,24 @@ describe('PageHeader', () => {
       expect(mockNavigate).toHaveBeenCalledWith({ to: '/account' });
     });
 
+    it('navigates to browse leagues page when Browse Leagues is clicked', async () => {
+      const user = userEvent.setup();
+      mockUseTeam.mockReturnValue(createMockTeamContext({ hasTeam: true }));
+
+      renderWithRouter();
+
+      const dropdownButtons = screen.getAllByRole('button');
+      const dropdownTrigger = dropdownButtons.find(
+        (button) => button.getAttribute('aria-haspopup') === 'menu',
+      )!;
+      await user.click(dropdownTrigger);
+
+      const dashboardMenuItem = screen.getByRole('menuitem', { name: 'Browse Leagues' });
+      await user.click(dashboardMenuItem);
+
+      expect(mockNavigate).toHaveBeenCalledWith({ to: '/browse-leagues' });
+    });
+
     it('navigates to users leagues list when My Leagues is clicked', async () => {
       const user = userEvent.setup();
       mockUseTeam.mockReturnValue(createMockTeamContext({ hasTeam: true }));

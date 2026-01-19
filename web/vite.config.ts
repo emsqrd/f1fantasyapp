@@ -38,6 +38,7 @@ export default defineConfig(({ mode }) => {
           'dist/',
           'src/setupTests.ts',
           'src/main.tsx',
+          'src/router.tsx',
           'src/contracts/**',
           '**/*.config.js',
           '**/*.config.ts',

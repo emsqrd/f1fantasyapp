@@ -44,6 +44,23 @@
       }
     },
     {
+      "label": "[Web] Test Coverage",
+      "type": "shell",
+      "command": "npm run test:coverage",
+      "options": {
+        "cwd": "${workspaceFolder}/web"
+      },
+      "problemMatcher": [],
+      "icon": {
+        "id": "graph",
+        "color": "terminal.ansiCyan"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
       "label": "[Web] Build",
       "type": "shell",
       "command": "npm run build",

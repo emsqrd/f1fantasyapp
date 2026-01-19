@@ -61,6 +61,10 @@ export function PageHeader() {
     navigate({ to: '/sign-in' });
   };
 
+  const handleBrowseLeagues = () => {
+    navigate({ to: '/browse-leagues' });
+  };
+
   useEffect(() => {
     if (displayAvatarUrl) {
       setIsImageLoading(true);
@@ -80,7 +84,7 @@ export function PageHeader() {
   const isAuthPage = location.pathname === '/sign-in' || location.pathname === '/sign-up';
 
   return (
-    <nav className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b backdrop-blur">
+    <nav className="bg-background sticky top-0 z-50 border-b">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div
@@ -136,6 +140,9 @@ export function PageHeader() {
                         <DropdownMenuItem onClick={handleAccountClick}>My Account</DropdownMenuItem>
                         {hasTeam ? (
                           <>
+                            <DropdownMenuItem onClick={handleBrowseLeagues}>
+                              Browse Leagues
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={handleLeagues}>My Leagues</DropdownMenuItem>
                             <DropdownMenuItem onClick={handleMyTeam}>My Team</DropdownMenuItem>
                           </>

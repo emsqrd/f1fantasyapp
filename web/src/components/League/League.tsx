@@ -28,7 +28,7 @@ export function League() {
             preload="intent"
           >
             <ChevronLeft />
-            Back to Leagues
+            Back to My Leagues
           </Link>
         </nav>
       </header>

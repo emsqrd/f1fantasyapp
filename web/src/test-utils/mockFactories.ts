@@ -174,6 +174,8 @@ export function createMockLeague(overrides: Partial<League> = {}): League {
     ownerName: 'Test Owner',
     description: 'Test Description',
     isPrivate: true,
+    teamCount: 1,
+    maxTeams: 10,
     teams: createMockTeamList(1),
     ...overrides,
   };
