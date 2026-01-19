@@ -144,38 +144,42 @@ export function BrowseLeagues() {
                     </div>
 
                     {/* Join Button with Confirmation Dialog */}
-                    <AlertDialog
-                      open={dialogOpen === league.id}
-                      onOpenChange={(open) => handleDialogChange(league.id, open)}
-                    >
-                      <AlertDialogTrigger asChild>
-                        {/* TODO: disable for private leagues until that feature is implemented */}
-                        <Button size="sm" disabled={league.isPrivate}>
-                          Join League
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Join {league.name}?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            You're about to join this league. You can manage your league memberships
-                            from your leagues page at any time.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction asChild>
-                            <LoadingButton
-                              isLoading={isJoining}
-                              loadingText="Joining..."
-                              onClick={() => handleJoinLeague(league)}
-                            >
-                              Confirm Join
-                            </LoadingButton>
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <div className="flex flex-col items-center gap-1">
+                      <AlertDialog
+                        open={dialogOpen === league.id}
+                        onOpenChange={(open) => handleDialogChange(league.id, open)}
+                      >
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" disabled={league.isPrivate}>
+                            Join League
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Join {league.name}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              You're about to join this league. You can manage your league
+                              memberships from your leagues page at any time.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction asChild>
+                              <LoadingButton
+                                isLoading={isJoining}
+                                loadingText="Joining..."
+                                onClick={() => handleJoinLeague(league)}
+                              >
+                                Confirm Join
+                              </LoadingButton>
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                      {league.isPrivate && (
+                        <p className="text-muted-foreground text-xs">Coming soon</p>
+                      )}
+                    </div>
                   </div>
 
                   {/* Error Message */}
