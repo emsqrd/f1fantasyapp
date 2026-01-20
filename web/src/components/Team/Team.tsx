@@ -1,7 +1,6 @@
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team as TeamType } from '@/contracts/Team';
-import { Link, useLoaderData } from '@tanstack/react-router';
-import { ChevronLeft } from 'lucide-react';
+import { useLoaderData } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 
 import { AppContainer } from '../AppContainer/AppContainer';
@@ -53,18 +52,6 @@ export function Team() {
 
   return (
     <AppContainer maxWidth="md">
-      <header className="m-4">
-        <nav aria-label="Breadcrumb" className="mb-4">
-          <Link
-            to="/leagues"
-            className="text-muted-foreground hover:text-foreground inline-flex items-center text-sm transition-colors"
-            preload="intent"
-          >
-            <ChevronLeft />
-            Back to Leagues
-          </Link>
-        </nav>
-      </header>
       <div className="mb-4 gap-4 sm:grid sm:grid-cols-2">
         <Card className="mb-6 flex justify-center sm:mb-0">
           <CardHeader>

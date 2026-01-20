@@ -1,9 +1,8 @@
+import { createMockLeague } from '@/test-utils/mockFactories';
+import * as Sentry from '@sentry/react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import * as Sentry from '@sentry/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { createMockLeague } from '@/test-utils/mockFactories';
 
 import { BrowseLeagues } from './BrowseLeagues';
 
@@ -62,7 +61,6 @@ describe('BrowseLeagues', () => {
 
       render(<BrowseLeagues />);
 
-      expect(screen.getByText('Available Leagues')).toBeInTheDocument();
       expect(screen.getByText('There are no available leagues to display')).toBeInTheDocument();
       expect(screen.queryByLabelText('available-leagues')).not.toBeInTheDocument();
     });
@@ -222,7 +220,9 @@ describe('BrowseLeagues', () => {
 
       expect(await screen.findByText('Join Test League?')).toBeInTheDocument();
       expect(
-        screen.getByText(/You're about to join this league. You can manage your league memberships/i),
+        screen.getByText(
+          /You're about to join this league. You can manage your league memberships/i,
+        ),
       ).toBeInTheDocument();
       expect(await screen.findByRole('button', { name: /cancel/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /confirm join/i })).toBeInTheDocument();
@@ -569,26 +569,6 @@ describe('BrowseLeagues', () => {
       const liveRegion = screen.getByRole('status');
       expect(liveRegion).toBeInTheDocument();
       expect(liveRegion).toHaveTextContent('Test announcement');
-    });
-
-    it('uses semantic HTML with proper heading structure', () => {
-      const leagues = [
-        createMockLeague({
-          id: 1,
-          name: 'Test League',
-          isPrivate: false,
-        }),
-      ];
-
-      vi.mocked(useLoaderData).mockReturnValue({ leagues });
-
-      render(<BrowseLeagues />);
-
-      const mainHeading = screen.getByRole('heading', { level: 2, name: /available leagues/i });
-      expect(mainHeading).toBeInTheDocument();
-
-      const leagueHeading = screen.getByRole('heading', { level: 3, name: /test league/i });
-      expect(leagueHeading).toBeInTheDocument();
     });
 
     it('provides aria-label for leagues list container', () => {

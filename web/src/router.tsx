@@ -228,6 +228,9 @@ const authenticatedLayoutRoute = createRoute({
 const accountRoute = createRoute({
   getParentRoute: () => authenticatedLayoutRoute,
   path: 'account',
+  staticData: {
+    pageTitle: 'Account Settings',
+  },
   loader: async (): Promise<{ userProfile: UserProfile | null }> => {
     const userProfile = await userProfileService.getCurrentProfile();
     return { userProfile };
@@ -279,6 +282,9 @@ const noTeamLayoutRoute = createRoute({
 const createTeamRoute = createRoute({
   getParentRoute: () => noTeamLayoutRoute,
   path: 'create-team',
+  staticData: {
+    pageTitle: 'Create Team',
+  },
   component: CreateTeam,
   pendingComponent: () => (
     <div role="status" className="flex w-full items-center justify-center p-8 md:min-h-screen">
@@ -332,6 +338,9 @@ const teamRequiredLayoutRoute = createRoute({
 const leaguesRoute = createRoute({
   getParentRoute: () => teamRequiredLayoutRoute,
   path: 'leagues',
+  staticData: {
+    pageTitle: 'My Leagues',
+  },
   loader: async () => {
     const leagues = await getMyLeagues();
     return { leagues };
@@ -358,6 +367,9 @@ const leaguesRoute = createRoute({
 const browseLeaguesRoute = createRoute({
   getParentRoute: () => teamRequiredLayoutRoute,
   path: 'browse-leagues',
+  staticData: {
+    pageTitle: 'Available Leagues',
+  },
   loader: async () => {
     const leagues = await getAvailableLeagues();
     return { leagues };
@@ -400,6 +412,9 @@ const browseLeaguesRoute = createRoute({
 const leagueRoute = createRoute({
   getParentRoute: () => teamRequiredLayoutRoute,
   path: 'league/$leagueId',
+  staticData: {
+    pageTitle: 'League Details',
+  },
   loader: async ({ params }) => {
     const LEAGUE_ROUTE_ID = '/_authenticated/_team-required/league/$leagueId';
 
@@ -469,6 +484,9 @@ const leagueRoute = createRoute({
 const teamRoute = createRoute({
   getParentRoute: () => teamRequiredLayoutRoute,
   path: 'team/$teamId',
+  staticData: {
+    pageTitle: 'Team Details',
+  },
   loader: async ({ params }): Promise<{ team: TeamType }> => {
     const TEAM_ROUTE_ID = '/_authenticated/_team-required/team/$teamId';
 

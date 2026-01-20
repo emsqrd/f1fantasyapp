@@ -6,9 +6,12 @@ export interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isAuthTransitioning: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, additionalData: CreateProfileData) => Promise<void>;
   signOut: () => Promise<void>;
+  startAuthTransition: () => void;
+  completeAuthTransition: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

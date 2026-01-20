@@ -75,9 +75,12 @@ const mockAuthContext: AuthContextType = {
   user: { id: 'user-123' } as User,
   session: null,
   loading: false,
+  isAuthTransitioning: false,
   signIn: vi.fn(),
   signUp: vi.fn(),
   signOut: vi.fn(),
+  startAuthTransition: vi.fn(),
+  completeAuthTransition: vi.fn(),
 };
 
 function renderWithAuth(component: ReactNode, authContext = mockAuthContext) {

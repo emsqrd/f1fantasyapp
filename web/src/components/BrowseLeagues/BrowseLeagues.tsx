@@ -89,11 +89,7 @@ export function BrowseLeagues() {
   }, []);
 
   return (
-    <AppContainer maxWidth="md" className="p-8">
-      <header className="flex justify-between pb-4">
-        <h2 className="mb-2 text-2xl font-semibold">Available Leagues</h2>
-      </header>
-
+    <AppContainer maxWidth="md">
       <LiveRegion message={message} />
 
       {!hasAvailableLeagues ? (

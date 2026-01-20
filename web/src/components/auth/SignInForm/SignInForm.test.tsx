@@ -29,9 +29,12 @@ describe('SignInForm', () => {
       user: null,
       session: null,
       loading: false,
+      isAuthTransitioning: false,
       signIn: signInMock,
       signUp: vi.fn(),
       signOut: vi.fn(),
+      startAuthTransition: vi.fn(),
+      completeAuthTransition: vi.fn(),
     });
   });
 

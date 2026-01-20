@@ -22,14 +22,13 @@ export function LeagueList() {
   const hasLeagues = leagues.length > 0;
 
   return (
-    <AppContainer maxWidth="md" className="p-8">
-      <header className="flex justify-between pb-4">
-        <h2 className="mb-2 text-2xl font-semibold">Joined Leagues</h2>
+    <AppContainer maxWidth="md">
+      <header className="flex justify-end pb-4">
         <CreateLeague
           onLeagueCreated={(league) =>
             navigate({ to: '/league/$leagueId', params: { leagueId: String(league.id) } })
           }
-        ></CreateLeague>
+        />
       </header>
       {!hasLeagues ? (
         <div className="bg-card rounded-lg p-8 text-center">
