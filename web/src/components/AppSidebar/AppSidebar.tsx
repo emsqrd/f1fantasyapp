@@ -3,6 +3,7 @@ import { useTeam } from '@/hooks/useTeam';
 import { avatarEvents } from '@/lib/avatarEvents';
 import { router } from '@/router';
 import { useMatches, useNavigate, useRouterState } from '@tanstack/react-router';
+import * as Sentry from '@sentry/react';
 import {
   BadgeCheck,
   Check,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import {
@@ -96,8 +98,22 @@ export function AppSidebar() {
       // Navigate to home - auth state change will trigger via onAuthStateChange
       await navigate({ to: '/' });
       completeAuthTransition();
-    } catch (_) {
+    } catch (error) {
       completeAuthTransition();
+
+      // Log error to Sentry for monitoring
+      Sentry.captureException(error, {
+        tags: { action: 'sign_out' },
+        level: 'error',
+        contexts: {
+          auth: {
+            userId: user?.id,
+          },
+        },
+      });
+
+      // Show user feedback for critical auth failure
+      toast.error('Failed to sign out. Please try again.');
     }
   };
 
