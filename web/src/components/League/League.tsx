@@ -19,19 +19,6 @@ export function League() {
   //TODO: How do I send them back to browse leagues from here?
   return (
     <AppContainer maxWidth="md">
-      {/* <header className="m-4">
-        <nav aria-label="Breadcrumb" className="mb-4">
-          <Link
-            to="/leagues"
-            className="text-muted-foreground hover:text-foreground inline-flex items-center text-sm transition-colors"
-            preload="intent"
-          >
-            <ChevronLeft />
-            Back to My Leagues
-          </Link>
-        </nav>
-      </header> */}
-
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="p-4">
           <header className="flex justify-between">

@@ -92,6 +92,11 @@ public class GlobalExceptionHandler : IExceptionHandler
                  "Invalid Slot Position",
                  ex.Message),
 
+            InvalidLeagueInviteTokenException ex =>
+                (StatusCodes.Status400BadRequest,
+                "Invalid League Invite Token",
+                ex.Message),
+
             // Generic Authentication/Authorization (legacy - to be removed after migration)
             InvalidOperationException ex when ex.Message.Contains("User profile not found") =>
                 (StatusCodes.Status400BadRequest,
