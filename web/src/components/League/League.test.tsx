@@ -53,14 +53,6 @@ describe('League', () => {
     expect(heading).toBeInTheDocument();
   });
 
-  it('displays back to leagues navigation link', () => {
-    render(<League />);
-
-    const backLink = screen.getByRole('link', { name: /back to my leagues/i });
-    expect(backLink).toBeInTheDocument();
-    expect(backLink).toHaveAttribute('href', '/leagues');
-  });
-
   it('renders different league data correctly', () => {
     mockUseLoaderData.mockReturnValue({
       league: {

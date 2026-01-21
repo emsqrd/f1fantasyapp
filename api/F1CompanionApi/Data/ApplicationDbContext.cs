@@ -13,10 +13,11 @@ public class ApplicationDbContext : DbContext
     public DbSet<Constructor> Constructors => Set<Constructor>();
     public DbSet<Driver> Drivers => Set<Driver>();
     public DbSet<League> Leagues => Set<League>();
+    public DbSet<LeagueInvite> LeagueInvites => Set<LeagueInvite>();
+    public DbSet<LeagueTeam> LeagueTeams => Set<LeagueTeam>();
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<TeamDriver> TeamDrivers => Set<TeamDriver>();
     public DbSet<TeamConstructor> TeamConstructors => Set<TeamConstructor>();
-    public DbSet<LeagueTeam> LeagueTeams => Set<LeagueTeam>();
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -34,6 +35,16 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(e => e.OwnerId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<LeagueInvite>(entity =>
+        {
+            entity.HasOne(e => e.League)
+                .WithMany()
+                .HasForeignKey(e => e.LeagueId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.Token).IsUnique();
+            entity.HasIndex(e => e.LeagueId).IsUnique();
+        });
 
         modelBuilder.Entity<UserProfile>(entity =>
         {
@@ -111,6 +122,7 @@ public class ApplicationDbContext : DbContext
         ConfigureAuditTrailForeignKeys<TeamDriver>(modelBuilder);
         ConfigureAuditTrailForeignKeys<TeamConstructor>(modelBuilder);
         ConfigureAuditTrailForeignKeys<LeagueTeam>(modelBuilder);
+        ConfigureAuditTrailForeignKeys<LeagueInvite>(modelBuilder);
     }
 
     private void ConfigureAuditTrailForeignKeys<T>(ModelBuilder modelBuilder)

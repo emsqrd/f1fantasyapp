@@ -1,6 +1,5 @@
 import type { League as LeagueType } from '@/contracts/League';
-import { Link, useLoaderData } from '@tanstack/react-router';
-import { ChevronLeft } from 'lucide-react';
+import { useLoaderData } from '@tanstack/react-router';
 
 import { AppContainer } from '../AppContainer/AppContainer';
 import { Leaderboard } from '../Leaderboard/Leaderboard';
@@ -20,7 +19,7 @@ export function League() {
   //TODO: How do I send them back to browse leagues from here?
   return (
     <AppContainer maxWidth="md">
-      <header className="m-4">
+      {/* <header className="m-4">
         <nav aria-label="Breadcrumb" className="mb-4">
           <Link
             to="/leagues"
@@ -31,7 +30,7 @@ export function League() {
             Back to My Leagues
           </Link>
         </nav>
-      </header>
+      </header> */}
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="p-4">
