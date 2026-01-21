@@ -9,6 +9,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthTransitioning, setIsAuthTransitioning] = useState(false);
 
   useEffect(() => {
     // Get initial session
@@ -57,8 +58,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    // Create a promise that resolves when auth state is cleared
+    const authStateCleared = new Promise<void>((resolve) => {
+      const unsubscribe = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT' || session === null) {
+          unsubscribe.data.subscription.unsubscribe();
+          resolve();
+        }
+      });
+    });
+
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+
+    // Wait for auth state to be cleared before resolving
+    await authStateCleared;
+  };
+
+  const startAuthTransition = () => {
+    setIsAuthTransitioning(true);
+  };
+
+  const completeAuthTransition = () => {
+    setIsAuthTransitioning(false);
   };
 
   return (
@@ -67,9 +89,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         session,
         loading,
+        isAuthTransitioning,
         signIn,
         signUp,
         signOut,
+        startAuthTransition,
+        completeAuthTransition,
       }}
     >
       {children}

@@ -4,49 +4,73 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  --radius: 0.625rem;
+  --radius: 0.65rem;
   --background: #ffffff;
-  --foreground: #252525;
+  --foreground: #09090b;
   --card: #ffffff;
-  --card-foreground: #252525;
+  --card-foreground: #09090b;
   --popover: #ffffff;
-  --popover-foreground: #252525;
-  --primary: #343434;
-  --primary-foreground: #fbfbfb;
-  --secondary: #f7f7f7;
-  --secondary-foreground: #343434;
-  --muted: #f7f7f7;
-  --muted-foreground: #8e8e8e;
-  --accent: #f7f7f7;
-  --accent-foreground: #343434;
-  --destructive: #e84c3d;
-  --border: #ebebeb;
-  --input: #ebebeb;
-  --ring: #b5b5b5;
-  --chart-1: #dfa635;
-  --chart-2: #6f9e9e;
-  --chart-3: #575c6b;
-  --chart-4: #d6d149;
-  --chart-5: #d9b945;
-  --sidebar: #fbfbfb;
-  --sidebar-foreground: #252525;
-  --sidebar-primary: #343434;
-  --sidebar-primary-foreground: #fbfbfb;
-  --sidebar-accent: #f7f7f7;
-  --sidebar-accent-foreground: #343434;
-  --sidebar-border: #ebebeb;
-  --sidebar-ring: #b5b5b5;
+  --popover-foreground: #09090b;
+  --primary: #1447e6;
+  --primary-foreground: #eff6ff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717b;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #e7000b;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #a1a1a1;
+  --chart-1: #8ec5ff;
+  --chart-2: #2b7fff;
+  --chart-3: #155dfc;
+  --chart-4: #1447e6;
+  --chart-5: #193cb8;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #09090b;
+  --sidebar-primary: #155dfc;
+  --sidebar-primary-foreground: #eff6ff;
+  --sidebar-accent: #f4f4f5;
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: #e4e4e7;
+  --sidebar-ring: #a1a1a1;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #18181b;
+  --card-foreground: #fafafa;
+  --popover: #18181b;
+  --popover-foreground: #fafafa;
+  --primary: #1447e6;
+  --primary-foreground: #eff6ff;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #9f9fa9;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+  --destructive: #ff6467;
+  --border: #ffffff1a;
+  --input: #ffffff26;
+  --ring: #737373;
+  --chart-1: #8ec5ff;
+  --chart-2: #2b7fff;
+  --chart-3: #155dfc;
+  --chart-4: #1447e6;
+  --chart-5: #193cb8;
+  --sidebar: #18181b;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #2b7fff;
+  --sidebar-primary-foreground: #eff6ff;
+  --sidebar-accent: #27272a;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #ffffff1a;
+  --sidebar-ring: #525252;
 }
 
 body {
@@ -109,47 +133,19 @@ body {
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-.dark {
-  color-scheme: dark;
-  --background: #252525;
-  --foreground: #fbfbfb;
-  --card: #343434;
-  --card-foreground: #fbfbfb;
-  --popover: #454545;
-  --popover-foreground: #fbfbfb;
-  --primary: #ebebeb;
-  --primary-foreground: #343434;
-  --secondary: #454545;
-  --secondary-foreground: #fbfbfb;
-  --muted: #454545;
-  --muted-foreground: #b5b5b5;
-  --accent: #5f5f5f;
-  --accent-foreground: #fbfbfb;
-  --destructive: #d97960;
-  --border: #ffffff1a;
-  --input: #ffffff26;
-  --ring: #8e8e8e;
-  --chart-1: #6c5dcd;
-  --chart-2: #51bb8c;
-  --chart-3: #d9b945;
-  --chart-4: #d652bc;
-  --chart-5: #df7041;
-  --sidebar: #343434;
-  --sidebar-foreground: #fbfbfb;
-  --sidebar-primary: #6c5dcd;
-  --sidebar-primary-foreground: #fbfbfb;
-  --sidebar-accent: #454545;
-  --sidebar-accent-foreground: #fbfbfb;
-  --sidebar-border: #ffffff1a;
-  --sidebar-ring: #717171;
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* Restore pointer cursor for interactive elements */
+  button:not(:disabled),
+  [role='button']:not(:disabled),
+  [role='menuitem']:not([data-disabled]),
+  [role='option']:not([data-disabled]) {
+    cursor: pointer !important;
   }
   /* Standard browser autofill styling */
   input:-webkit-autofill,

@@ -73,9 +73,12 @@ describe('TeamProvider', () => {
       user: mockUser,
       session: null,
       loading: false,
+      isAuthTransitioning: false,
       signIn: vi.fn(),
       signUp: vi.fn(),
       signOut: vi.fn(),
+      startAuthTransition: vi.fn(),
+      completeAuthTransition: vi.fn(),
     });
   });
 
@@ -146,9 +149,12 @@ describe('TeamProvider', () => {
         user: null,
         session: null,
         loading: false,
+        isAuthTransitioning: false,
         signIn: vi.fn(),
         signUp: vi.fn(),
         signOut: vi.fn(),
+        startAuthTransition: vi.fn(),
+        completeAuthTransition: vi.fn(),
       });
 
       render(
@@ -243,9 +249,12 @@ describe('TeamProvider', () => {
         user: null,
         session: null,
         loading: false,
+        isAuthTransitioning: false,
         signIn: vi.fn(),
         signUp: vi.fn(),
         signOut: vi.fn(),
+        startAuthTransition: vi.fn(),
+        completeAuthTransition: vi.fn(),
       });
 
       const { rerender } = render(
@@ -264,9 +273,12 @@ describe('TeamProvider', () => {
         user: mockUser,
         session: null,
         loading: false,
+        isAuthTransitioning: false,
         signIn: vi.fn(),
         signUp: vi.fn(),
         signOut: vi.fn(),
+        startAuthTransition: vi.fn(),
+        completeAuthTransition: vi.fn(),
       });
 
       vi.mocked(getMyTeam).mockResolvedValue(mockTeam);

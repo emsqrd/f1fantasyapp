@@ -57,5 +57,20 @@ export function InnerApp() {
     );
   }
 
-  return <RouterProvider router={router} context={{ auth, teamContext, team: null }} />;
+  return (
+    <>
+      <RouterProvider router={router} context={{ auth, teamContext, team: null }} />
+      {auth.isAuthTransitioning && (
+        <div
+          role="status"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background"
+        >
+          <div className="text-center">
+            <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }

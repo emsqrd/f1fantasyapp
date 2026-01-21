@@ -100,16 +100,6 @@ describe('Team Component', () => {
     });
   });
 
-  describe('Component Navigation', () => {
-    it('displays back to leagues navigation link', () => {
-      render(<Team />);
-
-      const backLink = screen.getByRole('link', { name: /back to leagues/i });
-      expect(backLink).toBeInTheDocument();
-      expect(backLink).toHaveAttribute('href', '/leagues');
-    });
-  });
-
   describe('Tab Navigation', () => {
     it('switches to constructors tab when clicked', async () => {
       const user = userEvent.setup();

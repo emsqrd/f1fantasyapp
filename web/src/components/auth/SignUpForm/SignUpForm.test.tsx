@@ -35,9 +35,12 @@ describe('SignUpForm', () => {
       user: null,
       session: null,
       loading: false,
+      isAuthTransitioning: false,
       signIn: vi.fn(),
       signUp: mockSignUp,
       signOut: vi.fn(),
+      startAuthTransition: vi.fn(),
+      completeAuthTransition: vi.fn(),
     });
     vi.mocked(useNavigate).mockReturnValue(mockNavigate);
   });

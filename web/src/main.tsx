@@ -1,5 +1,6 @@
 import { Toaster } from '@/components/ui/sonner';
 import * as Sentry from '@sentry/react';
+import { ThemeProvider } from 'next-themes';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -69,11 +70,13 @@ const root = createRoot(container, {
 
 root.render(
   <StrictMode>
-    <Toaster position="top-center" />
-    <AuthProvider>
-      <TeamProvider>
-        <InnerApp />
-      </TeamProvider>
-    </AuthProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
+      <Toaster position="top-center" />
+      <AuthProvider>
+        <TeamProvider>
+          <InnerApp />
+        </TeamProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </StrictMode>,
 );

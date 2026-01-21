@@ -46,9 +46,6 @@ describe('LeagueList', () => {
     // Leagues should be displayed immediately (no loading state)
     expect(screen.getByText('League 1')).toBeInTheDocument();
     expect(screen.getByText('League 2')).toBeInTheDocument();
-
-    // There should be an accessible heading for the component
-    expect(screen.getByRole('heading', { level: 2, name: 'Joined Leagues' })).toBeInTheDocument();
   });
 
   it('displays empty league list when no leagues exist', () => {
@@ -57,9 +54,6 @@ describe('LeagueList', () => {
     });
 
     render(<LeagueList />);
-
-    // Heading should still be visible
-    expect(screen.getByRole('heading', { level: 2, name: 'Joined Leagues' })).toBeInTheDocument();
 
     // But no league items should be present
     expect(screen.queryByText('League 1')).not.toBeInTheDocument();

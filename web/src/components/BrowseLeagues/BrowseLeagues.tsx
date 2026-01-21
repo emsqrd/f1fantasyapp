@@ -89,11 +89,7 @@ export function BrowseLeagues() {
   }, []);
 
   return (
-    <AppContainer maxWidth="md" className="p-8">
-      <header className="flex justify-between pb-4">
-        <h2 className="mb-2 text-2xl font-semibold">Available Leagues</h2>
-      </header>
-
+    <AppContainer maxWidth="md">
       <LiveRegion message={message} />
 
       {!hasAvailableLeagues ? (
@@ -113,7 +109,7 @@ export function BrowseLeagues() {
                   {/* League Header */}
                   <div className="mb-3 flex items-start justify-between gap-3">
                     <h3 className="text-lg font-semibold">{league.name}</h3>
-                    <Badge className="gap-1 bg-blue-500 text-white dark:bg-blue-600">
+                    <Badge className="gap-1" variant="secondary">
                       {league.isPrivate ? (
                         <>
                           <Lock className="h-3 w-3" aria-hidden="true" />

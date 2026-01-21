@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 
 export function SignInForm() {
@@ -15,7 +15,8 @@ export function SignInForm() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { signIn } = useAuth();
+  const { signIn, startAuthTransition, completeAuthTransition } = useAuth();
+  const navigate = useNavigate();
 
   const { message, announce } = useLiveRegion();
 
@@ -26,6 +27,9 @@ export function SignInForm() {
 
     try {
       await signIn(email, password);
+      startAuthTransition();
+      await navigate({ to: '/leagues' });
+      completeAuthTransition();
     } catch (error) {
       const errorMessage =
         error instanceof Error ? `Login failed: ${error.message}` : 'Login Failed';

@@ -26,9 +26,12 @@ describe('useAuth', () => {
       user: null,
       session: null,
       loading: false,
+      isAuthTransitioning: false,
       signIn: vi.fn(),
       signUp: vi.fn(),
       signOut: vi.fn(),
+      startAuthTransition: vi.fn(),
+      completeAuthTransition: vi.fn(),
     };
 
     const { result } = renderHook(() => useAuth(), {
