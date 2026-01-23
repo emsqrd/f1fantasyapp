@@ -1,7 +1,6 @@
 import type { League } from '@/contracts/League';
 import { Link, useLoaderData } from '@tanstack/react-router';
 
-import { AppContainer } from '../AppContainer/AppContainer';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 
 interface LeagueLoaderData {
@@ -17,7 +16,7 @@ export function Leaderboard() {
   const hasTeams = league.teams.length > 0;
 
   return (
-    <AppContainer maxWidth="md">
+    <>
       {!hasTeams ? (
         <div className="bg-card rounded-lg p-8 text-center">
           <p className="text-muted-foreground text-lg">No teams in this league yet.</p>
@@ -53,6 +52,6 @@ export function Leaderboard() {
           </TableBody>
         </Table>
       )}
-    </AppContainer>
+    </>
   );
 }
