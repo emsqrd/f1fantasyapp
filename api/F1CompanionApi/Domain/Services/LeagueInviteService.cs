@@ -16,7 +16,7 @@ public interface ILeagueInviteService
 {
     Task<LeagueInviteTokenResponse> GetOrCreateLeagueInviteAsync(int leagueId, int requestorId);
     Task<LeagueInviteTokenPreviewResponse> ValidateAndPreviewLeagueInviteAsync(string token);
-    Task<LeagueResponse> JoinLegueViaLeagueInviteAsync(string token, int userId);
+    Task<LeagueResponse> JoinLeagueViaLeagueInviteAsync(string token, int userId);
 }
 
 public class LeagueInviteService : ILeagueInviteService
@@ -44,6 +44,22 @@ public class LeagueInviteService : ILeagueInviteService
 
     public async Task<LeagueInviteTokenResponse> GetOrCreateLeagueInviteAsync(int leagueId, int requesterId)
     {
+        var league = await _dbContext.Leagues.FindAsync(leagueId);
+        if (league is null)
+        {
+            throw new LeagueNotFoundException(leagueId);
+        }
+
+        if (league.OwnerId != requesterId)
+        {
+            throw new UnauthorizedAccessException("Only league owner can create invites");
+        }
+
+        if (!league.IsPrivate)
+        {
+            throw new InvalidOperationException("Public leagues cannot be joined by league invite");
+        }
+
         // Check if invite already exists
         var existingInvite = await _dbContext.LeagueInvites.FirstOrDefaultAsync(x => x.LeagueId == leagueId);
 
@@ -65,6 +81,7 @@ public class LeagueInviteService : ILeagueInviteService
             LeagueId = leagueId,
             Token = token,
             CreatedBy = requesterId,
+            CreatedAt = DateTime.UtcNow,
         };
 
         await _dbContext.LeagueInvites.AddAsync(leagueInvite);
@@ -109,7 +126,7 @@ public class LeagueInviteService : ILeagueInviteService
         }
     }
 
-    public async Task<LeagueResponse> JoinLegueViaLeagueInviteAsync(string token, int userId)
+    public async Task<LeagueResponse> JoinLeagueViaLeagueInviteAsync(string token, int userId)
     {
         // Input parameter guards
         if (userId <= 0)
@@ -119,6 +136,7 @@ public class LeagueInviteService : ILeagueInviteService
 
         var leagueId = DecryptAndExtractLeagueId(token);
         var league = await _dbContext.Leagues
+            .Include(x => x.Owner)
             .Include(x => x.LeagueTeams)
             .FirstOrDefaultAsync(x => x.Id == leagueId);
 
@@ -162,7 +180,7 @@ public class LeagueInviteService : ILeagueInviteService
         _dbContext.LeagueTeams.Add(leagueTeam);
         await _dbContext.SaveChangesAsync();
 
-        _logger.LogInformation("User {UserId} successfully joine League {LeagueId} with team {TeamId}", userId, leagueId, userTeam.Id);
+        _logger.LogInformation("User {UserId} successfully joined League {LeagueId} with team {TeamId}", userId, leagueId, userTeam.Id);
 
         return league.ToResponseModel();
     }
