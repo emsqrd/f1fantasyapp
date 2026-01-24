@@ -56,14 +56,15 @@ https://yourapp.com/join/AbC123XyZ789...
 **How It Works:**
 
 1. **Backend creates token**: Encrypts `{leagueId}:{Guid}` → URL-safe string (e.g., `AbC123XyZ789`)
-2. **Backend returns full URL**: `InviteTokenResponse.ShareableUrl` = `https://yourapp.com/join/AbC123XyZ789`
-3. **Owner copies full URL** from Dialog and shares it
-4. **Recipient clicks link** → Browser navigates to `/join/AbC123XyZ789`
-5. **Frontend extracts token** from URL route parameter (`:token`)
-6. **Frontend calls API** with token:
+2. **Backend returns token**: `InviteTokenResponse.Token` = `AbC123XyZ789`
+3. **Frontend builds full URL**: `${window.location.origin}/join/${token}` = `https://yourapp.com/join/AbC123XyZ789`
+4. **Owner copies full URL** from Dialog and shares it
+5. **Recipient clicks link** → Browser navigates to `/join/AbC123XyZ789`
+6. **Frontend extracts token** from URL route parameter (`:token`)
+7. **Frontend calls API** with token:
    - `GET /leagues/join/AbC123XyZ789/preview` (shows league info)
    - `POST /leagues/join/AbC123XyZ789` (joins league)
-7. **Backend decrypts token** to extract `leagueId` and process request
+8. **Backend decrypts token** to extract `leagueId` and process request
 
 **Security:** Token is encrypted and tied to specific league, cannot be forged or guessed.
 
@@ -140,7 +141,6 @@ public class InviteTokenResponse
     public required int Id { get; set; }
     public required int LeagueId { get; set; }
     public required string Token { get; set; }
-    public required string ShareableUrl { get; set; }  // Full frontend URL
     public required DateTime CreatedAt { get; set; }
     public required string CreatedByName { get; set; }
 }
@@ -176,8 +176,8 @@ public class InviteTokenPreviewResponse
 - Use `CreateProtector("LeagueInvites")` for purpose separation
 - Token generation: Encrypt `{leagueId}:{Guid}` payload, convert to URL-safe Base64
 - **GetOrCreate pattern**: Check if token exists for league, return it; otherwise create new
-- **ShareableUrl construction**: Build full frontend URL `{frontendBaseUrl}/join/{token}` (e.g., `https://yourapp.com/join/AbC123XyZ789`)
 - Authorization: Only league owner can get/create token
+- **Private leagues only**: Throws `InvalidOperationException` if league is not private
 - Transaction: Wrap join operation for atomicity
 - Token decryption: Extract `leagueId` from encrypted token to validate and process requests
 
@@ -211,7 +211,6 @@ Task<LeagueResponse> JoinLeagueAsync(int leagueId, int userId, bool bypassPrivat
 ```csharp
 public static InviteTokenResponse ToResponseModel(this LeagueInvite invite)
 {
-    // Build shareable URL for frontend: /join/{invite.Token}
     // Map all properties from entity to response DTO
     // Include CreatedByUser.GetFullName() for display
 }
@@ -223,7 +222,7 @@ public static InviteTokenResponse ToResponseModel(this LeagueInvite invite)
 
 **New Endpoints:**
 
-1. **GET /leagues/{id}/invite** (auth required, owner only)
+1. **POST /leagues/{id}/invite** (auth required, owner only)
    - Handler: `GetOrCreateInviteAsync`
    - Returns: 200 OK with `InviteTokenResponse`
    - Gets existing invite or creates new one if none exists
@@ -263,7 +262,7 @@ services.AddScoped<IInviteService, InviteService>();
 
 **Interfaces:**
 
-- `InviteToken` - Token details (id, token, leagueId, shareableUrl, createdAt, createdByName)
+- `InviteToken` - Token details (id, token, leagueId, createdAt, createdByName)
 - `InviteTokenPreview` - League preview from token (leagueName, description, ownerName, currentTeamCount, maxTeams, isLeagueFull)
 
 ### 2.2 Create Service Layer
@@ -272,9 +271,9 @@ services.AddScoped<IInviteService, InviteService>();
 
 **Functions:**
 
-- `getOrCreateInvite(leagueId)` → Promise<InviteToken>
-- `validateInvite(token)` → Promise<InviteTokenPreview>
-- `joinViaInvite(token)` → Promise<League>
+- `getOrCreateInvite(leagueId)` → Promise<InviteToken> - Uses POST `/leagues/{id}/invite`
+- `validateInvite(token)` → Promise<InviteTokenPreview> - Uses GET `/leagues/join/{token}/preview`
+- `joinViaInvite(token)` → Promise<League> - Uses POST `/leagues/join/{token}`
 
 **Implementation:** Use `apiClient` with proper error context, Sentry logging for significant events
 
@@ -333,11 +332,99 @@ Has Team → Click "Join League" → Navigate to /league/:leagueId
 
 **Returns:**
 
-- `copy(text)` - Copies to clipboard, shows toast
+- `copy(text)` - Copies to clipboard, returns Promise<boolean> for success/failure
 - `copiedValue` - Currently copied value (for state tracking)
-- `hasCopied` - Boolean flag
+- `hasCopied` - Boolean flag for visual feedback (icon swap)
 
-**Features:** Auto-reset after 2 seconds, Sentry logging on errors, uses `useCallback` for optimization
+**Features:** Auto-reset after 2 seconds, Sentry logging, no toast notifications (use icon swap for feedback)
+
+**Implementation:**
+
+```typescript
+import { useState, useCallback, useEffect, useRef } from 'react';
+import * as Sentry from '@sentry/react';
+
+interface UseClipboardReturn {
+  copy: (text: string) => Promise<boolean>;
+  copiedValue: string | null;
+  hasCopied: boolean;
+}
+
+/**
+ * Custom hook for copying text to clipboard with auto-reset functionality
+ *
+ * @param resetDelay - Time in milliseconds before resetting hasCopied state (default: 2000)
+ * @returns Object with copy function, copiedValue, and hasCopied state
+ *
+ * @example
+ * const { copy, hasCopied } = useClipboard();
+ *
+ * return (
+ *   <Button onClick={() => copy(inviteUrl)}>
+ *     {hasCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+ *   </Button>
+ * );
+ */
+export function useClipboard(resetDelay = 2000): UseClipboardReturn {
+  const [copiedValue, setCopiedValue] = useState<string | null>(null);
+  const [hasCopied, setHasCopied] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  const copy = useCallback(async (text: string): Promise<boolean> => {
+    // Clear any existing timeout to handle rapid successive calls
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    if (!navigator.clipboard) {
+      Sentry.captureMessage('Clipboard API not supported', 'warning');
+      return false;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedValue(text);
+      setHasCopied(true);
+
+      // Set new timeout that properly resets on each copy
+      timeoutRef.current = setTimeout(() => {
+        setHasCopied(false);
+        setCopiedValue(null);
+        timeoutRef.current = null;
+      }, resetDelay);
+
+      Sentry.addBreadcrumb({
+        category: 'clipboard',
+        message: 'Text copied to clipboard',
+        level: 'info',
+      });
+
+      return true;
+    } catch (error) {
+      setHasCopied(false);
+      setCopiedValue(null);
+
+      Sentry.captureException(error, {
+        tags: { feature: 'clipboard' },
+        extra: { textLength: text.length },
+      });
+
+      return false;
+    }
+  }, [resetDelay]);
+
+  return { copy, copiedValue, hasCopied };
+}
+```
 
 ### 2.6 Update League Component
 
@@ -345,18 +432,104 @@ Has Team → Click "Join League" → Navigate to /league/:leagueId
 
 **Changes:**
 
-1. Add "Share League" button (visible to owner only) in header area
+1. Add "Share League" button (visible to owner of **private leagues only**) in header area
 2. Button opens Dialog with:
    - Dialog title: "Share League"
    - Dialog description: "Anyone with this link can join your league"
-   - Read-only Input with invite URL
-   - "Copy" button (uses `useClipboard` hook)
-   - Visual feedback when copied (icon change)
-   - "Close" button in footer
-3. Check ownership: Compare current user with league owner
-4. Load invite token when dialog opens (lazy load)
+   - Read-only Input with invite URL (built client-side from token)
+   - Icon button with `useClipboard` hook (Copy icon → Check icon)
+   - Visual feedback: Icon swaps from Copy to Check for 2 seconds
+   - No toast notifications (cleaner UX like shadcn/ui docs)
+3. Check ownership and privacy: Compare current user with league owner AND check `league.isPrivate`
+4. **Build full URL client-side**: Use `window.location.origin` + token to construct shareable URL
+5. **Lazy load invite token using event handler** (not useEffect)
 
-**Implementation Pattern:** Follow shadcn/ui Dialog "Share link" example
+**Implementation Pattern:**
+
+```typescript
+import { Copy, Check } from 'lucide-react';
+
+function League() {
+  const { league } = useLoaderData({...});
+  const { user } = useAuth();
+  const isOwner = league.ownerId === user?.id;
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [inviteToken, setInviteToken] = useState<InviteToken | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { copy, hasCopied } = useClipboard();
+
+  // Build full URL from token (client-side)
+  const inviteUrl = inviteToken
+    ? `${window.location.origin}/join/${inviteToken.token}`
+    : '';
+
+  // Lazy load invite when dialog opens (event handler approach)
+  const handleDialogOpen = async (open: boolean) => {
+    setIsDialogOpen(open);
+
+    // Only fetch when opening dialog and token not already loaded
+    if (open && !inviteToken && !isLoading) {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const token = await getOrCreateInvite(league.id);
+        setInviteToken(token);
+      } catch (err) {
+        setError('Failed to load invite link');
+        Sentry.logger.error('Failed to load invite', { leagueId: league.id, err });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  return (
+    <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
+      <DialogTrigger asChild>
+        {/* Only show for private leagues owned by current user */}
+        {isOwner && league.isPrivate && <Button>Share League</Button>}
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Share League</DialogTitle>
+          <DialogDescription>
+            Anyone with this link can join your league
+          </DialogDescription>
+        </DialogHeader>
+        {isLoading && <div>Loading invite link...</div>}
+        {error && <InlineError message={error} />}
+        {inviteToken && (
+          <div className="flex items-center gap-2">
+            <Input value={inviteUrl} readOnly className="flex-1" />
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => copy(inviteUrl)}
+              aria-label={hasCopied ? 'Copied' : 'Copy invite link'}
+            >
+              {hasCopied ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+**Key Benefits:**
+- **No useEffect** - Event handler directly tied to user action
+- **Cached result** - Won't re-fetch on subsequent dialog opens
+- **Clean loading states** - Error handling within dialog
+- **Performance** - Only fetches when user actually wants to share
+- **Client-side URL construction** - Backend doesn't need to know frontend URL structure
 
 ---
 
@@ -371,6 +544,7 @@ Has Team → Click "Join League" → Navigate to /league/:leagueId
 - ✅ GetOrCreateInvite: Returns existing invite if one exists for league
 - ✅ GetOrCreateInvite: Creates new invite if none exists
 - ✅ GetOrCreateInvite: Throws UnauthorizedAccessException if not owner
+- ✅ GetOrCreateInvite: Throws InvalidOperationException if league is public
 - ✅ GetOrCreateInvite: Throws LeagueNotFoundException if league doesn't exist
 - ✅ ValidateAndPreview: Returns correct preview data
 - ✅ ValidateAndPreview: Throws InvalidInviteTokenException for invalid token format
@@ -400,10 +574,11 @@ Has Team → Click "Join League" → Navigate to /league/:leagueId
 
 **Test Cases:**
 
-- ✅ Owner sees "Share League" button
+- ✅ Owner of private league sees "Share League" button
+- ✅ Owner of public league does not see "Share League" button
 - ✅ Non-owner does not see "Share League" button
 - ✅ Clicking "Share League" opens dialog
-- ✅ Dialog shows invite URL in read-only input
+- ✅ Dialog shows invite URL in read-only input (built from token)
 - ✅ Copy button copies to clipboard
 - ✅ Copy button shows visual feedback (icon change)
 
@@ -423,11 +598,12 @@ Has Team → Click "Join League" → Navigate to /league/:leagueId
 
 **Test Cases:**
 
-- ✅ copy() writes to clipboard
+- ✅ copy() writes to clipboard and returns true
 - ✅ hasCopied becomes true after copy
 - ✅ Auto-resets after 2 seconds
-- ✅ Toast shown on successful copy
+- ✅ copy() returns false when clipboard API unavailable
 - ✅ Sentry logs on error
+- ✅ Multiple rapid copies properly reset timeout
 
 ---
 
@@ -439,7 +615,7 @@ Has Team → Click "Join League" → Navigate to /league/:leagueId
 2. Navigate to league detail page
 3. Click "Share League" button
 4. Dialog opens with invite link
-5. Click "Copy" button → URL copied to clipboard, toast confirmation
+5. Click "Copy" button → URL copied to clipboard, icon changes to checkmark
 6. Open link in incognito browser (not signed in)
 7. See league preview with correct details
 8. Click "Sign In to Join" → redirected to sign-in with redirect param
@@ -525,8 +701,8 @@ dotnet ef database update -p F1CompanionApi
 ### 5.3 API Testing (Manual with curl/Postman)
 
 ```bash
-# 1. Get or create invite (owner only)
-GET /leagues/1/invite
+# 1. Get or create invite (owner only, private leagues only)
+POST /leagues/1/invite
 Response: 200 OK with invite details including token
 
 # 2. Preview token (public)
@@ -540,9 +716,10 @@ Response: 200 OK with league details
 
 ### 5.4 End-to-End Verification
 
-✅ League owner can get/create invite link with "Share League" button
-✅ Dialog shows invite URL with copy functionality
-✅ Copy button provides visual feedback and toast notification
+✅ Private league owner can get/create invite link with "Share League" button
+✅ Public league owner does not see "Share League" button
+✅ Dialog shows invite URL (built client-side from token) with copy functionality
+✅ Copy button provides visual feedback with icon swap (Copy → Check)
 ✅ Public users can preview league details before signing in
 ✅ Authenticated users can join private leagues via invite links
 ✅ GetOrCreate pattern returns same token on subsequent calls
@@ -588,7 +765,7 @@ Response: 200 OK with league details
 **Modified Files:**
 
 1. `web/src/router.tsx` - Add joinInviteRoute with redirect parameter support
-2. `web/src/components/League/League.tsx` - Add "Share League" button with Dialog
+2. `web/src/components/League/League.tsx` - Add "Share League" button with Dialog (private leagues only)
 
 ---
 
@@ -599,6 +776,7 @@ Response: 200 OK with league details
 - Tokens encrypted using ASP.NET Core Data Protection API
 - URL-safe Base64 encoding prevents URL manipulation
 - Owner authorization enforced at service layer
+- Private leagues only - backend enforces this constraint
 - Public preview endpoint doesn't expose sensitive data
 
 **Performance:**
@@ -611,9 +789,10 @@ Response: 200 OK with league details
 
 - Public preview allows viral growth (non-users can see what they're joining)
 - Redirect parameter preserves invite link through sign-in flow
-- Toast notifications for copy operations
+- Icon swap for copy feedback (Copy → Check, like shadcn/ui docs)
 - LiveRegion announcements for form submissions
 - Dialog pattern follows shadcn/ui best practices
+- Client-side URL construction - better separation of concerns, backend agnostic to frontend URL structure
 
 **Accessibility:**
 

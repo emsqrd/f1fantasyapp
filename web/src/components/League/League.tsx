@@ -1,8 +1,13 @@
 import type { League as LeagueType } from '@/contracts/League';
+import type { LeagueInvite } from '@/contracts/LeagueInvite';
+import { getOrCreateLeagueInvite } from '@/services/leagueInviteService';
+import * as Sentry from '@sentry/react';
 import { useLoaderData } from '@tanstack/react-router';
-import { Copy, Share } from 'lucide-react';
+import { Copy } from 'lucide-react';
+import { useState } from 'react';
 
 import { AppContainer } from '../AppContainer/AppContainer';
+import { InlineError } from '../InlineError/InlineError';
 import { Leaderboard } from '../Leaderboard/Leaderboard';
 import { Button } from '../ui/button';
 import {
@@ -28,18 +33,41 @@ export function League() {
     from: '/_authenticated/_team-required/league/$leagueId',
   }) as LeagueLoaderData;
 
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [leagueInvite, setLeagueInvite] = useState<LeagueInvite | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const inviteUrl = leagueInvite ? `${window.location.origin}/join/${leagueInvite.token}` : '';
+
+  // lazy load invite when dialog opens
+  const handleDialogOpen = async (open: boolean) => {
+    setIsDialogOpen(open);
+
+    if (open && !leagueInvite && !isLoading) {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const leagueInvite = await getOrCreateLeagueInvite(league.id);
+        setLeagueInvite(leagueInvite);
+      } catch (error) {
+        setError('Failed to load invite link');
+        Sentry.logger.error('Failed to load invite', { leagueId: league.id, error });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
   return (
     <AppContainer maxWidth="md">
       <div className="">
         <div className="">
           <header className="flex justify-between pb-3">
             <h2 className="text-3xl font-bold">{league.name}</h2>
-            <Dialog>
+            <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
-                  <Share />
-                  League Invite
-                </Button>
+                <Button>Manage Invites</Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
@@ -47,19 +75,20 @@ export function League() {
                   <DialogDescription>
                     Anyone who has this link will be able to join your league
                   </DialogDescription>
-                  <div className="flex items-center gap-4">
-                    <div className="flex flex-1 gap-2">
-                      <Label htmlFor="link" className="sr-only">
-                        League Invite Link
-                      </Label>
-                      <Input id="link" defaultValue="http://www.google.com" readOnly></Input>
-                      <Button>
-                        <Copy />
-                        Copy
-                      </Button>
-                    </div>
-                  </div>
                 </DialogHeader>
+                {isLoading && <div>Loading invite link...</div>}
+                {error && <InlineError message={error} />}
+                {leagueInvite && (
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="link" className="sr-only">
+                      League Invite Link
+                    </Label>
+                    <Input id="link" className="flex-1" value={inviteUrl} readOnly></Input>
+                    <Button size="icon" variant="outline">
+                      <Copy />
+                    </Button>
+                  </div>
+                )}
               </DialogContent>
             </Dialog>
           </header>
