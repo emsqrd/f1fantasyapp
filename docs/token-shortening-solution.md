@@ -211,23 +211,7 @@ Update test setup:
 - Update assertions to work with random codes instead of encrypted tokens
 - Ensure tests validate token lookup via database queries
 
-### Recommended Enhancements (Optional)
-
-1. **Rate Limiting**: Add rate limiting to preview/join endpoints to prevent brute-force attacks
-2. **Token Expiry**: Add `ExpiresAt` column if time-limited invites are desired
-3. **Usage Tracking**: Track how many times a token has been used (add `UsedCount` column)
-4. **Token Revocation**: Add explicit revocation functionality (soft delete or `IsActive` flag)
-   migrationBuilder.CreateIndex(
-   name: "IX_LeagueInvites_Token",
-   table: "LeagueInvites",
-   column: "Token",
-   unique: true);
-
-   ```
-
-   ```
-
-5. Summary of Changes
+## Summary of Changes
 
 ### Files to Modify
 

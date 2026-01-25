@@ -1,12 +1,10 @@
 using System.Security.Cryptography;
-using System.Text;
 using F1CompanionApi.Api.Mappers;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Exceptions;
 using F1CompanionApi.Extensions;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Sentry.Protocol;
 
@@ -23,23 +21,17 @@ public class LeagueInviteService : ILeagueInviteService
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly ILogger<LeagueInviteService> _logger;
-    private readonly IDataProtector _protector;
 
     public LeagueInviteService(
         ApplicationDbContext dbContext,
-        ILogger<LeagueInviteService> logger,
-        IDataProtectionProvider dataProtectionProvider
+        ILogger<LeagueInviteService> logger
     )
     {
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(logger);
-        ArgumentNullException.ThrowIfNull(dataProtectionProvider);
 
         _dbContext = dbContext;
         _logger = logger;
-
-        // Create a "purpose" - isolates these tokens from other protected data
-        _protector = dataProtectionProvider.CreateProtector("LeagueInvites");
     }
 
     public async Task<LeagueInviteTokenResponse> GetOrCreateLeagueInviteAsync(int leagueId, int requesterId)
@@ -68,13 +60,22 @@ public class LeagueInviteService : ILeagueInviteService
             return existingInvite.ToResponseModel();
         }
 
-        // Create payload: combine leagueId and a unique guid
-        var payload = $"{leagueId}:{Guid.NewGuid}";
+        // Generate unique token (retry on collision)
+        string token;
+        int attempts = 0;
+        const int maxAttempts = 5;
 
-        // Encrypt it
-        var encryptedBytes = _protector.Protect(Encoding.UTF8.GetBytes(payload));
+        do
+        {
+            token = GenerateSecureRandomCode(10);
+            attempts++;
 
-        var token = Base64UrlEncode(encryptedBytes);
+            if (attempts >= maxAttempts)
+            {
+                throw new InvalidOperationException("Failed to generate unique invite token");
+            }
+        }
+        while (await _dbContext.LeagueInvites.AnyAsync(x => x.Token == token));
 
         var leagueInvite = new LeagueInvite
         {
@@ -92,38 +93,33 @@ public class LeagueInviteService : ILeagueInviteService
 
     public async Task<LeagueInviteTokenPreviewResponse> ValidateAndPreviewLeagueInviteAsync(string token)
     {
-        try
+        var invite = await _dbContext.LeagueInvites
+            .Include(x => x.League)
+                .ThenInclude(l => l.Owner)
+            .Include(x => x.League)
+                .ThenInclude(l => l.LeagueTeams)
+            .FirstOrDefaultAsync(x => x.Token == token);
+
+        if (invite == null)
         {
-            var leagueId = DecryptAndExtractLeagueId(token);
-
-            // Fetch league and return preview
-            var league = await _dbContext.Leagues
-                .Include(x => x.Owner)
-                .Include(x => x.LeagueTeams)
-                .FirstOrDefaultAsync(x => x.Id == leagueId);
-
-            if (league == null)
-            {
-                throw new InvalidLeagueInviteTokenException("League not found");
-            }
-
-            return new LeagueInviteTokenPreviewResponse
-            {
-                LeagueName = league.Name,
-                LeagueDescription = league.Description,
-                OwnerName = league.Owner.GetFullName(),
-                CurrentTeamCount = league.LeagueTeams.Count,
-                MaxTeams = league.MaxTeams,
-                IsLeagueFull = league.LeagueTeams.Count >= league.MaxTeams
-            };
+            throw new InvalidLeagueInviteTokenException("Invalid or expired invite");
         }
-        catch (Exception ex) when (ex is CryptographicException
-                                    or FormatException
-                                    or OverflowException
-                                    or IndexOutOfRangeException)
+
+        var league = invite.League;
+        if (league == null)
         {
-            throw new InvalidLeagueInviteTokenException("Invalid token format");
+            throw new InvalidLeagueInviteTokenException("League not found");
         }
+
+        return new LeagueInviteTokenPreviewResponse
+        {
+            LeagueName = league.Name,
+            LeagueDescription = league.Description,
+            OwnerName = league.Owner.GetFullName(),
+            CurrentTeamCount = league.LeagueTeams.Count,
+            MaxTeams = league.MaxTeams,
+            IsLeagueFull = league.LeagueTeams.Count >= league.MaxTeams
+        };
     }
 
     public async Task<LeagueResponse> JoinLeagueViaLeagueInviteAsync(string token, int userId)
@@ -134,7 +130,15 @@ public class LeagueInviteService : ILeagueInviteService
             throw new ArgumentOutOfRangeException(nameof(userId), "User ID must be greater than 0");
         }
 
-        var leagueId = DecryptAndExtractLeagueId(token);
+        var invite = await _dbContext.LeagueInvites
+            .FirstOrDefaultAsync(x => x.Token == token);
+
+        if (invite == null)
+        {
+            throw new InvalidLeagueInviteTokenException("Invalid or expired invite");
+        }
+
+        var leagueId = invite.LeagueId;
         var league = await _dbContext.Leagues
             .Include(x => x.Owner)
             .Include(x => x.LeagueTeams)
@@ -185,42 +189,21 @@ public class LeagueInviteService : ILeagueInviteService
         return league.ToResponseModel();
     }
 
-    private int DecryptAndExtractLeagueId(string token)
+    private static string GenerateSecureRandomCode(int length = 10)
     {
-        // Decode from URL-safe Base64
-        var encryptedBytes = Base64UrlDecode(token);
+        // Use only URL-safe characters (avoid confusion: no 0, O, I, l)
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789abcdefghjkmnpqrstuvwxyz";
 
-        // Decrypt the token
-        var decryptedBytes = _protector.Unprotect(encryptedBytes);
-        var payload = Encoding.UTF8.GetString(decryptedBytes);
+        var bytes = new byte[length];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(bytes);
 
-        // Extract leagueId from payload
-        var parts = payload.Split(':');
-        var leagueId = int.Parse(parts[0]);
-
-        return leagueId;
-    }
-
-    private static string Base64UrlEncode(byte[] input)
-    {
-        var base64 = Convert.ToBase64String(input);
-
-        // Mark URL-safe (Base64 with - and _ instead of + and /)
-        return base64.Replace('+', '-').Replace('/', '_').TrimEnd('=');
-    }
-
-    private static byte[] Base64UrlDecode(string input)
-    {
-        // Reverse the URL-safe encoding
-        var base64 = input.Replace('-', '+').Replace('_', '/');
-
-        // Add back padding
-        switch (input.Length % 4)
+        var result = new char[length];
+        for (int i = 0; i < length; i++)
         {
-            case 2: base64 += "=="; break;
-            case 3: base64 += "="; break;
+            result[i] = chars[bytes[i] % chars.Length];
         }
 
-        return Convert.FromBase64String(base64);
+        return new string(result);
     }
 }

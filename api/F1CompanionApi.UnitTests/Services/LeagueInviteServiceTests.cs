@@ -2,7 +2,6 @@ using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Exceptions;
 using F1CompanionApi.Domain.Services;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -12,19 +11,10 @@ namespace F1CompanionApi.UnitTests.Services;
 public class LeagueInviteServiceTests
 {
     private readonly Mock<ILogger<LeagueInviteService>> _mockLogger;
-    private readonly Mock<IDataProtectionProvider> _mockDataProtectionProvider;
-    private readonly Mock<IDataProtector> _mockDataProtector;
 
     public LeagueInviteServiceTests()
     {
         _mockLogger = new Mock<ILogger<LeagueInviteService>>();
-        _mockDataProtectionProvider = new Mock<IDataProtectionProvider>();
-        _mockDataProtector = new Mock<IDataProtector>();
-
-        // Setup data protection provider to return the mocked protector
-        _mockDataProtectionProvider
-            .Setup(x => x.CreateProtector("LeagueInvites"))
-            .Returns(_mockDataProtector.Object);
     }
 
     private ApplicationDbContext CreateInMemoryContext()
@@ -73,13 +63,7 @@ public class LeagueInviteServiceTests
         using var context = CreateInMemoryContext();
         var (owner, league) = await SeedPrivateLeagueWithOwner(context);
 
-        // Setup mock to create a "protected" token
-        var fakeEncryptedBytes = new byte[] { 1, 2, 3, 4, 5 };
-        _mockDataProtector
-            .Setup(x => x.Protect(It.IsAny<byte[]>()))
-            .Returns(fakeEncryptedBytes);
-
-        var service = new LeagueInviteService(context, _mockLogger.Object, _mockDataProtectionProvider.Object);
+        var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act
         var result = await service.GetOrCreateLeagueInviteAsync(league.Id, owner.Id);
@@ -87,6 +71,7 @@ public class LeagueInviteServiceTests
         // Assert
         Assert.NotNull(result);
         Assert.NotEmpty(result.Token);
+        Assert.Equal(10, result.Token.Length);
         Assert.Equal(league.Id, result.LeagueId);
 
         // Verify invite was persisted
@@ -113,7 +98,7 @@ public class LeagueInviteServiceTests
         context.LeagueInvites.Add(existingInvite);
         await context.SaveChangesAsync();
 
-        var service = new LeagueInviteService(context, _mockLogger.Object, _mockDataProtectionProvider.Object);
+        var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act
         var result = await service.GetOrCreateLeagueInviteAsync(league.Id, owner.Id);
@@ -133,7 +118,7 @@ public class LeagueInviteServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new LeagueInviteService(context, _mockLogger.Object, _mockDataProtectionProvider.Object);
+        var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<LeagueNotFoundException>(
@@ -160,7 +145,7 @@ public class LeagueInviteServiceTests
         context.UserProfiles.Add(nonOwner);
         await context.SaveChangesAsync();
 
-        var service = new LeagueInviteService(context, _mockLogger.Object, _mockDataProtectionProvider.Object);
+        var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
@@ -199,7 +184,7 @@ public class LeagueInviteServiceTests
         context.Leagues.Add(publicLeague);
         await context.SaveChangesAsync();
 
-        var service = new LeagueInviteService(context, _mockLogger.Object, _mockDataProtectionProvider.Object);
+        var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -250,15 +235,18 @@ public class LeagueInviteServiceTests
         );
         await context.SaveChangesAsync();
 
-        var token = "valid-token-123";
-        var payload = $"{league.Id}:{Guid.NewGuid()}";
-        var payloadBytes = System.Text.Encoding.UTF8.GetBytes(payload);
+        var token = "validToken1";
+        var invite = new LeagueInvite
+        {
+            LeagueId = league.Id,
+            Token = token,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.LeagueInvites.Add(invite);
+        await context.SaveChangesAsync();
 
-        _mockDataProtector
-            .Setup(x => x.Unprotect(It.IsAny<byte[]>()))
-            .Returns(payloadBytes);
-
-        var service = new LeagueInviteService(context, _mockLogger.Object, _mockDataProtectionProvider.Object);
+        var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act
         var result = await service.ValidateAndPreviewLeagueInviteAsync(token);
@@ -314,15 +302,18 @@ public class LeagueInviteServiceTests
         );
         await context.SaveChangesAsync();
 
-        var token = "valid-token-123";
-        var payload = $"{league.Id}:{Guid.NewGuid()}";
-        var payloadBytes = System.Text.Encoding.UTF8.GetBytes(payload);
+        var token = "validToken2";
+        var invite = new LeagueInvite
+        {
+            LeagueId = league.Id,
+            Token = token,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.LeagueInvites.Add(invite);
+        await context.SaveChangesAsync();
 
-        _mockDataProtector
-            .Setup(x => x.Unprotect(It.IsAny<byte[]>()))
-            .Returns(payloadBytes);
-
-        var service = new LeagueInviteService(context, _mockLogger.Object, _mockDataProtectionProvider.Object);
+        var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act
         var result = await service.ValidateAndPreviewLeagueInviteAsync(token);
@@ -340,22 +331,17 @@ public class LeagueInviteServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
 
-        var token = "valid-token-for-nonexistent-league";
-        var payload = $"999:{Guid.NewGuid()}"; // League ID 999 doesn't exist
-        var payloadBytes = System.Text.Encoding.UTF8.GetBytes(payload);
+        var token = "invalidToken";
+        // Don't add LeagueInvite to database - simulates invalid token
 
-        _mockDataProtector
-            .Setup(x => x.Unprotect(It.IsAny<byte[]>()))
-            .Returns(payloadBytes);
-
-        var service = new LeagueInviteService(context, _mockLogger.Object, _mockDataProtectionProvider.Object);
+        var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidLeagueInviteTokenException>(
             () => service.ValidateAndPreviewLeagueInviteAsync(token)
         );
 
-        Assert.Equal("League not found", exception.InviteToken);
+        Assert.Equal("Invalid or expired invite", exception.InviteToken);
     }
 
     #endregion
@@ -389,15 +375,18 @@ public class LeagueInviteServiceTests
         context.Teams.Add(userTeam);
         await context.SaveChangesAsync();
 
-        var token = "valid-invite-token";
-        var payload = $"{league.Id}:{Guid.NewGuid()}";
-        var payloadBytes = System.Text.Encoding.UTF8.GetBytes(payload);
+        var token = "testToken1";
+        var invite = new LeagueInvite
+        {
+            LeagueId = league.Id,
+            Token = token,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.LeagueInvites.Add(invite);
+        await context.SaveChangesAsync();
 
-        _mockDataProtector
-            .Setup(x => x.Unprotect(It.IsAny<byte[]>()))
-            .Returns(payloadBytes);
-
-        var service = new LeagueInviteService(context, _mockLogger.Object, _mockDataProtectionProvider.Object);
+        var service = new LeagueInviteService(context, _mockLogger.Object);
 
         var beforeJoin = DateTime.UtcNow;
 
@@ -434,15 +423,18 @@ public class LeagueInviteServiceTests
         context.UserProfiles.Add(newUser);
         await context.SaveChangesAsync();
 
-        var token = "valid-token-for-nonexistent-league";
-        var payload = $"999:{Guid.NewGuid()}"; // League ID 999 doesn't exist
-        var payloadBytes = System.Text.Encoding.UTF8.GetBytes(payload);
+        var token = "testToken2";
+        var invite = new LeagueInvite
+        {
+            LeagueId = 999, // League ID 999 doesn't exist
+            Token = token,
+            CreatedBy = newUser.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.LeagueInvites.Add(invite);
+        await context.SaveChangesAsync();
 
-        _mockDataProtector
-            .Setup(x => x.Unprotect(It.IsAny<byte[]>()))
-            .Returns(payloadBytes);
-
-        var service = new LeagueInviteService(context, _mockLogger.Object, _mockDataProtectionProvider.Object);
+        var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<LeagueNotFoundException>(
@@ -515,15 +507,18 @@ public class LeagueInviteServiceTests
         context.Teams.Add(userTeam);
         await context.SaveChangesAsync();
 
-        var token = "valid-invite-token";
-        var payload = $"{league.Id}:{Guid.NewGuid()}";
-        var payloadBytes = System.Text.Encoding.UTF8.GetBytes(payload);
+        var token = "testToken3";
+        var invite = new LeagueInvite
+        {
+            LeagueId = league.Id,
+            Token = token,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.LeagueInvites.Add(invite);
+        await context.SaveChangesAsync();
 
-        _mockDataProtector
-            .Setup(x => x.Unprotect(It.IsAny<byte[]>()))
-            .Returns(payloadBytes);
-
-        var service = new LeagueInviteService(context, _mockLogger.Object, _mockDataProtectionProvider.Object);
+        var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<LeagueFullException>(
@@ -552,15 +547,18 @@ public class LeagueInviteServiceTests
         await context.SaveChangesAsync();
         // Note: No team created for this user
 
-        var token = "valid-invite-token";
-        var payload = $"{league.Id}:{Guid.NewGuid()}";
-        var payloadBytes = System.Text.Encoding.UTF8.GetBytes(payload);
+        var token = "testToken4";
+        var invite = new LeagueInvite
+        {
+            LeagueId = league.Id,
+            Token = token,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.LeagueInvites.Add(invite);
+        await context.SaveChangesAsync();
 
-        _mockDataProtector
-            .Setup(x => x.Unprotect(It.IsAny<byte[]>()))
-            .Returns(payloadBytes);
-
-        var service = new LeagueInviteService(context, _mockLogger.Object, _mockDataProtectionProvider.Object);
+        var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<TeamNotFoundException>(
@@ -608,15 +606,18 @@ public class LeagueInviteServiceTests
         });
         await context.SaveChangesAsync();
 
-        var token = "valid-invite-token";
-        var payload = $"{league.Id}:{Guid.NewGuid()}";
-        var payloadBytes = System.Text.Encoding.UTF8.GetBytes(payload);
+        var token = "testToken5";
+        var invite = new LeagueInvite
+        {
+            LeagueId = league.Id,
+            Token = token,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.LeagueInvites.Add(invite);
+        await context.SaveChangesAsync();
 
-        _mockDataProtector
-            .Setup(x => x.Unprotect(It.IsAny<byte[]>()))
-            .Returns(payloadBytes);
-
-        var service = new LeagueInviteService(context, _mockLogger.Object, _mockDataProtectionProvider.Object);
+        var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<AlreadyInLeagueException>(
@@ -625,6 +626,72 @@ public class LeagueInviteServiceTests
 
         Assert.Equal(league.Id, exception.LeagueId);
         Assert.Equal(memberTeam.Id, exception.TeamId);
+    }
+
+    #endregion
+
+    #region Token Generation Tests
+
+    [Fact]
+    public async Task GetOrCreateLeagueInviteAsync_GeneratesUniqueToken_WhenCollisionOccurs()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (owner, league1) = await SeedPrivateLeagueWithOwner(context);
+
+        // Create second league for the same owner
+        var league2 = new League
+        {
+            Name = "Second Private League",
+            Description = "Another test league",
+            IsPrivate = true,
+            MaxTeams = 10,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        context.Leagues.Add(league2);
+        await context.SaveChangesAsync();
+
+        var service = new LeagueInviteService(context, _mockLogger.Object);
+
+        // Act
+        var result1 = await service.GetOrCreateLeagueInviteAsync(league1.Id, owner.Id);
+        var result2 = await service.GetOrCreateLeagueInviteAsync(league2.Id, owner.Id);
+
+        // Assert
+        Assert.NotEqual(result1.Token, result2.Token);
+        Assert.Equal(10, result1.Token.Length);
+        Assert.Equal(10, result2.Token.Length);
+
+        // Verify both tokens are persisted
+        var tokens = await context.LeagueInvites.Select(x => x.Token).ToListAsync();
+        Assert.Equal(2, tokens.Count);
+        Assert.Contains(result1.Token, tokens);
+        Assert.Contains(result2.Token, tokens);
+    }
+
+    [Fact]
+    public async Task GetOrCreateLeagueInviteAsync_GeneratedToken_UsesUrlSafeCharacters()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var (owner, league) = await SeedPrivateLeagueWithOwner(context);
+
+        var service = new LeagueInviteService(context, _mockLogger.Object);
+
+        // Act
+        var result = await service.GetOrCreateLeagueInviteAsync(league.Id, owner.Id);
+
+        // Assert
+        var validChars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789abcdefghjkmnpqrstuvwxyz";
+        Assert.All(result.Token, c => Assert.Contains(c, validChars));
+
+        // Ensure no confusing characters (0, O, I, l)
+        Assert.DoesNotContain('0', result.Token);
+        Assert.DoesNotContain('O', result.Token);
+        Assert.DoesNotContain('I', result.Token);
+        Assert.DoesNotContain('l', result.Token);
     }
 
     #endregion

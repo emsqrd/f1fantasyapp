@@ -55,6 +55,11 @@ public class GlobalExceptionHandler : IExceptionHandler
                  "Private League",
                  ex.Message),
 
+            UnauthorizedAccessException ex =>
+                (StatusCodes.Status403Forbidden,
+                 "Forbidden",
+                 ex.Message),
+
             // Custom Domain Exceptions - Resource Conflicts
             SlotOccupiedException ex =>
                 (StatusCodes.Status409Conflict,
@@ -96,6 +101,22 @@ public class GlobalExceptionHandler : IExceptionHandler
                 (StatusCodes.Status400BadRequest,
                 "Invalid League Invite Token",
                 ex.Message),
+
+            // Standard .NET Exceptions (order matters: most specific first)
+            ArgumentNullException ex =>
+                (StatusCodes.Status400BadRequest,
+                 "Missing Required Value",
+                 ex.Message),
+
+            ArgumentOutOfRangeException ex =>
+                (StatusCodes.Status400BadRequest,
+                 "Value Out of Range",
+                 ex.Message),
+
+            ArgumentException ex =>
+                (StatusCodes.Status400BadRequest,
+                 "Invalid Argument",
+                 ex.Message),
 
             // Generic Authentication/Authorization (legacy - to be removed after migration)
             InvalidOperationException ex when ex.Message.Contains("User profile not found") =>

@@ -6,5 +6,5 @@ public class LeagueInvite : UserOwnedEntity
 
     public required string Token { get; set; }
 
-    public League? League { get; set; }
+    public League League { get; set; } = null!;
 }

@@ -2,7 +2,6 @@ using System.Text;
 using F1CompanionApi.Data;
 using F1CompanionApi.Domain.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -75,8 +74,6 @@ public static class ServiceExtensions
     private static void AddServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<ISupabaseAuthService, SupabaseAuthService>();
-        services.AddDataProtection()
-            .SetApplicationName("F1CompanionApi");
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
