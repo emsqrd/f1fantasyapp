@@ -30,6 +30,8 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { z } from 'zod';
 
 import { BrowseLeagues } from './components/BrowseLeagues/BrowseLeagues';
+import { JoinInvite } from './components/JoinInvite/JoinInvite';
+import { previewInvite } from './services/leagueInviteService';
 
 /**
  * Zod schema for validating league ID route parameter.
@@ -191,6 +193,40 @@ const signUpRoute = createRoute({
     }
   },
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
+});
+
+const joinInviteRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/join/$token',
+  staticData: {
+    pageTitle: 'Join League',
+  },
+  component: JoinInvite,
+  loader: async ({ params }) => {
+    const ROUTE_ID = '/join/$token';
+    const { token } = params;
+
+    try {
+      const preview = await previewInvite(token);
+      return { preview };
+    } catch (_) {
+      // invalid or non-existent token returns 404
+      throw notFound({ routeId: ROUTE_ID });
+    }
+  },
+  pendingComponent: () => (
+    <div role="status" className="flex w-full items-center justify-center p-8 md:min-h-screen">
+      <div className="text-center">
+        <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+        <p className="text-muted-foreground">Loading team creation...</p>
+      </div>
+    </div>
+  ),
+  errorComponent: ({ error }) => (
+    <ErrorBoundary level="page">
+      <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
+    </ErrorBoundary>
+  ),
 });
 
 /**
@@ -552,6 +588,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   signInRoute,
   signUpRoute,
+  joinInviteRoute,
   authenticatedLayoutRoute.addChildren([
     accountRoute,
     teamRequiredLayoutRoute.addChildren([leaguesRoute, browseLeaguesRoute, leagueRoute, teamRoute]),

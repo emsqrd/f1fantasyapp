@@ -263,7 +263,7 @@ services.AddScoped<IInviteService, InviteService>();
 **Interfaces:**
 
 - `InviteToken` - Token details (id, token, leagueId, createdAt, createdByName)
-- `InviteTokenPreview` - League preview from token (leagueName, description, ownerName, currentTeamCount, maxTeams, isLeagueFull)
+- `LeagueInvitePreviewResponse` - League preview from token (leagueName, description, ownerName, currentTeamCount, maxTeams, isLeagueFull)
 
 ### 2.2 Create Service Layer
 
@@ -272,10 +272,10 @@ services.AddScoped<IInviteService, InviteService>();
 **Functions:**
 
 - `getOrCreateInvite(leagueId)` → Promise<InviteToken> - Uses POST `/leagues/{id}/invite`
-- `validateInvite(token)` → Promise<InviteTokenPreview> - Uses GET `/leagues/join/{token}/preview`
+- `previewInvite(token)` → Promise<LeagueInvitePreviewResponse> - Uses GET `/leagues/join/{token}/preview`
 - `joinViaInvite(token)` → Promise<League> - Uses POST `/leagues/join/{token}`
 
-**Implementation:** Use `apiClient` with proper error context, Sentry logging for significant events
+**Implementation:** Use `apiClient` with error context `'invite-preview'`, Sentry logging for significant events
 
 ### 2.3 Create Public Join Route
 
@@ -286,13 +286,13 @@ services.AddScoped<IInviteService, InviteService>();
 **Route Config:**
 
 - Parent: `rootRoute` (public access)
-- Path parameter: `:token` - The encrypted invite token extracted from URL
-- Params validation: Zod schema for token format
-- Loader: Fetch `validateInvite(token)` → preview league details
+- Path parameter: `:token` - The encrypted invite token extracted from URL (used directly as string, no Zod validation needed)
+- Loader: Call `previewInvite(token)` to fetch league preview details
+- Error handling: Loader throws `notFound()` for invalid/missing tokens (follows existing pattern from leagueRoute)
 - Component: `JoinInvite`
-- Error handling: 404 for invalid tokens, ErrorBoundary for other errors
-- Pending component: Loading spinner
+- Pending component: Loading spinner with "Loading league preview..." message
 - Static data: `pageTitle: 'Join League'`
+- ErrorComponent: Uses default ErrorBoundary/ErrorFallback for page-level errors
 
 **Example URLs:**
 
@@ -300,7 +300,24 @@ services.AddScoped<IInviteService, InviteService>();
 - Route matches: `/join/:token` where `token = "AbC123XyZ789"`
 - Token passed to API: `GET /leagues/join/AbC123XyZ789/preview`
 
-**Update:** `routeTree` to include `joinInviteRoute`
+**Loader Implementation Pattern:**
+
+```typescript
+loader: async ({ params }) => {
+  const ROUTE_ID = '/join/$token';
+  const { token } = params;
+
+  try {
+    const preview = await previewInvite(token);
+    return { preview };
+  } catch (error) {
+    // Invalid or non-existent token returns 404
+    throw notFound({ routeId: ROUTE_ID });
+  }
+}
+```
+
+**Update:** Add `joinInviteRoute` to `routeTree` as child of `rootRoute` (alongside other public routes like `signInRoute`, `signUpRoute`)
 
 ### 2.4 Create JoinInvite Component
 
@@ -316,15 +333,109 @@ services.AddScoped<IInviteService, InviteService>();
 - Success: Navigate to league detail page after join
 - Error handling: InlineError for join failures, LiveRegion for announcements
 
-**UX Flow:**
+**Hooks Used:**
+
+- `useLoaderData()` - Get league preview from route loader
+- `useAuth()` - Check authentication state (`user`)
+- `useTeam()` - Check team state (`hasTeam`)
+- `useLiveRegion()` - Screen reader announcements
+- `useNavigate()` - Programmatic navigation with search params
+
+**UX Flow with Redirect Search Params:**
 
 ```
-Unauthenticated → "Sign In" with redirect back to /join/:token
-No Team → "Create Team" then return to join
-Has Team → Click "Join League" → Navigate to /league/:leagueId
+Unauthenticated:
+  Click "Sign In to Join" → navigate({ to: '/sign-in', search: { redirect: `/join/${token}` } })
+  After sign-in → redirected back to /join/:token
+
+No Team:
+  Click "Create Team First" → navigate({ to: '/create-team', search: { redirect: `/join/${token}` } })
+  After team creation → redirected back to /join/:token
+
+Has Team:
+  Click "Join League" → joinViaInvite(token) → navigate to /league/:leagueId
 ```
 
-### 2.5 Create Clipboard Hook
+**Implementation Notes:**
+
+- League preview data comes from loader (no loading state needed in component)
+- Use InlineError for join operation failures (e.g., already in league, league full)
+- Extract token from route params using `Route.useParams()`
+- Build redirect URLs using search params: `{ search: { redirect: `/join/${token}` } }`
+
+### 2.5 Update SignInForm to Support Redirect
+
+**Files:**
+- `web/src/router.tsx` (add search schema to signInRoute)
+- `web/src/components/auth/SignInForm/SignInForm.tsx`
+
+**Changes to router.tsx:**
+
+Add validateSearch to the signInRoute definition:
+```typescript
+const signInSearchSchema = z.object({
+  redirect: z.string().optional(),
+});
+
+const signInRoute = createRoute({
+  // ... existing config
+  validateSearch: signInSearchSchema,
+  // ... rest of config
+});
+```
+
+**Changes to SignInForm.tsx:**
+
+1. Read redirect param from route search:
+   ```typescript
+   const search = Route.useSearch(); // Get { redirect?: string }
+   const redirectTo = search.redirect ?? '/leagues';
+   ```
+
+2. Update navigation after successful sign-in:
+   ```typescript
+   await navigate({ to: redirectTo }); // Instead of hardcoded '/leagues'
+   ```
+
+**Why:** Allows invite flow to redirect back to `/join/:token` after authentication
+
+### 2.6 Update CreateTeam to Support Redirect
+
+**Files:**
+- `web/src/router.tsx` (add search schema to createTeamRoute)
+- `web/src/components/CreateTeam/CreateTeam.tsx`
+
+**Changes to router.tsx:**
+
+Add validateSearch to the createTeamRoute definition:
+```typescript
+const createTeamSearchSchema = z.object({
+  redirect: z.string().optional(),
+});
+
+const createTeamRoute = createRoute({
+  // ... existing config
+  validateSearch: createTeamSearchSchema,
+  // ... rest of config
+});
+```
+
+**Changes to CreateTeam.tsx:**
+
+1. Read redirect param from route search:
+   ```typescript
+   const search = Route.useSearch(); // Get { redirect?: string }
+   const redirectTo = search.redirect ?? '/leagues';
+   ```
+
+2. Update navigation after successful team creation:
+   ```typescript
+   await navigate({ to: redirectTo }); // Instead of hardcoded '/leagues'
+   ```
+
+**Why:** Allows invite flow to redirect back to `/join/:token` after team creation
+
+### 2.7 Create Clipboard Hook
 
 **File:** `web/src/hooks/useClipboard.ts` (new)
 
@@ -410,7 +521,7 @@ export function useClipboard(): UseClipboardReturn {
 }
 ```
 
-### 2.6 Update League Component
+### 2.8 Update League Component
 
 **File:** `web/src/components/League/League.tsx`
 
@@ -607,14 +718,14 @@ function League() {
 4. Dialog opens with invite link
 5. Click "Copy" button → URL copied to clipboard, icon changes to checkmark
 6. Close dialog → icon resets to Copy for next time
-6. Open link in incognito browser (not signed in)
-7. See league preview with correct details
-8. Click "Sign In to Join" → redirected to sign-in with redirect param
-9. Sign in with existing account that has team
-10. Automatically redirected back to invite page
-11. Click "Join League"
-12. Successfully joined → navigated to league detail page
-13. Verify user appears in league members
+7. Open link in incognito browser (not signed in)
+8. See league preview with correct details
+9. Click "Sign In to Join" → redirected to sign-in with redirect param
+10. Sign in with existing account that has team
+11. Automatically redirected back to invite page
+12. Click "Join League"
+13. Successfully joined → navigated to league detail page
+14. Verify user appears in league members
 
 ### 4.2 Edge Cases
 

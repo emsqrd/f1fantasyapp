@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using F1CompanionApi.Api.Models;
-using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Services;
 using Microsoft.AspNetCore.Mvc;
 
