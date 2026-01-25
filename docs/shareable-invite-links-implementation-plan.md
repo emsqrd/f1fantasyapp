@@ -333,31 +333,38 @@ Has Team → Click "Join League" → Navigate to /league/:leagueId
 **Returns:**
 
 - `copy(text)` - Copies to clipboard, returns Promise<boolean> for success/failure
+- `reset()` - Clears copied state (call when dialog closes)
 - `copiedValue` - Currently copied value (for state tracking)
 - `hasCopied` - Boolean flag for visual feedback (icon swap)
 
-**Features:** Auto-reset after 2 seconds, Sentry logging, no toast notifications (use icon swap for feedback)
+**Features:** Sentry logging, no toast notifications (use icon swap for feedback). Call `reset()` when dialog closes to clear state for next open.
 
 **Implementation:**
 
 ```typescript
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import * as Sentry from '@sentry/react';
 
 interface UseClipboardReturn {
   copy: (text: string) => Promise<boolean>;
+  reset: () => void;
   copiedValue: string | null;
   hasCopied: boolean;
 }
 
 /**
- * Custom hook for copying text to clipboard with auto-reset functionality
+ * Custom hook for copying text to clipboard
  *
- * @param resetDelay - Time in milliseconds before resetting hasCopied state (default: 2000)
- * @returns Object with copy function, copiedValue, and hasCopied state
+ * @returns Object with copy function, reset function, copiedValue, and hasCopied state
  *
  * @example
- * const { copy, hasCopied } = useClipboard();
+ * const { copy, reset, hasCopied } = useClipboard();
+ *
+ * // In dialog close handler
+ * const handleDialogOpen = (open: boolean) => {
+ *   setIsDialogOpen(open);
+ *   if (!open) reset(); // Clear state when dialog closes
+ * };
  *
  * return (
  *   <Button onClick={() => copy(inviteUrl)}>
@@ -365,26 +372,11 @@ interface UseClipboardReturn {
  *   </Button>
  * );
  */
-export function useClipboard(resetDelay = 2000): UseClipboardReturn {
+export function useClipboard(): UseClipboardReturn {
   const [copiedValue, setCopiedValue] = useState<string | null>(null);
   const [hasCopied, setHasCopied] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
 
   const copy = useCallback(async (text: string): Promise<boolean> => {
-    // Clear any existing timeout to handle rapid successive calls
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
     if (!navigator.clipboard) {
       Sentry.captureMessage('Clipboard API not supported', 'warning');
       return false;
@@ -394,19 +386,6 @@ export function useClipboard(resetDelay = 2000): UseClipboardReturn {
       await navigator.clipboard.writeText(text);
       setCopiedValue(text);
       setHasCopied(true);
-
-      // Set new timeout that properly resets on each copy
-      timeoutRef.current = setTimeout(() => {
-        setHasCopied(false);
-        setCopiedValue(null);
-        timeoutRef.current = null;
-      }, resetDelay);
-
-      Sentry.addBreadcrumb({
-        category: 'clipboard',
-        message: 'Text copied to clipboard',
-        level: 'info',
-      });
 
       return true;
     } catch (error) {
@@ -420,9 +399,14 @@ export function useClipboard(resetDelay = 2000): UseClipboardReturn {
 
       return false;
     }
-  }, [resetDelay]);
+  }, []);
 
-  return { copy, copiedValue, hasCopied };
+  const reset = useCallback(() => {
+    setHasCopied(false);
+    setCopiedValue(null);
+  }, []);
+
+  return { copy, reset, copiedValue, hasCopied };
 }
 ```
 
@@ -438,8 +422,8 @@ export function useClipboard(resetDelay = 2000): UseClipboardReturn {
    - Dialog description: "Anyone with this link can join your league"
    - Read-only Input with invite URL (built client-side from token)
    - Icon button with `useClipboard` hook (Copy icon → Check icon)
-   - Visual feedback: Icon swaps from Copy to Check for 2 seconds
-   - No toast notifications (cleaner UX like shadcn/ui docs)
+   - Visual feedback: Icon swaps from Copy to Check (persists until dialog closes)
+   - No toast notifications (cleaner UX)
 3. Check ownership and privacy: Compare current user with league owner AND check `league.isPrivate`
 4. **Build full URL client-side**: Use `window.location.origin` + token to construct shareable URL
 5. **Lazy load invite token using event handler** (not useEffect)
@@ -459,7 +443,7 @@ function League() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { copy, hasCopied } = useClipboard();
+  const { copy, reset, hasCopied } = useClipboard();
 
   // Build full URL from token (client-side)
   const inviteUrl = inviteToken
@@ -469,6 +453,11 @@ function League() {
   // Lazy load invite when dialog opens (event handler approach)
   const handleDialogOpen = async (open: boolean) => {
     setIsDialogOpen(open);
+
+    // Reset clipboard state when dialog closes
+    if (!open) {
+      reset();
+    }
 
     // Only fetch when opening dialog and token not already loaded
     if (open && !inviteToken && !isLoading) {
@@ -525,6 +514,7 @@ function League() {
 ```
 
 **Key Benefits:**
+
 - **No useEffect** - Event handler directly tied to user action
 - **Cached result** - Won't re-fetch on subsequent dialog opens
 - **Clean loading states** - Error handling within dialog
@@ -580,7 +570,8 @@ function League() {
 - ✅ Clicking "Share League" opens dialog
 - ✅ Dialog shows invite URL in read-only input (built from token)
 - ✅ Copy button copies to clipboard
-- ✅ Copy button shows visual feedback (icon change)
+- ✅ Copy button shows visual feedback (Copy → Check icon)
+- ✅ Closing dialog resets clipboard state (icon reverts to Copy on reopen)
 
 ### 3.3 Service Tests
 
@@ -600,10 +591,9 @@ function League() {
 
 - ✅ copy() writes to clipboard and returns true
 - ✅ hasCopied becomes true after copy
-- ✅ Auto-resets after 2 seconds
+- ✅ reset() clears hasCopied and copiedValue
 - ✅ copy() returns false when clipboard API unavailable
 - ✅ Sentry logs on error
-- ✅ Multiple rapid copies properly reset timeout
 
 ---
 
@@ -616,6 +606,7 @@ function League() {
 3. Click "Share League" button
 4. Dialog opens with invite link
 5. Click "Copy" button → URL copied to clipboard, icon changes to checkmark
+6. Close dialog → icon resets to Copy for next time
 6. Open link in incognito browser (not signed in)
 7. See league preview with correct details
 8. Click "Sign In to Join" → redirected to sign-in with redirect param
@@ -720,6 +711,7 @@ Response: 200 OK with league details
 ✅ Public league owner does not see "Share League" button
 ✅ Dialog shows invite URL (built client-side from token) with copy functionality
 ✅ Copy button provides visual feedback with icon swap (Copy → Check)
+✅ Closing and reopening dialog resets icon to Copy state
 ✅ Public users can preview league details before signing in
 ✅ Authenticated users can join private leagues via invite links
 ✅ GetOrCreate pattern returns same token on subsequent calls
@@ -789,7 +781,7 @@ Response: 200 OK with league details
 
 - Public preview allows viral growth (non-users can see what they're joining)
 - Redirect parameter preserves invite link through sign-in flow
-- Icon swap for copy feedback (Copy → Check, like shadcn/ui docs)
+- Icon swap for copy feedback (Copy → Check, resets when dialog closes)
 - LiveRegion announcements for form submissions
 - Dialog pattern follows shadcn/ui best practices
 - Client-side URL construction - better separation of concerns, backend agnostic to frontend URL structure

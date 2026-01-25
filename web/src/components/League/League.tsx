@@ -1,9 +1,10 @@
 import type { League as LeagueType } from '@/contracts/League';
 import type { LeagueInvite } from '@/contracts/LeagueInvite';
+import { useClipboard } from '@/hooks/useClipboard';
 import { getOrCreateLeagueInvite } from '@/services/leagueInviteService';
 import * as Sentry from '@sentry/react';
 import { useLoaderData } from '@tanstack/react-router';
-import { Copy } from 'lucide-react';
+import { Check, Copy, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
 import { AppContainer } from '../AppContainer/AppContainer';
@@ -38,11 +39,17 @@ export function League() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const { copy, reset, hasCopied } = useClipboard();
+
   const inviteUrl = leagueInvite ? `${window.location.origin}/join/${leagueInvite.token}` : '';
 
   // lazy load invite when dialog opens
   const handleDialogOpen = async (open: boolean) => {
     setIsDialogOpen(open);
+
+    if (!open) {
+      reset();
+    }
 
     if (open && !leagueInvite && !isLoading) {
       setIsLoading(true);
@@ -67,7 +74,10 @@ export function League() {
             <h2 className="text-3xl font-bold">{league.name}</h2>
             <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
               <DialogTrigger asChild>
-                <Button>Manage Invites</Button>
+                <Button>
+                  <UserPlus className="h-4 w-4" />
+                  Invite
+                </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
@@ -84,8 +94,13 @@ export function League() {
                       League Invite Link
                     </Label>
                     <Input id="link" className="flex-1" value={inviteUrl} readOnly></Input>
-                    <Button size="icon" variant="outline">
-                      <Copy />
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => copy(inviteUrl)}
+                      aria-label={hasCopied ? 'Copied' : 'Copy invite link'}
+                    >
+                      {hasCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
                 )}
