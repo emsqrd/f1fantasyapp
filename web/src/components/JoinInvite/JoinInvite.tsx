@@ -10,7 +10,7 @@ import { useTeam } from '@/hooks/useTeam';
 import { joinViaInvite } from '@/services/leagueInviteService';
 import * as Sentry from '@sentry/react';
 import { Link, useLoaderData, useNavigate, useParams } from '@tanstack/react-router';
-import { AlertCircle, Lock, Users } from 'lucide-react';
+import { AlertCircle, InfoIcon, Lock, Users } from 'lucide-react';
 import { useState } from 'react';
 
 import { AppContainer } from '../AppContainer/AppContainer';
@@ -149,11 +149,22 @@ export function JoinInvite() {
                     </>
                   ) : !hasTeam ? (
                     // Authenticated but no team: Show create team button
-                    <Button asChild className="w-full">
-                      <Link to="/create-team" search={{ redirect: redirectUrl }}>
-                        Create Team First
-                      </Link>
-                    </Button>
+                    <>
+                      <div className="bg-muted flex items-start gap-2 rounded-md p-3 text-sm">
+                        <InfoIcon className="mt-0.5 h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                        <div className="space-y-1">
+                          <p className="font-medium">Create a team to continue</p>
+                          <p className="text-muted-foreground">
+                            You'll return here after setting up your team.
+                          </p>
+                        </div>
+                      </div>
+                      <Button asChild className="w-full">
+                        <Link to="/create-team" search={{ redirect: redirectUrl }}>
+                          Create Team
+                        </Link>
+                      </Button>
+                    </>
                   ) : (
                     // Authenticated with team: Show join button
                     <LoadingButton

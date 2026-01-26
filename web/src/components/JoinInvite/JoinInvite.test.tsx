@@ -1,10 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-
 import type { LeagueInvitePreviewResponse } from '@/contracts/LeagueInvitePreviewResponse';
 import * as leagueInviteService from '@/services/leagueInviteService';
 import { createMockLeague } from '@/test-utils/mockFactories';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { JoinInvite } from './JoinInvite';
 
@@ -107,7 +106,7 @@ describe('JoinInvite', () => {
       expect(signInLink).toHaveAttribute('href', '/sign-in');
       expect(signInLink).toHaveAttribute(
         'data-search',
-        JSON.stringify({ redirect: `/join/${mockToken}` })
+        JSON.stringify({ redirect: `/join/${mockToken}` }),
       );
     });
 
@@ -118,7 +117,7 @@ describe('JoinInvite', () => {
       expect(signUpLink).toHaveAttribute('href', '/sign-up');
       expect(signUpLink).toHaveAttribute(
         'data-search',
-        JSON.stringify({ redirect: `/join/${mockToken}` })
+        JSON.stringify({ redirect: `/join/${mockToken}` }),
       );
     });
   });
@@ -130,7 +129,7 @@ describe('JoinInvite', () => {
 
       render(<JoinInvite />);
 
-      expect(screen.getByRole('link', { name: /create team first/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /create team/i })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /join league/i })).not.toBeInTheDocument();
     });
 
@@ -140,11 +139,11 @@ describe('JoinInvite', () => {
 
       render(<JoinInvite />);
 
-      const createTeamLink = screen.getByRole('link', { name: /create team first/i });
+      const createTeamLink = screen.getByRole('link', { name: /create team/i });
       expect(createTeamLink).toHaveAttribute('href', '/create-team');
       expect(createTeamLink).toHaveAttribute(
         'data-search',
-        JSON.stringify({ redirect: `/join/${mockToken}` })
+        JSON.stringify({ redirect: `/join/${mockToken}` }),
       );
     });
   });
@@ -188,7 +187,7 @@ describe('JoinInvite', () => {
     it('shows loading state while joining', async () => {
       const user = userEvent.setup();
       vi.mocked(leagueInviteService.joinViaInvite).mockImplementation(
-        () => new Promise(() => {}) // Never resolves
+        () => new Promise(() => {}), // Never resolves
       );
 
       render(<JoinInvite />);

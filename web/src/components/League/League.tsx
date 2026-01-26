@@ -48,6 +48,7 @@ export function League() {
 
   const inviteUrl = leagueInvite ? `${window.location.origin}/join/${leagueInvite.token}` : '';
   const isOwner = profile?.id === league.ownerId;
+  const displayInviteButton = isOwner && league.isPrivate;
 
   // lazy load invite when dialog opens
   const handleDialogOpen = async (open: boolean) => {
@@ -74,9 +75,12 @@ export function League() {
 
   return (
     <AppContainer maxWidth="md">
-      <header className="flex justify-between pb-3">
-        <h2 className="text-3xl font-bold">{league.name}</h2>
-        {isOwner && (
+      <header className="flex justify-between gap-2 pb-3">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-3xl font-bold">{league.name}</h2>
+          {league.description && <p className="text-muted-foreground">{league.description}</p>}
+        </div>
+        {displayInviteButton && (
           <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
             <DialogTrigger asChild>
               <Button>
