@@ -68,6 +68,24 @@ const teamIdParamsSchema = z.object({
 });
 
 /**
+ * Zod schema for validating redirect search parameters.
+ *
+ * Uses `.catch()` for graceful error handling per TanStack Router best practices:
+ * Invalid redirect values fall back to undefined instead of throwing errors.
+ *
+ * Security: Only allows internal paths starting with '/' to prevent open redirects.
+ *
+ * @see {@link https://tanstack.com/router/latest/docs/framework/react/how-to/validate-search-params | Validate Search Parameters}
+ */
+const redirectSearchSchema = z.object({
+  redirect: z
+    .string()
+    .refine((url) => url.startsWith('/'), 'Redirect must be an internal path')
+    .optional()
+    .catch(undefined),
+});
+
+/**
  * Root route with context - wraps all routes in the application.
  *
  * Provides the base layout with {@link Layout} component and dev tools.
@@ -161,6 +179,7 @@ const indexRoute = createRoute({
 const signInRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sign-in',
+  validateSearch: redirectSearchSchema,
   component: SignInForm,
   beforeLoad: async ({ context }) => {
     // Redirect authenticated users to their appropriate page
@@ -182,6 +201,7 @@ const signInRoute = createRoute({
 const signUpRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sign-up',
+  validateSearch: redirectSearchSchema,
   component: SignUpForm,
   beforeLoad: async ({ context }) => {
     // Redirect authenticated users to their appropriate page
@@ -318,6 +338,7 @@ const noTeamLayoutRoute = createRoute({
 const createTeamRoute = createRoute({
   getParentRoute: () => noTeamLayoutRoute,
   path: 'create-team',
+  validateSearch: redirectSearchSchema,
   staticData: {
     pageTitle: 'Create Team',
   },

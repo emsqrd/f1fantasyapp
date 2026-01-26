@@ -15,9 +15,11 @@ vi.mock('@/hooks/useAuth', () => ({
 }));
 
 const mockNavigate = vi.fn();
+const mockUseSearch = vi.fn();
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
+  useSearch: () => mockUseSearch(),
 }));
 
 const mockTeamService = vi.mocked(teamService);
@@ -34,6 +36,7 @@ describe('CreateTeam', () => {
     mockTeamService.createTeam.mockReset();
     mockTeamService.createTeam.mockResolvedValue(mockTeam);
     mockTeamService.getMyTeam.mockResolvedValue(null);
+    mockUseSearch.mockReturnValue({});
   });
 
   it('creates team and navigates to team page on successful submission', async () => {
@@ -51,8 +54,7 @@ describe('CreateTeam', () => {
 
     // Silent success pattern - navigation is the feedback
     expect(mockNavigate).toHaveBeenCalledWith({
-      to: '/team/$teamId',
-      params: { teamId: '1' },
+      to: '/team/1',
     });
   });
 
@@ -111,6 +113,21 @@ describe('CreateTeam', () => {
 
     const submitButton = screen.getByRole('button', { name: /creating/i });
     expect(submitButton).toHaveAttribute('aria-busy', 'true');
+  });
+
+  it('navigates to redirect path when redirect search parameter is provided', async () => {
+    mockUseSearch.mockReturnValue({ redirect: '/leagues' });
+    renderWithTeamProvider(<CreateTeam />);
+    const user = userEvent.setup();
+
+    await user.type(screen.getByLabelText(/team name/i), 'My Racing Team');
+    await user.click(screen.getByRole('button', { name: /create team/i }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith({
+        to: '/leagues',
+      });
+    });
   });
 
   // TODO: This keeps failing intermittently

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 
 export function SignInForm() {
@@ -17,6 +17,7 @@ export function SignInForm() {
   const [error, setError] = useState<string | null>(null);
   const { signIn, startAuthTransition, completeAuthTransition } = useAuth();
   const navigate = useNavigate();
+  const search = useSearch({ from: '/sign-in' });
 
   const { message, announce } = useLiveRegion();
 
@@ -28,7 +29,9 @@ export function SignInForm() {
     try {
       await signIn(email, password);
       startAuthTransition();
-      await navigate({ to: '/leagues' });
+
+      const redirectPath = search.redirect || '/leagues';
+      await navigate({ to: redirectPath });
       completeAuthTransition();
     } catch (error) {
       const errorMessage =

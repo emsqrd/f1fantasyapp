@@ -8,10 +8,12 @@ import { SignInForm } from './SignInForm';
 // Mock useAuth
 vi.mock('@/hooks/useAuth');
 
-// Mock useNavigate
+// Mock useNavigate and useSearch
 const mockNavigate = vi.fn();
+const mockUseSearch = vi.fn();
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
+  useSearch: () => mockUseSearch(),
   Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
     <a href={to}>{children}</a>
   ),
@@ -36,6 +38,7 @@ describe('SignInForm', () => {
       startAuthTransition: vi.fn(),
       completeAuthTransition: vi.fn(),
     });
+    mockUseSearch.mockReturnValue({});
   });
 
   afterEach(() => {
@@ -91,5 +94,18 @@ describe('SignInForm', () => {
     render(<SignInForm />);
     const link = screen.getByRole('link', { name: /sign up/i });
     expect(link).toHaveAttribute('href', '/sign-up');
+  });
+
+  it('navigates to redirect path when redirect search parameter is provided', async () => {
+    signInMock.mockResolvedValueOnce(undefined);
+    mockUseSearch.mockReturnValue({ redirect: '/team/123' });
+    render(<SignInForm />);
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@example.com' } });
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith({ to: '/team/123' });
+    });
   });
 });

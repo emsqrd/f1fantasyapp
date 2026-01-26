@@ -3,7 +3,7 @@ import { useTeam } from '@/hooks/useTeam';
 import { createTeam } from '@/services/teamService';
 import { type CreateTeamFormData, createTeamFormSchema } from '@/validations/teamSchemas';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -19,6 +19,7 @@ export function CreateTeam() {
   const { refreshMyTeam } = useTeam();
   const [error, setError] = useState<string | null>(null);
   const { message, announce } = useLiveRegion();
+  const search = useSearch({ from: '/_no-team/create-team' });
 
   const {
     register,
@@ -44,7 +45,8 @@ export function CreateTeam() {
       await refreshMyTeam();
 
       // Navigate - TanStack Router handles navigation transitions
-      navigate({ to: '/team/$teamId', params: { teamId: String(createdTeam.id) } });
+      const redirectPath = search.redirect || `/team/${createdTeam.id}`;
+      navigate({ to: redirectPath });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create team';
       setError(errorMessage);
