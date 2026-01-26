@@ -5,16 +5,21 @@ namespace F1CompanionApi.Extensions;
 public static class UserProfileExtensions
 {
     /// <summary>
-    /// Gets the full name of the user by combining FirstName and LastName.
+    /// Gets the display name for the user, preferring FirstName + LastName combination.
+    /// Falls back to DisplayName if first and last names are not available.
     /// Handles null values gracefully and trims extra whitespace.
     /// </summary>
     /// <param name="profile">The user profile</param>
-    /// <returns>Full name with proper spacing, or empty string if both names are null/whitespace</returns>
+    /// <returns>Full name, DisplayName, or empty string if all values are null/whitespace</returns>
     public static string GetFullName(this UserProfile profile)
     {
-        return string.Join(" ",
+        var fullName = string.Join(" ",
             from s in new[] { profile.FirstName, profile.LastName }
             where s != null && !string.IsNullOrWhiteSpace(s)
             select s.Trim());
+
+        return !string.IsNullOrWhiteSpace(fullName)
+            ? fullName
+            : profile.DisplayName?.Trim() ?? string.Empty;
     }
 }

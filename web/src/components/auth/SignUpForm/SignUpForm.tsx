@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 
 export function SignUpForm() {
@@ -19,6 +19,7 @@ export function SignUpForm() {
   const [error, setError] = useState<string | null>(null);
   const { signUp, startAuthTransition, completeAuthTransition } = useAuth();
   const navigate = useNavigate();
+  const search = useSearch({ from: '/sign-up' });
 
   const { message, announce } = useLiveRegion();
 
@@ -63,7 +64,12 @@ export function SignUpForm() {
     try {
       await signUp(email, password, { displayName });
       startAuthTransition();
-      await navigate({ to: '/create-team' });
+
+      if (search.redirect) {
+        await navigate({ to: search.redirect });
+      } else {
+        await navigate({ to: '/create-team' });
+      }
       completeAuthTransition();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Sign up failed';

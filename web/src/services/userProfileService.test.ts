@@ -28,7 +28,7 @@ describe('userProfileService', () => {
     };
 
     const mockUserProfile: UserProfile = {
-      id: 'user-123',
+      id: 123,
       email: 'john@example.com',
       firstName: 'John',
       lastName: 'Doe',
@@ -97,7 +97,7 @@ describe('userProfileService', () => {
       const result = await userProfileService.registerUser(mockCreateProfileData);
 
       expect(result).toMatchObject({
-        id: expect.any(String),
+        id: expect.any(Number),
         email: expect.any(String),
         firstName: expect.any(String),
         lastName: expect.any(String),
@@ -137,7 +137,7 @@ describe('userProfileService', () => {
 
   describe('getCurrentProfile', () => {
     const mockUserProfile: UserProfile = {
-      id: 'user-456',
+      id: 456,
       email: 'jane@example.com',
       firstName: 'Jane',
       lastName: 'Smith',
@@ -161,7 +161,7 @@ describe('userProfileService', () => {
       const result = await userProfileService.getCurrentProfile();
 
       expect(result).toMatchObject({
-        id: expect.any(String),
+        id: expect.any(Number),
         email: expect.any(String),
         firstName: expect.any(String),
         lastName: expect.any(String),
@@ -212,7 +212,7 @@ describe('userProfileService', () => {
 
   describe('updateUserProfile', () => {
     const originalProfile: UserProfile = {
-      id: 'user-789',
+      id: 789,
       email: 'bob@example.com',
       firstName: 'Bob',
       lastName: 'Johnson',
@@ -324,7 +324,7 @@ describe('userProfileService', () => {
       const result = await userProfileService.updateUserProfile(updateData);
 
       expect(result).toMatchObject({
-        id: expect.any(String),
+        id: expect.any(Number),
         email: expect.any(String),
         firstName: expect.any(String),
         lastName: expect.any(String),
@@ -367,7 +367,7 @@ describe('userProfileService', () => {
       // Step 1: Register user
       const registrationData: CreateProfileData = { displayName: 'Test User' };
       const registeredProfile: UserProfile = {
-        id: 'user-integration-test',
+        id: 999,
         email: 'test@example.com',
         firstName: 'Test',
         lastName: 'User',
@@ -403,7 +403,7 @@ describe('userProfileService', () => {
 
     it('should maintain data consistency across service calls', async () => {
       const baseProfile: UserProfile = {
-        id: 'consistent-user',
+        id: 1001,
         email: 'consistent@example.com',
         firstName: 'Consistent',
         lastName: 'User',
@@ -427,7 +427,7 @@ describe('userProfileService', () => {
   describe('edge cases and error scenarios', () => {
     it('should handle empty string values appropriately', async () => {
       const profileWithEmptyStrings: UserProfile = {
-        id: 'empty-test',
+        id: 1002,
         email: 'empty@example.com',
         firstName: '',
         lastName: '',
@@ -447,7 +447,7 @@ describe('userProfileService', () => {
     it('should handle very long display names', async () => {
       const longDisplayName = 'A'.repeat(255);
       const profileWithLongName: UserProfile = {
-        id: 'long-name-test',
+        id: 1003,
         email: 'long@example.com',
         firstName: 'Long',
         lastName: 'Name',
@@ -464,7 +464,7 @@ describe('userProfileService', () => {
 
     it('should handle concurrent service calls appropriately', async () => {
       const profile: UserProfile = {
-        id: 'concurrent-test',
+        id: 1004,
         email: 'concurrent@example.com',
         firstName: 'Concurrent',
         lastName: 'Test',

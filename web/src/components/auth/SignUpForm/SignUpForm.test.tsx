@@ -13,8 +13,10 @@ vi.mock('@/hooks/useAuth', async () => {
   };
 });
 
+const mockUseSearch = vi.fn();
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: vi.fn(),
+  useSearch: () => mockUseSearch(),
   Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
     <a href={to}>{children}</a>
   ),
@@ -43,6 +45,7 @@ describe('SignUpForm', () => {
       completeAuthTransition: vi.fn(),
     });
     vi.mocked(useNavigate).mockReturnValue(mockNavigate);
+    mockUseSearch.mockReturnValue({});
   });
 
   afterEach(() => {
@@ -129,5 +132,22 @@ describe('SignUpForm', () => {
       'true',
     );
     await waitFor(() => expect(mockSignUp).toHaveBeenCalled());
+  });
+
+  it('navigates to redirect path when redirect search parameter is provided', async () => {
+    mockSignUp.mockResolvedValueOnce(undefined);
+    mockUseSearch.mockReturnValue({ redirect: '/leagues' });
+    setup();
+    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: 'password123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith({ to: '/leagues' });
+    });
   });
 });

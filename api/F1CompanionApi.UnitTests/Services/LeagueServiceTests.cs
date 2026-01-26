@@ -426,65 +426,6 @@ public class LeagueServiceTests
     }
 
     [Fact]
-    public async Task GetAvailableLeaguesAsync_MixedPublicAndPrivate_ReturnsBothTypes()
-    {
-        // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new LeagueService(context, _mockLogger.Object);
-
-        var owner = new UserProfile
-        {
-            AccountId = "test-account",
-            Email = "owner@test.com",
-            FirstName = "Test",
-            LastName = "Owner"
-        };
-        var requestingUser = new UserProfile
-        {
-            AccountId = "requesting-account",
-            Email = "requesting@test.com",
-            FirstName = "Requesting",
-            LastName = "User"
-        };
-        context.UserProfiles.AddRange(owner, requestingUser);
-        await context.SaveChangesAsync();
-
-        var publicLeague = new League
-        {
-            Name = "Public League",
-            IsPrivate = false,
-            OwnerId = owner.Id,
-            CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
-        };
-        var privateLeague1 = new League
-        {
-            Name = "Private League 1",
-            IsPrivate = true,
-            OwnerId = owner.Id,
-            CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
-        };
-        var privateLeague2 = new League
-        {
-            Name = "Private League 2",
-            IsPrivate = true,
-            OwnerId = owner.Id,
-            CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
-        };
-        context.Leagues.AddRange(publicLeague, privateLeague1, privateLeague2);
-        await context.SaveChangesAsync();
-
-        // Act
-        var result = await service.GetAvailableLeaguesAsync(requestingUser.Id);
-
-        // Assert - Returns both public and private leagues with capacity
-        Assert.NotNull(result);
-        Assert.Equal(3, result.Count());
-    }
-
-    [Fact]
     public async Task GetAvailableLeaguesAsync_SearchByName_ReturnsMatchingLeagues()
     {
         // Arrange
@@ -831,61 +772,6 @@ public class LeagueServiceTests
         Assert.NotNull(result);
         var leagueResponse = result.First();
         Assert.Equal("John Doe", leagueResponse.OwnerName);
-    }
-
-    [Fact]
-    public async Task GetAvailableLeaguesAsync_SearchIncludesPrivateLeagues()
-    {
-        // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new LeagueService(context, _mockLogger.Object);
-
-        var owner = new UserProfile
-        {
-            AccountId = "test-account",
-            Email = "owner@test.com",
-            FirstName = "Test",
-            LastName = "Owner"
-        };
-        var requestingUser = new UserProfile
-        {
-            AccountId = "requesting-account",
-            Email = "requesting@test.com",
-            FirstName = "Requesting",
-            LastName = "User"
-        };
-        context.UserProfiles.AddRange(owner, requestingUser);
-        await context.SaveChangesAsync();
-
-        var publicLeague = new League
-        {
-            Name = "Champions League",
-            Description = "Public competition",
-            IsPrivate = false,
-            OwnerId = owner.Id,
-            CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
-        };
-        var privateLeague = new League
-        {
-            Name = "Champions Private",
-            Description = "Private competition",
-            IsPrivate = true,
-            OwnerId = owner.Id,
-            CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
-        };
-        context.Leagues.AddRange(publicLeague, privateLeague);
-        await context.SaveChangesAsync();
-
-        // Act
-        var result = await service.GetAvailableLeaguesAsync(requestingUser.Id, "Champions");
-
-        // Assert - Should return both public and private leagues that match search
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Count());
-        Assert.Contains(result, l => l.Name == "Champions League");
-        Assert.Contains(result, l => l.Name == "Champions Private");
     }
 
     [Fact]

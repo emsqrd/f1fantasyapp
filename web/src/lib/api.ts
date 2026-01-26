@@ -51,43 +51,65 @@ class ApiClient {
       });
 
       if (!response.ok) {
-        const errorBody = await response.text().catch(() => 'Unable to read response body');
-        const error = new Error(`${method} ${endpoint} failed: ${response.statusText}`) as ApiError;
+        let errorBody = 'Unable to read response body';
+        let bodyReadFailed = false;
+
+        try {
+          errorBody = await response.text();
+        } catch (bodyError) {
+          bodyReadFailed = true;
+          Sentry.logger.error(
+            Sentry.logger.fmt`Failed to read response body for ${method} ${endpoint}`,
+            {
+              endpoint,
+              method,
+              status: response.status,
+              responseBody: 'Unable to read response body',
+              error: bodyError instanceof Error ? bodyError.message : 'Unknown error',
+            },
+          );
+        }
+
+        // Try to parse RFC 7807 Problem Details response
+        let errorMessage = `${method} ${endpoint} failed: ${response.statusText}`;
+        try {
+          const problemDetails = JSON.parse(errorBody);
+          // Use the detail field from Problem Details for user-friendly message
+          if (problemDetails.detail) {
+            errorMessage = problemDetails.detail;
+          }
+        } catch {
+          // If parsing fails, fall back to statusText
+        }
+
+        const error = new Error(errorMessage) as ApiError;
         error.status = response.status;
         error.responseBody = errorBody;
 
-        // Only capture 5xx server errors as exceptions (not 4xx client errors)
-        const isServerError = response.status >= 500 && response.status < 600;
-
-        if (isServerError) {
-          // 5xx errors are unexpected server failures - capture as exceptions
+        // Capture 5xx server errors to Sentry
+        if (response.status >= 500) {
           Sentry.withScope((scope) => {
             scope.setTag('api.endpoint', endpoint);
             scope.setTag('api.method', method);
-            scope.setTag('api.status_code', response.status);
+            scope.setTag('error.type', 'server');
             scope.setContext('response', {
-              body: errorBody,
-            });
-
-            // Structured log for server errors
-            Sentry.logger.error(Sentry.logger.fmt`API server error: ${method} ${endpoint}`, {
               status: response.status,
               statusText: response.statusText,
-              endpoint,
-              method,
-              responseBody: errorBody,
+              body: errorBody,
+              bodyReadFailed,
             });
 
+            Sentry.logger.error(
+              Sentry.logger.fmt`API server error: ${method} ${endpoint} (${response.status})`,
+              {
+                status: response.status,
+                endpoint,
+                method,
+                responseBody: errorBody,
+              },
+            );
+
             Sentry.captureException(error);
-          });
-        } else {
-          // 4xx errors are expected client errors - log as warnings, not exceptions
-          Sentry.logger.warn(Sentry.logger.fmt`API client error: ${method} ${endpoint}`, {
-            status: response.status,
-            statusText: response.statusText,
-            endpoint,
-            method,
-            responseBody: errorBody,
           });
         }
 

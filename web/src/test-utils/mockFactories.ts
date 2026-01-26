@@ -172,6 +172,7 @@ export function createMockLeague(overrides: Partial<League> = {}): League {
     id: 1,
     name: 'League 1',
     ownerName: 'Test Owner',
+    ownerId: 1,
     description: 'Test Description',
     isPrivate: true,
     teamCount: 1,

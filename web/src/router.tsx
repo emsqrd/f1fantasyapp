@@ -30,6 +30,8 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { z } from 'zod';
 
 import { BrowseLeagues } from './components/BrowseLeagues/BrowseLeagues';
+import { JoinInvite } from './components/JoinInvite/JoinInvite';
+import { previewInvite } from './services/leagueInviteService';
 
 /**
  * Zod schema for validating league ID route parameter.
@@ -63,6 +65,24 @@ const teamIdParamsSchema = z.object({
     .number({ message: 'Team ID must be a number' })
     .int('Team ID must be an integer')
     .positive('Team ID must be positive'),
+});
+
+/**
+ * Zod schema for validating redirect search parameters.
+ *
+ * Uses `.catch()` for graceful error handling per TanStack Router best practices:
+ * Invalid redirect values fall back to undefined instead of throwing errors.
+ *
+ * Security: Only allows internal paths starting with '/' to prevent open redirects.
+ *
+ * @see {@link https://tanstack.com/router/latest/docs/framework/react/how-to/validate-search-params | Validate Search Parameters}
+ */
+const redirectSearchSchema = z.object({
+  redirect: z
+    .string()
+    .refine((url) => url.startsWith('/'), 'Redirect must be an internal path')
+    .optional()
+    .catch(undefined),
 });
 
 /**
@@ -159,6 +179,7 @@ const indexRoute = createRoute({
 const signInRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sign-in',
+  validateSearch: redirectSearchSchema,
   component: SignInForm,
   beforeLoad: async ({ context }) => {
     // Redirect authenticated users to their appropriate page
@@ -180,6 +201,7 @@ const signInRoute = createRoute({
 const signUpRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sign-up',
+  validateSearch: redirectSearchSchema,
   component: SignUpForm,
   beforeLoad: async ({ context }) => {
     // Redirect authenticated users to their appropriate page
@@ -191,6 +213,52 @@ const signUpRoute = createRoute({
     }
   },
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
+});
+
+/**
+ * Join invite route - public route for previewing and joining leagues via invite link.
+ *
+ * Displays league information from an invite token and allows users to join.
+ * Uses {@link https://tanstack.com/router/latest/docs/framework/react/guide/data-loading | loader}
+ * to fetch and validate invite preview before component renders.
+ *
+ * **Note:** Returns 404 for invalid or expired tokens. Users can be authenticated or
+ * unauthenticated - authentication is handled by the {@link JoinInvite} component.
+ *
+ * @type {import('@tanstack/react-router').Route}
+ */
+const joinInviteRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/join/$token',
+  staticData: {
+    pageTitle: 'Join League',
+  },
+  component: JoinInvite,
+  loader: async ({ params }) => {
+    const ROUTE_ID = '/join/$token';
+    const { token } = params;
+
+    try {
+      const preview = await previewInvite(token);
+      return { preview };
+    } catch (_) {
+      // invalid or non-existent token returns 404
+      throw notFound({ routeId: ROUTE_ID });
+    }
+  },
+  pendingComponent: () => (
+    <div role="status" className="flex w-full items-center justify-center p-8 md:min-h-screen">
+      <div className="text-center">
+        <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+        <p className="text-muted-foreground">Loading invite details...</p>
+      </div>
+    </div>
+  ),
+  errorComponent: ({ error }) => (
+    <ErrorBoundary level="page">
+      <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
+    </ErrorBoundary>
+  ),
 });
 
 /**
@@ -282,6 +350,7 @@ const noTeamLayoutRoute = createRoute({
 const createTeamRoute = createRoute({
   getParentRoute: () => noTeamLayoutRoute,
   path: 'create-team',
+  validateSearch: redirectSearchSchema,
   staticData: {
     pageTitle: 'Create Team',
   },
@@ -552,6 +621,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   signInRoute,
   signUpRoute,
+  joinInviteRoute,
   authenticatedLayoutRoute.addChildren([
     accountRoute,
     teamRequiredLayoutRoute.addChildren([leaguesRoute, browseLeaguesRoute, leagueRoute, teamRoute]),

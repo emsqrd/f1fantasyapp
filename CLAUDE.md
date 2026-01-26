@@ -2,10 +2,6 @@
 
 Full-stack F1 Fantasy Sports application combining React frontend and .NET backend.
 
-## Instructions for Claude
-
-Always use Context7 MCP when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.
-
 ## Repository Structure
 
 - `web/` - React/TypeScript frontend with Vite (see web/CLAUDE.md)

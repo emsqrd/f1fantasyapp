@@ -3,6 +3,7 @@ using System;
 using F1CompanionApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace F1CompanionApi.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260121184839_AddLeagueInvite")]
+    partial class AddLeagueInvite
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -225,7 +228,6 @@ namespace F1CompanionApi.Data.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Token")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")

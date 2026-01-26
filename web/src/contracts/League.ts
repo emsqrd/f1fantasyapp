@@ -7,6 +7,7 @@ export interface League {
   teamCount: number;
   maxTeams: number;
   isPrivate: boolean;
+  ownerId: number;
   ownerName: string;
   teams: Team[];
 }

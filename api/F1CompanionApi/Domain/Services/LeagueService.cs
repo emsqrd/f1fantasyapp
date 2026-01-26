@@ -110,6 +110,7 @@ public class LeagueService : ILeagueService
             .Include(x => x.Owner)
             .Include(x => x.LeagueTeams)
             .Where(x =>
+                !x.IsPrivate &&
                 x.LeagueTeams.Count < x.MaxTeams &&
                 !x.LeagueTeams.Any(lt => lt.Team.UserId == userId)
             );

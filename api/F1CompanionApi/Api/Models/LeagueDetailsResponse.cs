@@ -8,6 +8,7 @@ public class LeagueDetailsResponse
     public int TeamCount { get; set; }
     public int MaxTeams { get; set; }
     public bool IsPrivate { get; set; }
+    public int OwnerId { get; set; }
     public required string OwnerName { get; set; }
     public ICollection<TeamResponse> Teams { get; set; } = [];
 }
