@@ -65,8 +65,11 @@ export function SignUpForm() {
       await signUp(email, password, { displayName });
       startAuthTransition();
 
-      const redirectPath = search.redirect || '/create-team';
-      await navigate({ to: redirectPath });
+      if (search.redirect) {
+        await navigate({ to: search.redirect });
+      } else {
+        await navigate({ to: '/create-team' });
+      }
       completeAuthTransition();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Sign up failed';

@@ -53,7 +53,9 @@ public class LeagueInviteService : ILeagueInviteService
         }
 
         // Check if invite already exists
-        var existingInvite = await _dbContext.LeagueInvites.FirstOrDefaultAsync(x => x.LeagueId == leagueId);
+        var existingInvite = await _dbContext.LeagueInvites
+            .Include(x => x.CreatedByUser)
+            .FirstOrDefaultAsync(x => x.LeagueId == leagueId);
 
         if (existingInvite != null)
         {
@@ -87,6 +89,9 @@ public class LeagueInviteService : ILeagueInviteService
 
         await _dbContext.LeagueInvites.AddAsync(leagueInvite);
         await _dbContext.SaveChangesAsync();
+
+        // Load CreatedByUser navigation property for ToResponseModel()
+        await _dbContext.Entry(leagueInvite).Reference(x => x.CreatedByUser).LoadAsync();
 
         return leagueInvite.ToResponseModel();
     }

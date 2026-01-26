@@ -54,7 +54,8 @@ describe('CreateTeam', () => {
 
     // Silent success pattern - navigation is the feedback
     expect(mockNavigate).toHaveBeenCalledWith({
-      to: '/team/1',
+      to: '/team/$teamId',
+      params: { teamId: '1' },
     });
   });
 

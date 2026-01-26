@@ -351,6 +351,6 @@ public class UserProfileExtensionsTests
         var result = profile.GetFullName();
 
         // Assert
-        Assert.Equal("   ", result);
+        Assert.Equal("", result);
     }
 }

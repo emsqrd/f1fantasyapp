@@ -20,6 +20,6 @@ public static class UserProfileExtensions
 
         return !string.IsNullOrWhiteSpace(fullName)
             ? fullName
-            : profile.DisplayName ?? string.Empty;
+            : profile.DisplayName?.Trim() ?? string.Empty;
     }
 }

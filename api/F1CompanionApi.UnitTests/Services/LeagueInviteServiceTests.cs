@@ -133,7 +133,7 @@ public class LeagueInviteServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var (owner, league) = await SeedPrivateLeagueWithOwner(context);
+        var (_, league) = await SeedPrivateLeagueWithOwner(context);
 
         var nonOwner = new UserProfile
         {

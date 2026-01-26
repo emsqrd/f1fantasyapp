@@ -45,8 +45,13 @@ export function CreateTeam() {
       await refreshMyTeam();
 
       // Navigate - TanStack Router handles navigation transitions
-      const redirectPath = search.redirect || `/team/${createdTeam.id}`;
-      navigate({ to: redirectPath });
+      if (search.redirect) {
+        // When redirecting to an external path, use the string
+        navigate({ to: search.redirect });
+      } else {
+        // When going to default route, use type-safe routing
+        navigate({ to: '/team/$teamId', params: { teamId: String(createdTeam.id) } });
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create team';
       setError(errorMessage);

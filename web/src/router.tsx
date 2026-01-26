@@ -215,6 +215,18 @@ const signUpRoute = createRoute({
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
 
+/**
+ * Join invite route - public route for previewing and joining leagues via invite link.
+ *
+ * Displays league information from an invite token and allows users to join.
+ * Uses {@link https://tanstack.com/router/latest/docs/framework/react/guide/data-loading | loader}
+ * to fetch and validate invite preview before component renders.
+ *
+ * **Note:** Returns 404 for invalid or expired tokens. Users can be authenticated or
+ * unauthenticated - authentication is handled by the {@link JoinInvite} component.
+ *
+ * @type {import('@tanstack/react-router').Route}
+ */
 const joinInviteRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/join/$token',
@@ -238,7 +250,7 @@ const joinInviteRoute = createRoute({
     <div role="status" className="flex w-full items-center justify-center p-8 md:min-h-screen">
       <div className="text-center">
         <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
-        <p className="text-muted-foreground">Loading team creation...</p>
+        <p className="text-muted-foreground">Loading invite details...</p>
       </div>
     </div>
   ),

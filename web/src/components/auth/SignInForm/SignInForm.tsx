@@ -30,8 +30,11 @@ export function SignInForm() {
       await signIn(email, password);
       startAuthTransition();
 
-      const redirectPath = search.redirect || '/leagues';
-      await navigate({ to: redirectPath });
+      if (search.redirect) {
+        await navigate({ to: search.redirect });
+      } else {
+        await navigate({ to: '/leagues' });
+      }
       completeAuthTransition();
     } catch (error) {
       const errorMessage =
