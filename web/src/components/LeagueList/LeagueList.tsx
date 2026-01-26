@@ -43,7 +43,6 @@ export function LeagueList() {
                 params={{ leagueId: String(league.id) }}
                 className="hover:bg-accent focus:ring-ring block w-full cursor-pointer p-6 text-left transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                 aria-label={`View league: ${league.name}`}
-                preload="intent"
               >
                 <h3 className="text-lg font-medium">{league.name}</h3>
               </Link>

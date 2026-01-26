@@ -75,46 +75,48 @@ export function League() {
 
   return (
     <AppContainer maxWidth="md">
-      <header className="flex justify-between gap-2 pb-3">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-3xl font-bold">{league.name}</h2>
-          {league.description && <p className="text-muted-foreground">{league.description}</p>}
+      <header className="pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <h2 className="text-xl font-bold">{league.name}</h2>
+          {displayInviteButton && (
+            <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex-shrink-0">
+                  <UserPlus className="h-4 w-4" />
+                  Invite
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Share League Invite</DialogTitle>
+                  <DialogDescription>
+                    Anyone who has this link will be able to join your league
+                  </DialogDescription>
+                </DialogHeader>
+                {isLoading && <div>Loading invite link...</div>}
+                {error && <InlineError message={error} />}
+                {leagueInvite && (
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="link" className="sr-only">
+                      League Invite Link
+                    </Label>
+                    <Input id="link" className="flex-1" value={inviteUrl} readOnly></Input>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => copy(inviteUrl)}
+                      aria-label={hasCopied ? 'Copied' : 'Copy invite link'}
+                    >
+                      {hasCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
-        {displayInviteButton && (
-          <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="h-4 w-4" />
-                Invite
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Share League Invite</DialogTitle>
-                <DialogDescription>
-                  Anyone who has this link will be able to join your league
-                </DialogDescription>
-              </DialogHeader>
-              {isLoading && <div>Loading invite link...</div>}
-              {error && <InlineError message={error} />}
-              {leagueInvite && (
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="link" className="sr-only">
-                    League Invite Link
-                  </Label>
-                  <Input id="link" className="flex-1" value={inviteUrl} readOnly></Input>
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    onClick={() => copy(inviteUrl)}
-                    aria-label={hasCopied ? 'Copied' : 'Copy invite link'}
-                  >
-                    {hasCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  </Button>
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
+        {league.description && (
+          <p className="text-muted-foreground mt-2 text-sm">{league.description}</p>
         )}
       </header>
       <Leaderboard />
