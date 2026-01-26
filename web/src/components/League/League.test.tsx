@@ -14,9 +14,11 @@ vi.mock('../Leaderboard/Leaderboard', () => ({
 
 // Mock TanStack Router hooks
 const mockUseLoaderData = vi.fn();
+const mockUseRouteContext = vi.fn();
 
 vi.mock('@tanstack/react-router', () => ({
   useLoaderData: (opts: { from: string }) => mockUseLoaderData(opts),
+  useRouteContext: (opts: { from: string }) => mockUseRouteContext(opts),
   Link: ({ children, to, ...props }: { children: React.ReactNode; to: string }) => (
     <a href={to} {...props}>
       {children}
@@ -63,6 +65,15 @@ describe('League', () => {
     // Default: mock loader data with league
     mockUseLoaderData.mockReturnValue({
       league: leagueMock,
+    });
+
+    // Default: mock route context with profile (as owner)
+    mockUseRouteContext.mockReturnValue({
+      profile: {
+        id: leagueMock.ownerId,
+        email: 'owner@example.com',
+        username: 'LeagueOwner',
+      },
     });
 
     // Default: mock useClipboard hook

@@ -79,7 +79,7 @@ public class GlobalExceptionHandler : IExceptionHandler
             AlreadyInLeagueException ex =>
                 (StatusCodes.Status409Conflict,
                  "Already in League",
-                 ex.Message),
+                 "Your team has already joined this league"),
 
             LeagueFullException ex =>
                 (StatusCodes.Status409Conflict,

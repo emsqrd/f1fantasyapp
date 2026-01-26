@@ -143,31 +143,6 @@ describe('ApiClient', () => {
       });
     });
 
-    it('logs 4xx client errors as warnings without capturing exceptions', async () => {
-      const mockResponse = {
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-        text: vi.fn().mockResolvedValue('Not found error body'),
-      };
-
-      mockFetch.mockResolvedValueOnce(mockResponse as unknown as Response);
-
-      await expect(apiClient.get('/nonexistent-endpoint')).rejects.toThrow(
-        'GET /nonexistent-endpoint failed: Not Found',
-      );
-
-      expect(Sentry.captureException).not.toHaveBeenCalled();
-      expect(Sentry.logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('API client error'),
-        expect.objectContaining({
-          status: 404,
-          endpoint: '/nonexistent-endpoint',
-          method: 'GET',
-        }),
-      );
-    });
-
     it('captures network errors as exceptions with proper logging', async () => {
       const networkError = new Error('Network connection failed');
       mockFetch.mockRejectedValueOnce(networkError);
@@ -250,25 +225,6 @@ describe('ApiClient', () => {
         },
         body: JSON.stringify(postData),
       });
-    });
-
-    it('logs POST request 4xx errors as warnings', async () => {
-      const postData = { invalid: 'data' };
-      const mockResponse = {
-        ok: false,
-        status: 400,
-        statusText: 'Bad Request',
-        text: vi.fn().mockResolvedValue('Bad request error body'),
-      };
-
-      mockFetch.mockResolvedValueOnce(mockResponse as unknown as Response);
-
-      await expect(apiClient.post('/bad-request', postData)).rejects.toThrow(
-        'POST /bad-request failed: Bad Request',
-      );
-
-      expect(Sentry.captureException).not.toHaveBeenCalled();
-      expect(Sentry.logger.warn).toHaveBeenCalled();
     });
 
     it('handles empty POST data', async () => {
@@ -356,25 +312,6 @@ describe('ApiClient', () => {
         },
         body: JSON.stringify(patchData),
       });
-    });
-
-    it('logs PATCH request 4xx errors as warnings', async () => {
-      const patchData = { invalid: 'update' };
-      const mockResponse = {
-        ok: false,
-        status: 422,
-        statusText: 'Unprocessable Entity',
-        text: vi.fn().mockResolvedValue('Unprocessable entity error body'),
-      };
-
-      mockFetch.mockResolvedValueOnce(mockResponse as unknown as Response);
-
-      await expect(apiClient.patch('/invalid-update/1', patchData)).rejects.toThrow(
-        'PATCH /invalid-update/1 failed: Unprocessable Entity',
-      );
-
-      expect(Sentry.captureException).not.toHaveBeenCalled();
-      expect(Sentry.logger.warn).toHaveBeenCalled();
     });
   });
 

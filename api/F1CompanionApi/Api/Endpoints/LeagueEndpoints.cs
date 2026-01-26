@@ -161,10 +161,6 @@ public static class LeagueEndpoints
         [FromServices] ILogger logger
     )
     {
-        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
-
-        logger.LogInformation("User {UserId} is requesting to join a league via invite", user.Id);
-
         var leagueInviteTokenPreview = await leagueInviteService.ValidateAndPreviewLeagueInviteAsync(token);
 
         return Results.Ok(leagueInviteTokenPreview);

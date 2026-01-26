@@ -63,7 +63,7 @@ const mockUserProfileService = vi.mocked(userProfileService);
 const mockAvatarEvents = vi.mocked(avatarEvents);
 
 const mockUserProfile: UserProfile = {
-  id: 'user-123',
+  id: 123,
   email: 'test@example.com',
   firstName: 'John',
   lastName: 'Doe',
@@ -114,7 +114,7 @@ describe('Account', () => {
     it('updates component when loader data changes (user switches accounts)', () => {
       // Start with User A's data
       const userAProfile: UserProfile = {
-        id: 'user-a',
+        id: 1,
         email: 'usera@example.com',
         firstName: 'Alice',
         lastName: 'Anderson',
@@ -133,7 +133,7 @@ describe('Account', () => {
 
       // Simulate router.invalidate() refetching with User B's data
       const userBProfile: UserProfile = {
-        id: 'user-b',
+        id: 2,
         email: 'userb@example.com',
         firstName: 'Bob',
         lastName: 'Brown',
