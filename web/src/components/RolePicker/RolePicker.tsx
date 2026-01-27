@@ -1,6 +1,6 @@
 import type { BaseRole } from '@/contracts/Role';
-import { useLineup } from '@/hooks/useLineup';
-import { useEffect, useState } from 'react';
+import { useRouter } from '@tanstack/react-router';
+import { useEffect, useMemo, useState } from 'react';
 
 import { ScrollArea } from '../ui/scroll-area';
 import {
@@ -45,8 +45,8 @@ interface RolePickerContentProps<T extends BaseRole> {
   itemPool: T[];
   /** Number of positions in the lineup */
   lineupSize: number;
-  /** Initially selected items */
-  initialItems?: (T | null)[];
+  /** Currently selected items from route loader */
+  lineup?: (T | null)[];
   /** Component to render each card in the grid */
   CardComponent: React.ComponentType<RoleCardProps<T>>;
   /** Component to render each item in the selection list */
@@ -65,13 +65,13 @@ interface RolePickerContentProps<T extends BaseRole> {
 
 /**
  * Internal component that handles the picker UI and lineup management logic.
- * This is where the generic business logic lives - managing the lineup, handling
- * add/remove operations with rollback, and coordinating the sheet UI.
+ * Derives lineup from route data (server state as source of truth).
+ * Mutations wait for server response before UI updates.
  */
 function RolePickerContent<T extends BaseRole>({
   itemPool,
   lineupSize,
-  initialItems = [],
+  lineup: initialItems = [],
   CardComponent,
   ListItemComponent,
   addToTeam,
@@ -80,54 +80,77 @@ function RolePickerContent<T extends BaseRole>({
   sheetDescription,
   gridClassName = 'grid grid-cols-1 gap-4 sm:grid-cols-2',
 }: RolePickerContentProps<T>) {
+  const router = useRouter();
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
-  const { lineup, pool, add, remove } = useLineup<T>(itemPool, initialItems, lineupSize);
+  const [isPending, setIsPending] = useState(false);
+
+  // Derive lineup from route data
+  const lineup = useMemo(() => {
+    const safe = initialItems ?? [];
+    return safe.length === lineupSize
+      ? safe
+      : [...safe, ...Array(lineupSize - safe.length).fill(null)];
+  }, [initialItems, lineupSize]);
+
+  // Derive pool from current lineup
+  const pool = useMemo(() => {
+    const selectedIds = new Set(
+      lineup.filter((item): item is T => item !== null).map((item) => item.id),
+    );
+    return itemPool.filter((item) => !selectedIds.has(item.id));
+  }, [itemPool, lineup]);
 
   const handleAdd = async (position: number, item: T) => {
-    // Optimistically update state immediately
-    add(position, item);
+    setIsPending(true);
     try {
-      // Persist to backend
       await addToTeam(item.id, position);
+      await router.invalidate();
+      setSelectedPosition(null);
     } catch (error) {
-      // Rollback on error
-      remove(position);
       console.error('Failed to add item:', error);
+    } finally {
+      setIsPending(false);
     }
   };
 
   const handleRemove = async (position: number) => {
-    const item = lineup[position];
-    // Optimistically update state immediately
-    remove(position);
+    setIsPending(true);
     try {
-      // Persist to backend
       await removeFromTeam(position);
+      await router.invalidate();
     } catch (error) {
-      // Rollback on error
-      if (item) {
-        add(position, item);
-      }
       console.error('Failed to remove item:', error);
+    } finally {
+      setIsPending(false);
     }
   };
 
   return (
     <>
       {/* Grid of cards representing lineup positions */}
-      <div className={gridClassName}>
+      <div className={gridClassName} style={{ position: 'relative' }}>
         {lineup.map((item, idx) => (
           <CardComponent
             key={idx}
             item={item}
-            onClick={() => setSelectedPosition(idx)}
-            onRemove={() => handleRemove(idx)}
+            onClick={() => !isPending && setSelectedPosition(idx)}
+            onRemove={() => !isPending && handleRemove(idx)}
           />
         ))}
+
+        {/* Loading overlay during mutations */}
+        {isPending && (
+          <div className="bg-background/50 absolute inset-0 flex items-center justify-center">
+            <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2" />
+          </div>
+        )}
       </div>
 
       {/* Selection sheet */}
-      <Sheet open={selectedPosition !== null} onOpenChange={(o) => !o && setSelectedPosition(null)}>
+      <Sheet
+        open={selectedPosition !== null && !isPending}
+        onOpenChange={(o) => !o && setSelectedPosition(null)}
+      >
         <SheetTrigger asChild>
           {/* Invisible trigger - we open imperatively via setSelectedPosition */}
           <div />
@@ -143,11 +166,9 @@ function RolePickerContent<T extends BaseRole>({
                 <ListItemComponent
                   key={item.id}
                   item={item}
-                  onSelect={async () => {
+                  onSelect={() => {
                     if (selectedPosition !== null) {
-                      await handleAdd(selectedPosition, item);
-                      // Always close sheet after add attempt (whether success or rolled back)
-                      setSelectedPosition(null);
+                      handleAdd(selectedPosition, item);
                     }
                   }}
                 />
@@ -168,7 +189,7 @@ export interface RolePickerProps<T extends BaseRole> {
   /** Number of positions in the lineup (e.g., 5 for drivers, 2 for constructors) */
   lineupSize?: number;
   /** Initially selected items */
-  initialItems?: (T | null)[];
+  lineup?: (T | null)[];
   /** Component to render each card in the grid */
   CardComponent: React.ComponentType<RoleCardProps<T>>;
   /** Component to render each item in the selection list */
@@ -195,14 +216,15 @@ export interface RolePickerProps<T extends BaseRole> {
  * Generic RolePicker component for selecting items (drivers, constructors, etc.) for a team.
  *
  * This component handles:
- * - Data fetching with loading and error states
- * - Lineup management with add/remove operations
- * - Optimistic updates with automatic rollback on error
+ * - Data fetching of available items pool with loading and error states
+ * - Current lineup derived from route loader data (server state)
+ * - Add/remove operations with React 19's useOptimistic for instant UI feedback
+ * - Automatic revert on mutation errors
  * - Generic rendering via component props
  */
 export function RolePicker<T extends BaseRole>({
   lineupSize = 5,
-  initialItems,
+  lineup: initialItems,
   CardComponent,
   ListItemComponent,
   fetchItems,
@@ -255,7 +277,7 @@ export function RolePicker<T extends BaseRole>({
     <RolePickerContent
       itemPool={itemPool}
       lineupSize={lineupSize}
-      initialItems={initialItems}
+      lineup={initialItems}
       CardComponent={CardComponent}
       ListItemComponent={ListItemComponent}
       addToTeam={addToTeam}

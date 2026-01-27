@@ -19,14 +19,14 @@ const DriverListItemAdapter: ComponentType<RoleListItemProps<Driver>> = ({ item,
 
 interface DriverPickerProps {
   lineupSize?: number;
-  initialDrivers?: (Driver | null)[];
+  currentDrivers?: (Driver | null)[];
 }
 
-export function DriverPicker({ lineupSize = 5, initialDrivers }: DriverPickerProps) {
+export function DriverPicker({ lineupSize = 5, currentDrivers }: DriverPickerProps) {
   return (
     <RolePicker<Driver>
       lineupSize={lineupSize}
-      initialItems={initialDrivers}
+      lineup={currentDrivers}
       fetchItems={getActiveDrivers}
       addToTeam={addDriverToTeam}
       removeFromTeam={removeDriverFromTeam}

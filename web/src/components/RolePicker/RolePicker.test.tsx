@@ -2,9 +2,17 @@ import type { Constructor, Driver } from '@/contracts/Role';
 import { createMockDriver } from '@/test-utils';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { RolePicker } from './RolePicker';
+
+// Mock TanStack Router
+const mockInvalidate = vi.fn();
+vi.mock('@tanstack/react-router', () => ({
+  useRouter: () => ({
+    invalidate: mockInvalidate,
+  }),
+}));
 
 // Mock card component for testing
 function MockDriverCard({
@@ -78,6 +86,11 @@ function MockConstructorListItem({ item, onSelect }: { item: Constructor; onSele
 }
 
 describe('RolePicker', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockInvalidate.mockResolvedValue(undefined);
+  });
+
   describe('Loading State', () => {
     it('displays loading message while fetching items', () => {
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>(() => new Promise(() => {})); // Never resolves
@@ -161,7 +174,7 @@ describe('RolePicker', () => {
       render(
         <RolePicker<Driver>
           lineupSize={3}
-          initialItems={initialDrivers}
+          lineup={initialDrivers}
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
           fetchItems={mockFetchItems}
@@ -288,13 +301,18 @@ describe('RolePicker', () => {
       await user.click(selectButton);
 
       await waitFor(() => {
+        expect(mockAddToTeam).toHaveBeenCalledWith(1, 0);
+        expect(mockInvalidate).toHaveBeenCalled();
+      });
+
+      await waitFor(() => {
         expect(screen.queryByRole('heading', { name: 'Select Driver' })).not.toBeInTheDocument();
       });
     });
   });
 
   describe('Adding Items', () => {
-    it('calls addToTeam with correct parameters when selecting item', async () => {
+    it('calls addToTeam with correct parameters and invalidates router', async () => {
       const user = userEvent.setup();
       const mockDrivers = [createMockDriver({ id: 1, firstName: 'Max', lastName: 'Verstappen' })];
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
@@ -323,22 +341,22 @@ describe('RolePicker', () => {
 
       await waitFor(() => {
         expect(mockAddToTeam).toHaveBeenCalledWith(1, 0);
+        expect(mockInvalidate).toHaveBeenCalled();
       });
     });
 
-    it('updates card to show selected item', async () => {
-      const user = userEvent.setup();
+    it('displays selected item when provided via lineup prop', async () => {
       const mockDrivers = [createMockDriver({ id: 1, firstName: 'Max', lastName: 'Verstappen' })];
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
-      const mockAddToTeam = vi.fn().mockResolvedValue(undefined);
 
       render(
         <RolePicker<Driver>
           lineupSize={2}
+          lineup={[mockDrivers[0], null]}
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
           fetchItems={mockFetchItems}
-          addToTeam={mockAddToTeam}
+          addToTeam={vi.fn()}
           removeFromTeam={vi.fn()}
           sheetTitle="Select Driver"
           sheetDescription="Choose a driver"
@@ -346,34 +364,28 @@ describe('RolePicker', () => {
           errorPrefix="Failed to load drivers"
         />,
       );
-
-      const addButtons = await screen.findAllByRole('button', { name: 'Add Driver' });
-      await user.click(addButtons[0]);
-
-      const selectButton = within(screen.getByTestId('driver-list-item')).getByRole('button');
-      await user.click(selectButton);
 
       await waitFor(() => {
         expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
       });
     });
 
-    it('removes selected item from pool in selection sheet', async () => {
+    it('excludes drivers in lineup from available pool', async () => {
       const user = userEvent.setup();
       const mockDrivers = [
         createMockDriver({ id: 1, firstName: 'Max', lastName: 'Verstappen' }),
         createMockDriver({ id: 2, firstName: 'Lewis', lastName: 'Hamilton' }),
       ];
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
-      const mockAddToTeam = vi.fn().mockResolvedValue(undefined);
 
       render(
         <RolePicker<Driver>
           lineupSize={2}
+          lineup={[mockDrivers[0], null]}
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
           fetchItems={mockFetchItems}
-          addToTeam={mockAddToTeam}
+          addToTeam={vi.fn()}
           removeFromTeam={vi.fn()}
           sheetTitle="Select Driver"
           sheetDescription="Choose a driver"
@@ -382,38 +394,27 @@ describe('RolePicker', () => {
         />,
       );
 
-      // Select first driver
-      const firstAddButtons = await screen.findAllByRole('button', { name: 'Add Driver' });
-      await user.click(firstAddButtons[0]);
+      // Verify Max is shown in the card (part of lineup)
+      expect(await screen.findByText('Max Verstappen')).toBeInTheDocument();
 
-      const selectMaxButton = within(screen.getAllByTestId('driver-list-item')[0]).getByRole(
-        'button',
-      );
-      await user.click(selectMaxButton);
+      // Open selection sheet
+      const addButtons = screen.getAllByRole('button', { name: 'Add Driver' });
+      await user.click(addButtons[0]);
 
-      // Wait for the sheet to close and card to update
-      await waitFor(() => {
-        expect(screen.queryByRole('heading', { name: 'Select Driver' })).not.toBeInTheDocument();
-      });
-
-      // Verify Max is shown on the card (optimistic update)
-      expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
-
-      // Open sheet again for second slot
-      const secondAddButtons = await screen.findAllByRole('button', { name: 'Add Driver' });
-      await user.click(secondAddButtons[0]);
-
-      // Max should not be in the pool anymore, only Lewis should be available
+      // Only Lewis should be available in the pool (Max is already in lineup)
       await waitFor(() => {
         const listItems = screen.getAllByTestId('driver-list-item');
         expect(listItems).toHaveLength(1);
       });
-      expect(screen.getByText('Lewis Hamilton')).toBeInTheDocument();
+
+      // Check within the list items that only Lewis is present
+      const listItems = screen.getAllByTestId('driver-list-item');
+      expect(within(listItems[0]).getByText('Lewis Hamilton')).toBeInTheDocument();
     });
   });
 
   describe('Removing Items', () => {
-    it('calls removeFromTeam with correct parameters', async () => {
+    it('calls removeFromTeam with correct parameters and invalidates router', async () => {
       const user = userEvent.setup();
       const mockDrivers = [createMockDriver({ id: 1, firstName: 'Max', lastName: 'Verstappen' })];
       const initialDrivers = [mockDrivers[0]];
@@ -423,7 +424,7 @@ describe('RolePicker', () => {
       render(
         <RolePicker<Driver>
           lineupSize={2}
-          initialItems={initialDrivers}
+          lineup={initialDrivers}
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
           fetchItems={mockFetchItems}
@@ -441,25 +442,23 @@ describe('RolePicker', () => {
 
       await waitFor(() => {
         expect(mockRemoveFromTeam).toHaveBeenCalledWith(0);
+        expect(mockInvalidate).toHaveBeenCalled();
       });
     });
 
-    it('clears card after removing item', async () => {
-      const user = userEvent.setup();
+    it('displays empty card when lineup slot is null', async () => {
       const mockDrivers = [createMockDriver({ id: 1, firstName: 'Max', lastName: 'Verstappen' })];
-      const initialDrivers = [mockDrivers[0]];
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
-      const mockRemoveFromTeam = vi.fn().mockResolvedValue(undefined);
 
       render(
         <RolePicker<Driver>
           lineupSize={2}
-          initialItems={initialDrivers}
+          lineup={[null, null]}
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
           fetchItems={mockFetchItems}
           addToTeam={vi.fn()}
-          removeFromTeam={mockRemoveFromTeam}
+          removeFromTeam={vi.fn()}
           sheetTitle="Select Driver"
           sheetDescription="Choose a driver"
           loadingMessage="Loading Drivers..."
@@ -467,35 +466,28 @@ describe('RolePicker', () => {
         />,
       );
 
-      expect(await screen.findByText('Max Verstappen')).toBeInTheDocument();
-
-      const removeButton = screen.getByRole('button', { name: 'Remove' });
-      await user.click(removeButton);
-
-      await waitFor(() => {
-        expect(screen.queryByText('Max Verstappen')).not.toBeInTheDocument();
-      });
+      const addButtons = await screen.findAllByRole('button', { name: 'Add Driver' });
+      expect(addButtons).toHaveLength(2);
+      expect(screen.queryByText('Max Verstappen')).not.toBeInTheDocument();
     });
 
-    it('returns removed item to pool', async () => {
+    it('includes all drivers in pool when lineup is empty', async () => {
       const user = userEvent.setup();
       const mockDrivers = [
         createMockDriver({ id: 1, firstName: 'Max', lastName: 'Verstappen' }),
         createMockDriver({ id: 2, firstName: 'Lewis', lastName: 'Hamilton' }),
       ];
-      const initialDrivers = [mockDrivers[0]];
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
-      const mockRemoveFromTeam = vi.fn().mockResolvedValue(undefined);
 
       render(
         <RolePicker<Driver>
           lineupSize={2}
-          initialItems={initialDrivers}
+          lineup={[null, null]}
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
           fetchItems={mockFetchItems}
           addToTeam={vi.fn()}
-          removeFromTeam={mockRemoveFromTeam}
+          removeFromTeam={vi.fn()}
           sheetTitle="Select Driver"
           sheetDescription="Choose a driver"
           loadingMessage="Loading Drivers..."
@@ -503,26 +495,25 @@ describe('RolePicker', () => {
         />,
       );
 
-      const removeButton = await screen.findByRole('button', { name: 'Remove' });
-      await user.click(removeButton);
+      const addButtons = await screen.findAllByRole('button', { name: 'Add Driver' });
+      await user.click(addButtons[0]);
 
-      await waitFor(async () => {
-        const addButton = screen.getAllByRole('button', { name: 'Add Driver' })[0];
-        await user.click(addButton);
-      });
-
-      // Both drivers should now be in the pool
+      // Both drivers should be available in the pool
       const listItems = screen.getAllByTestId('driver-list-item');
       expect(listItems).toHaveLength(2);
+      expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
+      expect(screen.getByText('Lewis Hamilton')).toBeInTheDocument();
     });
   });
 
-  describe('Error Handling and Rollback', () => {
-    it('rolls back add operation when addToTeam fails', async () => {
+  describe('Error Handling', () => {
+    it('does not invalidate router when addToTeam fails', async () => {
       const user = userEvent.setup();
       const mockDrivers = [createMockDriver({ id: 1, firstName: 'Max', lastName: 'Verstappen' })];
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
       const mockAddToTeam = vi.fn().mockRejectedValue(new Error('Network error'));
+
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       render(
         <RolePicker<Driver>
@@ -545,28 +536,29 @@ describe('RolePicker', () => {
       const selectButton = within(screen.getByTestId('driver-list-item')).getByRole('button');
       await user.click(selectButton);
 
-      // Wait for the error to be handled and rollback to complete
       await waitFor(() => {
         expect(mockAddToTeam).toHaveBeenCalled();
+        expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to add item:', expect.any(Error));
       });
 
-      // Wait for rollback - card should remain empty after rollback
-      await waitFor(() => {
-        expect(screen.queryByText('Max Verstappen')).not.toBeInTheDocument();
-      });
+      expect(mockInvalidate).not.toHaveBeenCalled();
+
+      consoleErrorSpy.mockRestore();
     });
 
-    it('rolls back remove operation when removeFromTeam fails', async () => {
+    it('does not invalidate router when removeFromTeam fails', async () => {
       const user = userEvent.setup();
       const mockDrivers = [createMockDriver({ id: 1, firstName: 'Max', lastName: 'Verstappen' })];
       const initialDrivers = [mockDrivers[0]];
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
       const mockRemoveFromTeam = vi.fn().mockRejectedValue(new Error('Network error'));
 
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
       render(
         <RolePicker<Driver>
           lineupSize={2}
-          initialItems={initialDrivers}
+          lineup={initialDrivers}
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
           fetchItems={mockFetchItems}
@@ -584,10 +576,12 @@ describe('RolePicker', () => {
 
       await waitFor(() => {
         expect(mockRemoveFromTeam).toHaveBeenCalled();
+        expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to remove item:', expect.any(Error));
       });
 
-      // Driver should remain in card after rollback
-      expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
+      expect(mockInvalidate).not.toHaveBeenCalled();
+
+      consoleErrorSpy.mockRestore();
     });
   });
 
@@ -660,8 +654,13 @@ describe('RolePicker', () => {
 
       await waitFor(() => {
         expect(mockAddToTeam).toHaveBeenCalledWith(1, 0);
+        expect(mockInvalidate).toHaveBeenCalled();
       });
-      expect(screen.getByText('Red Bull Racing')).toBeInTheDocument();
+
+      // Verify the sheet closes after selection
+      await waitFor(() => {
+        expect(screen.queryByRole('heading', { name: 'Select Constructor' })).not.toBeInTheDocument();
+      });
     });
   });
 

@@ -22,14 +22,14 @@ const ConstructorListItemAdapter: ComponentType<RoleListItemProps<Constructor>> 
 
 interface ConstructorPickerProps {
   lineupSize?: number;
-  initialConstructors?: (Constructor | null)[];
+  currentConstructors?: (Constructor | null)[];
 }
 
-export function ConstructorPicker({ lineupSize = 2, initialConstructors }: ConstructorPickerProps) {
+export function ConstructorPicker({ lineupSize = 2, currentConstructors }: ConstructorPickerProps) {
   return (
     <RolePicker<Constructor>
       lineupSize={lineupSize}
-      initialItems={initialConstructors}
+      lineup={currentConstructors}
       fetchItems={getActiveConstructors}
       addToTeam={addConstructorToTeam}
       removeFromTeam={removeConstructorFromTeam}

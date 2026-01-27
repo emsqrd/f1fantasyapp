@@ -423,9 +423,6 @@ const leaguesRoute = createRoute({
       </div>
     </div>
   ),
-  pendingMs: 200, // Show pending after 200ms to prevent flash for fast loads
-  staleTime: 10_000, // Consider fresh for 10 seconds
-  gcTime: 5 * 60_000, // Keep in memory for 5 minutes
   errorComponent: ({ error }) => (
     <ErrorBoundary level="page">
       <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
@@ -515,9 +512,6 @@ const leagueRoute = createRoute({
       </div>
     </div>
   ),
-  pendingMs: 200, // Show pending after 200ms to prevent flash for fast loads
-  staleTime: 10_000, // Consider fresh for 10 seconds
-  gcTime: 5 * 60_000, // Keep in memory for 5 minutes
   notFoundComponent: () => (
     <div className="flex min-h-screen flex-col items-center justify-center">
       <h1 className="mb-4 text-4xl font-bold">League Not Found</h1>
