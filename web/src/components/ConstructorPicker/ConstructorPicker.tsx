@@ -5,17 +5,17 @@ import type { ComponentType } from 'react';
 
 import { ConstructorCard } from '../ConstructorCard/ConstructorCard';
 import { ConstructorListItem } from '../ConstructorListItem/ConstructorListItem';
-import type { RoleCardProps, RoleListItemProps } from '../RolePicker/RolePicker';
-import { RolePicker } from '../RolePicker/RolePicker';
+import type { LineupCardProps, LineupListItemProps } from '../LineupPicker/LineupPicker';
+import { LineupPicker } from '../LineupPicker/LineupPicker';
 
-// Adapter components to bridge between RolePicker's generic props and Constructor-specific components
-const ConstructorCardAdapter: ComponentType<RoleCardProps<Constructor>> = ({
+// Adapter components to bridge between LineupPicker's generic props and Constructor-specific components
+const ConstructorCardAdapter: ComponentType<LineupCardProps<Constructor>> = ({
   item,
   onClick,
   onRemove,
 }) => <ConstructorCard constructor={item} onOpenSheet={onClick} onRemove={onRemove} />;
 
-const ConstructorListItemAdapter: ComponentType<RoleListItemProps<Constructor>> = ({
+const ConstructorListItemAdapter: ComponentType<LineupListItemProps<Constructor>> = ({
   item,
   onSelect,
 }) => <ConstructorListItem constructor={item} onSelect={onSelect} />;
@@ -27,7 +27,7 @@ interface ConstructorPickerProps {
 
 export function ConstructorPicker({ lineupSize = 2, currentConstructors }: ConstructorPickerProps) {
   return (
-    <RolePicker<Constructor>
+    <LineupPicker<Constructor>
       lineupSize={lineupSize}
       lineup={currentConstructors}
       fetchItems={getActiveConstructors}

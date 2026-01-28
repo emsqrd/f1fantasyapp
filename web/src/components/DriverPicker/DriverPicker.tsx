@@ -5,15 +5,15 @@ import type { ComponentType } from 'react';
 
 import { DriverCard } from '../DriverCard/DriverCard';
 import { DriverListItem } from '../DriverListItem/DriverListItem';
-import type { RoleCardProps, RoleListItemProps } from '../RolePicker/RolePicker';
-import { RolePicker } from '../RolePicker/RolePicker';
+import type { LineupCardProps, LineupListItemProps } from '../LineupPicker/LineupPicker';
+import { LineupPicker } from '../LineupPicker/LineupPicker';
 
-// Adapter components to bridge between RolePicker's generic props and Driver-specific components
-const DriverCardAdapter: ComponentType<RoleCardProps<Driver>> = ({ item, onClick, onRemove }) => (
+// Adapter components to bridge between LineupPicker's generic props and Driver-specific components
+const DriverCardAdapter: ComponentType<LineupCardProps<Driver>> = ({ item, onClick, onRemove }) => (
   <DriverCard driver={item} onOpenSheet={onClick} onRemove={onRemove} />
 );
 
-const DriverListItemAdapter: ComponentType<RoleListItemProps<Driver>> = ({ item, onSelect }) => (
+const DriverListItemAdapter: ComponentType<LineupListItemProps<Driver>> = ({ item, onSelect }) => (
   <DriverListItem driver={item} onSelect={onSelect} />
 );
 
@@ -24,7 +24,7 @@ interface DriverPickerProps {
 
 export function DriverPicker({ lineupSize = 5, currentDrivers }: DriverPickerProps) {
   return (
-    <RolePicker<Driver>
+    <LineupPicker<Driver>
       lineupSize={lineupSize}
       lineup={currentDrivers}
       fetchItems={getActiveDrivers}

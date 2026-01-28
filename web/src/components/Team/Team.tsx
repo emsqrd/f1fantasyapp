@@ -38,7 +38,7 @@ export function Team() {
   }, [team?.drivers]);
 
   // Memoize constructor slot transformation to avoid recalculating on every render
-  const contructorSlots = useMemo(() => {
+  const constructorSlots = useMemo(() => {
     if (!team?.constructors) return Array.from({ length: 2 }, () => null);
 
     return Array.from({ length: 2 }, (_, index) => {
@@ -134,7 +134,7 @@ export function Team() {
         >
           <Card className="py-4">
             <CardContent className="px-4">
-              <ConstructorPicker lineupSize={2} currentConstructors={contructorSlots} />
+              <ConstructorPicker lineupSize={2} currentConstructors={constructorSlots} />
             </CardContent>
           </Card>
         </TabsContent>

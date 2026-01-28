@@ -14,9 +14,9 @@ import {
 
 /**
  * Props for card components displayed in the picker grid.
- * T represents the role type (Driver, Constructor, etc.)
+ * T represents the item type (Driver, Constructor, etc.)
  */
-export interface RoleCardProps<T extends BaseRole> {
+export interface LineupCardProps<T extends BaseRole> {
   /** The item to display, or null for empty positions */
   item: T | null;
   /** Callback when the card is clicked */
@@ -27,9 +27,9 @@ export interface RoleCardProps<T extends BaseRole> {
 
 /**
  * Props for list item components displayed in the selection sheet.
- * T represents the role type (Driver, Constructor, etc.)
+ * T represents the item type (Driver, Constructor, etc.)
  */
-export interface RoleListItemProps<T extends BaseRole> {
+export interface LineupListItemProps<T extends BaseRole> {
   /** The item to display in the list */
   item: T;
   /** Callback when the item is selected */
@@ -37,10 +37,10 @@ export interface RoleListItemProps<T extends BaseRole> {
 }
 
 /**
- * Props for the internal RolePickerContent component.
+ * Props for the internal LineupPickerContent component.
  * This component handles the core picker logic with lineup management and selection.
  */
-interface RolePickerContentProps<T extends BaseRole> {
+interface LineupPickerContentProps<T extends BaseRole> {
   /** Pool of available items to choose from */
   itemPool: T[];
   /** Number of positions in the lineup */
@@ -48,9 +48,9 @@ interface RolePickerContentProps<T extends BaseRole> {
   /** Currently selected items from route loader */
   lineup?: (T | null)[];
   /** Component to render each card in the grid */
-  CardComponent: React.ComponentType<RoleCardProps<T>>;
+  CardComponent: React.ComponentType<LineupCardProps<T>>;
   /** Component to render each item in the selection list */
-  ListItemComponent: React.ComponentType<RoleListItemProps<T>>;
+  ListItemComponent: React.ComponentType<LineupListItemProps<T>>;
   /** Async function to add an item to the team */
   addToTeam: (itemId: number, position: number) => Promise<void>;
   /** Async function to remove an item from the team */
@@ -68,7 +68,7 @@ interface RolePickerContentProps<T extends BaseRole> {
  * Derives lineup from route data (server state as source of truth).
  * Mutations wait for server response before UI updates.
  */
-function RolePickerContent<T extends BaseRole>({
+function LineupPickerContent<T extends BaseRole>({
   itemPool,
   lineupSize,
   lineup: initialItems = [],
@@ -79,13 +79,13 @@ function RolePickerContent<T extends BaseRole>({
   sheetTitle,
   sheetDescription,
   gridClassName = 'grid grid-cols-1 gap-4 sm:grid-cols-2',
-}: RolePickerContentProps<T>) {
+}: LineupPickerContentProps<T>) {
   const router = useRouter();
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
   const [isPending, setIsPending] = useState(false);
 
   // Derive lineup from route data
-  const lineup = useMemo(() => {
+  const displayLineup = useMemo(() => {
     const safe = initialItems ?? [];
     return safe.length === lineupSize
       ? safe
@@ -95,10 +95,10 @@ function RolePickerContent<T extends BaseRole>({
   // Derive pool from current lineup
   const pool = useMemo(() => {
     const selectedIds = new Set(
-      lineup.filter((item): item is T => item !== null).map((item) => item.id),
+      displayLineup.filter((item): item is T => item !== null).map((item) => item.id),
     );
     return itemPool.filter((item) => !selectedIds.has(item.id));
-  }, [itemPool, lineup]);
+  }, [itemPool, displayLineup]);
 
   const handleAdd = async (position: number, item: T) => {
     setIsPending(true);
@@ -128,8 +128,8 @@ function RolePickerContent<T extends BaseRole>({
   return (
     <>
       {/* Grid of cards representing lineup positions */}
-      <div className={gridClassName} style={{ position: 'relative' }}>
-        {lineup.map((item, idx) => (
+      <div className={`${gridClassName} relative`}>
+        {displayLineup.map((item, idx) => (
           <CardComponent
             key={idx}
             item={item}
@@ -182,18 +182,18 @@ function RolePickerContent<T extends BaseRole>({
 }
 
 /**
- * Props for the main RolePicker component.
+ * Props for the main LineupPicker component.
  * This defines the external API for using the generic picker.
  */
-export interface RolePickerProps<T extends BaseRole> {
+export interface LineupPickerProps<T extends BaseRole> {
   /** Number of positions in the lineup (e.g., 5 for drivers, 2 for constructors) */
   lineupSize?: number;
   /** Initially selected items */
   lineup?: (T | null)[];
   /** Component to render each card in the grid */
-  CardComponent: React.ComponentType<RoleCardProps<T>>;
+  CardComponent: React.ComponentType<LineupCardProps<T>>;
   /** Component to render each item in the selection list */
-  ListItemComponent: React.ComponentType<RoleListItemProps<T>>;
+  ListItemComponent: React.ComponentType<LineupListItemProps<T>>;
   /** Async function to fetch available items */
   fetchItems: () => Promise<T[]>;
   /** Async function to add an item to the team */
@@ -213,7 +213,7 @@ export interface RolePickerProps<T extends BaseRole> {
 }
 
 /**
- * Generic RolePicker component for selecting items (drivers, constructors, etc.) for a team.
+ * Generic LineupPicker component for selecting items (drivers, constructors, etc.) for a team.
  *
  * This component handles:
  * - Data fetching of available items pool with loading and error states
@@ -222,7 +222,7 @@ export interface RolePickerProps<T extends BaseRole> {
  * - Automatic revert on mutation errors
  * - Generic rendering via component props
  */
-export function RolePicker<T extends BaseRole>({
+export function LineupPicker<T extends BaseRole>({
   lineupSize = 5,
   lineup: initialItems,
   CardComponent,
@@ -235,7 +235,7 @@ export function RolePicker<T extends BaseRole>({
   loadingMessage,
   errorPrefix,
   gridClassName,
-}: RolePickerProps<T>) {
+}: LineupPickerProps<T>) {
   const [itemPool, setItemPool] = useState<T[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -274,7 +274,7 @@ export function RolePicker<T extends BaseRole>({
   }
 
   return (
-    <RolePickerContent
+    <LineupPickerContent
       itemPool={itemPool}
       lineupSize={lineupSize}
       lineup={initialItems}

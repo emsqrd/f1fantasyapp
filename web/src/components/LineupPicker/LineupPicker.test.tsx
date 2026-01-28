@@ -4,7 +4,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { RolePicker } from './RolePicker';
+import { LineupPicker } from './LineupPicker';
 
 // Mock TanStack Router
 const mockInvalidate = vi.fn();
@@ -85,7 +85,7 @@ function MockConstructorListItem({ item, onSelect }: { item: Constructor; onSele
   );
 }
 
-describe('RolePicker', () => {
+describe('LineupPicker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockInvalidate.mockResolvedValue(undefined);
@@ -96,7 +96,7 @@ describe('RolePicker', () => {
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>(() => new Promise(() => {})); // Never resolves
 
       render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
           fetchItems={mockFetchItems}
@@ -119,7 +119,7 @@ describe('RolePicker', () => {
       const mockFetchItems = vi.fn().mockRejectedValue(new Error('Network error'));
 
       render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
           fetchItems={mockFetchItems}
@@ -145,7 +145,7 @@ describe('RolePicker', () => {
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
 
       render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           lineupSize={5}
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
@@ -172,7 +172,7 @@ describe('RolePicker', () => {
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
 
       render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           lineupSize={3}
           lineup={initialDrivers}
           CardComponent={MockDriverCard}
@@ -195,7 +195,7 @@ describe('RolePicker', () => {
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
 
       render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
           fetchItems={mockFetchItems}
@@ -220,7 +220,7 @@ describe('RolePicker', () => {
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
 
       render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           lineupSize={2}
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
@@ -250,7 +250,7 @@ describe('RolePicker', () => {
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
 
       render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           lineupSize={2}
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
@@ -280,7 +280,7 @@ describe('RolePicker', () => {
       const mockAddToTeam = vi.fn().mockResolvedValue(undefined);
 
       render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           lineupSize={2}
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
@@ -319,7 +319,7 @@ describe('RolePicker', () => {
       const mockAddToTeam = vi.fn().mockResolvedValue(undefined);
 
       render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           lineupSize={2}
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
@@ -350,7 +350,7 @@ describe('RolePicker', () => {
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
 
       render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           lineupSize={2}
           lineup={[mockDrivers[0], null]}
           CardComponent={MockDriverCard}
@@ -379,7 +379,7 @@ describe('RolePicker', () => {
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
 
       render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           lineupSize={2}
           lineup={[mockDrivers[0], null]}
           CardComponent={MockDriverCard}
@@ -422,7 +422,7 @@ describe('RolePicker', () => {
       const mockRemoveFromTeam = vi.fn().mockResolvedValue(undefined);
 
       render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           lineupSize={2}
           lineup={initialDrivers}
           CardComponent={MockDriverCard}
@@ -451,7 +451,7 @@ describe('RolePicker', () => {
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
 
       render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           lineupSize={2}
           lineup={[null, null]}
           CardComponent={MockDriverCard}
@@ -480,7 +480,7 @@ describe('RolePicker', () => {
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
 
       render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           lineupSize={2}
           lineup={[null, null]}
           CardComponent={MockDriverCard}
@@ -516,7 +516,7 @@ describe('RolePicker', () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           lineupSize={2}
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
@@ -556,7 +556,7 @@ describe('RolePicker', () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           lineupSize={2}
           lineup={initialDrivers}
           CardComponent={MockDriverCard}
@@ -605,7 +605,7 @@ describe('RolePicker', () => {
         .mockResolvedValue(mockConstructors);
 
       render(
-        <RolePicker<Constructor>
+        <LineupPicker<Constructor>
           lineupSize={2}
           CardComponent={MockConstructorCard}
           ListItemComponent={MockConstructorListItem}
@@ -632,7 +632,7 @@ describe('RolePicker', () => {
       const mockAddToTeam = vi.fn().mockResolvedValue(undefined);
 
       render(
-        <RolePicker<Constructor>
+        <LineupPicker<Constructor>
           lineupSize={2}
           CardComponent={MockConstructorCard}
           ListItemComponent={MockConstructorListItem}
@@ -659,7 +659,9 @@ describe('RolePicker', () => {
 
       // Verify the sheet closes after selection
       await waitFor(() => {
-        expect(screen.queryByRole('heading', { name: 'Select Constructor' })).not.toBeInTheDocument();
+        expect(
+          screen.queryByRole('heading', { name: 'Select Constructor' }),
+        ).not.toBeInTheDocument();
       });
     });
   });
@@ -670,7 +672,7 @@ describe('RolePicker', () => {
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
 
       const { container } = render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           lineupSize={2}
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
@@ -696,7 +698,7 @@ describe('RolePicker', () => {
       const mockFetchItems = vi.fn<() => Promise<Driver[]>>().mockResolvedValue(mockDrivers);
 
       const { container } = render(
-        <RolePicker<Driver>
+        <LineupPicker<Driver>
           lineupSize={2}
           CardComponent={MockDriverCard}
           ListItemComponent={MockDriverListItem}
