@@ -28,7 +28,7 @@ export function Team() {
   }) as { team: TeamType };
 
   // Memoize driver slot transformation to avoid recalculating on every render
-  const initialDriverSlots = useMemo(() => {
+  const driverSlots = useMemo(() => {
     if (!team?.drivers) return Array.from({ length: 5 }, () => null);
 
     return Array.from({ length: 5 }, (_, index) => {
@@ -38,7 +38,7 @@ export function Team() {
   }, [team?.drivers]);
 
   // Memoize constructor slot transformation to avoid recalculating on every render
-  const initialConstructorSlots = useMemo(() => {
+  const constructorSlots = useMemo(() => {
     if (!team?.constructors) return Array.from({ length: 2 }, () => null);
 
     return Array.from({ length: 2 }, (_, index) => {
@@ -123,7 +123,7 @@ export function Team() {
         >
           <Card className="py-4">
             <CardContent className="px-4">
-              <DriverPicker lineupSize={5} initialDrivers={initialDriverSlots} />
+              <DriverPicker lineupSize={5} currentDrivers={driverSlots} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -134,7 +134,7 @@ export function Team() {
         >
           <Card className="py-4">
             <CardContent className="px-4">
-              <ConstructorPicker lineupSize={2} initialConstructors={initialConstructorSlots} />
+              <ConstructorPicker lineupSize={2} currentConstructors={constructorSlots} />
             </CardContent>
           </Card>
         </TabsContent>

@@ -4,6 +4,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DriverPicker } from './DriverPicker';
 
+// Mock TanStack Router
+const mockInvalidate = vi.fn();
+vi.mock('@tanstack/react-router', () => ({
+  useRouter: () => ({
+    invalidate: mockInvalidate,
+  }),
+}));
+
 // Mock the driver service (external API call - appropriate to mock)
 const mockGetActiveDrivers = vi.fn();
 vi.mock('@/services/driverService', () => ({
@@ -19,11 +27,11 @@ vi.mock('@/services/teamService', () => ({
 }));
 
 const mockDrivers = [
-  { id: 1, firstName: 'Oscar', lastName: 'Piastri', countryAbbreviation: 'AUS' },
-  { id: 2, firstName: 'Lando', lastName: 'Norris', countryAbbreviation: 'GBR' },
-  { id: 3, firstName: 'Charles', lastName: 'Leclerc', countryAbbreviation: 'MON' },
-  { id: 4, firstName: 'Max', lastName: 'Verstappen', countryAbbreviation: 'NED' },
-  { id: 5, firstName: 'Lewis', lastName: 'Hamilton', countryAbbreviation: 'GBR' },
+  { type: 'driver' as const, id: 1, firstName: 'Oscar', lastName: 'Piastri', countryAbbreviation: 'AUS' },
+  { type: 'driver' as const, id: 2, firstName: 'Lando', lastName: 'Norris', countryAbbreviation: 'GBR' },
+  { type: 'driver' as const, id: 3, firstName: 'Charles', lastName: 'Leclerc', countryAbbreviation: 'MON' },
+  { type: 'driver' as const, id: 4, firstName: 'Max', lastName: 'Verstappen', countryAbbreviation: 'NED' },
+  { type: 'driver' as const, id: 5, firstName: 'Lewis', lastName: 'Hamilton', countryAbbreviation: 'GBR' },
 ];
 
 // Helper to find and click a driver's add button in the pool list within the sheet
@@ -44,6 +52,7 @@ describe('DriverPicker', () => {
     mockGetActiveDrivers.mockResolvedValue(mockDrivers);
     mockAddDriverToTeam.mockResolvedValue(undefined);
     mockRemoveDriverFromTeam.mockResolvedValue(undefined);
+    mockInvalidate.mockResolvedValue(undefined);
   });
 
   describe('Loading State', () => {
@@ -109,7 +118,7 @@ describe('DriverPicker', () => {
       expect(screen.getByText('Lewis Hamilton')).toBeInTheDocument();
     });
 
-    it('adds selected driver to slot and closes sheet', async () => {
+    it('calls add service and invalidates router when driver is selected', async () => {
       const user = userEvent.setup();
       render(<DriverPicker />);
 
@@ -120,13 +129,14 @@ describe('DriverPicker', () => {
       await selectDriverFromPool(user, 'Oscar Piastri');
 
       await waitFor(() => {
-        expect(screen.queryByText('Select Driver')).not.toBeInTheDocument();
+        expect(mockAddDriverToTeam).toHaveBeenCalledWith(1, 0);
+        expect(mockInvalidate).toHaveBeenCalled();
       });
 
-      // Oscar Piastri should now appear as a selected driver (in heading)
-      expect(screen.getByRole('heading', { name: 'Oscar Piastri' })).toBeInTheDocument();
-      // Should have 4 empty slots remaining
-      expect(screen.getAllByRole('button', { name: /add driver/i })).toHaveLength(4);
+      // Verify sheet closes after selection
+      await waitFor(() => {
+        expect(screen.queryByText('Select Driver')).not.toBeInTheDocument();
+      });
     });
 
     it('closes sheet without selecting when pressing escape', async () => {
@@ -149,114 +159,93 @@ describe('DriverPicker', () => {
   });
 
   describe('Driver Removal', () => {
-    it('removes driver from slot when remove button is clicked', async () => {
+    it('calls remove service and invalidates router when driver is removed', async () => {
       const user = userEvent.setup();
-      render(<DriverPicker />);
+      const currentDrivers = [
+        mockDrivers[0], // Oscar Piastri
+        null,
+        null,
+        null,
+        null,
+      ];
+      render(<DriverPicker currentDrivers={currentDrivers} />);
 
-      // Add a driver first
-      const addButtons = await screen.findAllByRole('button', { name: /add driver/i });
-      await user.click(addButtons[0]);
-      await screen.findByText('Select Driver');
-      await selectDriverFromPool(user, 'Oscar Piastri');
-
-      await waitFor(() => {
-        expect(screen.queryByText('Select Driver')).not.toBeInTheDocument();
-      });
+      // Verify driver is displayed
+      expect(await screen.findByRole('heading', { name: 'Oscar Piastri' })).toBeInTheDocument();
 
       // Remove the driver using the remove button
       await user.click(screen.getByRole('button', { name: /remove role/i }));
 
-      // Driver should be removed, all slots empty again
-      expect(screen.queryByRole('heading', { name: 'Oscar Piastri' })).not.toBeInTheDocument();
-      expect(screen.getAllByRole('button', { name: /add driver/i })).toHaveLength(5);
+      await waitFor(() => {
+        expect(mockRemoveDriverFromTeam).toHaveBeenCalledWith(0);
+        expect(mockInvalidate).toHaveBeenCalled();
+      });
     });
   });
 
   describe('Pool Management', () => {
-    it('removes selected driver from available pool', async () => {
+    it('excludes drivers in lineup from available pool', async () => {
       const user = userEvent.setup();
-      render(<DriverPicker />);
+      const currentDrivers = [
+        mockDrivers[0], // Oscar Piastri
+        null,
+        null,
+        null,
+        null,
+      ];
+      render(<DriverPicker currentDrivers={currentDrivers} />);
 
-      // Open sheet and add Oscar Piastri
-      const addButtons = await screen.findAllByRole('button', { name: /add driver/i });
+      // Verify driver is displayed in lineup
+      expect(await screen.findByRole('heading', { name: 'Oscar Piastri' })).toBeInTheDocument();
+
+      // Open sheet for second slot
+      const addButtons = screen.getAllByRole('button', { name: /add driver/i });
       await user.click(addButtons[0]);
       await screen.findByText('Select Driver');
-      expect(screen.getAllByRole('listitem')).toHaveLength(5);
 
-      await selectDriverFromPool(user, 'Oscar Piastri');
-
-      // Open sheet again for second slot
-      await waitFor(() => {
-        expect(screen.queryByText('Select Driver')).not.toBeInTheDocument();
-      });
-
-      const remainingAddButtons = screen.getAllByRole('button', { name: /add driver/i });
-      await user.click(remainingAddButtons[0]);
-      await screen.findByText('Select Driver');
-
-      // Pool should now have only 4 drivers (Oscar Piastri was removed)
+      // Pool should have only 4 drivers (Oscar Piastri is already in lineup)
       const listItems = screen.getAllByRole('listitem');
       expect(listItems).toHaveLength(4);
       expect(screen.getByText('Lando Norris')).toBeInTheDocument();
       expect(screen.getByText('Charles Leclerc')).toBeInTheDocument();
       expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
       expect(screen.getByText('Lewis Hamilton')).toBeInTheDocument();
+      // Verify Oscar Piastri is not in the pool
+      expect(within(screen.getByRole('list')).queryByText('Oscar Piastri')).not.toBeInTheDocument();
     });
 
-    it('returns removed driver back to available pool', async () => {
+    it('includes all drivers in pool when lineup is empty', async () => {
       const user = userEvent.setup();
       render(<DriverPicker />);
 
-      // Add and then remove a driver
       const addButtons = await screen.findAllByRole('button', { name: /add driver/i });
       await user.click(addButtons[0]);
       await screen.findByText('Select Driver');
-      await selectDriverFromPool(user, 'Oscar Piastri');
 
-      await waitFor(() => {
-        expect(screen.queryByText('Select Driver')).not.toBeInTheDocument();
-      });
-
-      await user.click(screen.getByRole('button', { name: /remove role/i }));
-
-      // Open sheet to check pool
-      const allAddButtons = screen.getAllByRole('button', { name: /add driver/i });
-      await user.click(allAddButtons[0]);
-      await screen.findByText('Select Driver');
-
-      // Oscar Piastri should be back in the pool - all 5 drivers available
+      // All 5 drivers should be available in the pool
       const listItems = screen.getAllByRole('listitem');
       expect(listItems).toHaveLength(5);
       expect(screen.getByText('Oscar Piastri')).toBeInTheDocument();
+      expect(screen.getByText('Lando Norris')).toBeInTheDocument();
+      expect(screen.getByText('Charles Leclerc')).toBeInTheDocument();
+      expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
+      expect(screen.getByText('Lewis Hamilton')).toBeInTheDocument();
     });
   });
 
   describe('Multi-Driver Workflow', () => {
-    it('handles adding multiple drivers to different slots', async () => {
-      const user = userEvent.setup();
-      render(<DriverPicker />);
+    it('displays multiple drivers when provided via currentDrivers prop', async () => {
+      const currentDrivers = [
+        mockDrivers[0], // Oscar Piastri
+        mockDrivers[1], // Lando Norris
+        null,
+        null,
+        null,
+      ];
+      render(<DriverPicker currentDrivers={currentDrivers} />);
 
-      // Add first driver (Oscar Piastri)
-      const addButtons = await screen.findAllByRole('button', { name: /add driver/i });
-      await user.click(addButtons[0]);
-      await screen.findByText('Select Driver');
-      await selectDriverFromPool(user, 'Oscar Piastri');
-
-      // Add second driver (Lando Norris)
-      await waitFor(() => {
-        expect(screen.queryByText('Select Driver')).not.toBeInTheDocument();
-      });
-      const remainingSlotButtons = screen.getAllByRole('button', { name: /add driver/i });
-      await user.click(remainingSlotButtons[0]);
-      await screen.findByText('Select Driver');
-      await selectDriverFromPool(user, 'Lando Norris');
-
-      await waitFor(() => {
-        expect(screen.queryByText('Select Driver')).not.toBeInTheDocument();
-      });
-
-      // Verify two drivers are selected (shown as headings in filled cards)
-      expect(screen.getByRole('heading', { name: 'Oscar Piastri' })).toBeInTheDocument();
+      // Verify both drivers are displayed (shown as headings in filled cards)
+      expect(await screen.findByRole('heading', { name: 'Oscar Piastri' })).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: 'Lando Norris' })).toBeInTheDocument();
       // 3 empty slots remaining
       expect(screen.getAllByRole('button', { name: /add driver/i })).toHaveLength(3);

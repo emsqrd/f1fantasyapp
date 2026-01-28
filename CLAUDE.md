@@ -2,6 +2,14 @@
 
 Full-stack F1 Fantasy Sports application combining React frontend and .NET backend.
 
+## Claude Code Preferences
+
+- Do not include the "Generated with Claude Code" footer in commit messages or PR descriptions
+- Avoid over-engineering; keep solutions focused on the requested task
+- When in doubt about approach, ask rather than proceed
+- Keep solutions focused on solving the cause of a problem, not the symptom
+- Use conventional commit styling for commit messages
+
 ## Repository Structure
 
 - `web/` - React/TypeScript frontend with Vite (see web/CLAUDE.md)

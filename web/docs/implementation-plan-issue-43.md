@@ -397,7 +397,7 @@ root.render(
 - Add `role="alert"` if using inline error div
 - Already has loading state with `role="status"` (keep)
 
-### 4.3 RolePicker.tsx
+### 4.3 LineupPicker.tsx
 
 **Changes:**
 
