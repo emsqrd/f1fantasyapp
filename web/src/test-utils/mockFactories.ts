@@ -10,7 +10,6 @@ import type { Team, TeamDriver } from '@/contracts/Team';
  */
 export function createMockDriver(overrides: Partial<Driver> = {}): Driver {
   return {
-    type: 'driver',
     id: 1,
     firstName: 'Test',
     lastName: 'Driver',

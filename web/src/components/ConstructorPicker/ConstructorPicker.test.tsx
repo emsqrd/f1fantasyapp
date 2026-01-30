@@ -27,10 +27,10 @@ vi.mock('@/services/teamService', () => ({
 }));
 
 const mockConstructors = [
-  { type: 'constructor' as const, id: 1, name: 'Ferrari', fullName: 'Scuderia Ferrari', countryAbbreviation: 'ITA' },
-  { type: 'constructor' as const, id: 2, name: 'McLaren', fullName: 'McLaren F1 Team', countryAbbreviation: 'GBR' },
-  { type: 'constructor' as const, id: 3, name: 'Mercedes', fullName: 'Mercedes-AMG Petronas', countryAbbreviation: 'GER' },
-  { type: 'constructor' as const, id: 4, name: 'Red Bull', fullName: 'Oracle Red Bull Racing', countryAbbreviation: 'AUT' },
+  { id: 1, name: 'Ferrari', fullName: 'Scuderia Ferrari', countryAbbreviation: 'ITA' },
+  { id: 2, name: 'McLaren', fullName: 'McLaren F1 Team', countryAbbreviation: 'GBR' },
+  { id: 3, name: 'Mercedes', fullName: 'Mercedes-AMG Petronas', countryAbbreviation: 'GER' },
+  { id: 4, name: 'Red Bull', fullName: 'Oracle Red Bull Racing', countryAbbreviation: 'AUT' },
 ];
 
 // Helper to find and click a constructor's add button in the pool list within the sheet

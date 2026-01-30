@@ -27,11 +27,11 @@ vi.mock('@/services/teamService', () => ({
 }));
 
 const mockDrivers = [
-  { type: 'driver' as const, id: 1, firstName: 'Oscar', lastName: 'Piastri', countryAbbreviation: 'AUS' },
-  { type: 'driver' as const, id: 2, firstName: 'Lando', lastName: 'Norris', countryAbbreviation: 'GBR' },
-  { type: 'driver' as const, id: 3, firstName: 'Charles', lastName: 'Leclerc', countryAbbreviation: 'MON' },
-  { type: 'driver' as const, id: 4, firstName: 'Max', lastName: 'Verstappen', countryAbbreviation: 'NED' },
-  { type: 'driver' as const, id: 5, firstName: 'Lewis', lastName: 'Hamilton', countryAbbreviation: 'GBR' },
+  { id: 1, firstName: 'Oscar', lastName: 'Piastri', countryAbbreviation: 'AUS' },
+  { id: 2, firstName: 'Lando', lastName: 'Norris', countryAbbreviation: 'GBR' },
+  { id: 3, firstName: 'Charles', lastName: 'Leclerc', countryAbbreviation: 'MON' },
+  { id: 4, firstName: 'Max', lastName: 'Verstappen', countryAbbreviation: 'NED' },
+  { id: 5, firstName: 'Lewis', lastName: 'Hamilton', countryAbbreviation: 'GBR' },
 ];
 
 // Helper to find and click a driver's add button in the pool list within the sheet

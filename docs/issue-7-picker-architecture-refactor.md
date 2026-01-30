@@ -64,43 +64,54 @@ export interface Constructor {
 The **only shared abstraction** in the new architecture. Extracts state logic from current `LineupPickerContent`:
 - `displayLineup` — memoized lineup with null padding
 - `pool` — memoized available items filtered to exclude selected
-- `selectedPosition` / `openSheet` / `closeSheet` — sheet state management
+- `selectedPosition` / `openPicker` / `closePicker` — picker overlay state management
 - `isPending` — mutation in progress
-- `handleAdd(position, item)` — calls addToTeam, invalidates router, closes sheet
-- `handleRemove(position)` — calls removeFromTeam, invalidates router
+- `error` — error message for failed operations
+- `handleAdd(position, item)` — calls addToTeam, invalidates router, closes picker on success, logs errors with Sentry
+- `handleRemove(position)` — calls removeFromTeam, invalidates router, logs errors with Sentry
 
-Parameters: `{ items, lineup, lineupSize, addToTeam, removeFromTeam }`
+Parameters: `{ items, lineup, lineupSize, itemType, addToTeam, removeFromTeam }`
 
 ```ts
 import { useRouter } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
+import * as Sentry from '@sentry/react';
 
 interface UseLineupPickerOptions<T extends { id: number }> {
   items: T[];
   lineup: (T | null)[];
   lineupSize: number;
+  itemType: string;
   addToTeam: (itemId: number, position: number) => Promise<void>;
   removeFromTeam: (position: number) => Promise<void>;
 }
 
+/**
+ * Manages lineup selection state and operations for picker components.
+ * Handles item pool filtering, picker state, and add/remove operations with error handling.
+ */
 export function useLineupPicker<T extends { id: number }>({
   items,
   lineup,
   lineupSize,
+  itemType,
   addToTeam,
   removeFromTeam,
 }: UseLineupPickerOptions<T>) {
   const router = useRouter();
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Pad lineup with nulls to match lineupSize for empty slots
   const displayLineup = useMemo(() => {
-    const safe = lineup ?? [];
-    return safe.length === lineupSize
-      ? safe
-      : [...safe, ...Array(lineupSize - safe.length).fill(null)];
+    const currentLineup = lineup ?? [];
+    return currentLineup.length === lineupSize
+      ? currentLineup
+      : [...currentLineup, ...Array(lineupSize - currentLineup.length).fill(null)];
   }, [lineup, lineupSize]);
 
+  // Filter out already-selected items from the available pool
   const pool = useMemo(() => {
     const selectedIds = new Set(
       displayLineup.filter((item): item is T => item !== null).map((item) => item.id),
@@ -108,28 +119,59 @@ export function useLineupPicker<T extends { id: number }>({
     return items.filter((item) => !selectedIds.has(item.id));
   }, [items, displayLineup]);
 
+  /**
+   * Adds an item to the lineup at the specified position.
+   * Closes the picker on success, keeps it open on error for retry.
+   */
   const handleAdd = async (position: number, item: T) => {
     setIsPending(true);
+    setError(null);
     try {
       await addToTeam(item.id, position);
       await router.invalidate();
       setSelectedPosition(null);
-    } catch (error) {
-      console.error('Failed to add item:', error);
+    } catch (err) {
+      Sentry.logger.error(`Failed to add ${itemType} to lineup`, {
+        itemType,
+        position,
+        itemId: item.id,
+        error: err
+      });
+      setError(`Failed to add ${itemType}. Please try again.`);
     } finally {
       setIsPending(false);
     }
   };
 
+  /**
+   * Removes an item from the lineup at the specified position.
+   */
   const handleRemove = async (position: number) => {
     setIsPending(true);
+    setError(null);
     try {
       await removeFromTeam(position);
       await router.invalidate();
-    } catch (error) {
-      console.error('Failed to remove item:', error);
+    } catch (err) {
+      Sentry.logger.error(`Failed to remove ${itemType} from lineup`, {
+        itemType,
+        position,
+        error: err
+      });
+      setError(`Failed to remove ${itemType}. Please try again.`);
     } finally {
       setIsPending(false);
+    }
+  };
+
+  /**
+   * Opens the picker overlay for the specified position.
+   * Clears any previous errors and prevents opening during pending operations.
+   */
+  const openPicker = (position: number) => {
+    if (!isPending) {
+      setError(null);
+      setSelectedPosition(position);
     }
   };
 
@@ -138,8 +180,9 @@ export function useLineupPicker<T extends { id: number }>({
     pool,
     selectedPosition,
     isPending,
-    openSheet: (position: number) => !isPending && setSelectedPosition(position),
-    closeSheet: () => setSelectedPosition(null),
+    error,
+    openPicker,
+    closePicker: () => setSelectedPosition(null),
     handleAdd,
     handleRemove,
   };
@@ -165,11 +208,11 @@ import { Card, CardContent } from '../ui/card';
 
 interface DriverCardProps {
   driver: Driver | null;
-  onOpenSheet: () => void;
+  onOpenPicker: () => void;
   onRemove: () => void;
 }
 
-export function DriverCard({ driver, onOpenSheet, onRemove }: DriverCardProps) {
+export function DriverCard({ driver, onOpenPicker, onRemove }: DriverCardProps) {
   return (
     <Card className="bg-secondary relative py-4">
       <CardContent className="group flex h-full items-center justify-between px-3">
@@ -184,7 +227,7 @@ export function DriverCard({ driver, onOpenSheet, onRemove }: DriverCardProps) {
           </div>
         ) : (
           <Button
-            onClick={onOpenSheet}
+            onClick={onOpenPicker}
             variant="ghost"
             className="flex items-center gap-2 !bg-transparent"
           >
@@ -226,11 +269,11 @@ import { Card, CardContent } from '../ui/card';
 
 interface ConstructorCardProps {
   constructor: Constructor | null;
-  onOpenSheet: () => void;
+  onOpenPicker: () => void;
   onRemove: () => void;
 }
 
-export function ConstructorCard({ constructor, onOpenSheet, onRemove }: ConstructorCardProps) {
+export function ConstructorCard({ constructor, onOpenPicker, onRemove }: ConstructorCardProps) {
   return (
     <Card className="bg-secondary relative py-4">
       <CardContent className="group flex h-full items-center justify-between px-3">
@@ -243,7 +286,7 @@ export function ConstructorCard({ constructor, onOpenSheet, onRemove }: Construc
           </div>
         ) : (
           <Button
-            onClick={onOpenSheet}
+            onClick={onOpenPicker}
             variant="ghost"
             className="flex items-center gap-2 !bg-transparent"
           >
@@ -286,6 +329,7 @@ import { addDriverToTeam, removeDriverFromTeam } from '@/services/teamService';
 import { useLineupPicker } from '@/hooks/useLineupPicker';
 import { DriverCard } from '../DriverCard/DriverCard';
 import { DriverListItem } from '../DriverListItem/DriverListItem';
+import { InlineError } from '../InlineError/InlineError';
 import { ScrollArea } from '../ui/scroll-area';
 import {
   Sheet,
@@ -308,14 +352,16 @@ export function DriverPicker({ activeDrivers, currentDrivers, lineupSize = 5 }: 
     pool,
     selectedPosition,
     isPending,
-    openSheet,
-    closeSheet,
+    error,
+    openPicker,
+    closePicker,
     handleAdd,
     handleRemove,
   } = useLineupPicker({
     items: activeDrivers,
     lineup: currentDrivers,
     lineupSize,
+    itemType: 'driver',
     addToTeam: addDriverToTeam,
     removeFromTeam: removeDriverFromTeam,
   });
@@ -327,7 +373,7 @@ export function DriverPicker({ activeDrivers, currentDrivers, lineupSize = 5 }: 
           <DriverCard
             key={idx}
             driver={driver}
-            onOpenSheet={() => openSheet(idx)}
+            onOpenPicker={() => openPicker(idx)}
             onRemove={() => handleRemove(idx)}
           />
         ))}
@@ -341,7 +387,7 @@ export function DriverPicker({ activeDrivers, currentDrivers, lineupSize = 5 }: 
 
       <Sheet
         open={selectedPosition !== null && !isPending}
-        onOpenChange={(open) => !open && closeSheet()}
+        onOpenChange={(open) => !open && closePicker()}
       >
         <SheetTrigger asChild>
           <div />
@@ -352,6 +398,7 @@ export function DriverPicker({ activeDrivers, currentDrivers, lineupSize = 5 }: 
             <SheetDescription>
               Choose a driver from the list below to add to your team.
             </SheetDescription>
+            {error && <InlineError message={error} />}
           </SheetHeader>
           <ScrollArea className="h-full min-h-0 flex-1 pr-4 pl-4">
             <ul className="space-y-2">
@@ -390,6 +437,7 @@ import { addConstructorToTeam, removeConstructorFromTeam } from '@/services/team
 import { useLineupPicker } from '@/hooks/useLineupPicker';
 import { ConstructorCard } from '../ConstructorCard/ConstructorCard';
 import { ConstructorListItem } from '../ConstructorListItem/ConstructorListItem';
+import { InlineError } from '../InlineError/InlineError';
 import { ScrollArea } from '../ui/scroll-area';
 import {
   Sheet,
@@ -416,14 +464,16 @@ export function ConstructorPicker({
     pool,
     selectedPosition,
     isPending,
-    openSheet,
-    closeSheet,
+    error,
+    openPicker,
+    closePicker,
     handleAdd,
     handleRemove,
   } = useLineupPicker({
     items: activeConstructors,
     lineup: currentConstructors,
     lineupSize,
+    itemType: 'constructor',
     addToTeam: addConstructorToTeam,
     removeFromTeam: removeConstructorFromTeam,
   });
@@ -435,7 +485,7 @@ export function ConstructorPicker({
           <ConstructorCard
             key={idx}
             constructor={constructor}
-            onOpenSheet={() => openSheet(idx)}
+            onOpenPicker={() => openPicker(idx)}
             onRemove={() => handleRemove(idx)}
           />
         ))}
@@ -449,7 +499,7 @@ export function ConstructorPicker({
 
       <Sheet
         open={selectedPosition !== null && !isPending}
-        onOpenChange={(open) => !open && closeSheet()}
+        onOpenChange={(open) => !open && closePicker()}
       >
         <SheetTrigger asChild>
           <div />
@@ -460,6 +510,7 @@ export function ConstructorPicker({
             <SheetDescription>
               Choose a constructor from the list below to add to your team.
             </SheetDescription>
+            {error && <InlineError message={error} />}
           </SheetHeader>
           <ScrollArea className="h-full min-h-0 flex-1 pr-4 pl-4">
             <ul className="space-y-2">

@@ -587,7 +587,6 @@ describe('LineupPicker', () => {
 
   describe('Generic Type Support - Constructors', () => {
     const createMockConstructor = (overrides: Partial<Constructor> = {}): Constructor => ({
-      type: 'constructor',
       id: 1,
       name: 'Red Bull Racing',
       fullName: 'Oracle Red Bull Racing',

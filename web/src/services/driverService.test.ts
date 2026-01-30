@@ -22,14 +22,12 @@ describe('driverService', () => {
       const mockDrivers: Driver[] = [
         {
           id: 1,
-          type: 'driver',
           firstName: 'Max',
           lastName: 'Verstappen',
           countryAbbreviation: 'NL',
         },
         {
           id: 2,
-          type: 'driver',
           firstName: 'Lewis',
           lastName: 'Hamilton',
           countryAbbreviation: 'GB',
