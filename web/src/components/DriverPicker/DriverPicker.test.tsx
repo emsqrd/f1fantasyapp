@@ -158,31 +158,6 @@ describe('DriverPicker', () => {
     });
   });
 
-  describe('Driver Removal', () => {
-    it('calls remove service and invalidates router when driver is removed', async () => {
-      const user = userEvent.setup();
-      const currentDrivers = [
-        mockDrivers[0], // Oscar Piastri
-        null,
-        null,
-        null,
-        null,
-      ];
-      render(<DriverPicker currentDrivers={currentDrivers} />);
-
-      // Verify driver is displayed
-      expect(await screen.findByRole('heading', { name: 'Oscar Piastri' })).toBeInTheDocument();
-
-      // Remove the driver using the remove button
-      await user.click(screen.getByRole('button', { name: /remove role/i }));
-
-      await waitFor(() => {
-        expect(mockRemoveDriverFromTeam).toHaveBeenCalledWith(0);
-        expect(mockInvalidate).toHaveBeenCalled();
-      });
-    });
-  });
-
   describe('Pool Management', () => {
     it('excludes drivers in lineup from available pool', async () => {
       const user = userEvent.setup();

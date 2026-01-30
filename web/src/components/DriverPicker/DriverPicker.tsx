@@ -10,7 +10,7 @@ import { LineupPicker } from '../LineupPicker/LineupPicker';
 
 // Adapter components to bridge between LineupPicker's generic props and Driver-specific components
 const DriverCardAdapter: ComponentType<LineupCardProps<Driver>> = ({ item, onClick, onRemove }) => (
-  <DriverCard driver={item} onOpenSheet={onClick} onRemove={onRemove} />
+  <DriverCard driver={item} onOpenPicker={onClick} onRemove={onRemove} />
 );
 
 const DriverListItemAdapter: ComponentType<LineupListItemProps<Driver>> = ({ item, onSelect }) => (

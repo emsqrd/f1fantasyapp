@@ -1,63 +1,99 @@
-import type { Driver } from '@/contracts/Role';
-import { render } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { userEvent } from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 
-import type { RoleCardProps } from '../RoleCard/RoleCard';
+import { createMockDriver } from '@/test-utils/mockFactories';
+
 import { DriverCard } from './DriverCard';
 
-// Mock RoleCard to capture props
-const mockRoleCard = vi.fn();
-vi.mock('../RoleCard/RoleCard', () => ({
-  RoleCard: (props: RoleCardProps) => {
-    mockRoleCard(props);
-    return <div data-testid="role-card">Mocked RoleCard</div>;
-  },
-}));
-
 describe('DriverCard', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+  describe('Empty State (no driver selected)', () => {
+    it('displays "Add Driver" button when no driver is selected', () => {
+      render(<DriverCard driver={null} onOpenPicker={vi.fn()} onRemove={vi.fn()} />);
+
+      expect(screen.getByRole('button', { name: /add driver/i })).toBeInTheDocument();
+    });
+
+    it('calls onOpenPicker when "Add Driver" button is clicked', async () => {
+      const user = userEvent.setup();
+      const onOpenPicker = vi.fn();
+
+      render(<DriverCard driver={null} onOpenPicker={onOpenPicker} onRemove={vi.fn()} />);
+
+      await user.click(screen.getByRole('button', { name: /add driver/i }));
+
+      expect(onOpenPicker).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not display remove button when no driver is selected', () => {
+      render(<DriverCard driver={null} onOpenPicker={vi.fn()} onRemove={vi.fn()} />);
+
+      expect(screen.queryByRole('button', { name: /remove driver/i })).not.toBeInTheDocument();
+    });
   });
 
-  describe('Filled Variant', () => {
-    const driver: Driver = {
-      id: 1,
+  describe('Filled State (driver selected)', () => {
+    const driver = createMockDriver({
       firstName: 'Carlos',
       lastName: 'Sainz',
-      countryAbbreviation: 'SPA',
-    };
-    const onOpenSheet = vi.fn();
-    const onRemove = vi.fn();
-
-    beforeEach(() => {
-      render(<DriverCard driver={driver} onOpenSheet={onOpenSheet} onRemove={onRemove} />);
     });
 
-    it('should transform driver data correctly for RoleCard', () => {
-      expect(mockRoleCard).toHaveBeenCalledTimes(1);
-      expect(mockRoleCard).toHaveBeenCalledWith({
-        variant: 'filled',
-        name: 'Carlos Sainz',
-        onRemove,
-      });
+    it('displays driver full name when driver is selected', () => {
+      render(<DriverCard driver={driver} onOpenPicker={vi.fn()} onRemove={vi.fn()} />);
+
+      expect(screen.getByText('Carlos Sainz')).toBeInTheDocument();
+    });
+
+    it('does not display "Add Driver" button when driver is selected', () => {
+      render(<DriverCard driver={driver} onOpenPicker={vi.fn()} onRemove={vi.fn()} />);
+
+      expect(screen.queryByRole('button', { name: /add driver/i })).not.toBeInTheDocument();
+    });
+
+    it('displays remove button with accessible label', () => {
+      render(<DriverCard driver={driver} onOpenPicker={vi.fn()} onRemove={vi.fn()} />);
+
+      expect(screen.getByRole('button', { name: /remove driver/i })).toBeInTheDocument();
+    });
+
+    it('calls onRemove when remove button is clicked', async () => {
+      const user = userEvent.setup();
+      const onRemove = vi.fn();
+
+      render(<DriverCard driver={driver} onOpenPicker={vi.fn()} onRemove={onRemove} />);
+
+      await user.click(screen.getByRole('button', { name: /remove driver/i }));
+
+      expect(onRemove).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe('Empty Variant', () => {
-    const onOpenSheet = vi.fn();
-    const onRemove = vi.fn();
+  describe('Keyboard Interactions', () => {
+    it('allows keyboard interaction with "Add Driver" button', async () => {
+      const user = userEvent.setup();
+      const onOpenPicker = vi.fn();
 
-    beforeEach(() => {
-      render(<DriverCard driver={null} onOpenSheet={onOpenSheet} onRemove={onRemove} />);
+      render(<DriverCard driver={null} onOpenPicker={onOpenPicker} onRemove={vi.fn()} />);
+
+      const addButton = screen.getByRole('button', { name: /add driver/i });
+      addButton.focus();
+      await user.keyboard('{Enter}');
+
+      expect(onOpenPicker).toHaveBeenCalledTimes(1);
     });
 
-    it('should pass Driver role string when driver is null', () => {
-      expect(mockRoleCard).toHaveBeenCalledTimes(1);
-      expect(mockRoleCard).toHaveBeenCalledWith({
-        variant: 'empty',
-        role: 'Driver',
-        onOpenSheet,
-      });
+    it('allows keyboard interaction with remove button', async () => {
+      const user = userEvent.setup();
+      const onRemove = vi.fn();
+      const driver = createMockDriver({ firstName: 'Max', lastName: 'Verstappen' });
+
+      render(<DriverCard driver={driver} onOpenPicker={vi.fn()} onRemove={onRemove} />);
+
+      const removeButton = screen.getByRole('button', { name: /remove driver/i });
+      removeButton.focus();
+      await user.keyboard('{Enter}');
+
+      expect(onRemove).toHaveBeenCalledTimes(1);
     });
   });
 });
