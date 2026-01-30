@@ -2,6 +2,28 @@
 
 Full-stack F1 Fantasy Sports application combining React frontend and .NET backend.
 
+## System Overview
+
+F1 Fantasy Sports platform where users build fantasy F1 teams, join leagues, and earn points based on real race performance.
+
+**Architecture:**
+```
+React SPA (Vite) → .NET 9 Minimal API → PostgreSQL
+                ↓
+            Supabase Auth
+```
+
+**Tech Stack:**
+- **Frontend:** React 19, TypeScript, TanStack Router, Tailwind CSS v4, shadcn/ui
+- **Backend:** .NET 9 ASP.NET Core Minimal API, Entity Framework Core
+- **Database:** PostgreSQL
+- **Services:** Supabase (authentication), Sentry (monitoring)
+
+## Project Context
+
+- **Team Size**: Solo developer
+- **Development Philosophy**: Balance simplicity with proper patterns - avoid both over-engineering for scale and shortcuts that create technical debt
+
 ## Claude Code Preferences
 
 - Do not include the "Generated with Claude Code" footer in commit messages or PR descriptions
