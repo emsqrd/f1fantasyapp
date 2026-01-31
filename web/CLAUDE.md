@@ -57,12 +57,14 @@ root
 ```
 
 **Key concepts:**
+
 - **Pathless layouts** (underscore prefix) group routes with shared guards
 - **Route guards** in `src/lib/route-guards.ts` use `beforeLoad` to redirect unauthorized access
 - **Route loaders** fetch data before rendering using `loader` function
 - **Zod validation** for route parameters (e.g., `leagueId`, `teamId`)
 
 **Adding protected routes:**
+
 ```typescript
 import { requireAuth } from '@/lib/route-guards';
 
@@ -100,19 +102,21 @@ const myRoute = createRoute({
 **File:** `src/lib/api.ts`
 
 Centralized `ApiClient` class handles all HTTP requests:
+
 - Automatically injects Supabase JWT in Authorization header
 - Consistent error handling with Sentry integration
 - Optional `errorContext` parameter for better error messages
 
 **Service modules** (in `src/services/`) wrap apiClient:
+
 ```typescript
 // teamService.ts
-export async function getMyTeam(): Promise<Team | null>
-export async function createTeam(data): Promise<Team>
+export async function getMyTeam(): Promise<Team | null>;
+export async function createTeam(data): Promise<Team>;
 
 // leagueService.ts
-export async function getMyLeagues(): Promise<League[]>
-export async function getLeagueById(id): Promise<League | null>
+export async function getMyLeagues(): Promise<League[]>;
+export async function getLeagueById(id): Promise<League | null>;
 ```
 
 **Pattern:** Services return `null` on 404, throw on other errors.
@@ -151,6 +155,7 @@ function LeagueComponent() {
 - **Route errorComponent** - Handles loader/guard errors
 
 **When to use:**
+
 - Toasts: Background operations only (e.g., avatar uploads)
 - InlineError: Form errors, validation failures
 - ErrorState: Page-level data fetching failures
@@ -162,9 +167,33 @@ function LeagueComponent() {
 
 **Philosophy:** Test user-facing behavior, not implementation details
 
-**Documentation & Best Practices:**
+**Layered Testing Approach:**
 
-When writing or reviewing tests, use Context7 MCP to validate approaches against official documentation:
+Our codebase uses **separation of concerns** in testing - each layer tests its own responsibilities:
+
+1. **Leaf/Presentational Components** (ConstructorCard, DriverCard, ListItems, etc.)
+   - Test user interactions (clicks, keyboard, focus)
+   - Test callback invocations
+   - Test conditional rendering based on props
+
+2. **Hooks** (useLineupPicker, useAuth, etc.)
+   - Test business logic and state management
+   - Test API integration (with mocked APIs)
+   - Test error handling and edge cases
+
+3. **Container/Parent Components** (DriverPicker, ConstructorPicker, etc.)
+   - Test **unique transformation logic** (e.g., converting props into lineup arrays)
+   - Test **integration** (does hook state correctly drive UI rendering?)
+   - Test **composition** (are callbacks wired through correctly?)
+   - Test **accessibility** at the container level (dialog roles, semantic structure)
+   - **DO NOT** re-test child component behavior or hook logic
+
+**When evaluating test value:**
+- Before criticizing missing tests, check if the behavior is tested at a different layer
+- Parent components with mocked hooks are testing integration, not duplicating hook tests
+- If a component delegates all logic to hooks and presentational children, its tests should be lean and focused on wiring
+
+**Documentation & Best Practices:**
 
 - **React Testing Library**: `/testing-library/react-testing-library` - RTL best practices, query priorities, and patterns
 - **Vitest**: `/vitest-dev/vitest` - Test runner features, mocking patterns, and configuration
@@ -172,24 +201,29 @@ When writing or reviewing tests, use Context7 MCP to validate approaches against
 - **TanStack Router**: `/tanstack/router` - Route loader testing, guard patterns, and router mocking
 
 Consult these sources when:
+
 - Implementing unfamiliar testing patterns
 - Deciding between testing approaches (e.g., when to mock, query strategies)
 - Troubleshooting test failures or flaky tests
 - Ensuring alignment with current industry standards
 
 **What to test:**
+
 - User interactions and workflows
 - Business logic specific to your component
 - Error handling and edge cases
 - Accessibility (keyboard navigation, ARIA attributes)
 
 **What NOT to test:**
-- Third-party library internals (React Hook Form, Radix UI)
-- Static JSX rendering (headings, labels)
+
+- Third-party library internals (React Hook Form, Radix UI, shadcn/ui primitives)
+- Basic UI primitives (Button, Card, Sheet, etc.) - trust the library
+- Static JSX rendering (headings, labels) unless testing position/order
 - Styling concerns (CSS classes)
 - Validation schema rules (test integration, not individual rules)
 
 **Testing route components:**
+
 ```typescript
 // Mock TanStack Router hooks
 const mockUseLoaderData = vi.fn();
@@ -206,6 +240,7 @@ render(<League />);
 
 **Testing route guards:**
 Test guard functions directly, not through components:
+
 ```typescript
 const context = {
   auth: { user: null, loading: false },
@@ -221,6 +256,7 @@ await expect(requireAuth(context)).rejects.toThrow();
 **File:** `src/main.tsx` (initialized first)
 
 **Default logging approach:** Use `Sentry.logger.*` instead of `console.log`:
+
 ```typescript
 Sentry.logger.info('Team submitted successfully', { teamId: 123 });
 Sentry.logger.warn('API rate limit approaching', { remainingCalls: 50 });
@@ -228,14 +264,15 @@ Sentry.logger.error('Failed to load team data', { teamId, error });
 ```
 
 **Performance tracking:**
+
 ```typescript
-await Sentry.startSpan(
-  { op: 'http.client', name: 'GET /api/teams/123' },
-  async () => fetch('/api/teams/123')
+await Sentry.startSpan({ op: 'http.client', name: 'GET /api/teams/123' }, async () =>
+  fetch('/api/teams/123'),
 );
 ```
 
 **When to capture exceptions:**
+
 - Unexpected errors in try-catch blocks
 - Network/API failures that need investigation
 - NOT for validation errors or user cancellations
@@ -250,6 +287,7 @@ await Sentry.startSpan(
 - **InlineSuccess** - Uses `role="status"` for polite announcement
 
 **Testing accessibility:**
+
 - Keyboard navigation (Tab, Enter, Space)
 - Screen reader support (VoiceOver on macOS: ⌘ + F5)
 - Focus indicators and ARIA attributes in tests
@@ -281,6 +319,7 @@ src/
 ## Key Data Models
 
 **Team:**
+
 ```typescript
 {
   id: number
@@ -292,19 +331,21 @@ src/
 ```
 
 **League:**
+
 ```typescript
 {
-  id: number
-  name: string
-  description: string
-  ownerName: string
-  isPrivate: boolean
+  id: number;
+  name: string;
+  description: string;
+  ownerName: string;
+  isPrivate: boolean;
 }
 ```
 
 ## Common Tasks
 
 ### Adding a New Route
+
 1. Edit `src/router.tsx`
 2. Add route to appropriate parent (use `_authenticated` layout for protected routes)
 3. Use `beforeLoad` with `requireAuth` or `requireTeam` as needed
@@ -313,18 +354,21 @@ src/
 6. Add to routeTree
 
 ### Making API Calls
+
 1. Create service function in `src/services/[domain]Service.ts`
 2. Use `apiClient.get/post/patch/delete` from `@/lib/api`
 3. Return `null` on 404, throw on other errors
 4. Add Sentry logging for significant events
 
 ### Creating Forms
+
 1. Define Zod schema in `src/validations/[feature]Schema.ts`
 2. Use React Hook Form with `zodResolver`
 3. Display errors with `InlineError` component
 4. Use `LoadingButton` for submit button with `aria-busy`
 
 ### Testing Components
+
 1. Create `ComponentName.test.tsx` co-located with component
 2. Use `@testing-library/react` and `@testing-library/user-event`
 3. Mock router hooks (`useLoaderData`, `useNavigate`) if needed
@@ -334,6 +378,7 @@ src/
 ### Quick Test Generation Workflows
 
 **For new test files** (no existing tests):
+
 ```
 Generate high-value tests for this file following our testing guidelines.
 - Keep it lean (~10-15 tests)
@@ -346,6 +391,7 @@ Generate high-value tests for this file following our testing guidelines.
 ```
 
 **For existing test files** (adding new tests):
+
 ```
 Add tests for the new [describe feature/functionality] following our testing guidelines.
 - Review existing tests to understand current coverage and patterns
@@ -358,6 +404,7 @@ Add tests for the new [describe feature/functionality] following our testing gui
 ## Environment Variables
 
 Required in `.env.local`:
+
 ```bash
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_anon_key

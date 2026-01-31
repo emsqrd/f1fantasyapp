@@ -1,221 +1,256 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import type { Constructor } from '@/contracts/Role';
+import type { TeamConstructor } from '@/contracts/Team';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ConstructorPicker } from './ConstructorPicker';
 
-// Mock TanStack Router
-const mockInvalidate = vi.fn();
-vi.mock('@tanstack/react-router', () => ({
-  useRouter: () => ({
-    invalidate: mockInvalidate,
+// Mock useLineupPicker hook
+vi.mock('@/hooks/useLineupPicker', () => ({
+  useLineupPicker: () => ({
+    displayLineup: mockDisplayLineup,
+    pool: mockPool,
+    selectedPosition: mockSelectedPosition,
+    isPending: mockIsPending,
+    error: mockError,
+    openPicker: vi.fn(),
+    closePicker: vi.fn(),
+    handleAdd: vi.fn(),
+    handleRemove: vi.fn(),
   }),
 }));
 
-// Mock the constructor service (external API call - appropriate to mock)
-const mockGetActiveConstructors = vi.fn();
-vi.mock('@/services/constructorService', () => ({
-  getActiveConstructors: () => mockGetActiveConstructors(),
-}));
+// Mock data - will be set in beforeEach or individual tests
+let mockDisplayLineup: (Constructor | null)[];
+let mockPool: Constructor[];
+let mockSelectedPosition: number | null;
+let mockIsPending: boolean;
+let mockError: string | null;
 
-// Mock the team service for persistence
-const mockAddConstructorToTeam = vi.fn();
-const mockRemoveConstructorFromTeam = vi.fn();
-vi.mock('@/services/teamService', () => ({
-  addConstructorToTeam: (...args: unknown[]) => mockAddConstructorToTeam(...args),
-  removeConstructorFromTeam: (...args: unknown[]) => mockRemoveConstructorFromTeam(...args),
-}));
-
-const mockConstructors = [
-  { id: 1, name: 'Ferrari', fullName: 'Scuderia Ferrari', countryAbbreviation: 'ITA' },
-  { id: 2, name: 'McLaren', fullName: 'McLaren F1 Team', countryAbbreviation: 'GBR' },
-  { id: 3, name: 'Mercedes', fullName: 'Mercedes-AMG Petronas', countryAbbreviation: 'GER' },
-  { id: 4, name: 'Red Bull', fullName: 'Oracle Red Bull Racing', countryAbbreviation: 'AUT' },
+const mockConstructors: Constructor[] = [
+  { id: 1, name: 'McLaren', fullName: 'McLaren F1 Team', countryAbbreviation: 'GBR' },
+  { id: 2, name: 'Ferrari', fullName: 'Scuderia Ferrari', countryAbbreviation: 'ITA' },
+  {
+    id: 3,
+    name: 'Red Bull Racing',
+    fullName: 'Oracle Red Bull Racing',
+    countryAbbreviation: 'AUT',
+  },
+  { id: 4, name: 'Mercedes', fullName: 'Mercedes-AMG Petronas', countryAbbreviation: 'GER' },
+  { id: 5, name: 'Aston Martin', fullName: 'Aston Martin Aramco', countryAbbreviation: 'GBR' },
 ];
 
-// Helper to find and click a constructor's add button in the pool list within the sheet
-async function selectConstructorFromPool(
-  user: ReturnType<typeof userEvent.setup>,
-  constructorName: string,
-) {
-  // Find the list item containing the constructor name, then click its add button
-  const listItems = screen.getAllByRole('listitem');
-  const targetItem = listItems.find((item) => item.textContent?.includes(constructorName));
-  if (!targetItem) {
-    throw new Error(`Could not find list item for constructor: ${constructorName}`);
-  }
-  const addButton = within(targetItem).getByRole('button', { name: /add constructor/i });
-  await user.click(addButton);
-}
+// Helper to convert Constructor to TeamConstructor
+const toTeamConstructor = (constructor: Constructor, slotPosition: number): TeamConstructor => ({
+  ...constructor,
+  slotPosition,
+});
 
 describe('ConstructorPicker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetActiveConstructors.mockResolvedValue(mockConstructors);
-    mockAddConstructorToTeam.mockResolvedValue(undefined);
-    mockRemoveConstructorFromTeam.mockResolvedValue(undefined);
-    mockInvalidate.mockResolvedValue(undefined);
+
+    // Default state: empty lineup, all constructors in pool, picker closed
+    mockDisplayLineup = [null, null, null, null];
+    mockPool = mockConstructors;
+    mockSelectedPosition = null;
+    mockIsPending = false;
+    mockError = null;
   });
 
-  describe('Loading State', () => {
-    it('displays loading indicator while fetching constructors', () => {
-      // Keep promise pending to observe loading state
-      mockGetActiveConstructors.mockReturnValue(new Promise(() => {}));
+  describe('Lineup Rendering', () => {
+    it('renders 4 empty constructor slots by default', () => {
+      render(<ConstructorPicker activeConstructors={mockConstructors} />);
 
-      render(<ConstructorPicker />);
-
-      expect(screen.getByRole('status')).toBeInTheDocument();
-      expect(screen.getByText('Loading Constructors...')).toBeInTheDocument();
+      const addButtons = screen.getAllByRole('button', { name: /add constructor/i });
+      expect(addButtons).toHaveLength(4);
     });
-  });
 
-  describe('Error State', () => {
-    it('displays error message when constructor fetch fails', async () => {
-      mockGetActiveConstructors.mockRejectedValue(new Error('Network error'));
+    it('displays existing constructors in correct positions', () => {
+      const teamConstructors: TeamConstructor[] = [
+        toTeamConstructor(mockConstructors[0], 0),
+        toTeamConstructor(mockConstructors[1], 1),
+      ];
 
-      render(<ConstructorPicker />);
+      mockDisplayLineup = [mockConstructors[0], mockConstructors[1], null, null];
 
-      expect(await screen.findByRole('alert')).toHaveTextContent(
-        'Failed to load active constructors',
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          teamConstructors={teamConstructors}
+        />,
       );
-    });
-  });
 
-  describe('Slot Rendering', () => {
-    it('renders default of 2 empty slots when loaded', async () => {
-      render(<ConstructorPicker />);
+      expect(screen.getByText('McLaren')).toBeInTheDocument();
+      expect(screen.getByText('Ferrari')).toBeInTheDocument();
 
-      // Wait for loading to complete, then find "Add Constructor" buttons in slot cards
-      const addButtons = await screen.findAllByRole('button', { name: /add constructor/i });
+      // Two filled slots, two empty
+      const addButtons = screen.getAllByRole('button', { name: /add constructor/i });
       expect(addButtons).toHaveLength(2);
     });
 
-    it('renders custom slot count when specified', async () => {
-      render(<ConstructorPicker lineupSize={2} />);
+    it('displays all constructors when lineup is full', () => {
+      const teamConstructors: TeamConstructor[] = [
+        toTeamConstructor(mockConstructors[0], 0),
+        toTeamConstructor(mockConstructors[1], 1),
+        toTeamConstructor(mockConstructors[2], 2),
+        toTeamConstructor(mockConstructors[3], 3),
+      ];
 
-      const addButtons = await screen.findAllByRole('button', { name: /add constructor/i });
-      expect(addButtons).toHaveLength(2);
+      mockDisplayLineup = [
+        mockConstructors[0],
+        mockConstructors[1],
+        mockConstructors[2],
+        mockConstructors[3],
+      ];
+
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          teamConstructors={teamConstructors}
+        />,
+      );
+
+      expect(screen.getByText('McLaren')).toBeInTheDocument();
+      expect(screen.getByText('Ferrari')).toBeInTheDocument();
+      expect(screen.getByText('Red Bull Racing')).toBeInTheDocument();
+      expect(screen.getByText('Mercedes')).toBeInTheDocument();
+
+      // No "Add Constructor" buttons when all slots are filled
+      expect(screen.queryByRole('button', { name: /add constructor/i })).not.toBeInTheDocument();
     });
   });
 
-  describe('Constructor Selection Flow', () => {
-    it('opens selection sheet and displays available constructors when clicking add button', async () => {
-      const user = userEvent.setup();
-      render(<ConstructorPicker />);
+  describe('Picker Sheet', () => {
+    beforeEach(() => {
+      mockSelectedPosition = 0; // Picker is open
+    });
 
-      const addButtons = await screen.findAllByRole('button', { name: /add constructor/i });
-      await user.click(addButtons[0]);
+    it('displays sheet with title and description when picker is open', () => {
+      render(<ConstructorPicker activeConstructors={mockConstructors} />);
 
-      // Sheet should open with title and description
-      expect(await screen.findByText('Select Constructor')).toBeInTheDocument();
+      expect(screen.getByText('Select Constructor')).toBeInTheDocument();
       expect(
         screen.getByText('Choose a constructor from the list below to add to your team.'),
       ).toBeInTheDocument();
+    });
 
-      // All 4 constructors should be available in the pool as list items
-      const listItems = screen.getAllByRole('listitem');
-      expect(listItems).toHaveLength(4);
+    it('displays all available constructors from pool', () => {
+      mockPool = mockConstructors; // All constructors available
+
+      render(<ConstructorPicker activeConstructors={mockConstructors} />);
+
+      expect(screen.getByText('McLaren')).toBeInTheDocument();
       expect(screen.getByText('Ferrari')).toBeInTheDocument();
-      expect(screen.getByText('McLaren')).toBeInTheDocument();
+      expect(screen.getByText('Red Bull Racing')).toBeInTheDocument();
       expect(screen.getByText('Mercedes')).toBeInTheDocument();
-      expect(screen.getByText('Red Bull')).toBeInTheDocument();
+      expect(screen.getByText('Aston Martin')).toBeInTheDocument();
     });
 
-    it('calls add service and invalidates router when constructor is selected', async () => {
-      const user = userEvent.setup();
-      render(<ConstructorPicker />);
-
-      const addButtons = await screen.findAllByRole('button', { name: /add constructor/i });
-      await user.click(addButtons[0]);
-
-      await screen.findByText('Select Constructor');
-      await selectConstructorFromPool(user, 'Ferrari');
-
-      await waitFor(() => {
-        expect(mockAddConstructorToTeam).toHaveBeenCalledWith(1, 0);
-        expect(mockInvalidate).toHaveBeenCalled();
-      });
-
-      // Verify sheet closes after selection
-      await waitFor(() => {
-        expect(screen.queryByText('Select Constructor')).not.toBeInTheDocument();
-      });
-    });
-
-    it('closes sheet without selecting when pressing escape', async () => {
-      const user = userEvent.setup();
-      render(<ConstructorPicker />);
-
-      const addButtons = await screen.findAllByRole('button', { name: /add constructor/i });
-      await user.click(addButtons[0]);
-
-      await screen.findByText('Select Constructor');
-      await user.keyboard('{Escape}');
-
-      await waitFor(() => {
-        expect(screen.queryByText('Select Constructor')).not.toBeInTheDocument();
-      });
-
-      // All 2 slots should still be empty
-      expect(screen.getAllByRole('button', { name: /add constructor/i })).toHaveLength(2);
-    });
-  });
-
-  describe('Pool Management', () => {
-    it('excludes constructors in lineup from available pool', async () => {
-      const user = userEvent.setup();
-      const currentConstructors = [mockConstructors[0], null]; // Ferrari in first slot
-      render(<ConstructorPicker currentConstructors={currentConstructors} />);
-
-      // Verify constructor is displayed in lineup
-      expect(await screen.findByRole('heading', { name: 'Ferrari' })).toBeInTheDocument();
-
-      // Open sheet for second slot
-      const addButtons = screen.getAllByRole('button', { name: /add constructor/i });
-      await user.click(addButtons[0]);
-      await screen.findByText('Select Constructor');
-
-      // Pool should have only 3 constructors (Ferrari is already in lineup)
-      const listItems = screen.getAllByRole('listitem');
-      expect(listItems).toHaveLength(3);
-      expect(screen.getByText('McLaren')).toBeInTheDocument();
-      expect(screen.getByText('Mercedes')).toBeInTheDocument();
-      expect(screen.getByText('Red Bull')).toBeInTheDocument();
-      // Verify Ferrari is not in the pool
-      expect(within(screen.getByRole('list')).queryByText('Ferrari')).not.toBeInTheDocument();
-    });
-
-    it('includes all constructors in pool when lineup is empty', async () => {
-      const user = userEvent.setup();
-      render(<ConstructorPicker />);
-
-      const addButtons = await screen.findAllByRole('button', { name: /add constructor/i });
-      await user.click(addButtons[0]);
-      await screen.findByText('Select Constructor');
-
-      // All 4 constructors should be available in the pool
-      const listItems = screen.getAllByRole('listitem');
-      expect(listItems).toHaveLength(4);
-      expect(screen.getByText('Ferrari')).toBeInTheDocument();
-      expect(screen.getByText('McLaren')).toBeInTheDocument();
-      expect(screen.getByText('Mercedes')).toBeInTheDocument();
-      expect(screen.getByText('Red Bull')).toBeInTheDocument();
-    });
-  });
-
-  describe('Multi-Constructor Workflow', () => {
-    it('displays multiple constructors when provided via currentConstructors prop', async () => {
-      const currentConstructors = [
-        mockConstructors[0], // Ferrari
-        mockConstructors[1], // McLaren
+    it('only displays constructors not in current lineup', () => {
+      mockDisplayLineup = [mockConstructors[0], null, null, null];
+      mockPool = [
+        mockConstructors[1],
+        mockConstructors[2],
+        mockConstructors[3],
+        mockConstructors[4],
       ];
-      render(<ConstructorPicker currentConstructors={currentConstructors} />);
 
-      // Verify both constructors are displayed (shown as headings in filled cards)
-      expect(await screen.findByRole('heading', { name: 'Ferrari' })).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: 'McLaren' })).toBeInTheDocument();
-      // 0 empty slots remaining (both slots filled)
-      expect(screen.queryByRole('button', { name: /add constructor/i })).toBeNull();
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          teamConstructors={[toTeamConstructor(mockConstructors[0], 0)]}
+        />,
+      );
+
+      // Get the list element (pool) within the sheet
+      const poolList = screen.getByRole('list');
+
+      // McLaren should not appear in the pool (already in lineup)
+      expect(poolList.textContent).not.toContain('McLaren');
+
+      // Other constructors should appear in the pool
+      expect(poolList.textContent).toContain('Ferrari');
+      expect(poolList.textContent).toContain('Red Bull Racing');
+      expect(poolList.textContent).toContain('Mercedes');
+      expect(poolList.textContent).toContain('Aston Martin');
+    });
+
+    it('does not display sheet when picker is closed', () => {
+      mockSelectedPosition = null;
+
+      render(<ConstructorPicker activeConstructors={mockConstructors} />);
+
+      expect(screen.queryByText('Select Constructor')).not.toBeInTheDocument();
+    });
+
+    it('does not display sheet when operation is pending', () => {
+      mockSelectedPosition = 0;
+      mockIsPending = true;
+
+      render(<ConstructorPicker activeConstructors={mockConstructors} />);
+
+      expect(screen.queryByText('Select Constructor')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Error Handling', () => {
+    beforeEach(() => {
+      mockSelectedPosition = 0; // Picker must be open to show errors
+    });
+
+    it('displays error message in picker when error occurs', () => {
+      mockError = 'Failed to add constructor. Please try again.';
+
+      render(<ConstructorPicker activeConstructors={mockConstructors} />);
+
+      const errorElement = screen.getByRole('alert');
+      expect(errorElement).toHaveTextContent('Failed to add constructor. Please try again.');
+    });
+
+    it('does not display error when no error exists', () => {
+      mockError = null;
+
+      render(<ConstructorPicker activeConstructors={mockConstructors} />);
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Accessibility', () => {
+    it('uses semantic HTML with proper roles', () => {
+      mockSelectedPosition = 0;
+
+      render(<ConstructorPicker activeConstructors={mockConstructors} />);
+
+      // Sheet should have dialog role
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+      // List of constructors should use list/listitem roles
+      const list = screen.getByRole('list');
+      expect(list).toBeInTheDocument();
+    });
+
+    it('provides descriptive button labels', async () => {
+      render(<ConstructorPicker activeConstructors={mockConstructors} />);
+
+      // Empty slot buttons should be clear
+      const addButtons = screen.getAllByRole('button', { name: /add constructor/i });
+      expect(addButtons.length).toBeGreaterThan(0);
+    });
+
+    it('provides aria-label for remove buttons', () => {
+      mockDisplayLineup = [mockConstructors[0], null, null, null];
+
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          teamConstructors={[toTeamConstructor(mockConstructors[0], 0)]}
+        />,
+      );
+
+      const removeButton = screen.getByRole('button', { name: /remove constructor/i });
+      expect(removeButton).toHaveAccessibleName('Remove constructor');
     });
   });
 });

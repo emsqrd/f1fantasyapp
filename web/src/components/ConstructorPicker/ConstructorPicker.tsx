@@ -1,45 +1,113 @@
 import type { Constructor } from '@/contracts/Role';
-import { getActiveConstructors } from '@/services/constructorService';
+import type { TeamConstructor } from '@/contracts/Team';
+import { useLineupPicker } from '@/hooks/useLineupPicker';
 import { addConstructorToTeam, removeConstructorFromTeam } from '@/services/teamService';
-import type { ComponentType } from 'react';
+import { useMemo } from 'react';
 
 import { ConstructorCard } from '../ConstructorCard/ConstructorCard';
 import { ConstructorListItem } from '../ConstructorListItem/ConstructorListItem';
-import type { LineupCardProps, LineupListItemProps } from '../LineupPicker/LineupPicker';
-import { LineupPicker } from '../LineupPicker/LineupPicker';
-
-// Adapter components to bridge between LineupPicker's generic props and Constructor-specific components
-const ConstructorCardAdapter: ComponentType<LineupCardProps<Constructor>> = ({
-  item,
-  onClick,
-  onRemove,
-}) => <ConstructorCard constructor={item} onOpenPicker={onClick} onRemove={onRemove} />;
-
-const ConstructorListItemAdapter: ComponentType<LineupListItemProps<Constructor>> = ({
-  item,
-  onSelect,
-}) => <ConstructorListItem constructor={item} onSelect={onSelect} />;
+import { InlineError } from '../InlineError/InlineError';
+import { ScrollArea } from '../ui/scroll-area';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '../ui/sheet';
 
 interface ConstructorPickerProps {
-  lineupSize?: number;
-  currentConstructors?: (Constructor | null)[];
+  activeConstructors: Constructor[];
+  teamConstructors?: TeamConstructor[];
 }
 
-export function ConstructorPicker({ lineupSize = 2, currentConstructors }: ConstructorPickerProps) {
+const CONSTRUCTOR_SLOTS = 4;
+
+export function ConstructorPicker({
+  activeConstructors,
+  teamConstructors,
+}: ConstructorPickerProps) {
+  // build lineup with existing constructors
+  const lineup = useMemo(() => {
+    const slots: (Constructor | null)[] = Array(CONSTRUCTOR_SLOTS).fill(null);
+
+    teamConstructors?.forEach((constructor) => {
+      slots[constructor.slotPosition] = { ...constructor };
+    });
+
+    return slots;
+  }, [teamConstructors]);
+
+  const {
+    displayLineup,
+    pool,
+    selectedPosition,
+    isPending,
+    error,
+    openPicker,
+    closePicker,
+    handleAdd,
+    handleRemove,
+  } = useLineupPicker({
+    items: activeConstructors,
+    lineup,
+    lineupSize: CONSTRUCTOR_SLOTS,
+    itemType: 'constructor',
+    addToTeam: addConstructorToTeam,
+    removeFromTeam: removeConstructorFromTeam,
+  });
+
   return (
-    <LineupPicker<Constructor>
-      lineupSize={lineupSize}
-      lineup={currentConstructors}
-      fetchItems={getActiveConstructors}
-      addToTeam={addConstructorToTeam}
-      removeFromTeam={removeConstructorFromTeam}
-      CardComponent={ConstructorCardAdapter}
-      ListItemComponent={ConstructorListItemAdapter}
-      sheetTitle="Select Constructor"
-      sheetDescription="Choose a constructor from the list below to add to your team."
-      loadingMessage="Loading Constructors..."
-      errorPrefix="Failed to load active constructors"
-      gridClassName="grid grid-cols-1 gap-4 lg:grid-cols-2"
-    />
+    <>
+      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {displayLineup.map((constructor, idx) => (
+          <ConstructorCard
+            key={idx}
+            constructor={constructor}
+            onOpenPicker={() => openPicker(idx)}
+            onRemove={() => handleRemove(idx)}
+          />
+        ))}
+
+        {isPending && (
+          <div className="bg-background/50 absolute inset-0 flex items-center justify-center">
+            <div className="border-primary animate-spin-rounded-full h-8 w-8 border-b-2" />
+          </div>
+        )}
+      </div>
+      <Sheet
+        open={selectedPosition !== null && !isPending}
+        onOpenChange={(open) => !open && closePicker()}
+      >
+        <SheetTrigger asChild>
+          <div />
+        </SheetTrigger>
+        <SheetContent className="flex h-full w-80 flex-col">
+          <SheetHeader>
+            <SheetTitle>Select Constructor</SheetTitle>
+            <SheetDescription>
+              Choose a constructor from the list below to add to your team.
+            </SheetDescription>
+            {error && <InlineError message={error} />}
+          </SheetHeader>
+          <ScrollArea className="h-full min-h-0 flex-1 pr-4 pl-4">
+            <ul className="space-y-2">
+              {pool.map((constructor) => (
+                <ConstructorListItem
+                  key={constructor.id}
+                  constructor={constructor}
+                  onSelect={() => {
+                    if (selectedPosition !== null) {
+                      handleAdd(selectedPosition, constructor);
+                    }
+                  }}
+                />
+              ))}
+            </ul>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

@@ -117,23 +117,23 @@ public class TeamService : ITeamService
         }
 
         // Validate slot position range
-        if (slotPosition < 0 || slotPosition > 4)
+        if (slotPosition < 0 || slotPosition > 3)
         {
             _logger.LogWarning("Invalid slot position {SlotPosition} for driver", slotPosition);
-            throw new InvalidSlotPositionException(slotPosition, 4, "driver");
+            throw new InvalidSlotPositionException(slotPosition, 3, "driver");
         }
 
         // Validate driver limit
-        if (team.TeamDrivers.Count >= 5)
+        if (team.TeamDrivers.Count >= 4)
         {
             _logger.LogWarning("Team {TeamId} already has maximum drivers", teamId);
-            throw new TeamFullException(teamId, 5, "driver");
+            throw new TeamFullException(teamId, 4, "driver");
         }
 
         // Check if slot is already occupied
         if (team.TeamDrivers.Any(td => td.SlotPosition == slotPosition))
         {
-            _logger.LogWarning("Slot {SlotPosition} already occupied on team {TeamId}", slotPosition, teamId);
+            _logger.LogWarning("Slot {S-lotPosition} already occupied on team {TeamId}", slotPosition, teamId);
             throw new SlotOccupiedException(slotPosition, teamId);
         }
 
@@ -223,17 +223,17 @@ public class TeamService : ITeamService
         }
 
         // Validate slot position range
-        if (slotPosition < 0 || slotPosition > 1)
+        if (slotPosition < 0 || slotPosition > 3)
         {
             _logger.LogWarning("Invalid slot position {SlotPosition} for constructor", slotPosition);
-            throw new InvalidSlotPositionException(slotPosition, 1, "constructor");
+            throw new InvalidSlotPositionException(slotPosition, 3, "constructor");
         }
 
         // Validate constructor limit
-        if (team.TeamConstructors.Count >= 2)
+        if (team.TeamConstructors.Count >= 4)
         {
             _logger.LogWarning("Team {TeamId} already has maximum constructors", teamId);
-            throw new TeamFullException(teamId, 2, "constructor");
+            throw new TeamFullException(teamId, 4, "constructor");
         }
 
         // Check if slot is already occupied
