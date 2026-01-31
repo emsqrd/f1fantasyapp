@@ -1,7 +1,3 @@
-export interface BaseRole {
-  id: number;
-  countryAbbreviation: string;
-}
 export interface Driver {
   id: number;
   firstName: string;
