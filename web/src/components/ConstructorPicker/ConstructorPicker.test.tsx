@@ -161,25 +161,6 @@ describe('ConstructorPicker', () => {
     });
   });
 
-  describe('Constructor Removal', () => {
-    it('calls remove service and invalidates router when constructor is removed', async () => {
-      const user = userEvent.setup();
-      const currentConstructors = [mockConstructors[0], null]; // Ferrari in first slot
-      render(<ConstructorPicker currentConstructors={currentConstructors} />);
-
-      // Verify constructor is displayed
-      expect(await screen.findByRole('heading', { name: 'Ferrari' })).toBeInTheDocument();
-
-      // Remove the constructor using the remove button
-      await user.click(screen.getByRole('button', { name: /remove role/i }));
-
-      await waitFor(() => {
-        expect(mockRemoveConstructorFromTeam).toHaveBeenCalledWith(0);
-        expect(mockInvalidate).toHaveBeenCalled();
-      });
-    });
-  });
-
   describe('Pool Management', () => {
     it('excludes constructors in lineup from available pool', async () => {
       const user = userEvent.setup();

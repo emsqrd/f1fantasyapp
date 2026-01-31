@@ -13,7 +13,7 @@ const ConstructorCardAdapter: ComponentType<LineupCardProps<Constructor>> = ({
   item,
   onClick,
   onRemove,
-}) => <ConstructorCard constructor={item} onOpenSheet={onClick} onRemove={onRemove} />;
+}) => <ConstructorCard constructor={item} onOpenPicker={onClick} onRemove={onRemove} />;
 
 const ConstructorListItemAdapter: ComponentType<LineupListItemProps<Constructor>> = ({
   item,

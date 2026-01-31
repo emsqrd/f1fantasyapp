@@ -114,6 +114,11 @@ describe('CreateTeam', () => {
 
     const submitButton = screen.getByRole('button', { name: /creating/i });
     expect(submitButton).toHaveAttribute('aria-busy', 'true');
+
+    // Wait for the async operation to complete
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalled();
+    });
   });
 
   it('navigates to redirect path when redirect search parameter is provided', async () => {

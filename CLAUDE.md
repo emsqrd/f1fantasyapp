@@ -7,6 +7,7 @@ Full-stack F1 Fantasy Sports application combining React frontend and .NET backe
 F1 Fantasy Sports platform where users build fantasy F1 teams, join leagues, and earn points based on real race performance.
 
 **Architecture:**
+
 ```
 React SPA (Vite) → .NET 9 Minimal API → PostgreSQL
                 ↓
@@ -14,6 +15,7 @@ React SPA (Vite) → .NET 9 Minimal API → PostgreSQL
 ```
 
 **Tech Stack:**
+
 - **Frontend:** React 19, TypeScript, TanStack Router, Tailwind CSS v4, shadcn/ui
 - **Backend:** .NET 9 ASP.NET Core Minimal API, Entity Framework Core
 - **Database:** PostgreSQL
@@ -26,11 +28,14 @@ React SPA (Vite) → .NET 9 Minimal API → PostgreSQL
 
 ## Claude Code Preferences
 
-- Do not include the "Generated with Claude Code" footer in commit messages or PR descriptions
 - Avoid over-engineering; keep solutions focused on the requested task
 - When in doubt about approach, ask rather than proceed
 - Keep solutions focused on solving the cause of a problem, not the symptom
 - Use conventional commit styling for commit messages
+
+## Git Commit Message Preferences
+
+- Do not include the "Generated with Claude Code" footer in commit messages or PR descriptions
 
 ## Repository Structure
 
