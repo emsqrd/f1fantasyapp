@@ -52,7 +52,7 @@ export function useLineupPicker<T extends { id: number }>({
 
   /**
    * Adds an item to the lineup at the specified position.
-   * Closes the picker on success, keeps it open on error for retry.
+   * Closes the picker on both success and error.
    */
   const handleAdd = async (position: number, item: T) => {
     setIsPending(true);
@@ -61,7 +61,6 @@ export function useLineupPicker<T extends { id: number }>({
     try {
       await addToTeam(item.id, position);
       await router.invalidate();
-      setSelectedPosition(null);
     } catch (err) {
       Sentry.logger.error(`Failed to add ${itemType} to lineup`, {
         itemType,
@@ -73,6 +72,7 @@ export function useLineupPicker<T extends { id: number }>({
       setError(`Failed to add ${itemType}. Please try again.`);
     } finally {
       setIsPending(false);
+      setSelectedPosition(null);
     }
   };
 

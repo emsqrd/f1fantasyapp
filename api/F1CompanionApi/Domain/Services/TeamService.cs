@@ -133,7 +133,7 @@ public class TeamService : ITeamService
         // Check if slot is already occupied
         if (team.TeamDrivers.Any(td => td.SlotPosition == slotPosition))
         {
-            _logger.LogWarning("Slot {S-lotPosition} already occupied on team {TeamId}", slotPosition, teamId);
+            _logger.LogWarning("Slot {SlotPosition} already occupied on team {TeamId}", slotPosition, teamId);
             throw new SlotOccupiedException(slotPosition, teamId);
         }
 

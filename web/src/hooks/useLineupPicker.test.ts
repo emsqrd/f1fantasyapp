@@ -338,7 +338,7 @@ describe('useLineupPicker', () => {
       expect(result.current.error).toBe('Failed to add driver. Please try again.');
     });
 
-    it('keeps picker open when add fails', async () => {
+    it('closes picker when add fails', async () => {
       mockAddToTeam.mockRejectedValueOnce(new Error('API Error'));
 
       const { result } = renderHook(() =>
@@ -360,7 +360,7 @@ describe('useLineupPicker', () => {
         await result.current.handleAdd(0, mockItems[0]);
       });
 
-      expect(result.current.selectedPosition).toBe(0);
+      expect(result.current.selectedPosition).toBe(null);
     });
 
     it('clears error before add operation', async () => {

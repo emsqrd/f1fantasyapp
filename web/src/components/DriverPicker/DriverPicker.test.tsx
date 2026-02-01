@@ -156,38 +156,46 @@ describe('DriverPicker', () => {
       expect(screen.queryByText('Select Driver')).not.toBeInTheDocument();
     });
 
-    it('does not display sheet when operation is pending', () => {
+    it('keeps sheet open when operation is pending', () => {
       mockSelectedPosition = 0;
       mockIsPending = true;
 
       render(<DriverPicker activeDrivers={mockDrivers} />);
 
-      expect(screen.queryByText('Select Driver')).not.toBeInTheDocument();
+      // Sheet should remain open during pending operations
+      expect(screen.getByText('Select Driver')).toBeInTheDocument();
     });
   });
 
   describe('Loading State', () => {
-    it('hides picker sheet when operation is pending', () => {
+    it('keeps picker sheet open during pending operations', () => {
       mockSelectedPosition = 0; // User tried to open picker
-      mockIsPending = true; // But operation is pending
+      mockIsPending = true; // Operation is pending
 
       render(<DriverPicker activeDrivers={mockDrivers} />);
 
-      // Sheet should not be visible during pending operations
-      expect(screen.queryByText('Select Driver')).not.toBeInTheDocument();
+      // Sheet should remain open during pending operations
+      expect(screen.getByText('Select Driver')).toBeInTheDocument();
     });
   });
 
   describe('Error Handling', () => {
-    beforeEach(() => {
-      mockSelectedPosition = 0; // Picker must be open to show errors
-    });
-
-    it('displays error message in picker when error occurs', () => {
+    it('displays error message above grid when error occurs', () => {
       mockError = 'Failed to add driver. Please try again.';
 
       render(<DriverPicker activeDrivers={mockDrivers} />);
 
+      const errorElement = screen.getByRole('alert');
+      expect(errorElement).toHaveTextContent('Failed to add driver. Please try again.');
+    });
+
+    it('displays error regardless of picker state', () => {
+      mockError = 'Failed to add driver. Please try again.';
+      mockSelectedPosition = null; // Picker closed
+
+      render(<DriverPicker activeDrivers={mockDrivers} />);
+
+      // Error should still be visible even when picker is closed
       const errorElement = screen.getByRole('alert');
       expect(errorElement).toHaveTextContent('Failed to add driver. Please try again.');
     });

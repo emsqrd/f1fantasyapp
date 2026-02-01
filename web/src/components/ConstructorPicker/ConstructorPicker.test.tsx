@@ -184,26 +184,34 @@ describe('ConstructorPicker', () => {
       expect(screen.queryByText('Select Constructor')).not.toBeInTheDocument();
     });
 
-    it('does not display sheet when operation is pending', () => {
+    it('keeps sheet open when operation is pending', () => {
       mockSelectedPosition = 0;
       mockIsPending = true;
 
       render(<ConstructorPicker activeConstructors={mockConstructors} />);
 
-      expect(screen.queryByText('Select Constructor')).not.toBeInTheDocument();
+      // Sheet should remain open during pending operations
+      expect(screen.getByText('Select Constructor')).toBeInTheDocument();
     });
   });
 
   describe('Error Handling', () => {
-    beforeEach(() => {
-      mockSelectedPosition = 0; // Picker must be open to show errors
-    });
-
-    it('displays error message in picker when error occurs', () => {
+    it('displays error message above grid when error occurs', () => {
       mockError = 'Failed to add constructor. Please try again.';
 
       render(<ConstructorPicker activeConstructors={mockConstructors} />);
 
+      const errorElement = screen.getByRole('alert');
+      expect(errorElement).toHaveTextContent('Failed to add constructor. Please try again.');
+    });
+
+    it('displays error regardless of picker state', () => {
+      mockError = 'Failed to add constructor. Please try again.';
+      mockSelectedPosition = null; // Picker closed
+
+      render(<ConstructorPicker activeConstructors={mockConstructors} />);
+
+      // Error should still be visible even when picker is closed
       const errorElement = screen.getByRole('alert');
       expect(errorElement).toHaveTextContent('Failed to add constructor. Please try again.');
     });

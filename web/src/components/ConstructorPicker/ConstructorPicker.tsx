@@ -60,6 +60,11 @@ export function ConstructorPicker({
 
   return (
     <>
+      {error && (
+        <div className="pb-4">
+          <InlineError message={error} />
+        </div>
+      )}
       <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
         {displayLineup.map((constructor, idx) => (
           <ConstructorCard
@@ -72,12 +77,12 @@ export function ConstructorPicker({
 
         {isPending && (
           <div className="bg-background/50 absolute inset-0 flex items-center justify-center">
-            <div className="border-primary animate-spin-rounded-full h-8 w-8 border-b-2" />
+            <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2" />
           </div>
         )}
       </div>
       <Sheet
-        open={selectedPosition !== null && !isPending}
+        open={selectedPosition !== null}
         onOpenChange={(open) => !open && closePicker()}
       >
         <SheetTrigger asChild>
@@ -89,7 +94,6 @@ export function ConstructorPicker({
             <SheetDescription>
               Choose a constructor from the list below to add to your team.
             </SheetDescription>
-            {error && <InlineError message={error} />}
           </SheetHeader>
           <ScrollArea className="h-full min-h-0 flex-1 pr-4 pl-4">
             <ul className="space-y-2">
@@ -98,7 +102,7 @@ export function ConstructorPicker({
                   key={constructor.id}
                   constructor={constructor}
                   onSelect={() => {
-                    if (selectedPosition !== null) {
+                    if (selectedPosition !== null && !isPending) {
                       handleAdd(selectedPosition, constructor);
                     }
                   }}

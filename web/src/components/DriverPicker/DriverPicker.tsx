@@ -57,6 +57,11 @@ export function DriverPicker({ activeDrivers, teamDrivers }: DriverPickerProps) 
 
   return (
     <>
+      {error && (
+        <div className="pb-4">
+          <InlineError message={error} />
+        </div>
+      )}
       <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
         {displayLineup.map((driver, idx) => (
           <DriverCard
@@ -75,7 +80,7 @@ export function DriverPicker({ activeDrivers, teamDrivers }: DriverPickerProps) 
       </div>
 
       <Sheet
-        open={selectedPosition !== null && !isPending}
+        open={selectedPosition !== null}
         onOpenChange={(open) => !open && closePicker()}
       >
         <SheetTrigger asChild>
@@ -87,7 +92,6 @@ export function DriverPicker({ activeDrivers, teamDrivers }: DriverPickerProps) 
             <SheetDescription>
               Choose a driver from the list below to add to your team.
             </SheetDescription>
-            {error && <InlineError message={error} />}
           </SheetHeader>
           <ScrollArea className="h-full min-h-0 flex-1 pr-4 pl-4">
             <ul className="space-y-2">
@@ -96,7 +100,7 @@ export function DriverPicker({ activeDrivers, teamDrivers }: DriverPickerProps) 
                   key={driver.id}
                   driver={driver}
                   onSelect={() => {
-                    if (selectedPosition !== null) {
+                    if (selectedPosition !== null && !isPending) {
                       handleAdd(selectedPosition, driver);
                     }
                   }}
