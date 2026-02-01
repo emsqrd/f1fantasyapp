@@ -113,6 +113,7 @@ export function createMockTeam(overrides: Partial<Team> = {}): Team {
   return {
     id: 1,
     name: 'Test Team',
+    ownerId: 1,
     ownerName: 'Test Owner',
     drivers: [],
     constructors: [],

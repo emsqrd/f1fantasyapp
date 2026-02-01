@@ -58,6 +58,7 @@ describe('Team Component', () => {
       team: createMockTeam({
         id: 1,
         name: 'Test Team',
+        ownerId: 1,
         ownerName: 'Test Owner',
       }),
     });

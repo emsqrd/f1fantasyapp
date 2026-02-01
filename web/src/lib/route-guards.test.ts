@@ -175,6 +175,7 @@ describe('route-guards', () => {
       vi.mocked(getMyTeam).mockResolvedValue({
         id: 1,
         name: 'Test Team',
+        ownerId: 1,
         ownerName: 'Test Owner',
         drivers: [],
         constructors: [],
@@ -271,6 +272,7 @@ describe('route-guards', () => {
       vi.mocked(getMyTeam).mockResolvedValue({
         id: 1,
         name: 'Test Team',
+        ownerId: 1,
         ownerName: 'Test Owner',
         drivers: [],
         constructors: [],
@@ -362,6 +364,7 @@ describe('route-guards', () => {
       vi.mocked(getMyTeam).mockResolvedValue({
         id: 1,
         name: 'Test Team',
+        ownerId: 1,
         ownerName: 'Test Owner',
         drivers: [],
         constructors: [],

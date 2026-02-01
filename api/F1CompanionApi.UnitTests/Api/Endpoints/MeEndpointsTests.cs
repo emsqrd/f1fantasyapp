@@ -326,6 +326,7 @@ public class MeEndpointsTests
         {
             Id = 1,
             Name = "My Team",
+            OwnerId = 1,
             OwnerName = "John Doe",
             Drivers = new List<TeamDriverResponse>(),
             Constructors = new List<TeamConstructorResponse>()
@@ -424,7 +425,7 @@ public class MeEndpointsTests
     {
         // Arrange
         var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
-        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerId = 1, OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
         var request = new AddDriverToTeamRequest { DriverId = 5, SlotPosition = 1 };
 
         _mockUserProfileService
@@ -476,7 +477,7 @@ public class MeEndpointsTests
     {
         // Arrange
         var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
-        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerId = 1, OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
         var request = new AddDriverToTeamRequest { DriverId = 5, SlotPosition = 1 };
 
         _mockUserProfileService
@@ -505,7 +506,7 @@ public class MeEndpointsTests
     {
         // Arrange
         var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
-        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerId = 1, OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
         int slotPosition = 1;
 
         _mockUserProfileService
@@ -557,7 +558,7 @@ public class MeEndpointsTests
     {
         // Arrange
         var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
-        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerId = 1, OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
         int slotPosition = 1;
 
         _mockUserProfileService
@@ -586,7 +587,7 @@ public class MeEndpointsTests
     {
         // Arrange
         var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
-        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerId = 1, OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
         var request = new AddConstructorToTeamRequest { ConstructorId = 3, SlotPosition = 1 };
 
         _mockUserProfileService
@@ -638,7 +639,7 @@ public class MeEndpointsTests
     {
         // Arrange
         var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
-        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerId = 1, OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
         var request = new AddConstructorToTeamRequest { ConstructorId = 3, SlotPosition = 1 };
 
         _mockUserProfileService
@@ -667,7 +668,7 @@ public class MeEndpointsTests
     {
         // Arrange
         var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
-        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerId = 1, OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
         int slotPosition = 1;
 
         _mockUserProfileService
@@ -719,7 +720,7 @@ public class MeEndpointsTests
     {
         // Arrange
         var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
-        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerId = 1, OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
         int slotPosition = 1;
 
         _mockUserProfileService
