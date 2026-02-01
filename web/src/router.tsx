@@ -31,6 +31,9 @@ import { z } from 'zod';
 
 import { BrowseLeagues } from './components/BrowseLeagues/BrowseLeagues';
 import { JoinInvite } from './components/JoinInvite/JoinInvite';
+import type { Constructor, Driver } from './contracts/Role';
+import { getActiveConstructors } from './services/constructorService';
+import { getActiveDrivers } from './services/driverService';
 import { previewInvite } from './services/leagueInviteService';
 
 /**
@@ -550,7 +553,13 @@ const teamRoute = createRoute({
   staticData: {
     pageTitle: 'Team Details',
   },
-  loader: async ({ params }): Promise<{ team: TeamType }> => {
+  loader: async ({
+    params,
+  }): Promise<{
+    team: TeamType;
+    activeDrivers: Driver[];
+    activeConstructors: Constructor[];
+  }> => {
     const TEAM_ROUTE_ID = '/_authenticated/_team-required/team/$teamId';
 
     // Validate and parse params using Zod schema
@@ -563,14 +572,20 @@ const teamRoute = createRoute({
     }
 
     const { teamId } = validationResult.data;
-    const team = await getTeamById(teamId);
+
+    // Fetch all data in parallel
+    const [team, activeDrivers, activeConstructors] = await Promise.all([
+      getTeamById(teamId),
+      getActiveDrivers(),
+      getActiveConstructors(),
+    ]);
 
     // Return 404 if team doesn't exist
     if (!team) {
       throw notFound({ routeId: TEAM_ROUTE_ID });
     }
 
-    return { team };
+    return { team, activeDrivers, activeConstructors };
   },
   component: Team,
   pendingComponent: () => (

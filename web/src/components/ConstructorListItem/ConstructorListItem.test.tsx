@@ -8,7 +8,6 @@ import { ConstructorListItem } from './ConstructorListItem';
 describe('ConstructorListItem', () => {
   const constructor: Constructor = {
     id: 1,
-    type: 'constructor',
     name: 'Mercedes',
     fullName: 'Mercedes-AMG Petronas F1 Team',
     countryAbbreviation: 'DE',

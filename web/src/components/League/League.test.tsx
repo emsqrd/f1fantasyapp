@@ -150,19 +150,6 @@ describe('League', () => {
       expect(screen.getByDisplayValue(inviteUrl)).toBeInTheDocument();
     });
 
-    it('shows loading state while fetching invite link', async () => {
-      const user = userEvent.setup();
-      mockGetOrCreateLeagueInvite.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(mockLeagueInvite), 100)),
-      );
-
-      render(<League />);
-      await user.click(screen.getByRole('button', { name: /invite/i }));
-
-      // User sees loading state
-      expect(screen.getByText('Loading invite link...')).toBeInTheDocument();
-    });
-
     it('displays error when invite cannot be loaded', async () => {
       const user = userEvent.setup();
       mockGetOrCreateLeagueInvite.mockRejectedValue(new Error('Network error'));

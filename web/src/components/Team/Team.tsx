@@ -1,7 +1,5 @@
-import type { Constructor, Driver } from '@/contracts/Role';
-import type { Team as TeamType } from '@/contracts/Team';
 import { useLoaderData } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { AppContainer } from '../AppContainer/AppContainer';
 import { ConstructorPicker } from '../ConstructorPicker/ConstructorPicker';
@@ -13,39 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 /**
  * Team component - displays team details with driver and constructor selection.
  *
- * Uses TanStack Router's loader pattern for data fetching:
- * - Data is loaded before component renders (no content flash)
- * - Loading state handled by route's pendingComponent
- * - Errors handled by route's errorComponent
- * - Team not found handled by route's notFoundComponent
- *
  * @returns The team details page with driver/constructor pickers
  */
 export function Team() {
   // Get team data from route loader
-  const { team } = useLoaderData({
+  const { team, activeDrivers, activeConstructors } = useLoaderData({
     from: '/_authenticated/_team-required/team/$teamId',
-  }) as { team: TeamType };
-
-  // Memoize driver slot transformation to avoid recalculating on every render
-  const driverSlots = useMemo(() => {
-    if (!team?.drivers) return Array.from({ length: 5 }, () => null);
-
-    return Array.from({ length: 5 }, (_, index) => {
-      const teamDriver = team.drivers.find((d) => d.slotPosition === index);
-      return teamDriver ? { ...teamDriver, type: 'driver' as const } : null;
-    }) as (Driver | null)[];
-  }, [team?.drivers]);
-
-  // Memoize constructor slot transformation to avoid recalculating on every render
-  const constructorSlots = useMemo(() => {
-    if (!team?.constructors) return Array.from({ length: 2 }, () => null);
-
-    return Array.from({ length: 2 }, (_, index) => {
-      const teamConstructor = team.constructors.find((c) => c.slotPosition === index);
-      return teamConstructor ? { ...teamConstructor, type: 'constructor' as const } : null;
-    }) as (Constructor | null)[];
-  }, [team?.constructors]);
+  });
 
   // Track active tab to control visibility while keeping both tabs mounted
   const [activeTab, setActiveTab] = useState('drivers');
@@ -123,7 +95,7 @@ export function Team() {
         >
           <Card className="py-4">
             <CardContent className="px-4">
-              <DriverPicker lineupSize={5} currentDrivers={driverSlots} />
+              <DriverPicker activeDrivers={activeDrivers} teamDrivers={team.drivers} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -134,7 +106,10 @@ export function Team() {
         >
           <Card className="py-4">
             <CardContent className="px-4">
-              <ConstructorPicker lineupSize={2} currentConstructors={constructorSlots} />
+              <ConstructorPicker
+                activeConstructors={activeConstructors}
+                teamConstructors={team.constructors}
+              />
             </CardContent>
           </Card>
         </TabsContent>

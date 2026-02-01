@@ -156,7 +156,7 @@ describe('Team Component', () => {
       render(<Team />);
 
       const driverPicker = screen.getByTestId('driver-picker');
-      expect(driverPicker).toHaveAttribute('data-lineup-size', '5');
+      expect(driverPicker).toHaveAttribute('data-lineup-size', '4');
     });
 
     it('passes correct lineupSize to ConstructorPicker', async () => {
@@ -168,7 +168,7 @@ describe('Team Component', () => {
       await user.click(constructorsTab);
 
       const constructorPicker = screen.getByTestId('constructor-picker');
-      expect(constructorPicker).toHaveAttribute('data-lineup-size', '2');
+      expect(constructorPicker).toHaveAttribute('data-lineup-size', '4');
     });
 
     it('ensures only one tab content is visible at a time', async () => {
