@@ -562,24 +562,19 @@ export function ConstructorPicker({
 
 **File:** `web/src/components/Team/Team.tsx`
 
-Determine mode from route, show owner name in header, and pass readOnly to pickers:
+Convert `Team` from a route-aware component to a presentational component that accepts data via props. This allows it to be shared across two routes while each route maintains type-safe `useLoaderData` calls.
+
+**Component Props:**
 
 ```typescript
-import { useLoaderData, useMatch } from '@tanstack/react-router';
+interface TeamProps {
+  team: TeamType;
+  activeDrivers: Driver[];
+  activeConstructors: Constructor[];
+  readOnly: boolean;
+}
 
-export function Team() {
-  // Get team data from route loader (works for both routes)
-  const { team, activeDrivers, activeConstructors } = useLoaderData({
-    from: '/_authenticated/_team-required/team/$teamId',
-  });
-
-  // Determine read-only mode based on route (not ownership)
-  const isMyTeamRoute = useMatch({
-    from: '/_authenticated/_team-required/my-team',
-    shouldThrow: false
-  });
-  const readOnly = !isMyTeamRoute;
-
+export function Team({ team, activeDrivers, activeConstructors, readOnly }: TeamProps) {
   // Track active tab to control visibility while keeping both tabs mounted
   const [activeTab, setActiveTab] = useState('drivers');
 
@@ -616,7 +611,7 @@ export function Team() {
               <DriverPicker
                 activeDrivers={activeDrivers}
                 teamDrivers={team.drivers}
-                readOnly={readOnly} // Pass readOnly prop
+                readOnly={readOnly}
               />
             </CardContent>
           </Card>
@@ -628,7 +623,7 @@ export function Team() {
               <ConstructorPicker
                 activeConstructors={activeConstructors}
                 teamConstructors={team.constructors}
-                readOnly={readOnly} // Pass readOnly prop
+                readOnly={readOnly}
               />
             </CardContent>
           </Card>
@@ -639,6 +634,13 @@ export function Team() {
 }
 ```
 
+**Key changes:**
+
+- `Team` now accepts all data as props instead of calling `useLoaderData`
+- `readOnly` is passed as a prop (determined by the route, not the component)
+- This makes `Team` a proper reusable component that works with both routes
+- Each route definition (in router.tsx) will call `useLoaderData` with its own typed `from` and wrap `Team` with the appropriate props
+
 ---
 
 ### Phase 3: Update Routes
@@ -647,7 +649,7 @@ export function Team() {
 
 **File:** `web/src/router.tsx`
 
-Add new route after existing `teamRoute`:
+Add new route with an inline wrapper component that calls `useLoaderData` with the typed `from` parameter:
 
 ```typescript
 const myTeamRoute = createRoute({
@@ -656,22 +658,58 @@ const myTeamRoute = createRoute({
   staticData: {
     pageTitle: 'My Team',
   },
-  loader: async ({ context }) => {
-    const team = await getMyTeam();
+  loader: async () => {
+    const [team, activeDrivers, activeConstructors] = await Promise.all([
+      getMyTeam(),
+      getActiveDrivers(),
+      getActiveConstructors(),
+    ]);
 
     if (!team) {
       throw redirect({ to: '/create-team' });
     }
 
-    return { team };
+    return { team, activeDrivers, activeConstructors };
   },
-  component: Team,  // Reuse same component
+  component: () => {
+    // Inline wrapper component that calls useLoaderData with typed `from`
+    const { team, activeDrivers, activeConstructors } = useLoaderData({
+      from: '/_authenticated/_team-required/my-team',
+    });
+
+    return (
+      <Team
+        team={team}
+        activeDrivers={activeDrivers}
+        activeConstructors={activeConstructors}
+        readOnly={false}
+      />
+    );
+  },
+  pendingComponent: () => (
+    <div role="status" className="flex w-full items-center justify-center p-8 md:min-h-screen">
+      <div className="text-center">
+        <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+        <p className="text-muted-foreground">Loading team...</p>
+      </div>
+    </div>
+  ),
+  pendingMs: 200,
+  staleTime: 10_000,
+  gcTime: 5 * 60 * 1000,
   notFoundComponent: () => (
-    <ErrorState
-      title="Team Not Found"
-      description="Your team could not be found."
-      action={{ label: 'Create Team', to: '/create-team' }}
-    />
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <h1 className="mb-4 text-4xl font-bold">Team Not Found</h1>
+      <p className="text-muted-foreground mb-4">Your team could not be found.</p>
+      <a href="/create-team" className="text-primary hover:underline">
+        Create Team
+      </a>
+    </div>
+  ),
+  errorComponent: ({ error }) => (
+    <ErrorBoundary level="page">
+      <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
+    </ErrorBoundary>
   ),
 });
 ```
@@ -680,27 +718,26 @@ const myTeamRoute = createRoute({
 
 **File:** `web/src/router.tsx`
 
-Update existing `teamRoute` loader:
+Update existing `teamRoute` with an inline wrapper component and redirect logic:
 
 ```typescript
 const teamRoute = createRoute({
   getParentRoute: () => teamRequiredLayoutRoute,
   path: 'team/$teamId',
   staticData: {
-    pageTitle: 'Team',
+    pageTitle: 'Team Details',
   },
-  validateSearch: z.object({}).optional(),
-  loaderDeps: ({ search: _search }) => ({} as const),
   loader: async ({ params, context }) => {
-    // Validate team ID
-    const teamIdSchema = z.coerce.number().int().positive();
-    const parsed = teamIdSchema.safeParse(params.teamId);
+    const TEAM_ROUTE_ID = '/_authenticated/_team-required/team/$teamId';
 
-    if (!parsed.success) {
-      throw notFound({ routeId: ROUTE_ID });
+    // Validate and parse params using Zod schema
+    const validationResult = teamIdParamsSchema.safeParse(params);
+
+    if (!validationResult.success) {
+      throw notFound({ routeId: TEAM_ROUTE_ID });
     }
 
-    const teamId = parsed.data;
+    const { teamId } = validationResult.data;
 
     // Redirect if viewing own team
     const { teamContext } = context;
@@ -708,24 +745,58 @@ const teamRoute = createRoute({
       throw redirect({ to: '/my-team' });
     }
 
-    // Fetch team
-    const team = await getTeamById(teamId);
+    // Fetch all data in parallel
+    const [team, activeDrivers, activeConstructors] = await Promise.all([
+      getTeamById(teamId),
+      getActiveDrivers(),
+      getActiveConstructors(),
+    ]);
 
     if (!team) {
-      throw notFound({ routeId: ROUTE_ID });
+      throw notFound({ routeId: TEAM_ROUTE_ID });
     }
 
-    return { team };
+    return { team, activeDrivers, activeConstructors };
   },
+  component: () => {
+    // Inline wrapper component that calls useLoaderData with typed `from`
+    const { team, activeDrivers, activeConstructors } = useLoaderData({
+      from: '/_authenticated/_team-required/team/$teamId',
+    });
+
+    return (
+      <Team
+        team={team}
+        activeDrivers={activeDrivers}
+        activeConstructors={activeConstructors}
+        readOnly={true}
+      />
+    );
+  },
+  pendingComponent: () => (
+    <div role="status" className="flex w-full items-center justify-center p-8 md:min-h-screen">
+      <div className="text-center">
+        <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+        <p className="text-muted-foreground">Loading team...</p>
+      </div>
+    </div>
+  ),
+  pendingMs: 200,
   staleTime: 10_000,
   gcTime: 5 * 60 * 1000,
-  component: Team,  // Same component
   notFoundComponent: () => (
-    <ErrorState
-      title="Team Not Found"
-      description="The team you're looking for doesn't exist."
-      action={{ label: 'Browse Leagues', to: '/browse-leagues' }}
-    />
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <h1 className="mb-4 text-4xl font-bold">Team Not Found</h1>
+      <p className="text-muted-foreground mb-4">The team you're looking for doesn't exist.</p>
+      <a href="/leagues" className="text-primary hover:underline">
+        Go to leagues
+      </a>
+    </div>
+  ),
+  errorComponent: ({ error }) => (
+    <ErrorBoundary level="page">
+      <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
+    </ErrorBoundary>
   ),
 });
 ```

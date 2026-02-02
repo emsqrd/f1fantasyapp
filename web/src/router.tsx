@@ -6,7 +6,7 @@ import { LandingPage } from '@/components/LandingPage/LandingPage';
 import { Layout } from '@/components/Layout/Layout';
 import { League } from '@/components/League/League';
 import { LeagueList } from '@/components/LeagueList/LeagueList';
-import { Team } from '@/components/Team/Team';
+import { MyTeamRoute, TeamRoute } from '@/components/Team/Team';
 import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import type { Team as TeamType } from '@/contracts/Team';
@@ -553,6 +553,13 @@ const teamRoute = createRoute({
   staticData: {
     pageTitle: 'Team Details',
   },
+  beforeLoad: async ({ context, params }) => {
+    // Redirect to /my-team if viewing own team (runs before loader/render)
+    const validationResult = teamIdParamsSchema.safeParse(params);
+    if (validationResult.success && context.teamContext.myTeamId === validationResult.data.teamId) {
+      throw redirect({ to: '/my-team', replace: true });
+    }
+  },
   loader: async ({
     params,
   }): Promise<{
@@ -587,7 +594,7 @@ const teamRoute = createRoute({
 
     return { team, activeDrivers, activeConstructors };
   },
-  component: Team,
+  component: TeamRoute,
   pendingComponent: () => (
     <div role="status" className="flex w-full items-center justify-center p-8 md:min-h-screen">
       <div className="text-center">
@@ -605,6 +612,58 @@ const teamRoute = createRoute({
       <p className="text-muted-foreground mb-4">The team you're looking for doesn't exist.</p>
       <a href="/leagues" className="text-primary hover:underline">
         Go to leagues
+      </a>
+    </div>
+  ),
+  errorComponent: ({ error }) => (
+    <ErrorBoundary level="page">
+      <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
+    </ErrorBoundary>
+  ),
+});
+
+const myTeamRoute = createRoute({
+  getParentRoute: () => teamRequiredLayoutRoute,
+  path: 'my-team',
+  staticData: {
+    pageTitle: 'My Team',
+  },
+  loader: async (): Promise<{
+    team: TeamType;
+    activeDrivers: Driver[];
+    activeConstructors: Constructor[];
+  }> => {
+    // Fetch all data in parallel
+    const [team, activeDrivers, activeConstructors] = await Promise.all([
+      getMyTeam(),
+      getActiveDrivers(),
+      getActiveConstructors(),
+    ]);
+
+    if (!team) {
+      throw redirect({ to: '/create-team' });
+    }
+
+    return { team, activeDrivers, activeConstructors };
+  },
+  component: MyTeamRoute,
+  pendingComponent: () => (
+    <div role="status" className="flex w-full items-center justify-center p-8 md:min-h-screen">
+      <div className="text-center">
+        <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+        <p className="text-muted-foreground">Loading team...</p>
+      </div>
+    </div>
+  ),
+  pendingMs: 200, // Show pending after 200ms to prevent flash for fast loads
+  staleTime: 10_000, // Consider fresh for 10 seconds
+  gcTime: 5 * 60_000, // Keep in memory for 5 minutes
+  notFoundComponent: () => (
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <h1 className="mb-4 text-4xl font-bold">Team Not Found</h1>
+      <p className="text-muted-foreground mb-4">Your team could not be found.</p>
+      <a href="/create-team" className="text-primary hover:underline">
+        Create Team
       </a>
     </div>
   ),
@@ -633,7 +692,13 @@ const routeTree = rootRoute.addChildren([
   joinInviteRoute,
   authenticatedLayoutRoute.addChildren([
     accountRoute,
-    teamRequiredLayoutRoute.addChildren([leaguesRoute, browseLeaguesRoute, leagueRoute, teamRoute]),
+    teamRequiredLayoutRoute.addChildren([
+      leaguesRoute,
+      browseLeaguesRoute,
+      leagueRoute,
+      teamRoute,
+      myTeamRoute,
+    ]),
   ]),
   noTeamLayoutRoute.addChildren([createTeamRoute]),
 ]);

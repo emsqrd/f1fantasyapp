@@ -1,3 +1,5 @@
+import type { Constructor, Driver } from '@/contracts/Role';
+import type { Team } from '@/contracts/Team';
 import { useLoaderData } from '@tanstack/react-router';
 import { useState } from 'react';
 
@@ -8,17 +10,49 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
+interface TeamProps {
+  team: Team;
+  activeDrivers: Driver[];
+  activeConstructors: Constructor[];
+  readOnly: boolean;
+}
+
+export function MyTeamRoute() {
+  const { team, activeDrivers, activeConstructors } = useLoaderData({
+    from: '/_authenticated/_team-required/my-team',
+  });
+
+  return (
+    <Team
+      team={team}
+      activeDrivers={activeDrivers}
+      activeConstructors={activeConstructors}
+      readOnly={false}
+    />
+  );
+}
+
+export function TeamRoute() {
+  const { team, activeDrivers, activeConstructors } = useLoaderData({
+    from: '/_authenticated/_team-required/team/$teamId',
+  });
+
+  return (
+    <Team
+      team={team}
+      activeDrivers={activeDrivers}
+      activeConstructors={activeConstructors}
+      readOnly={true}
+    />
+  );
+}
+
 /**
  * Team component - displays team details with driver and constructor selection.
  *
  * @returns The team details page with driver/constructor pickers
  */
-export function Team() {
-  // Get team data from route loader
-  const { team, activeDrivers, activeConstructors } = useLoaderData({
-    from: '/_authenticated/_team-required/team/$teamId',
-  });
-
+export function Team({ team, activeDrivers, activeConstructors, readOnly }: TeamProps) {
   // Track active tab to control visibility while keeping both tabs mounted
   const [activeTab, setActiveTab] = useState('drivers');
 
@@ -28,6 +62,9 @@ export function Team() {
         <Card className="mb-6 flex justify-center sm:mb-0">
           <CardHeader>
             <CardTitle className="text-center text-3xl font-bold">{team.name}</CardTitle>
+            {readOnly && (
+              <p className="text-muted-foreground text-center text-sm">Owner: {team.ownerName}</p>
+            )}
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 sm:flex sm:flex-row sm:justify-center">
@@ -95,7 +132,11 @@ export function Team() {
         >
           <Card className="py-4">
             <CardContent className="px-4">
-              <DriverPicker activeDrivers={activeDrivers} teamDrivers={team.drivers} />
+              <DriverPicker
+                activeDrivers={activeDrivers}
+                teamDrivers={team.drivers}
+                readOnly={readOnly}
+              />
             </CardContent>
           </Card>
         </TabsContent>

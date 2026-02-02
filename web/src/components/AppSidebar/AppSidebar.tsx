@@ -2,8 +2,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTeam } from '@/hooks/useTeam';
 import { avatarEvents } from '@/lib/avatarEvents';
 import { router } from '@/router';
-import { useMatches, useNavigate, useRouterState } from '@tanstack/react-router';
 import * as Sentry from '@sentry/react';
+import { useMatches, useNavigate, useRouterState } from '@tanstack/react-router';
 import {
   BadgeCheck,
   Check,
@@ -47,7 +47,7 @@ import {
 
 export function AppSidebar() {
   const { user, signOut, startAuthTransition, completeAuthTransition } = useAuth();
-  const { hasTeam, myTeamId } = useTeam();
+  const { hasTeam } = useTeam();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const routerState = useRouterState();
@@ -76,7 +76,7 @@ export function AppSidebar() {
   };
 
   const handleMyTeam = () => {
-    navigate({ to: '/team/$teamId', params: { teamId: String(myTeamId) } });
+    navigate({ to: '/my-team' });
   };
 
   const handleCreateTeam = () => {
