@@ -8,9 +8,15 @@ interface ConstructorCardProps {
   constructor: Constructor | null;
   onOpenPicker: () => void;
   onRemove: () => void;
+  readOnly: boolean;
 }
 
-export function ConstructorCard({ constructor, onOpenPicker, onRemove }: ConstructorCardProps) {
+export function ConstructorCard({
+  constructor,
+  onOpenPicker,
+  onRemove,
+  readOnly,
+}: ConstructorCardProps) {
   return (
     <Card className="bg-secondary relative py-4">
       <CardContent className="group flex h-full items-center justify-between px-3">
@@ -21,18 +27,32 @@ export function ConstructorCard({ constructor, onOpenPicker, onRemove }: Constru
               <h3 className="text-lg font-bold">{constructor.name}</h3>
             </div>
           </div>
+        ) : readOnly ? (
+          // Read-only mode: Show placeholder matching filled card layout
+          <div className="flex h-full w-full items-center">
+            <span className="aspect-square w-14 self-center rounded-full border-2 border-dashed border-gray-600" />
+
+            <div className="flex flex-1 flex-col items-start justify-between pl-4">
+              <h3 className="text-muted-foreground text-lg font-medium">Empty Slot</h3>
+            </div>
+          </div>
         ) : (
+          // Edit mode: Show add button matching filled card layout
           <Button
             onClick={onOpenPicker}
             variant="ghost"
-            className="flex items-center gap-2 !bg-transparent"
+            className="flex h-full w-full items-center !bg-transparent p-0 hover:opacity-80"
           >
-            <CirclePlus />
-            Add Constructor
+            <span className="bg-primary/10 text-primary flex aspect-square w-14 items-center justify-center self-center rounded-full border-2 border-dashed border-gray-600">
+              <CirclePlus className="size-6" />
+            </span>
+            <div className="flex flex-1 flex-col items-start justify-between pl-4">
+              <h3 className="text-muted-foreground text-lg font-medium">Add Constructor</h3>
+            </div>
           </Button>
         )}
       </CardContent>
-      {constructor && (
+      {constructor && !readOnly && (
         <Button
           size="icon"
           variant="ghost"

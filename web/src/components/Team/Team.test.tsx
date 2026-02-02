@@ -47,14 +47,16 @@ vi.mock('../ConstructorPicker/ConstructorPicker', () => ({
   ConstructorPicker: (props: {
     activeConstructors: Constructor[];
     teamConstructors?: unknown[];
+    readOnly: boolean;
   }) => {
     mockConstructorPicker(props);
     return (
       <div
         data-testid="constructor-picker"
+        data-read-only={props.readOnly}
         data-active-constructors={props.activeConstructors.length}
       >
-        Mocked ConstructorPicker
+        Mocked ConstructorPicker (readOnly: {props.readOnly.toString()})
       </div>
     );
   },
@@ -279,6 +281,7 @@ describe('Team Component', () => {
         expect.objectContaining({
           activeConstructors: mockActiveConstructors,
           teamConstructors: mockTeam.constructors,
+          readOnly: false,
         }),
       );
     });
@@ -428,6 +431,46 @@ describe('Team Component', () => {
 
       const driverPicker = screen.getByTestId('driver-picker');
       expect(driverPicker).toHaveAttribute('data-read-only', 'false');
+    });
+
+    it('passes readOnly=true to ConstructorPicker when in read-only mode', () => {
+      render(
+        <Team
+          team={mockTeam}
+          activeDrivers={mockActiveDrivers}
+          activeConstructors={mockActiveConstructors}
+          readOnly={true}
+        />,
+      );
+
+      expect(mockConstructorPicker).toHaveBeenCalledWith(
+        expect.objectContaining({
+          readOnly: true,
+        }),
+      );
+
+      const constructorPicker = screen.getByTestId('constructor-picker');
+      expect(constructorPicker).toHaveAttribute('data-read-only', 'true');
+    });
+
+    it('passes readOnly=false to ConstructorPicker when not in read-only mode', () => {
+      render(
+        <Team
+          team={mockTeam}
+          activeDrivers={mockActiveDrivers}
+          activeConstructors={mockActiveConstructors}
+          readOnly={false}
+        />,
+      );
+
+      expect(mockConstructorPicker).toHaveBeenCalledWith(
+        expect.objectContaining({
+          readOnly: false,
+        }),
+      );
+
+      const constructorPicker = screen.getByTestId('constructor-picker');
+      expect(constructorPicker).toHaveAttribute('data-read-only', 'false');
     });
   });
 });

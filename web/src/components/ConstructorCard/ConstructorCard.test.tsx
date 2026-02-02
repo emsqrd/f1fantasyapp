@@ -7,9 +7,16 @@ import type { Constructor } from '@/contracts/Role';
 import { ConstructorCard } from './ConstructorCard';
 
 describe('ConstructorCard', () => {
-  describe('Empty State (no constructor selected)', () => {
-    it('displays "Add Constructor" button when no constructor is selected', () => {
-      render(<ConstructorCard constructor={null} onOpenPicker={vi.fn()} onRemove={vi.fn()} />);
+  describe('No Constructor Selected - Edit Mode', () => {
+    it('displays "Add Constructor" button when no constructor is selected in edit mode', () => {
+      render(
+        <ConstructorCard
+          constructor={null}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={false}
+        />,
+      );
 
       expect(screen.getByRole('button', { name: /add constructor/i })).toBeInTheDocument();
     });
@@ -18,7 +25,14 @@ describe('ConstructorCard', () => {
       const user = userEvent.setup();
       const onOpenPicker = vi.fn();
 
-      render(<ConstructorCard constructor={null} onOpenPicker={onOpenPicker} onRemove={vi.fn()} />);
+      render(
+        <ConstructorCard
+          constructor={null}
+          onOpenPicker={onOpenPicker}
+          onRemove={vi.fn()}
+          readOnly={false}
+        />,
+      );
 
       await user.click(screen.getByRole('button', { name: /add constructor/i }));
 
@@ -26,13 +40,61 @@ describe('ConstructorCard', () => {
     });
 
     it('does not display remove button when no constructor is selected', () => {
-      render(<ConstructorCard constructor={null} onOpenPicker={vi.fn()} onRemove={vi.fn()} />);
+      render(
+        <ConstructorCard
+          constructor={null}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={false}
+        />,
+      );
 
       expect(screen.queryByRole('button', { name: /remove constructor/i })).not.toBeInTheDocument();
     });
   });
 
-  describe('Filled State (constructor selected)', () => {
+  describe('No Constructor Selected - Read-Only Mode', () => {
+    it('displays "Empty Slot" text when no constructor is selected in read-only mode', () => {
+      render(
+        <ConstructorCard
+          constructor={null}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={true}
+        />,
+      );
+
+      expect(screen.getByText('Empty Slot')).toBeInTheDocument();
+    });
+
+    it('does not display "Add Constructor" button in read-only mode', () => {
+      render(
+        <ConstructorCard
+          constructor={null}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={true}
+        />,
+      );
+
+      expect(screen.queryByRole('button', { name: /add constructor/i })).not.toBeInTheDocument();
+    });
+
+    it('does not display remove button in read-only mode', () => {
+      render(
+        <ConstructorCard
+          constructor={null}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={true}
+        />,
+      );
+
+      expect(screen.queryByRole('button', { name: /remove constructor/i })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Constructor Selected - Edit Mode', () => {
     const constructor: Constructor = {
       id: 1,
       name: 'Ferrari',
@@ -41,19 +103,40 @@ describe('ConstructorCard', () => {
     };
 
     it('displays constructor name when constructor is selected', () => {
-      render(<ConstructorCard constructor={constructor} onOpenPicker={vi.fn()} onRemove={vi.fn()} />);
+      render(
+        <ConstructorCard
+          constructor={constructor}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={false}
+        />,
+      );
 
       expect(screen.getByText('Ferrari')).toBeInTheDocument();
     });
 
     it('does not display "Add Constructor" button when constructor is selected', () => {
-      render(<ConstructorCard constructor={constructor} onOpenPicker={vi.fn()} onRemove={vi.fn()} />);
+      render(
+        <ConstructorCard
+          constructor={constructor}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={false}
+        />,
+      );
 
       expect(screen.queryByRole('button', { name: /add constructor/i })).not.toBeInTheDocument();
     });
 
-    it('displays remove button with accessible label', () => {
-      render(<ConstructorCard constructor={constructor} onOpenPicker={vi.fn()} onRemove={vi.fn()} />);
+    it('displays remove button with accessible label in edit mode', () => {
+      render(
+        <ConstructorCard
+          constructor={constructor}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={false}
+        />,
+      );
 
       expect(screen.getByRole('button', { name: /remove constructor/i })).toBeInTheDocument();
     });
@@ -62,7 +145,14 @@ describe('ConstructorCard', () => {
       const user = userEvent.setup();
       const onRemove = vi.fn();
 
-      render(<ConstructorCard constructor={constructor} onOpenPicker={vi.fn()} onRemove={onRemove} />);
+      render(
+        <ConstructorCard
+          constructor={constructor}
+          onOpenPicker={vi.fn()}
+          onRemove={onRemove}
+          readOnly={false}
+        />,
+      );
 
       await user.click(screen.getByRole('button', { name: /remove constructor/i }));
 
@@ -70,12 +160,67 @@ describe('ConstructorCard', () => {
     });
   });
 
+  describe('Constructor Selected - Read-Only Mode', () => {
+    const constructor: Constructor = {
+      id: 1,
+      name: 'Ferrari',
+      fullName: 'Scuderia Ferrari',
+      countryAbbreviation: 'ITA',
+    };
+
+    it('displays constructor name in read-only mode', () => {
+      render(
+        <ConstructorCard
+          constructor={constructor}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={true}
+        />,
+      );
+
+      expect(screen.getByText('Ferrari')).toBeInTheDocument();
+    });
+
+    it('does not display remove button in read-only mode', () => {
+      render(
+        <ConstructorCard
+          constructor={constructor}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={true}
+        />,
+      );
+
+      expect(screen.queryByRole('button', { name: /remove constructor/i })).not.toBeInTheDocument();
+    });
+
+    it('does not display "Add Constructor" button in read-only mode', () => {
+      render(
+        <ConstructorCard
+          constructor={constructor}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={true}
+        />,
+      );
+
+      expect(screen.queryByRole('button', { name: /add constructor/i })).not.toBeInTheDocument();
+    });
+  });
+
   describe('Keyboard Interactions', () => {
-    it('allows keyboard interaction with "Add Constructor" button', async () => {
+    it('allows keyboard interaction with "Add Constructor" button in edit mode', async () => {
       const user = userEvent.setup();
       const onOpenPicker = vi.fn();
 
-      render(<ConstructorCard constructor={null} onOpenPicker={onOpenPicker} onRemove={vi.fn()} />);
+      render(
+        <ConstructorCard
+          constructor={null}
+          onOpenPicker={onOpenPicker}
+          onRemove={vi.fn()}
+          readOnly={false}
+        />,
+      );
 
       const addButton = screen.getByRole('button', { name: /add constructor/i });
       addButton.focus();
@@ -84,7 +229,7 @@ describe('ConstructorCard', () => {
       expect(onOpenPicker).toHaveBeenCalledTimes(1);
     });
 
-    it('allows keyboard interaction with remove button', async () => {
+    it('allows keyboard interaction with remove button in edit mode', async () => {
       const user = userEvent.setup();
       const onRemove = vi.fn();
       const constructor: Constructor = {
@@ -94,7 +239,14 @@ describe('ConstructorCard', () => {
         countryAbbreviation: 'AUT',
       };
 
-      render(<ConstructorCard constructor={constructor} onOpenPicker={vi.fn()} onRemove={onRemove} />);
+      render(
+        <ConstructorCard
+          constructor={constructor}
+          onOpenPicker={vi.fn()}
+          onRemove={onRemove}
+          readOnly={false}
+        />,
+      );
 
       const removeButton = screen.getByRole('button', { name: /remove constructor/i });
       removeButton.focus();

@@ -150,6 +150,7 @@ export function Team({ team, activeDrivers, activeConstructors, readOnly }: Team
               <ConstructorPicker
                 activeConstructors={activeConstructors}
                 teamConstructors={team.constructors}
+                readOnly={readOnly}
               />
             </CardContent>
           </Card>
