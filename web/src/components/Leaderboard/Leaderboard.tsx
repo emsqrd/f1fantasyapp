@@ -2,6 +2,7 @@ import type { League } from '@/contracts/League';
 import { Link, useLoaderData, useRouteContext } from '@tanstack/react-router';
 
 import { Badge } from '../ui/badge';
+import { buttonVariants } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 
 interface LeagueLoaderData {
@@ -28,8 +29,8 @@ export function Leaderboard() {
         <Table className="bg-card overflow-hidden rounded-lg">
           <TableHeader className="bg-secondary sticky top-0 font-bold">
             <TableRow>
-              <TableHead className="text-center text-lg font-bold">Rank</TableHead>
-              <TableHead className="min-w-48 text-lg font-bold">Team</TableHead>
+              <TableHead className="text-center font-bold">Rank</TableHead>
+              <TableHead className="min-w-48 font-bold">Team</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -38,19 +39,19 @@ export function Leaderboard() {
 
               return (
                 <TableRow key={team.id} className="hover:bg-accent transition-colors">
-                  <TableCell className="text-center align-top text-lg">{index + 1}</TableCell>
-                  <TableCell className="min-w-48 flex items-center justify-between">
+                  <TableCell className="text-center align-top">{index + 1}</TableCell>
+                  <TableCell className="flex min-w-48 items-center justify-between">
                     <div className="flex flex-col">
-                      <div className="flex items-center text-lg">
+                      <div className="flex items-center">
                         {team.name}
                         {isMyTeam && <Badge className="ml-2">You</Badge>}
                       </div>
-                      <div className="text-muted-foreground">{team.ownerName}</div>
+                      <div className="text-muted-foreground text-xs">{team.ownerName}</div>
                     </div>
                     <Link
                       to={isMyTeam ? '/my-team' : '/team/$teamId'}
                       params={isMyTeam ? undefined : { teamId: String(team.id) }}
-                      className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                      className={buttonVariants({ variant: 'outline' })}
                       aria-label={`View team: ${team.name}`}
                     >
                       View

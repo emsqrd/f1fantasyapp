@@ -3,6 +3,7 @@ import { Link, useLoaderData, useNavigate } from '@tanstack/react-router';
 
 import { AppContainer } from '../AppContainer/AppContainer';
 import { CreateLeague } from '../CreateLeague/CreateLeague';
+import { buttonVariants } from '../ui/button';
 import { Card } from '../ui/card';
 
 // Type for the route's loader data
@@ -37,15 +38,20 @@ export function LeagueList() {
       ) : (
         <div aria-label="league-list">
           {leagues.map((league) => (
-            <Card key={league.id} className="mb-4 overflow-hidden p-0">
-              <Link
-                to="/league/$leagueId"
-                params={{ leagueId: String(league.id) }}
-                className="hover:bg-accent focus:ring-ring block w-full cursor-pointer p-6 text-left transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
-                aria-label={`View league: ${league.name}`}
-              >
-                <h3 className="text-lg font-medium">{league.name}</h3>
-              </Link>
+            <Card key={league.id} className="mb-4 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-col">
+                  <h3 className="text-lg font-medium">{league.name}</h3>
+                </div>
+                <Link
+                  to="/league/$leagueId"
+                  params={{ leagueId: String(league.id) }}
+                  className={buttonVariants({ variant: 'outline' })}
+                  aria-label={`View league: ${league.name}`}
+                >
+                  View
+                </Link>
+              </div>
             </Card>
           ))}
         </div>
