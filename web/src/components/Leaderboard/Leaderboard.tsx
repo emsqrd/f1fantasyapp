@@ -48,14 +48,24 @@ export function Leaderboard() {
                       </div>
                       <div className="text-muted-foreground text-xs">{team.ownerName}</div>
                     </div>
-                    <Link
-                      to={isMyTeam ? '/my-team' : '/team/$teamId'}
-                      params={isMyTeam ? undefined : { teamId: String(team.id) }}
-                      className={buttonVariants({ variant: 'outline' })}
-                      aria-label={`View team: ${team.name}`}
-                    >
-                      View
-                    </Link>
+                    {isMyTeam ? (
+                      <Link
+                        to="/my-team"
+                        className={buttonVariants({ variant: 'outline' })}
+                        aria-label={`View team: ${team.name}`}
+                      >
+                        View
+                      </Link>
+                    ) : (
+                      <Link
+                        to="/team/$teamId"
+                        params={{ teamId: String(team.id) }}
+                        className={buttonVariants({ variant: 'outline' })}
+                        aria-label={`View team: ${team.name}`}
+                      >
+                        View
+                      </Link>
+                    )}
                   </TableCell>
                 </TableRow>
               );
