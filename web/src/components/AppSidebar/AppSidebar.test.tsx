@@ -54,7 +54,9 @@ vi.mock('@/lib/avatarEvents', () => ({
 
 // Mock UI components
 vi.mock('../ui/sidebar', () => ({
-  Sidebar: ({ children }: { children: React.ReactNode }) => <div data-testid="sidebar">{children}</div>,
+  Sidebar: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="sidebar">{children}</div>
+  ),
   SidebarContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   SidebarFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   SidebarGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -81,9 +83,13 @@ vi.mock('../ui/sidebar', () => ({
 vi.mock('../ui/dropdown-menu', () => ({
   DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuItem: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
-    <button onClick={onClick}>{children}</button>
-  ),
+  DropdownMenuItem: ({
+    children,
+    onClick,
+  }: {
+    children: React.ReactNode;
+    onClick?: () => void;
+  }) => <button onClick={onClick}>{children}</button>,
   DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuSeparator: () => <hr />,
   DropdownMenuTrigger: ({ children }: { children: React.ReactNode; asChild?: boolean }) => (
@@ -92,7 +98,9 @@ vi.mock('../ui/dropdown-menu', () => ({
 }));
 
 vi.mock('../ui/avatar', () => ({
-  Avatar: ({ children }: { children: React.ReactNode }) => <div data-testid="avatar">{children}</div>,
+  Avatar: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="avatar">{children}</div>
+  ),
   AvatarFallback: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   AvatarImage: ({ src, onLoad }: { src?: string; onLoad?: () => void }) => {
     // Call onLoad asynchronously to avoid setState during render
@@ -215,8 +223,7 @@ describe('AppSidebar', () => {
       await user.click(screen.getByText('My Team'));
 
       expect(mockNavigate).toHaveBeenCalledWith({
-        to: '/team/$teamId',
-        params: { teamId: '456' },
+        to: '/my-team',
       });
     });
 
@@ -269,7 +276,9 @@ describe('AppSidebar', () => {
       const { container } = render(<AppSidebar />);
 
       const buttons = container.querySelectorAll('button[data-active="true"]');
-      const activeButton = Array.from(buttons).find((btn) => btn.textContent?.includes('My Leagues'));
+      const activeButton = Array.from(buttons).find((btn) =>
+        btn.textContent?.includes('My Leagues'),
+      );
 
       expect(activeButton).toBeTruthy();
     });
@@ -280,7 +289,7 @@ describe('AppSidebar', () => {
 
       const buttons = container.querySelectorAll('button[data-active="true"]');
       const activeButton = Array.from(buttons).find((btn) =>
-        btn.textContent?.includes('Browse Leagues')
+        btn.textContent?.includes('Browse Leagues'),
       );
 
       expect(activeButton).toBeTruthy();
@@ -296,7 +305,9 @@ describe('AppSidebar', () => {
       const { container } = render(<AppSidebar />);
 
       const buttons = container.querySelectorAll('button[data-active="true"]');
-      const activeButton = Array.from(buttons).find((btn) => btn.textContent?.includes('Create Team'));
+      const activeButton = Array.from(buttons).find((btn) =>
+        btn.textContent?.includes('Create Team'),
+      );
 
       expect(activeButton).toBeTruthy();
     });

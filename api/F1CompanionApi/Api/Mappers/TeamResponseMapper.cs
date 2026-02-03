@@ -12,7 +12,8 @@ public static class TeamResponseMapper
         {
             Id = team.Id,
             Name = team.Name,
-            OwnerName = team.Owner.GetFullName()
+            OwnerId = team.UserId,
+            OwnerName = team.Owner.GetFullName(),
         };
     }
 
@@ -22,6 +23,7 @@ public static class TeamResponseMapper
         {
             Id = team.Id,
             Name = team.Name,
+            OwnerId = team.UserId,
             OwnerName = team.Owner.GetFullName(),
             Drivers = team.TeamDrivers
                 .OrderBy(teamDriver => teamDriver.SlotPosition)

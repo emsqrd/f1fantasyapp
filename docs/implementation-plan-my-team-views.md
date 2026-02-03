@@ -7,12 +7,14 @@ Separate "My Team" (editable) from viewing other teams (read-only) to enable pro
 ### Problem Summary
 
 **Current State:**
+
 - Single `/team/$teamId` route accessible by any authenticated user
 - No distinction between viewing your own team vs others' teams
 - All teams show the same interface with no edit controls
 - Team API response missing `ownerId` field needed for ownership detection
 
 **Desired Outcome:**
+
 - `/my-team` route for easy access to user's own team (always editable)
 - `/team/$teamId` for viewing other teams (always read-only)
 - Redirects ensure canonical URLs (e.g., `/team/$myTeamId` → `/my-team`)
@@ -41,6 +43,7 @@ Component Behavior:
 ### Route Structure
 
 **Before:**
+
 ```
 /_team-required (layout)
 ├── team/$teamId  (single route for viewing any team)
@@ -48,6 +51,7 @@ Component Behavior:
 ```
 
 **After:**
+
 ```
 /_team-required (layout)
 ├── my-team       (NEW - canonical URL for your team)
@@ -57,12 +61,12 @@ Component Behavior:
 
 **Routing Behavior:**
 
-| URL                    | Condition              | Behavior                          |
-|------------------------|------------------------|-----------------------------------|
-| `/my-team`            | Always                | Load your team, edit mode        |
-| `/team/$teamId`       | `teamId === myTeamId`  | Redirect to `/my-team`           |
-| `/team/$teamId`       | `teamId !== myTeamId`  | Load team, read-only mode        |
-| `/team/$teamId`       | Team not found        | Show error, link to `/my-team`   |
+| URL             | Condition             | Behavior                       |
+| --------------- | --------------------- | ------------------------------ |
+| `/my-team`      | Always                | Load your team, edit mode      |
+| `/team/$teamId` | `teamId === myTeamId` | Redirect to `/my-team`         |
+| `/team/$teamId` | `teamId !== myTeamId` | Load team, read-only mode      |
+| `/team/$teamId` | Team not found        | Show error, link to `/my-team` |
 
 ### Component Mode Strategy
 
@@ -70,8 +74,11 @@ Component Behavior:
 
 ```typescript
 // Team component determines mode from route, not ownership
-const route = useRouterState({ select: (s) => s.location.pathname });
-const readOnly = !route.startsWith('/my-team');
+const isMyTeam = useMatch({
+  from: '/_authenticated/_team-required/my-team',
+  shouldThrow: false
+});
+const readOnly = !isMyTeam;
 
 // Pass to child components
 <DriverPicker lineup={driverSlots} readOnly={readOnly} />
@@ -79,6 +86,7 @@ const readOnly = !route.startsWith('/my-team');
 ```
 
 **Why single component?**
+
 - Eliminates code duplication
 - Team display logic identical in both modes
 - Only difference is interactivity (edit buttons, picker sheets)
@@ -86,9 +94,14 @@ const readOnly = !route.startsWith('/my-team');
 
 ### API Contract Changes
 
-**Add `ownerId` to TeamDetailsResponse:**
+**Add `OwnerId` to BOTH TeamDetailsResponse AND TeamResponse:**
+
+**Critical:** Leaderboards use `TeamResponse`, not `TeamDetailsResponse`!
+
+**TeamDetailsResponse (for full team view):**
 
 Current:
+
 ```csharp
 public class TeamDetailsResponse {
   public int Id { get; set; }
@@ -99,6 +112,7 @@ public class TeamDetailsResponse {
 ```
 
 New:
+
 ```csharp
 public class TeamDetailsResponse {
   public int Id { get; set; }
@@ -109,9 +123,34 @@ public class TeamDetailsResponse {
 }
 ```
 
+**TeamResponse (for leaderboards):**
+
+Current:
+
+```csharp
+public class TeamResponse {
+  public required int Id { get; set; }
+  public required string Name { get; set; }
+  public required string OwnerName { get; set; }
+}
+```
+
+New:
+
+```csharp
+public class TeamResponse {
+  public required int Id { get; set; }
+  public required string Name { get; set; }
+  public required string OwnerName { get; set; }
+  public int OwnerId { get; set; }  // NEW: User ID
+}
+```
+
 **Why needed?**
-- Frontend needs ownership check: `profile.id === team.ownerId`
-- Matches existing League pattern (LeagueResponse has OwnerId)
+
+- Frontend needs ownership check: `team.ownerId === profile.id`
+- Leaderboard must determine correct link destination (my-team vs team/$id)
+- Consistent with existing League pattern (LeagueResponse has OwnerId)
 - Backend already has `team.UserId` - just needs exposure
 
 ### Read-Only Mode Implementation
@@ -121,23 +160,30 @@ public class TeamDetailsResponse {
 ```
 Team (determines readOnly from route)
   ├── DriverPicker (readOnly=true/false)
-  │   └── LineupPicker (readOnly=true/false)
-  │       └── LineupPickerContent (readOnly=true/false)
-  │           └── DriverCard (readOnly=true/false)
-  │               └── RoleCard (readOnly=true/false)
+  │   ├── useLineupPicker hook (handles state)
+  │   ├── DriverCard (readOnly=true/false) - handles empty/filled states
+  │   └── Sheet (conditionally rendered based on readOnly)
   │
   └── ConstructorPicker (readOnly=true/false)
-      └── LineupPicker (readOnly=true/false)
-          └── LineupPickerContent (readOnly=true/false)
-              └── ConstructorCard (readOnly=true/false)
-                  └── RoleCard (readOnly=true/false)
+      ├── useLineupPicker hook (handles state)
+      ├── ConstructorCard (readOnly=true/false) - handles empty/filled states
+      └── Sheet (conditionally rendered based on readOnly)
 ```
 
+**Current Architecture (Verified):**
+
+- **No RoleCard** - removed in previous refactor
+- **DriverCard/ConstructorCard** - leaf components handling both empty and filled states
+- **DriverPicker/ConstructorPicker** - use `useLineupPicker` hook for state management
+- **Sheet** - controlled by `selectedPosition` state from hook
+
 **When `readOnly=true`:**
-- Empty slots: Click disabled, sheet doesn't open
-- Filled slots: No remove (X) button shown
-- Sheet: Never renders in DOM
-- All callbacks return early
+
+- **Visual indicator**: Team header shows "Owner: [Name]" for other teams
+- **Empty slots**: Placeholder cards display "Empty Slot" / "No driver selected" text (no buttons)
+- **Filled slots**: Display content normally, no remove (X) button shown
+- **Sheet**: Never renders in DOM (conditionally excluded when readOnly)
+- **Callbacks**: Either disabled or no-ops
 
 ---
 
@@ -146,14 +192,17 @@ Team (determines readOnly from route)
 ### Decision 1: Route Structure (Two Routes vs Single Dynamic)
 
 **Option A: Two Routes (CHOSEN)**
+
 - `/my-team` - Your team, always editable
 - `/team/$teamId` - Any team, mode determined by ownership
 
 **Option B: Single Dynamic Route**
+
 - `/team/$teamId` - Auto-detect owner, show edit controls if owner
 - Simpler route definition, but logic spread across component
 
 **Why Option A?**
+
 - ✅ Canonical URL per mode (clearer semantics)
 - ✅ Single responsibility per route
 - ✅ URL matches intended behavior ("My Team" URL = editable)
@@ -163,16 +212,19 @@ Team (determines readOnly from route)
 ### Decision 2: Mode Determination (Route vs Runtime Check)
 
 **Option A: Route-Based (CHOSEN)**
+
 ```typescript
 const readOnly = !route.startsWith('/my-team');
 ```
 
 **Option B: Ownership-Based**
+
 ```typescript
 const readOnly = team.ownerId !== profile?.id;
 ```
 
 **Why Option A?**
+
 - ✅ No runtime checks, no edge cases
 - ✅ Route structure guarantees correct mode
 - ✅ Simpler component logic
@@ -182,14 +234,17 @@ const readOnly = team.ownerId !== profile?.id;
 ### Decision 3: Single vs Dual Components
 
 **Option A: Single Team Component (CHOSEN)**
+
 - One component with `readOnly` prop
 - Mode cascades through all children
 
 **Option B: TeamEdit and TeamView Components**
+
 - Separate components for edit and read-only
 - Each component optimized for its use case
 
 **Why Option A?**
+
 - ✅ DRY principle (no duplicated display logic)
 - ✅ Simpler maintenance
 - ✅ Props clearly indicate difference
@@ -201,20 +256,42 @@ const readOnly = team.ownerId !== profile?.id;
 
 ### Phase 1: Backend API Changes
 
+#### 1.0 Add OwnerId to TeamResponse (CRITICAL - LEADERBOARD BLOCKER)
+
+**File:** `api/F1CompanionApi/Api/Models/TeamResponse.cs`
+
+Add property to response model:
+
+```csharp
+public int OwnerId { get; set; }
+```
+
+**File:** `api/F1CompanionApi/Api/Mappers/TeamResponseMapper.cs`
+
+In `ToResponseModel()` method, map the field:
+
+```csharp
+OwnerId = team.UserId,
+```
+
+**Why critical:** Leaderboards use `TeamResponse`, not `TeamDetailsResponse`. Without this, ownership detection fails.
+
 #### 1.1 Add OwnerId to TeamDetailsResponse
 
 **File:** `api/F1CompanionApi/Api/Models/TeamDetailsResponse.cs`
 
 Add property to response model:
+
 ```csharp
 public int OwnerId { get; set; }
 ```
 
-#### 1.2 Update TeamResponseMapper
+#### 1.2 Update TeamDetailsResponse Mapper
 
 **File:** `api/F1CompanionApi/Api/Mappers/TeamResponseMapper.cs`
 
 In `ToDetailsResponseModel()` method, map the field:
+
 ```csharp
 OwnerId = team.UserId,
 ```
@@ -224,12 +301,13 @@ OwnerId = team.UserId,
 **File:** `web/src/contracts/Team.ts`
 
 Add `ownerId` property:
+
 ```typescript
 export interface Team {
   id: number;
   name: string;
   ownerName: string;
-  ownerId: number;  // NEW
+  ownerId: number; // NEW
   drivers: TeamDriver[];
   constructors: TeamConstructor[];
 }
@@ -239,100 +317,243 @@ export interface Team {
 
 ### Phase 2: Add Read-Only Mode to Components
 
-#### 2.1 Update RoleCard Component
+#### 2.1 Update DriverCard Component
 
-**File:** `web/src/components/RoleCard/RoleCard.tsx`
+**File:** `web/src/components/DriverCard/DriverCard.tsx`
 
-Add `readOnly` to both variants:
-```typescript
-export type RoleCardProps =
-  | {
-      variant: 'empty';
-      role: string;
-      onOpenSheet: () => void;
-      readOnly?: boolean;  // NEW
-    }
-  | {
-      variant: 'filled';
-      name: string;
-      onRemove: () => void;
-      readOnly?: boolean;  // NEW
-    };
-```
+Add `readOnly` prop and update logic:
 
-Update component logic:
-- Empty variant: Disable sheet opening when `readOnly`
-- Filled variant: Hide remove button when `readOnly`
-- Always render card, just disable interaction
-
-#### 2.2 Update DriverCard and ConstructorCard
-
-**Files:**
-- `web/src/components/DriverCard/DriverCard.tsx`
-- `web/src/components/ConstructorCard/ConstructorCard.tsx`
-
-Add `readOnly` prop and pass to RoleCard:
 ```typescript
 interface DriverCardProps {
-  item: Driver | null;
-  onClick: () => void;
+  driver: Driver | null;
+  onOpenPicker: () => void;
   onRemove: () => void;
-  readOnly?: boolean;  // NEW
+  readOnly?: boolean; // NEW
 }
 
-export function DriverCard({ item, onClick, onRemove, readOnly }: DriverCardProps) {
-  if (!item) {
-    return <RoleCard variant="empty" role="Driver" onOpenSheet={onClick} readOnly={readOnly} />;
-  }
-  return <RoleCard variant="filled" name={item.name} onRemove={onRemove} readOnly={readOnly} />;
+export function DriverCard({ driver, onOpenPicker, onRemove, readOnly }: DriverCardProps) {
+  return (
+    <Card className="bg-secondary relative py-4">
+      <CardContent className="group flex h-full items-center justify-between px-3">
+        {driver ? (
+          <div className="flex w-full">
+            {/* ... existing filled state ... */}
+          </div>
+        ) : readOnly ? (
+          // Read-only mode: Show placeholder text (no button)
+          <div className="text-muted-foreground flex flex-col items-center py-4 text-center">
+            <p className="font-medium">Empty Slot</p>
+            <p className="text-sm">No driver selected</p>
+          </div>
+        ) : (
+          // Edit mode: Show add button
+          <Button
+            onClick={onOpenPicker}
+            variant="ghost"
+            className="flex items-center gap-2 !bg-transparent"
+          >
+            <CirclePlus />
+            Add Driver
+          </Button>
+        )}
+      </CardContent>
+      {driver && !readOnly && ( // Only show remove button when NOT read-only
+        <Button
+          size="icon"
+          variant="ghost"
+          className="bg-secondary absolute top-2 right-2 h-6 w-6 rounded-full text-white"
+          aria-label="Remove driver"
+          onClick={onRemove}
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      )}
+    </Card>
+  );
 }
 ```
 
-(Same pattern for ConstructorCard)
+**Key changes:**
 
-#### 2.3 Update LineupPicker Component
+- Add `readOnly` prop
+- Disable "Add Driver" button when `readOnly=true`
+- Conditionally render remove button only when `!readOnly`
 
-**File:** `web/src/components/LineupPicker/LineupPicker.tsx`
+#### 2.2 Update ConstructorCard Component
 
-Add `readOnly` to both interface types:
+**File:** `web/src/components/ConstructorCard/ConstructorCard.tsx`
+
+Same pattern as DriverCard:
+
 ```typescript
-// LineupPickerProps (public interface)
-export interface LineupPickerProps<T extends BaseRole> {
-  // ... existing props ...
-  readOnly?: boolean;  // NEW
+interface ConstructorCardProps {
+  constructor: Constructor | null;
+  onOpenPicker: () => void;
+  onRemove: () => void;
+  readOnly?: boolean; // NEW
 }
 
-// LineupPickerContentProps (internal interface)
-interface LineupPickerContentProps<T extends BaseRole> {
-  // ... existing props ...
-  readOnly?: boolean;  // NEW
+export function ConstructorCard({ constructor, onOpenPicker, onRemove, readOnly }: ConstructorCardProps) {
+  return (
+    <Card className="bg-secondary relative py-4">
+      <CardContent className="group flex h-full items-center justify-between px-3">
+        {constructor ? (
+          <div className="flex w-full">
+            {/* ... existing filled state ... */}
+          </div>
+        ) : readOnly ? (
+          // Read-only mode: Show placeholder text (no button)
+          <div className="text-muted-foreground flex flex-col items-center py-4 text-center">
+            <p className="font-medium">Empty Slot</p>
+            <p className="text-sm">No constructor selected</p>
+          </div>
+        ) : (
+          // Edit mode: Show add button
+          <Button
+            onClick={onOpenPicker}
+            variant="ghost"
+            className="flex items-center gap-2 !bg-transparent"
+          >
+            <CirclePlus />
+            Add Constructor
+          </Button>
+        )}
+      </CardContent>
+      {constructor && !readOnly && (
+        <Button
+          size="icon"
+          variant="ghost"
+          className="bg-secondary absolute top-2 right-2 h-6 w-6 rounded-full text-white"
+          aria-label="Remove constructor"
+          onClick={onRemove}
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      )}
+    </Card>
+  );
 }
 ```
 
-Update LineupPickerContent function:
-- Only render Sheet if `!readOnly`
-- Disable onClick/onRemove callbacks when `readOnly`
-- Pass readOnly to CardComponent
+#### 2.3 Update DriverPicker Component
 
-#### 2.4 Update DriverPicker and ConstructorPicker
+**File:** `web/src/components/DriverPicker/DriverPicker.tsx`
 
-**Files:**
-- `web/src/components/DriverPicker/DriverPicker.tsx`
-- `web/src/components/ConstructorPicker/ConstructorPicker.tsx`
+Add `readOnly` prop and update render logic:
 
-Add `readOnly` prop and pass through:
 ```typescript
 interface DriverPickerProps {
-  lineup?: (Driver | null)[];
-  readOnly?: boolean;  // NEW
+  activeDrivers: Driver[];
+  teamDrivers?: TeamDriver[];
+  readOnly?: boolean; // NEW
 }
 
-export function DriverPicker({ lineup, readOnly }: DriverPickerProps) {
+export function DriverPicker({ activeDrivers, teamDrivers, readOnly }: DriverPickerProps) {
+  // ... existing lineup building and useLineupPicker hook ...
+
+  const {
+    displayLineup,
+    pool,
+    selectedPosition,
+    isPending,
+    error,
+    openPicker,
+    closePicker,
+    handleAdd,
+    handleRemove,
+  } = useLineupPicker({
+    items: activeDrivers,
+    lineup,
+    lineupSize: DRIVER_SLOTS,
+    itemType: 'driver',
+    addToTeam: addDriverToTeam,
+    removeFromTeam: removeDriverFromTeam,
+  });
+
   return (
-    <LineupPicker
-      // ... existing props ...
-      readOnly={readOnly}  // Pass through
-    />
+    <>
+      {error && <div className="pb-4"><InlineError message={error} /></div>}
+
+      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {displayLineup.map((driver, idx) => (
+          <DriverCard
+            key={idx}
+            driver={driver}
+            onOpenPicker={() => openPicker(idx)}
+            onRemove={() => handleRemove(idx)}
+            readOnly={readOnly} // Pass readOnly to card
+          />
+        ))}
+        {/* ... loading overlay ... */}
+      </div>
+
+      {/* Only render Sheet when NOT read-only */}
+      {!readOnly && (
+        <Sheet
+          open={selectedPosition !== null}
+          onOpenChange={(open) => !open && closePicker()}
+        >
+          {/* ... sheet content ... */}
+        </Sheet>
+      )}
+    </>
+  );
+}
+```
+
+**Key changes:**
+
+- Add `readOnly` prop to interface
+- Pass `readOnly` to `DriverCard`
+- Conditionally render `Sheet` only when `!readOnly`
+
+#### 2.4 Update ConstructorPicker Component
+
+**File:** `web/src/components/ConstructorPicker/ConstructorPicker.tsx`
+
+Same pattern as DriverPicker:
+
+```typescript
+interface ConstructorPickerProps {
+  activeConstructors: Constructor[];
+  teamConstructors?: TeamConstructor[];
+  readOnly?: boolean; // NEW
+}
+
+export function ConstructorPicker({
+  activeConstructors,
+  teamConstructors,
+  readOnly,
+}: ConstructorPickerProps) {
+  // ... existing lineup building and useLineupPicker hook ...
+
+  return (
+    <>
+      {error && <div className="pb-4"><InlineError message={error} /></div>}
+
+      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {displayLineup.map((constructor, idx) => (
+          <ConstructorCard
+            key={idx}
+            constructor={constructor}
+            onOpenPicker={() => openPicker(idx)}
+            onRemove={() => handleRemove(idx)}
+            readOnly={readOnly} // Pass readOnly to card
+          />
+        ))}
+        {/* ... loading overlay ... */}
+      </div>
+
+      {/* Only render Sheet when NOT read-only */}
+      {!readOnly && (
+        <Sheet
+          open={selectedPosition !== null}
+          onOpenChange={(open) => !open && closePicker()}
+        >
+          {/* ... sheet content ... */}
+        </Sheet>
+      )}
+    </>
   );
 }
 ```
@@ -341,39 +562,84 @@ export function DriverPicker({ lineup, readOnly }: DriverPickerProps) {
 
 **File:** `web/src/components/Team/Team.tsx`
 
-Determine mode from route:
+Convert `Team` from a route-aware component to a presentational component that accepts data via props. This allows it to be shared across two routes while each route maintains type-safe `useLoaderData` calls.
+
+**Component Props:**
+
 ```typescript
-import { useRouterState } from '@tanstack/react-router';
+interface TeamProps {
+  team: TeamType;
+  activeDrivers: Driver[];
+  activeConstructors: Constructor[];
+  readOnly: boolean;
+}
 
-export function Team() {
-  const { team } = useLoaderData({ from: '/_authenticated/_team-required/team/$teamId' });
-
-  // Determine read-only mode based on route (not ownership)
-  const route = useRouterState({ select: (s) => s.location.pathname });
-  const readOnly = !route.startsWith('/my-team');
+export function Team({ team, activeDrivers, activeConstructors, readOnly }: TeamProps) {
+  // Track active tab to control visibility while keeping both tabs mounted
+  const [activeTab, setActiveTab] = useState('drivers');
 
   return (
-    <div className="container mx-auto p-4">
-      {/* ... existing header ... */}
+    <AppContainer maxWidth="md">
+      <div className="mb-4 gap-4 sm:grid sm:grid-cols-2">
+        <Card className="mb-6 flex justify-center sm:mb-0">
+          <CardHeader>
+            <CardTitle className="text-center text-3xl font-bold">{team.name}</CardTitle>
+            {/* Show owner name in read-only mode */}
+            {readOnly && (
+              <p className="text-muted-foreground text-center text-sm">
+                Owner: {team.ownerName}
+              </p>
+            )}
+          </CardHeader>
+          <CardContent>
+            {/* ... existing budget/trades display ... */}
+          </CardContent>
+        </Card>
 
-      <Tabs defaultValue="drivers">
-        <TabsList>
+        {/* ... existing race selector and results cards ... */}
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full">
           <TabsTrigger value="drivers">Drivers</TabsTrigger>
           <TabsTrigger value="constructors">Constructors</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="drivers">
-          <DriverPicker lineup={driverSlots} readOnly={readOnly} />
+        <TabsContent value="drivers" forceMount style={{ display: activeTab !== 'drivers' ? 'none' : undefined }}>
+          <Card className="py-4">
+            <CardContent className="px-4">
+              <DriverPicker
+                activeDrivers={activeDrivers}
+                teamDrivers={team.drivers}
+                readOnly={readOnly}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="constructors">
-          <ConstructorPicker lineup={constructorSlots} readOnly={readOnly} />
+        <TabsContent value="constructors" forceMount style={{ display: activeTab !== 'constructors' ? 'none' : undefined }}>
+          <Card className="py-4">
+            <CardContent className="px-4">
+              <ConstructorPicker
+                activeConstructors={activeConstructors}
+                teamConstructors={team.constructors}
+                readOnly={readOnly}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </AppContainer>
   );
 }
 ```
+
+**Key changes:**
+
+- `Team` now accepts all data as props instead of calling `useLoaderData`
+- `readOnly` is passed as a prop (determined by the route, not the component)
+- This makes `Team` a proper reusable component that works with both routes
+- Each route definition (in router.tsx) will call `useLoaderData` with its own typed `from` and wrap `Team` with the appropriate props
 
 ---
 
@@ -383,7 +649,8 @@ export function Team() {
 
 **File:** `web/src/router.tsx`
 
-Add new route after existing `teamRoute`:
+Add new route with an inline wrapper component that calls `useLoaderData` with the typed `from` parameter:
+
 ```typescript
 const myTeamRoute = createRoute({
   getParentRoute: () => teamRequiredLayoutRoute,
@@ -391,22 +658,58 @@ const myTeamRoute = createRoute({
   staticData: {
     pageTitle: 'My Team',
   },
-  loader: async ({ context }) => {
-    const team = await getMyTeam();
+  loader: async () => {
+    const [team, activeDrivers, activeConstructors] = await Promise.all([
+      getMyTeam(),
+      getActiveDrivers(),
+      getActiveConstructors(),
+    ]);
 
     if (!team) {
       throw redirect({ to: '/create-team' });
     }
 
-    return { team };
+    return { team, activeDrivers, activeConstructors };
   },
-  component: Team,  // Reuse same component
+  component: () => {
+    // Inline wrapper component that calls useLoaderData with typed `from`
+    const { team, activeDrivers, activeConstructors } = useLoaderData({
+      from: '/_authenticated/_team-required/my-team',
+    });
+
+    return (
+      <Team
+        team={team}
+        activeDrivers={activeDrivers}
+        activeConstructors={activeConstructors}
+        readOnly={false}
+      />
+    );
+  },
+  pendingComponent: () => (
+    <div role="status" className="flex w-full items-center justify-center p-8 md:min-h-screen">
+      <div className="text-center">
+        <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+        <p className="text-muted-foreground">Loading team...</p>
+      </div>
+    </div>
+  ),
+  pendingMs: 200,
+  staleTime: 10_000,
+  gcTime: 5 * 60 * 1000,
   notFoundComponent: () => (
-    <ErrorState
-      title="Team Not Found"
-      description="Your team could not be found."
-      action={{ label: 'Create Team', to: '/create-team' }}
-    />
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <h1 className="mb-4 text-4xl font-bold">Team Not Found</h1>
+      <p className="text-muted-foreground mb-4">Your team could not be found.</p>
+      <a href="/create-team" className="text-primary hover:underline">
+        Create Team
+      </a>
+    </div>
+  ),
+  errorComponent: ({ error }) => (
+    <ErrorBoundary level="page">
+      <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
+    </ErrorBoundary>
   ),
 });
 ```
@@ -415,26 +718,26 @@ const myTeamRoute = createRoute({
 
 **File:** `web/src/router.tsx`
 
-Update existing `teamRoute` loader:
+Update existing `teamRoute` with an inline wrapper component and redirect logic:
+
 ```typescript
 const teamRoute = createRoute({
   getParentRoute: () => teamRequiredLayoutRoute,
   path: 'team/$teamId',
   staticData: {
-    pageTitle: 'Team',
+    pageTitle: 'Team Details',
   },
-  validateSearch: z.object({}).optional(),
-  loaderDeps: ({ search: _search }) => ({} as const),
   loader: async ({ params, context }) => {
-    // Validate team ID
-    const teamIdSchema = z.coerce.number().int().positive();
-    const parsed = teamIdSchema.safeParse(params.teamId);
+    const TEAM_ROUTE_ID = '/_authenticated/_team-required/team/$teamId';
 
-    if (!parsed.success) {
-      throw notFound({ routeId: ROUTE_ID });
+    // Validate and parse params using Zod schema
+    const validationResult = teamIdParamsSchema.safeParse(params);
+
+    if (!validationResult.success) {
+      throw notFound({ routeId: TEAM_ROUTE_ID });
     }
 
-    const teamId = parsed.data;
+    const { teamId } = validationResult.data;
 
     // Redirect if viewing own team
     const { teamContext } = context;
@@ -442,24 +745,58 @@ const teamRoute = createRoute({
       throw redirect({ to: '/my-team' });
     }
 
-    // Fetch team
-    const team = await getTeamById(teamId);
+    // Fetch all data in parallel
+    const [team, activeDrivers, activeConstructors] = await Promise.all([
+      getTeamById(teamId),
+      getActiveDrivers(),
+      getActiveConstructors(),
+    ]);
 
     if (!team) {
-      throw notFound({ routeId: ROUTE_ID });
+      throw notFound({ routeId: TEAM_ROUTE_ID });
     }
 
-    return { team };
+    return { team, activeDrivers, activeConstructors };
   },
+  component: () => {
+    // Inline wrapper component that calls useLoaderData with typed `from`
+    const { team, activeDrivers, activeConstructors } = useLoaderData({
+      from: '/_authenticated/_team-required/team/$teamId',
+    });
+
+    return (
+      <Team
+        team={team}
+        activeDrivers={activeDrivers}
+        activeConstructors={activeConstructors}
+        readOnly={true}
+      />
+    );
+  },
+  pendingComponent: () => (
+    <div role="status" className="flex w-full items-center justify-center p-8 md:min-h-screen">
+      <div className="text-center">
+        <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+        <p className="text-muted-foreground">Loading team...</p>
+      </div>
+    </div>
+  ),
+  pendingMs: 200,
   staleTime: 10_000,
   gcTime: 5 * 60 * 1000,
-  component: Team,  // Same component
   notFoundComponent: () => (
-    <ErrorState
-      title="Team Not Found"
-      description="The team you're looking for doesn't exist."
-      action={{ label: 'Browse Leagues', to: '/browse-leagues' }}
-    />
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <h1 className="mb-4 text-4xl font-bold">Team Not Found</h1>
+      <p className="text-muted-foreground mb-4">The team you're looking for doesn't exist.</p>
+      <a href="/leagues" className="text-primary hover:underline">
+        Go to leagues
+      </a>
+    </div>
+  ),
+  errorComponent: ({ error }) => (
+    <ErrorBoundary level="page">
+      <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
+    </ErrorBoundary>
   ),
 });
 ```
@@ -469,6 +806,7 @@ const teamRoute = createRoute({
 **File:** `web/src/router.tsx`
 
 Add `myTeamRoute` to route tree:
+
 ```typescript
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -482,7 +820,7 @@ const routeTree = rootRoute.addChildren([
       browseLeaguesRoute,
       leagueRoute,
       teamRoute,
-      myTeamRoute,  // ADD THIS
+      myTeamRoute, // ADD THIS
     ]),
   ]),
   noTeamLayoutRoute.addChildren([createTeamRoute]),
@@ -494,6 +832,7 @@ const routeTree = rootRoute.addChildren([
 **File:** `web/src/components/Leaderboard/Leaderboard.tsx`
 
 Check ownership to determine link destination:
+
 ```typescript
 export function Leaderboard({ league }: LeaderboardProps) {
   const { profile } = useRouteContext({ from: '/_authenticated' });
@@ -535,7 +874,7 @@ export function Leaderboard({ league }: LeaderboardProps) {
 }
 ```
 
-**Note:** May need to import `Badge` from `@/components/ui/badge`.
+**Note:** ✅ Verified - Badge component exists at `web/src/components/ui/badge.tsx`. Import with `import { Badge } from '@/components/ui/badge'`.
 
 ---
 
@@ -546,9 +885,10 @@ export function Leaderboard({ league }: LeaderboardProps) {
 **File:** `web/src/components/AppSidebar/AppSidebar.tsx`
 
 Update `handleMyTeam` to navigate to `/my-team`:
+
 ```typescript
 const handleMyTeam = () => {
-  navigate({ to: '/my-team' });  // Changed from /team/$teamId
+  navigate({ to: '/my-team' }); // Changed from /team/$teamId
 };
 ```
 
@@ -604,6 +944,8 @@ const handleMyTeam = () => {
 
 ✅ Result: Consistent canonical URL
 
+**Verified:** `teamContext.myTeamId` is guaranteed available (set by root route `beforeLoad` before any child route loaders run)
+
 ### Scenario 5: User Navigates to /my-team But Has No Team
 
 ```
@@ -629,52 +971,6 @@ const handleMyTeam = () => {
 
 ---
 
-## Testing Strategy
-
-### Unit Tests
-
-**RoleCard Component:**
-- [ ] Renders without remove button when `readOnly=true` and variant='filled'
-- [ ] Removes button is visible when `readOnly=false` and variant='filled'
-- [ ] `onOpenSheet` callback is not called when `readOnly=true` and variant='empty'
-- [ ] Clicking empty card calls `onOpenSheet` when `readOnly=false`
-
-**LineupPicker Component:**
-- [ ] Sheet does not render in DOM when `readOnly=true`
-- [ ] Sheet renders when `readOnly=false`
-- [ ] CardComponent receives `readOnly` prop correctly
-- [ ] onClick/onRemove handlers are properly disabled when `readOnly=true`
-
-**Team Component:**
-- [ ] Route starting with `/my-team` sets `readOnly=false`
-- [ ] Route `/team/$id` sets `readOnly=true`
-- [ ] Passes `readOnly` to DriverPicker
-- [ ] Passes `readOnly` to ConstructorPicker
-
-### Integration Tests
-
-**Route Behavior:**
-- [ ] Navigate to `/my-team` → loads your team, renders in edit mode
-- [ ] Navigate to `/team/$myTeamId` → redirects to `/my-team`
-- [ ] Navigate to `/team/$otherId` → shows team in read-only mode
-- [ ] Leaderboard link for your team goes to `/my-team`
-- [ ] Leaderboard link for other teams goes to `/team/$id`
-- [ ] Leaderboard shows "You" badge on your team
-
-**Edit Mode (`/my-team`):**
-- [ ] All picker sheets open on slot click
-- [ ] Can add drivers and constructors
-- [ ] Can remove drivers and constructors
-- [ ] Remove buttons (X) are visible on filled slots
-- [ ] Empty slots are clickable
-
-**Read-Only Mode (`/team/$otherId`):**
-- [ ] Clicking empty slots doesn't open sheet
-- [ ] Clicking filled slots doesn't open sheet
-- [ ] Remove buttons (X) are NOT visible
-- [ ] No keyboard interaction triggers pickers
-- [ ] URL stays at `/team/$id`
-
 ### Manual Testing Checklist
 
 - [ ] Sign in as User A
@@ -683,10 +979,11 @@ const handleMyTeam = () => {
 - [ ] View leaderboard → see "You" badge on your team
 - [ ] Click your team in leaderboard → navigates to `/my-team`
 - [ ] Click other team in leaderboard → navigates to `/team/$id`, read-only
+- [ ] Verify team header shows "Owner: [Name]" in read-only mode
+- [ ] Verify empty slots show "Empty Slot / No driver selected" placeholder in read-only
 - [ ] Manually type `/team/$myId` in URL → redirects to `/my-team`
-- [ ] In read-only mode, try clicking slots → no interaction
-- [ ] Try right-click on slot → no context menu (read-only)
-- [ ] Inspect UI → no remove buttons visible in read-only mode
+- [ ] In read-only mode, try clicking empty slots → no interaction
+- [ ] Inspect UI → no remove buttons visible on filled slots in read-only mode
 
 ---
 
@@ -712,10 +1009,12 @@ After implementation, verify each of these:
 
 ### Frontend UI Verification
 
-- [ ] On `/my-team`: Add/remove buttons visible, sheets open on click
+- [ ] On `/my-team`: Add/remove buttons visible, sheets open on click, no owner name shown
+- [ ] On `/team/$other`: Team header shows "Owner: [Name]" below team name
 - [ ] On `/team/$other`: No add/remove buttons, sheets don't open
+- [ ] Empty slots in read-only mode: Show "Empty Slot / No driver selected" placeholder text
 - [ ] Empty slots in read-only mode: Not clickable/interactive
-- [ ] Filled slots in read-only mode: Display content, no remove button
+- [ ] Filled slots in read-only mode: Display content normally, no remove button
 - [ ] Tab navigation: Read-only mode doesn't trap focus
 
 ### Build & Lint Verification
@@ -730,22 +1029,25 @@ After implementation, verify each of these:
 
 ## Files to Modify
 
-### Backend (2 files)
-- `api/F1CompanionApi/Api/Models/TeamDetailsResponse.cs` - Add OwnerId property
-- `api/F1CompanionApi/Api/Mappers/TeamResponseMapper.cs` - Map OwnerId field
+### Backend (3 files)
 
-### Frontend (11 files)
+- `api/F1CompanionApi/Api/Models/TeamResponse.cs` - Add OwnerId property (CRITICAL - leaderboard blocker)
+- `api/F1CompanionApi/Api/Models/TeamDetailsResponse.cs` - Add OwnerId property
+- `api/F1CompanionApi/Api/Mappers/TeamResponseMapper.cs` - Map OwnerId field in both ToResponseModel() and ToDetailsResponseModel()
+
+### Frontend (8 files)
+
 - `web/src/contracts/Team.ts` - Add ownerId to interface
-- `web/src/components/RoleCard/RoleCard.tsx` - Add readOnly prop, hide remove button when true
-- `web/src/components/DriverCard/DriverCard.tsx` - Add readOnly prop, pass to RoleCard
-- `web/src/components/ConstructorCard/ConstructorCard.tsx` - Add readOnly prop, pass to RoleCard
-- `web/src/components/LineupPicker/LineupPicker.tsx` - Add readOnly prop, disable sheet and callbacks when true
-- `web/src/components/DriverPicker/DriverPicker.tsx` - Add readOnly prop, pass to LineupPicker
-- `web/src/components/ConstructorPicker/ConstructorPicker.tsx` - Add readOnly prop, pass to LineupPicker
-- `web/src/components/Team/Team.tsx` - Determine readOnly from route, pass to pickers
+- `web/src/components/DriverCard/DriverCard.tsx` - Add readOnly prop, disable interactions when true
+- `web/src/components/ConstructorCard/ConstructorCard.tsx` - Add readOnly prop, disable interactions when true
+- `web/src/components/DriverPicker/DriverPicker.tsx` - Add readOnly prop, pass to DriverCard, conditionally render Sheet
+- `web/src/components/ConstructorPicker/ConstructorPicker.tsx` - Add readOnly prop, pass to ConstructorCard, conditionally render Sheet
+- `web/src/components/Team/Team.tsx` - Determine readOnly from route using useMatch(), pass to pickers
 - `web/src/components/AppSidebar/AppSidebar.tsx` - Update "My Team" button to navigate to `/my-team`
-- `web/src/components/Leaderboard/Leaderboard.tsx` - Check ownership, link correctly, show "You" badge
+- `web/src/components/Leaderboard/Leaderboard.tsx` - Check ownership, link correctly, show "You" badge, import Badge
 - `web/src/router.tsx` - Add myTeamRoute, update teamRoute with redirect, update route tree
+
+**Note:** RoleCard and LineupPicker components were removed in previous refactoring - they are not part of the current architecture.
 
 ---
 
@@ -791,13 +1093,12 @@ After implementation, verify each of these:
 1. ✅ Leaderboard shows "You" badge on user's team
 2. ✅ Leaderboard links correctly (own team → `/my-team`, others → `/team/$id`)
 3. ✅ Keyboard navigation respects read-only mode
-4. ✅ UI clearly indicates read-only status
+4. ✅ Team header shows "Owner: [Name]" in read-only mode
+5. ✅ Empty slots show placeholder text ("Empty Slot" / "No driver selected") in read-only mode
 
 ### Nice to Have
 
-1. ⚠️ Toast notification when attempting edit in read-only mode
-2. ⚠️ Visual indicator (badge, styling) showing read-only status
-3. ⚠️ Analytics tracking for read-only vs edit mode views
+1. ⚠️ Analytics tracking for read-only vs edit mode views
 
 ---
 
@@ -828,9 +1129,11 @@ No time estimates provided per project guidelines.
 ## References
 
 **Similar Implementation:**
+
 - League ownership pattern (LeagueResponse has OwnerId, similar UI controls)
 
 **Related Files:**
+
 - League component ownership checks
 - Route guard patterns in `src/lib/route-guards.ts`
 - TanStack Router redirect patterns

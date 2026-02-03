@@ -20,6 +20,7 @@ import {
 interface ConstructorPickerProps {
   activeConstructors: Constructor[];
   teamConstructors?: TeamConstructor[];
+  readOnly: boolean;
 }
 
 const CONSTRUCTOR_SLOTS = 4;
@@ -27,6 +28,7 @@ const CONSTRUCTOR_SLOTS = 4;
 export function ConstructorPicker({
   activeConstructors,
   teamConstructors,
+  readOnly,
 }: ConstructorPickerProps) {
   // build lineup with existing constructors
   const lineup = useMemo(() => {
@@ -72,6 +74,7 @@ export function ConstructorPicker({
             constructor={constructor}
             onOpenPicker={() => openPicker(idx)}
             onRemove={() => handleRemove(idx)}
+            readOnly={readOnly}
           />
         ))}
 
@@ -81,37 +84,36 @@ export function ConstructorPicker({
           </div>
         )}
       </div>
-      <Sheet
-        open={selectedPosition !== null}
-        onOpenChange={(open) => !open && closePicker()}
-      >
-        <SheetTrigger asChild>
-          <div />
-        </SheetTrigger>
-        <SheetContent className="flex h-full w-80 flex-col">
-          <SheetHeader>
-            <SheetTitle>Select Constructor</SheetTitle>
-            <SheetDescription>
-              Choose a constructor from the list below to add to your team.
-            </SheetDescription>
-          </SheetHeader>
-          <ScrollArea className="h-full min-h-0 flex-1 pr-4 pl-4">
-            <ul className="space-y-2">
-              {pool.map((constructor) => (
-                <ConstructorListItem
-                  key={constructor.id}
-                  constructor={constructor}
-                  onSelect={() => {
-                    if (selectedPosition !== null && !isPending) {
-                      handleAdd(selectedPosition, constructor);
-                    }
-                  }}
-                />
-              ))}
-            </ul>
-          </ScrollArea>
-        </SheetContent>
-      </Sheet>
+      {!readOnly && (
+        <Sheet open={selectedPosition !== null} onOpenChange={(open) => !open && closePicker()}>
+          <SheetTrigger asChild>
+            <div />
+          </SheetTrigger>
+          <SheetContent className="flex h-full w-80 flex-col">
+            <SheetHeader>
+              <SheetTitle>Select Constructor</SheetTitle>
+              <SheetDescription>
+                Choose a constructor from the list below to add to your team.
+              </SheetDescription>
+            </SheetHeader>
+            <ScrollArea className="h-full min-h-0 flex-1 pr-4 pl-4">
+              <ul className="space-y-2">
+                {pool.map((constructor) => (
+                  <ConstructorListItem
+                    key={constructor.id}
+                    constructor={constructor}
+                    onSelect={() => {
+                      if (selectedPosition !== null && !isPending) {
+                        handleAdd(selectedPosition, constructor);
+                      }
+                    }}
+                  />
+                ))}
+              </ul>
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
+      )}
     </>
   );
 }

@@ -8,9 +8,10 @@ interface DriverCardProps {
   driver: Driver | null;
   onOpenPicker: () => void;
   onRemove: () => void;
+  readOnly: boolean;
 }
 
-export function DriverCard({ driver, onOpenPicker, onRemove }: DriverCardProps) {
+export function DriverCard({ driver, onOpenPicker, onRemove, readOnly }: DriverCardProps) {
   return (
     <Card className="bg-secondary relative py-4">
       <CardContent className="group flex h-full items-center justify-between px-3">
@@ -23,18 +24,33 @@ export function DriverCard({ driver, onOpenPicker, onRemove }: DriverCardProps) 
               </h3>
             </div>
           </div>
+        ) : readOnly ? (
+          // Read-only mode: Show placeholder matching filled card layout
+          <div className="flex h-full w-full items-center">
+            <span className="aspect-square w-14 self-center rounded-full border-2 border-dashed border-gray-600" />
+
+            <div className="flex flex-1 flex-col items-start justify-between pl-4">
+              <h3 className="text-muted-foreground text-lg font-medium">Empty Slot</h3>
+            </div>
+          </div>
         ) : (
+          // Edit mode: Show add button matching filled card layout
           <Button
             onClick={onOpenPicker}
             variant="ghost"
-            className="flex items-center gap-2 !bg-transparent"
+            className="flex h-full w-full items-center !bg-transparent p-0 hover:opacity-80"
           >
-            <CirclePlus />
-            Add Driver
+            <span className="bg-primary/10 text-primary flex aspect-square w-14 items-center justify-center self-center rounded-full border-2 border-dashed border-gray-600">
+              <CirclePlus className="size-6" />
+            </span>
+            <div className="flex flex-1 flex-col items-start justify-between pl-4">
+              <h3 className="text-muted-foreground text-lg font-medium">Add Driver</h3>
+            </div>
           </Button>
         )}
       </CardContent>
-      {driver && (
+      {driver && !readOnly && (
+        // Remove button only displays in edit mode
         <Button
           size="icon"
           variant="ghost"

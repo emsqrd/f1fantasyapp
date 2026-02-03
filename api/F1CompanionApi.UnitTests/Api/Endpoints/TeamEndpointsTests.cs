@@ -160,6 +160,7 @@ public class TeamEndpointsTests
         {
             Id = 1,
             Name = "Test Team",
+            OwnerId = 1,
             OwnerName = "John Doe"
         };
 

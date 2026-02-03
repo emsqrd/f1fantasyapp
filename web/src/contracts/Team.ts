@@ -18,6 +18,7 @@ export interface TeamConstructor {
 export interface Team {
   id: number;
   name: string;
+  ownerId: number;
   ownerName: string;
   drivers: TeamDriver[];
   constructors: TeamConstructor[];

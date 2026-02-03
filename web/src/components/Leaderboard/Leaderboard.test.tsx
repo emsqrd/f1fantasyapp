@@ -8,10 +8,12 @@ import { Leaderboard } from './Leaderboard';
 
 const mockNavigate = vi.fn();
 const mockUseLoaderData = vi.fn();
+const mockUseRouteContext = vi.fn();
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
   useLoaderData: (opts: { from: string }) => mockUseLoaderData(opts),
+  useRouteContext: (opts: { from: string }) => mockUseRouteContext(opts),
   Link: ({
     children,
     to,
@@ -31,6 +33,8 @@ vi.mock('@tanstack/react-router', () => ({
 describe('Leaderboard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: no profile (user not logged in or profile not available)
+    mockUseRouteContext.mockReturnValue({ profile: null });
   });
 
   describe('Leaderboard display', () => {

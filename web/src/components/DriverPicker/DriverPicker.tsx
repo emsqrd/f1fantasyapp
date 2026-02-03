@@ -20,11 +20,12 @@ import {
 interface DriverPickerProps {
   activeDrivers: Driver[];
   teamDrivers?: TeamDriver[];
+  readOnly: boolean;
 }
 
 const DRIVER_SLOTS = 4;
 
-export function DriverPicker({ activeDrivers, teamDrivers }: DriverPickerProps) {
+export function DriverPicker({ activeDrivers, teamDrivers, readOnly }: DriverPickerProps) {
   // build lineup with existing drivers
   const lineup = useMemo(() => {
     const slots: (Driver | null)[] = Array(DRIVER_SLOTS).fill(null);
@@ -69,6 +70,7 @@ export function DriverPicker({ activeDrivers, teamDrivers }: DriverPickerProps) 
             driver={driver}
             onOpenPicker={() => openPicker(idx)}
             onRemove={() => handleRemove(idx)}
+            readOnly={readOnly}
           />
         ))}
 
@@ -79,37 +81,36 @@ export function DriverPicker({ activeDrivers, teamDrivers }: DriverPickerProps) 
         )}
       </div>
 
-      <Sheet
-        open={selectedPosition !== null}
-        onOpenChange={(open) => !open && closePicker()}
-      >
-        <SheetTrigger asChild>
-          <div />
-        </SheetTrigger>
-        <SheetContent className="flex h-full w-80 flex-col">
-          <SheetHeader>
-            <SheetTitle>Select Driver</SheetTitle>
-            <SheetDescription>
-              Choose a driver from the list below to add to your team.
-            </SheetDescription>
-          </SheetHeader>
-          <ScrollArea className="h-full min-h-0 flex-1 pr-4 pl-4">
-            <ul className="space-y-2">
-              {pool.map((driver) => (
-                <DriverListItem
-                  key={driver.id}
-                  driver={driver}
-                  onSelect={() => {
-                    if (selectedPosition !== null && !isPending) {
-                      handleAdd(selectedPosition, driver);
-                    }
-                  }}
-                />
-              ))}
-            </ul>
-          </ScrollArea>
-        </SheetContent>
-      </Sheet>
+      {!readOnly && (
+        <Sheet open={selectedPosition !== null} onOpenChange={(open) => !open && closePicker()}>
+          <SheetTrigger asChild>
+            <div />
+          </SheetTrigger>
+          <SheetContent className="flex h-full w-80 flex-col">
+            <SheetHeader>
+              <SheetTitle>Select Driver</SheetTitle>
+              <SheetDescription>
+                Choose a driver from the list below to add to your team.
+              </SheetDescription>
+            </SheetHeader>
+            <ScrollArea className="h-full min-h-0 flex-1 pr-4 pl-4">
+              <ul className="space-y-2">
+                {pool.map((driver) => (
+                  <DriverListItem
+                    key={driver.id}
+                    driver={driver}
+                    onSelect={() => {
+                      if (selectedPosition !== null && !isPending) {
+                        handleAdd(selectedPosition, driver);
+                      }
+                    }}
+                  />
+                ))}
+              </ul>
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
+      )}
     </>
   );
 }

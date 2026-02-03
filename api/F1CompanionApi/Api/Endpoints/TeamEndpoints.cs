@@ -32,6 +32,7 @@ public static class TeamEndpoints
         return app;
     }
 
+    //TODO Convert the logic in these endpoints to service methods
     private static async Task<IResult> CreateTeamAsync(
         CreateTeamRequest request,
         ITeamService teamService,
