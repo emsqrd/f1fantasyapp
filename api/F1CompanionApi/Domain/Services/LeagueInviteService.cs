@@ -6,7 +6,6 @@ using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Exceptions;
 using F1CompanionApi.Extensions;
 using Microsoft.EntityFrameworkCore;
-using Sentry.Protocol;
 
 namespace F1CompanionApi.Domain.Services;
 

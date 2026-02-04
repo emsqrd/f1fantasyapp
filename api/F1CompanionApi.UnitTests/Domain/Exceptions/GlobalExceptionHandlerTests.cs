@@ -1,5 +1,4 @@
 using F1CompanionApi.Domain.Exceptions;
-using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

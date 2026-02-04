@@ -4,7 +4,6 @@ using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace F1CompanionApi.Domain.Services;
 
