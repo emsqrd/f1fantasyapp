@@ -15,6 +15,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<League> Leagues => Set<League>();
     public DbSet<LeagueInvite> LeagueInvites => Set<LeagueInvite>();
     public DbSet<LeagueTeam> LeagueTeams => Set<LeagueTeam>();
+    public DbSet<Race> Races => Set<Race>();
+    public DbSet<Season> Seasons => Set<Season>();
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<TeamDriver> TeamDrivers => Set<TeamDriver>();
     public DbSet<TeamConstructor> TeamConstructors => Set<TeamConstructor>();
@@ -46,29 +48,6 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.LeagueId).IsUnique();
         });
 
-        modelBuilder.Entity<UserProfile>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.AccountId).IsUnique();
-            entity.HasIndex(e => e.Email).IsUnique();
-            entity
-                .HasOne(e => e.Account)
-                .WithOne(e => e.Profile)
-                .HasForeignKey<UserProfile>(e => e.AccountId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<Team>(entity =>
-        {
-            entity.HasIndex(e => e.UserId).IsUnique();
-            entity
-                .HasOne(e => e.Owner)
-                .WithOne(u => u.Team)
-                .HasForeignKey<Team>(e => e.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
-        });
-
-        // Configure LeagueTeam (many-to-many join table)
         modelBuilder.Entity<LeagueTeam>(entity =>
         {
             entity
@@ -82,6 +61,41 @@ public class ApplicationDbContext : DbContext
                 .WithMany(t => t.LeagueTeams)
                 .HasForeignKey(lt => lt.TeamId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Race>(entity =>
+        {
+            entity
+                .HasOne(e => e.Season)
+                .WithMany(s => s.Races)
+                .HasForeignKey(e => e.SeasonId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Team>(entity =>
+        {
+            entity.HasIndex(e => e.UserId).IsUnique();
+            entity
+                .HasOne(e => e.Owner)
+                .WithOne(u => u.Team)
+                .HasForeignKey<Team>(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Configure TeamConstructor relationships
+        modelBuilder.Entity<TeamConstructor>(entity =>
+        {
+            entity
+                .HasOne(tc => tc.Team)
+                .WithMany(t => t.TeamConstructors)
+                .HasForeignKey(tc => tc.TeamId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity
+                .HasOne(tc => tc.Constructor)
+                .WithMany()
+                .HasForeignKey(tc => tc.ConstructorId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Configure TeamDriver relationships
@@ -100,20 +114,16 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        // Configure TeamConstructor relationships
-        modelBuilder.Entity<TeamConstructor>(entity =>
+        modelBuilder.Entity<UserProfile>(entity =>
         {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.AccountId).IsUnique();
+            entity.HasIndex(e => e.Email).IsUnique();
             entity
-                .HasOne(tc => tc.Team)
-                .WithMany(t => t.TeamConstructors)
-                .HasForeignKey(tc => tc.TeamId)
+                .HasOne(e => e.Account)
+                .WithOne(e => e.Profile)
+                .HasForeignKey<UserProfile>(e => e.AccountId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            entity
-                .HasOne(tc => tc.Constructor)
-                .WithMany()
-                .HasForeignKey(tc => tc.ConstructorId)
-                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Configure audit trail FK for user-owned entities only
