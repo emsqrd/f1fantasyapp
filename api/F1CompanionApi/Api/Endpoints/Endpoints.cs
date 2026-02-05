@@ -12,6 +12,7 @@ public static class Endpoints
         .MapDriverEndpoints()
         .MapLeagueEndpoints()
         .MapMeEndpoints()
+        .MapSeasonEndpoints()
         .MapTeamEndpoints();
 
         return app;
