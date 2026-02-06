@@ -59,9 +59,8 @@ export function TeamRoute() {
 export function Team({ team, activeDrivers, activeConstructors, races, readOnly }: TeamProps) {
   // Track active tab to control visibility while keeping both tabs mounted
   const [activeTab, setActiveTab] = useState('drivers');
-  const [selectedRaceId, setSelectedRaceId] = useState<number>();
-
   const currentRace = races.find((r) => r.isCurrent) ?? races.at(-1);
+  const [selectedRaceId, setSelectedRaceId] = useState<number | undefined>(currentRace?.id);
 
   return (
     <AppContainer maxWidth="md">
@@ -89,7 +88,6 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
 
         <div className="mb-4 flex flex-col space-y-4 sm:mb-0">
           <Select
-            defaultValue={currentRace?.id.toString()}
             value={selectedRaceId?.toString()}
             onValueChange={(value) => setSelectedRaceId(Number(value))}
           >

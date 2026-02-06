@@ -71,8 +71,11 @@ public class RaceService : IRaceService
         if (race is null) return null;
 
         var now = DateTime.UtcNow;
-        var isCurrent = race.RaceDate >= now;
-        int? currentRaceId = isCurrent ? race.Id : null;
+        var currentRaceId = await _dbContext.Races
+            .Where(r => r.SeasonId == race.SeasonId && r.RaceDate >= now)
+            .OrderBy(r => r.Round)
+            .Select(r => (int?)r.Id)
+            .FirstOrDefaultAsync();
 
         return race.ToResponseModel(currentRaceId);
     }

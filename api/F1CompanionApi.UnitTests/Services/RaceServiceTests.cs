@@ -609,33 +609,103 @@ public class RaceServiceTests
     }
 
     [Fact]
-    public async Task GetRaceByIdAsync_MarksRaceAsCurrent_WhenRaceIsUpcoming()
+    public async Task GetRaceByIdAsync_MarksRaceAsCurrent_WhenRaceIsNextUpcoming()
     {
         // Arrange
         using var context = CreateInMemoryContext();
         var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
 
         var now = DateTime.UtcNow;
-        var race = new Race
+        var races = new[]
         {
-            SeasonId = 1,
-            Round = 1,
-            Name = "Upcoming Race",
-            Location = "Location",
-            Circuit = "Circuit",
-            Country = "Country",
-            RaceDate = now.AddDays(5)
+            new Race
+            {
+                SeasonId = 1,
+                Round = 1,
+                Name = "Past Race",
+                Location = "Location",
+                Circuit = "Circuit",
+                Country = "Country",
+                RaceDate = now.AddDays(-10)
+            },
+            new Race
+            {
+                SeasonId = 1,
+                Round = 2,
+                Name = "Next Upcoming Race",
+                Location = "Location",
+                Circuit = "Circuit",
+                Country = "Country",
+                RaceDate = now.AddDays(5)
+            },
+            new Race
+            {
+                SeasonId = 1,
+                Round = 3,
+                Name = "Future Race",
+                Location = "Location",
+                Circuit = "Circuit",
+                Country = "Country",
+                RaceDate = now.AddDays(15)
+            }
         };
 
-        context.Races.Add(race);
+        context.Races.AddRange(races);
         await context.SaveChangesAsync();
 
+        var nextUpcomingRace = races[1];
+
         // Act
-        var result = await service.GetRaceByIdAsync(race.Id);
+        var result = await service.GetRaceByIdAsync(nextUpcomingRace.Id);
 
         // Assert
         Assert.NotNull(result);
         Assert.True(result.IsCurrent);
+    }
+
+    [Fact]
+    public async Task GetRaceByIdAsync_MarksRaceAsNotCurrent_WhenRaceIsUpcomingButNotNext()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+
+        var now = DateTime.UtcNow;
+        var races = new[]
+        {
+            new Race
+            {
+                SeasonId = 1,
+                Round = 1,
+                Name = "Next Upcoming Race",
+                Location = "Location",
+                Circuit = "Circuit",
+                Country = "Country",
+                RaceDate = now.AddDays(5)
+            },
+            new Race
+            {
+                SeasonId = 1,
+                Round = 2,
+                Name = "Later Future Race",
+                Location = "Location",
+                Circuit = "Circuit",
+                Country = "Country",
+                RaceDate = now.AddDays(15)
+            }
+        };
+
+        context.Races.AddRange(races);
+        await context.SaveChangesAsync();
+
+        var laterRace = races[1];
+
+        // Act
+        var result = await service.GetRaceByIdAsync(laterRace.Id);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.False(result.IsCurrent);
     }
 
     [Fact]

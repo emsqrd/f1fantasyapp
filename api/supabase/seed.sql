@@ -100,7 +100,7 @@ BEGIN
     (season_id, 20, 'Mexico City Grand Prix', 'Mexico City', 'Autódromo Hermanos Rodríguez', 'Mexico', '2026-11-01', NULL, false, NOW(), NOW(), NULL),
     (season_id, 21, 'São Paulo Grand Prix', 'São Paulo', 'Autódromo José Carlos Pace', 'Brazil', '2026-11-08', NULL, false, NOW(), NOW(), NULL),
     (season_id, 22, 'Las Vegas Grand Prix', 'Las Vegas', 'Las Vegas Street Circuit', 'United States', '2026-11-21', NULL, false, NOW(), NOW(), NULL),
-    (season_id, 23, 'Qatar Grand Prix', 'Lusail', 'Losail International Circuit', 'Qatar', '2026-11-29', NULL, false, NOW(), NOW(), NULL),
+    (season_id, 23, 'Qatar Grand Prix', 'Lusail', 'Lusail International Circuit', 'Qatar', '2026-11-29', NULL, false, NOW(), NOW(), NULL),
     (season_id, 24, 'Abu Dhabi Grand Prix', 'Abu Dhabi', 'Yas Marina Circuit', 'United Arab Emirates', '2026-12-06', NULL, false, NOW(), NOW(), NULL)
   ON CONFLICT ("SeasonId", "Round") DO NOTHING;
 END $$;
