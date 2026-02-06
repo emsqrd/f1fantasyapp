@@ -1,6 +1,8 @@
 using System.Text;
+
 using F1CompanionApi.Data;
 using F1CompanionApi.Domain.Services;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -103,6 +105,8 @@ public static class ServiceExtensions
         services.AddScoped<IDriverService, DriverService>();
         services.AddScoped<ILeagueService, LeagueService>();
         services.AddScoped<ILeagueInviteService, LeagueInviteService>();
+        services.AddScoped<IRaceService, RaceService>();
+        services.AddScoped<ISeasonService, SeasonService>();
         services.AddScoped<ITeamService, TeamService>();
         services.AddScoped<IUserProfileService, UserProfileService>();
     }

@@ -1,6 +1,5 @@
 using F1CompanionApi.Api.Endpoints;
 using F1CompanionApi.Api.Models;
-using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Exceptions;
 using F1CompanionApi.Domain.Services;
 using Microsoft.AspNetCore.Http;

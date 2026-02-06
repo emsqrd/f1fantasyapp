@@ -31,10 +31,12 @@ import { z } from 'zod';
 
 import { BrowseLeagues } from './components/BrowseLeagues/BrowseLeagues';
 import { JoinInvite } from './components/JoinInvite/JoinInvite';
+import type { Race } from './contracts/Race';
 import type { Constructor, Driver } from './contracts/Role';
 import { getActiveConstructors } from './services/constructorService';
 import { getActiveDrivers } from './services/driverService';
 import { previewInvite } from './services/leagueInviteService';
+import { getRaces } from './services/raceService';
 
 /**
  * Zod schema for validating league ID route parameter.
@@ -566,6 +568,7 @@ const teamRoute = createRoute({
     team: TeamType;
     activeDrivers: Driver[];
     activeConstructors: Constructor[];
+    races: Race[];
   }> => {
     const TEAM_ROUTE_ID = '/_authenticated/_team-required/team/$teamId';
 
@@ -581,10 +584,11 @@ const teamRoute = createRoute({
     const { teamId } = validationResult.data;
 
     // Fetch all data in parallel
-    const [team, activeDrivers, activeConstructors] = await Promise.all([
+    const [team, activeDrivers, activeConstructors, races] = await Promise.all([
       getTeamById(teamId),
       getActiveDrivers(),
       getActiveConstructors(),
+      getRaces(),
     ]);
 
     // Return 404 if team doesn't exist
@@ -592,7 +596,7 @@ const teamRoute = createRoute({
       throw notFound({ routeId: TEAM_ROUTE_ID });
     }
 
-    return { team, activeDrivers, activeConstructors };
+    return { team, activeDrivers, activeConstructors, races };
   },
   component: TeamRoute,
   pendingComponent: () => (
@@ -632,19 +636,21 @@ const myTeamRoute = createRoute({
     team: TeamType;
     activeDrivers: Driver[];
     activeConstructors: Constructor[];
+    races: Race[];
   }> => {
     // Fetch all data in parallel
-    const [team, activeDrivers, activeConstructors] = await Promise.all([
+    const [team, activeDrivers, activeConstructors, races] = await Promise.all([
       getMyTeam(),
       getActiveDrivers(),
       getActiveConstructors(),
+      getRaces(),
     ]);
 
     if (!team) {
       throw redirect({ to: '/create-team' });
     }
 
-    return { team, activeDrivers, activeConstructors };
+    return { team, activeDrivers, activeConstructors, races };
   },
   component: MyTeamRoute,
   pendingComponent: () => (

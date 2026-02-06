@@ -1,5 +1,4 @@
 using F1CompanionApi.Domain.Exceptions;
-using Xunit;
 
 namespace F1CompanionApi.UnitTests.Domain.Exceptions;
 

@@ -28,7 +28,6 @@ public class DriverEndpointsTests
             new DriverResponse
             {
                 Id = 1,
-                Type = "driver",
                 FirstName = "Oscar",
                 LastName = "Piastri",
                 Abbreviation = "PIA",
@@ -37,7 +36,6 @@ public class DriverEndpointsTests
             new DriverResponse
             {
                 Id = 2,
-                Type = "driver",
                 FirstName = "Lando",
                 LastName = "Norris",
                 Abbreviation = "NOR",
@@ -66,7 +64,6 @@ public class DriverEndpointsTests
             new DriverResponse
             {
                 Id = 1,
-                Type = "driver",
                 FirstName = "Oscar",
                 LastName = "Piastri",
                 Abbreviation = "PIA",
@@ -93,7 +90,6 @@ public class DriverEndpointsTests
         var driver = new DriverResponse
         {
             Id = 1,
-            Type = "driver",
             FirstName = "Oscar",
             LastName = "Piastri",
             Abbreviation = "PIA",
@@ -157,7 +153,6 @@ public class DriverEndpointsTests
             new DriverResponse
             {
                 Id = 1,
-                Type = "driver",
                 FirstName = "Oscar",
                 LastName = "Piastri",
                 Abbreviation = "PIA",
@@ -166,7 +161,6 @@ public class DriverEndpointsTests
             new DriverResponse
             {
                 Id = 2,
-                Type = "driver",
                 FirstName = "Fernando",
                 LastName = "Alonso",
                 Abbreviation = "ALO",
@@ -212,7 +206,6 @@ public class DriverEndpointsTests
         var driver = new DriverResponse
         {
             Id = 1,
-            Type = "driver",
             FirstName = "Max",
             LastName = "Verstappen",
             Abbreviation = "VER",
@@ -229,7 +222,6 @@ public class DriverEndpointsTests
         Assert.IsType<Ok<DriverResponse>>(result);
         var okResult = (Ok<DriverResponse>)result;
         Assert.NotNull(okResult.Value);
-        Assert.Equal("driver", okResult.Value.Type);
         Assert.NotEmpty(okResult.Value.Abbreviation);
         Assert.NotEmpty(okResult.Value.CountryAbbreviation);
     }

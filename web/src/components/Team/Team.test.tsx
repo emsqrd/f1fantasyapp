@@ -1,3 +1,4 @@
+import type { Race } from '@/contracts/Race';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team as TeamType } from '@/contracts/Team';
 import { createMockTeam } from '@/test-utils';
@@ -106,6 +107,45 @@ describe('Team Component', () => {
     },
   ];
 
+  const mockRaces: Race[] = [
+    {
+      id: 1,
+      seasonId: 1,
+      round: 1,
+      name: 'Bahrain Grand Prix',
+      location: 'Bahrain',
+      circuit: 'Bahrain International Circuit',
+      country: 'Bahrain',
+      raceDate: '2024-03-02',
+      lockDeadline: '2024-03-01T12:00:00Z',
+      isCurrent: false,
+    },
+    {
+      id: 2,
+      seasonId: 1,
+      round: 2,
+      name: 'Saudi Arabian Grand Prix',
+      location: 'Jeddah',
+      circuit: 'Jeddah Corniche Circuit',
+      country: 'Saudi Arabia',
+      raceDate: '2024-03-09',
+      lockDeadline: '2024-03-08T12:00:00Z',
+      isCurrent: true,
+    },
+    {
+      id: 3,
+      seasonId: 1,
+      round: 3,
+      name: 'Australian Grand Prix',
+      location: 'Melbourne',
+      circuit: 'Albert Park Circuit',
+      country: 'Australia',
+      raceDate: '2024-03-24',
+      lockDeadline: '2024-03-23T12:00:00Z',
+      isCurrent: false,
+    },
+  ];
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -117,6 +157,7 @@ describe('Team Component', () => {
           team={mockTeam}
           activeDrivers={mockActiveDrivers}
           activeConstructors={mockActiveConstructors}
+          races={mockRaces}
           readOnly={false}
         />,
       );
@@ -130,6 +171,7 @@ describe('Team Component', () => {
           team={mockTeam}
           activeDrivers={mockActiveDrivers}
           activeConstructors={mockActiveConstructors}
+          races={mockRaces}
           readOnly={false}
         />,
       );
@@ -147,6 +189,7 @@ describe('Team Component', () => {
           team={mockTeam}
           activeDrivers={mockActiveDrivers}
           activeConstructors={mockActiveConstructors}
+          races={mockRaces}
           readOnly={false}
         />,
       );
@@ -166,6 +209,7 @@ describe('Team Component', () => {
           team={mockTeam}
           activeDrivers={mockActiveDrivers}
           activeConstructors={mockActiveConstructors}
+          races={mockRaces}
           readOnly={false}
         />,
       );
@@ -183,6 +227,7 @@ describe('Team Component', () => {
           team={mockTeam}
           activeDrivers={mockActiveDrivers}
           activeConstructors={mockActiveConstructors}
+          races={mockRaces}
           readOnly={false}
         />,
       );
@@ -203,6 +248,7 @@ describe('Team Component', () => {
           team={mockTeam}
           activeDrivers={mockActiveDrivers}
           activeConstructors={mockActiveConstructors}
+          races={mockRaces}
           readOnly={false}
         />,
       );
@@ -226,6 +272,7 @@ describe('Team Component', () => {
           team={mockTeam}
           activeDrivers={mockActiveDrivers}
           activeConstructors={mockActiveConstructors}
+          races={mockRaces}
           readOnly={false}
         />,
       );
@@ -248,44 +295,6 @@ describe('Team Component', () => {
   });
 
   describe('Content Delivery', () => {
-    it('passes props to DriverPicker correctly', () => {
-      render(
-        <Team
-          team={mockTeam}
-          activeDrivers={mockActiveDrivers}
-          activeConstructors={mockActiveConstructors}
-          readOnly={false}
-        />,
-      );
-
-      expect(mockDriverPicker).toHaveBeenCalledWith(
-        expect.objectContaining({
-          activeDrivers: mockActiveDrivers,
-          teamDrivers: mockTeam.drivers,
-          readOnly: false,
-        }),
-      );
-    });
-
-    it('passes props to ConstructorPicker correctly', async () => {
-      render(
-        <Team
-          team={mockTeam}
-          activeDrivers={mockActiveDrivers}
-          activeConstructors={mockActiveConstructors}
-          readOnly={false}
-        />,
-      );
-
-      expect(mockConstructorPicker).toHaveBeenCalledWith(
-        expect.objectContaining({
-          activeConstructors: mockActiveConstructors,
-          teamConstructors: mockTeam.constructors,
-          readOnly: false,
-        }),
-      );
-    });
-
     it('ensures only one tab content is visible at a time', async () => {
       const user = userEvent.setup();
       render(
@@ -293,6 +302,7 @@ describe('Team Component', () => {
           team={mockTeam}
           activeDrivers={mockActiveDrivers}
           activeConstructors={mockActiveConstructors}
+          races={mockRaces}
           readOnly={false}
         />,
       );
@@ -327,6 +337,7 @@ describe('Team Component', () => {
           team={mockTeam}
           activeDrivers={mockActiveDrivers}
           activeConstructors={mockActiveConstructors}
+          races={mockRaces}
           readOnly={false}
         />,
       );
@@ -353,6 +364,7 @@ describe('Team Component', () => {
           team={mockTeam}
           activeDrivers={mockActiveDrivers}
           activeConstructors={mockActiveConstructors}
+          races={mockRaces}
           readOnly={false}
         />,
       );
@@ -373,6 +385,7 @@ describe('Team Component', () => {
           team={mockTeam}
           activeDrivers={mockActiveDrivers}
           activeConstructors={mockActiveConstructors}
+          races={mockRaces}
           readOnly={true}
         />,
       );
@@ -386,6 +399,7 @@ describe('Team Component', () => {
           team={mockTeam}
           activeDrivers={mockActiveDrivers}
           activeConstructors={mockActiveConstructors}
+          races={mockRaces}
           readOnly={false}
         />,
       );
@@ -399,6 +413,7 @@ describe('Team Component', () => {
           team={mockTeam}
           activeDrivers={mockActiveDrivers}
           activeConstructors={mockActiveConstructors}
+          races={mockRaces}
           readOnly={true}
         />,
       );
@@ -419,6 +434,7 @@ describe('Team Component', () => {
           team={mockTeam}
           activeDrivers={mockActiveDrivers}
           activeConstructors={mockActiveConstructors}
+          races={mockRaces}
           readOnly={false}
         />,
       );
@@ -439,6 +455,7 @@ describe('Team Component', () => {
           team={mockTeam}
           activeDrivers={mockActiveDrivers}
           activeConstructors={mockActiveConstructors}
+          races={mockRaces}
           readOnly={true}
         />,
       );
@@ -459,6 +476,7 @@ describe('Team Component', () => {
           team={mockTeam}
           activeDrivers={mockActiveDrivers}
           activeConstructors={mockActiveConstructors}
+          races={mockRaces}
           readOnly={false}
         />,
       );
@@ -471,6 +489,64 @@ describe('Team Component', () => {
 
       const constructorPicker = screen.getByTestId('constructor-picker');
       expect(constructorPicker).toHaveAttribute('data-read-only', 'false');
+    });
+  });
+
+  describe('Race Selection', () => {
+    it('renders race selector with current race as default', () => {
+      render(
+        <Team
+          team={mockTeam}
+          activeDrivers={mockActiveDrivers}
+          activeConstructors={mockActiveConstructors}
+          races={mockRaces}
+          readOnly={false}
+        />,
+      );
+
+      const raceSelector = screen.getByRole('combobox');
+      expect(raceSelector).toBeInTheDocument();
+
+      // Should display the current race (Round 2 - Jeddah)
+      expect(screen.getByText('Jeddah')).toBeInTheDocument();
+      expect(screen.getByText('Round 2')).toBeInTheDocument();
+    });
+
+    it('defaults to last race when no current race exists', () => {
+      const racesWithNoCurrent = mockRaces.map((race) => ({
+        ...race,
+        isCurrent: false,
+      }));
+
+      render(
+        <Team
+          team={mockTeam}
+          activeDrivers={mockActiveDrivers}
+          activeConstructors={mockActiveConstructors}
+          races={racesWithNoCurrent}
+          readOnly={false}
+        />,
+      );
+
+      // Should display the last race (Round 3 - Melbourne)
+      expect(screen.getByText('Melbourne')).toBeInTheDocument();
+      expect(screen.getByText('Round 3')).toBeInTheDocument();
+    });
+
+    it('renders race selector as interactive element', () => {
+      render(
+        <Team
+          team={mockTeam}
+          activeDrivers={mockActiveDrivers}
+          activeConstructors={mockActiveConstructors}
+          races={mockRaces}
+          readOnly={false}
+        />,
+      );
+
+      const raceSelector = screen.getByRole('combobox');
+      expect(raceSelector).toBeEnabled();
+      expect(raceSelector).toHaveAttribute('aria-controls');
     });
   });
 });

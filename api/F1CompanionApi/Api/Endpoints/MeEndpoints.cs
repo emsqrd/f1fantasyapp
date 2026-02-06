@@ -1,8 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Domain.Services;
-using F1CompanionApi.Extensions;
-using Microsoft.AspNetCore.Mvc;
 
 namespace F1CompanionApi.Api.Endpoints;
 
