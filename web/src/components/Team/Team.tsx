@@ -1,3 +1,4 @@
+import type { Race } from '@/contracts/Race';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team } from '@/contracts/Team';
 import { useLoaderData } from '@tanstack/react-router';
@@ -14,11 +15,12 @@ interface TeamProps {
   team: Team;
   activeDrivers: Driver[];
   activeConstructors: Constructor[];
+  races: Race[];
   readOnly: boolean;
 }
 
 export function MyTeamRoute() {
-  const { team, activeDrivers, activeConstructors } = useLoaderData({
+  const { team, activeDrivers, activeConstructors, races } = useLoaderData({
     from: '/_authenticated/_team-required/my-team',
   });
 
@@ -27,13 +29,14 @@ export function MyTeamRoute() {
       team={team}
       activeDrivers={activeDrivers}
       activeConstructors={activeConstructors}
+      races={races}
       readOnly={false}
     />
   );
 }
 
 export function TeamRoute() {
-  const { team, activeDrivers, activeConstructors } = useLoaderData({
+  const { team, activeDrivers, activeConstructors, races } = useLoaderData({
     from: '/_authenticated/_team-required/team/$teamId',
   });
 
@@ -42,6 +45,7 @@ export function TeamRoute() {
       team={team}
       activeDrivers={activeDrivers}
       activeConstructors={activeConstructors}
+      races={races}
       readOnly={true}
     />
   );
@@ -52,9 +56,12 @@ export function TeamRoute() {
  *
  * @returns The team details page with driver/constructor pickers
  */
-export function Team({ team, activeDrivers, activeConstructors, readOnly }: TeamProps) {
+export function Team({ team, activeDrivers, activeConstructors, races, readOnly }: TeamProps) {
   // Track active tab to control visibility while keeping both tabs mounted
   const [activeTab, setActiveTab] = useState('drivers');
+  const [selectedRaceId, setSelectedRaceId] = useState<number>();
+
+  const currentRace = races.find((r) => r.isCurrent) ?? races.at(-1);
 
   return (
     <AppContainer maxWidth="md">
@@ -81,23 +88,23 @@ export function Team({ team, activeDrivers, activeConstructors, readOnly }: Team
         </Card>
 
         <div className="mb-4 flex flex-col space-y-4 sm:mb-0">
-          <Select defaultValue="round15">
+          <Select
+            defaultValue={currentRace?.id.toString()}
+            value={selectedRaceId?.toString()}
+            onValueChange={(value) => setSelectedRaceId(Number(value))}
+          >
             <SelectTrigger className="h-auto min-h-[60px] w-full py-8 [&>span]:block [&>span]:w-full [&>span]:text-left">
               <SelectValue placeholder="Pick a race" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="round15">
-                <div>
-                  <p className="text-muted-foreground font-medium">Round 15</p>
-                  <h1 className="text-2xl font-bold">Netherlands</h1>
-                </div>
-              </SelectItem>
-              <SelectItem value="round14">
-                <div>
-                  <p className="text-muted-foreground font-medium">Round 14</p>
-                  <h1 className="text-2xl font-bold">Hungary</h1>
-                </div>
-              </SelectItem>
+              {races.map((race) => (
+                <SelectItem key={race.id} value={race.id.toString()}>
+                  <div>
+                    <p className="text-muted-foreground font-medium">Round {race.round}</p>
+                    <h1 className="text-2xl font-bold">{race.location}</h1>
+                  </div>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
