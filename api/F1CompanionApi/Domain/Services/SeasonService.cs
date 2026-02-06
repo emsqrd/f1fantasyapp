@@ -1,6 +1,7 @@
 using F1CompanionApi.Api.Mappers;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
+using F1CompanionApi.Data.Entities;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +11,7 @@ public interface ISeasonService
 {
     Task<IEnumerable<SeasonResponse>> GetSeasonsAsync();
     Task<SeasonResponse?> GetSeasonByIdAsync(int id);
+    Task<Season?> GetCurrentSeasonAsync();
 }
 
 public class SeasonService : ISeasonService
@@ -34,22 +36,45 @@ public class SeasonService : ISeasonService
             .OrderBy(s => s.Year)
             .ToListAsync();
 
-        var now = DateTime.UtcNow;
-        var currentSeasonId = seasons.FirstOrDefault(s => now >= s.StartDate && now <= s.EndDate)?.Id;
+        _logger.LogDebug("Found {SeasonsCount} seasons", seasons.Count);
+
+        var currentSeason = await GetCurrentSeasonAsync();
+        var currentSeasonId = currentSeason?.Id;
 
         return seasons.ToResponseModel(currentSeasonId);
     }
 
     public async Task<SeasonResponse?> GetSeasonByIdAsync(int id)
     {
+        _logger.LogDebug("Fetching season {SeasonId}", id);
+
         var season = await _dbContext.Seasons.FindAsync(id);
 
         if (season is null) return null;
 
-        var now = DateTime.UtcNow;
-        var isCurrent = now >= season.StartDate && now <= season.EndDate;
-        int? currentSeasonId = isCurrent ? season.Id : null;
+        var currentSeason = await GetCurrentSeasonAsync();
+        var currentSeasonId = currentSeason?.Id;
 
         return season.ToResponseModel(currentSeasonId);
+    }
+
+    public async Task<Season?> GetCurrentSeasonAsync()
+    {
+        _logger.LogDebug("Fetching current season");
+
+        var now = DateTime.UtcNow;
+        var currentSeason = await _dbContext.Seasons
+            .FirstOrDefaultAsync(s => now >= s.StartDate && now <= s.EndDate);
+
+        if (currentSeason is not null)
+        {
+            _logger.LogDebug("Current season is {Year}", currentSeason.Year);
+        }
+        else
+        {
+            _logger.LogDebug("No current season found");
+        }
+
+        return currentSeason;
     }
 }

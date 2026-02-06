@@ -12,15 +12,14 @@ public static class SeasonEndpoints
     public static IEndpointRouteBuilder MapSeasonEndpoints(this IEndpointRouteBuilder app)
     {
         var seasonsGroup = app.MapGroup("/seasons")
+            .RequireAuthorization()
             .WithOpenApi();
 
         seasonsGroup.MapGet("/", GetSeasonsAsync)
-            .RequireAuthorization()
             .WithName("GetSeasons")
             .WithDescription("Get all seasons");
 
         seasonsGroup.MapGet("/{id}", GetSeasonByIdAsync)
-            .RequireAuthorization()
             .WithName("GetSeasonById")
             .WithDescription("Get a season by ID");
 

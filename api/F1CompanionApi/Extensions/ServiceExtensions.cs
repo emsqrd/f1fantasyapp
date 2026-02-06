@@ -105,6 +105,7 @@ public static class ServiceExtensions
         services.AddScoped<IDriverService, DriverService>();
         services.AddScoped<ILeagueService, LeagueService>();
         services.AddScoped<ILeagueInviteService, LeagueInviteService>();
+        services.AddScoped<IRaceService, RaceService>();
         services.AddScoped<ISeasonService, SeasonService>();
         services.AddScoped<ITeamService, TeamService>();
         services.AddScoped<IUserProfileService, UserProfileService>();
