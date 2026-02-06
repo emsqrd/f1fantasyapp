@@ -1,9 +1,11 @@
 using F1CompanionApi.Api.Endpoints;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Domain.Services;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
+
 using Moq;
 
 namespace F1CompanionApi.UnitTests.Api.Endpoints;
@@ -28,7 +30,6 @@ public class ConstructorEndpointsTests
             new ConstructorResponse
             {
                 Id = 1,
-                Type = "constructor",
                 Name = "McLaren",
                 FullName = "McLaren F1 Team",
                 CountryAbbreviation = "GBR",
@@ -37,7 +38,6 @@ public class ConstructorEndpointsTests
             new ConstructorResponse
             {
                 Id = 2,
-                Type = "constructor",
                 Name = "Ferrari",
                 FullName = "Scuderia Ferrari",
                 CountryAbbreviation = "ITA",
@@ -66,7 +66,6 @@ public class ConstructorEndpointsTests
             new ConstructorResponse
             {
                 Id = 1,
-                Type = "constructor",
                 Name = "McLaren",
                 FullName = "McLaren F1 Team",
                 CountryAbbreviation = "GBR",
@@ -94,7 +93,6 @@ public class ConstructorEndpointsTests
         var constructor = new ConstructorResponse
         {
             Id = 1,
-            Type = "constructor",
             Name = "McLaren",
             FullName = "McLaren F1 Team",
             CountryAbbreviation = "GBR",
@@ -158,7 +156,6 @@ public class ConstructorEndpointsTests
             new ConstructorResponse
             {
                 Id = 1,
-                Type = "constructor",
                 Name = "McLaren",
                 FullName = "McLaren F1 Team",
                 CountryAbbreviation = "GBR",
@@ -167,7 +164,6 @@ public class ConstructorEndpointsTests
             new ConstructorResponse
             {
                 Id = 2,
-                Type = "constructor",
                 Name = "Williams",
                 FullName = "Williams Racing",
                 CountryAbbreviation = "GBR",
@@ -213,7 +209,6 @@ public class ConstructorEndpointsTests
         var constructor = new ConstructorResponse
         {
             Id = 1,
-            Type = "constructor",
             Name = "Red Bull",
             FullName = "Oracle Red Bull Racing",
             CountryAbbreviation = "AUT",
@@ -230,7 +225,6 @@ public class ConstructorEndpointsTests
         Assert.IsType<Ok<ConstructorResponse>>(result);
         var okResult = (Ok<ConstructorResponse>)result;
         Assert.NotNull(okResult.Value);
-        Assert.Equal("constructor", okResult.Value.Type);
         Assert.NotEmpty(okResult.Value.Name);
         Assert.NotNull(okResult.Value.FullName);
         Assert.NotEmpty(okResult.Value.FullName);

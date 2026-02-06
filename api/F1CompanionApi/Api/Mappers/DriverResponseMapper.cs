@@ -10,7 +10,6 @@ public static class DriverResponseMapper
         return new DriverResponse
         {
             Id = driver.Id,
-            Type = "driver",
             FirstName = driver.FirstName,
             LastName = driver.LastName,
             Abbreviation = driver.Abbreviation,

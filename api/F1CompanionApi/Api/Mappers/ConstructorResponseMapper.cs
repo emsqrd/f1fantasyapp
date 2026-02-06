@@ -10,7 +10,6 @@ public static class ConstructorResponseMapper
         return new ConstructorResponse
         {
             Id = constructor.Id,
-            Type = "constructor",
             FullName = constructor.FullName,
             CountryAbbreviation = constructor.CountryAbbreviation,
             Name = constructor.Name,

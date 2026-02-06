@@ -1,8 +1,10 @@
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Services;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+
 using Moq;
 
 namespace F1CompanionApi.UnitTests.Services;
@@ -283,7 +285,6 @@ public class SeasonServiceTests
         Assert.Equal(2024, seasonResponse.Year);
         Assert.Equal(startDate, seasonResponse.StartDate);
         Assert.Equal(endDate, seasonResponse.EndDate);
-        Assert.NotNull(seasonResponse.IsCurrent);
     }
 
     #endregion
@@ -503,7 +504,6 @@ public class SeasonServiceTests
         Assert.Equal(2024, result.Year);
         Assert.Equal(startDate, result.StartDate);
         Assert.Equal(endDate, result.EndDate);
-        Assert.NotNull(result.IsCurrent);
     }
 
     #endregion
