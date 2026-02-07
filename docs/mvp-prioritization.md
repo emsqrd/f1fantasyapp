@@ -47,6 +47,8 @@ These features are required for basic gameplay. Without them, there's no functio
 
 #### 1. Race Schedule System ⭐ **START HERE**
 
+**Status:** Done
+
 **Why Critical:** Need to know what races exist and when they happen for scoring.
 
 **Scope:**
@@ -178,6 +180,8 @@ These features are required for basic gameplay. Without them, there's no functio
 
 #### 5. My Team vs Other Team Views ⭐ **HIGH PRIORITY**
 
+**Status:** Done
+
 **Why Critical:** Users need to edit their own team but only view others. Currently all teams show same editable interface.
 
 **Scope:**
@@ -202,10 +206,6 @@ These features are required for basic gameplay. Without them, there's no functio
 **Priority:** High - needed for security and UX clarity.
 
 ---
-
-### 🟡 IMPORTANT (Should Have for MVP) - Enhances Experience
-
-These features significantly improve the game but you could technically launch without them.
 
 #### 6. Weekly Trade/Transfer System ⭐ **REQUIRED FOR MVP**
 
@@ -239,6 +239,10 @@ These features significantly improve the game but you could technically launch w
 - Show transfer history (optional: which transfers were made)
 
 ---
+
+### 🟡 IMPORTANT (Should Have for MVP) - Enhances Experience
+
+These features significantly improve the game but you could technically launch without them.
 
 #### 7. Commissioner Tools - Expanded
 
