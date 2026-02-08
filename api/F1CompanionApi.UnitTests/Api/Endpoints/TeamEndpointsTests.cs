@@ -3,10 +3,12 @@ using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Services;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+
 using Moq;
 
 namespace F1CompanionApi.UnitTests.Api.Endpoints;
@@ -317,6 +319,7 @@ public class TeamEndpointsTests
             Id = 1,
             Name = "Mercedes",
             FullName = "Mercedes-AMG Petronas F1 Team",
+            Abbreviation = "MER",
             CountryAbbreviation = "GER",
             IsActive = true,
         };

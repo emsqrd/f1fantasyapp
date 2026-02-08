@@ -86,7 +86,7 @@ export function DriverPicker({ activeDrivers, teamDrivers, readOnly }: DriverPic
           <SheetTrigger asChild>
             <div />
           </SheetTrigger>
-          <SheetContent className="flex h-full w-80 flex-col">
+          <SheetContent className="bg-secondary flex h-full flex-col sm:max-w-md">
             <SheetHeader>
               <SheetTitle>Select Driver</SheetTitle>
               <SheetDescription>

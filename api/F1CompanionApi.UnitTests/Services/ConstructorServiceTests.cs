@@ -1,8 +1,10 @@
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Services;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+
 using Moq;
 
 namespace F1CompanionApi.UnitTests.Services;
@@ -38,6 +40,7 @@ public class ConstructorServiceTests
             {
                 Name = "McLaren",
                 FullName = "McLaren F1 Team",
+                Abbreviation = "MCL",
                 CountryAbbreviation = "GBR",
                 IsActive = true,
             },
@@ -45,6 +48,7 @@ public class ConstructorServiceTests
             {
                 Name = "Williams",
                 FullName = "Williams Racing",
+                Abbreviation = "MCL",
                 CountryAbbreviation = "GBR",
                 IsActive = false,
             },
@@ -74,6 +78,7 @@ public class ConstructorServiceTests
             {
                 Name = "McLaren",
                 FullName = "McLaren F1 Team",
+                Abbreviation = "MCL",
                 CountryAbbreviation = "GBR",
                 IsActive = true,
             },
@@ -81,6 +86,7 @@ public class ConstructorServiceTests
             {
                 Name = "Williams",
                 FullName = "Williams Racing",
+                Abbreviation = "MCL",
                 CountryAbbreviation = "GBR",
                 IsActive = false,
             },
@@ -111,6 +117,7 @@ public class ConstructorServiceTests
             {
                 Name = "Red Bull Racing",
                 FullName = "Oracle Red Bull Racing",
+                Abbreviation = "MCL",
                 CountryAbbreviation = "AUT",
                 IsActive = true,
             },
@@ -118,6 +125,7 @@ public class ConstructorServiceTests
             {
                 Name = "Ferrari",
                 FullName = "Scuderia Ferrari",
+                Abbreviation = "MCL",
                 CountryAbbreviation = "ITA",
                 IsActive = true,
             },
@@ -146,6 +154,7 @@ public class ConstructorServiceTests
         {
             Name = "McLaren",
             FullName = "McLaren F1 Team",
+            Abbreviation = "MCL",
             CountryAbbreviation = "GBR",
             IsActive = true,
         };
