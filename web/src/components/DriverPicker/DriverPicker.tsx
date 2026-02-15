@@ -86,7 +86,7 @@ export function DriverPicker({ activeDrivers, teamDrivers, readOnly }: DriverPic
           <SheetTrigger asChild>
             <div />
           </SheetTrigger>
-          <SheetContent className="bg-secondary flex h-full flex-col sm:max-w-md">
+          <SheetContent className="bg-card flex h-full flex-col sm:max-w-md">
             <SheetHeader>
               <SheetTitle>Select Driver</SheetTitle>
               <SheetDescription>
@@ -94,7 +94,7 @@ export function DriverPicker({ activeDrivers, teamDrivers, readOnly }: DriverPic
               </SheetDescription>
             </SheetHeader>
             <ScrollArea className="h-full min-h-0 flex-1 pr-4 pl-4">
-              <ul className="space-y-2">
+              <ul className="divide-border divide-y">
                 {pool.map((driver) => (
                   <DriverListItem
                     key={driver.id}

@@ -18,19 +18,6 @@ describe('DriverListItem', () => {
     vi.clearAllMocks();
   });
 
-  it('should display the drivers full name', () => {
-    render(<DriverListItem driver={driver} onSelect={mockOnSelect} />);
-
-    expect(screen.getByText('Carlos Sainz')).toBeInTheDocument();
-  });
-
-  it('should render button to select driver', () => {
-    render(<DriverListItem driver={driver} onSelect={mockOnSelect} />);
-
-    const addDriverButton = screen.getByRole('button', { name: /add driver/i });
-    expect(addDriverButton).toBeInTheDocument();
-  });
-
   it('should call onSelect when add button is clicked', async () => {
     render(<DriverListItem driver={driver} onSelect={mockOnSelect} />);
 

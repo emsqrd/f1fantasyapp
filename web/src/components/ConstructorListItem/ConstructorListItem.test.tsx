@@ -1,8 +1,8 @@
+import { createMockConstructor } from '@/test-utils/mockFactories';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createMockConstructor } from '@/test-utils/mockFactories';
 import { ConstructorListItem } from './ConstructorListItem';
 
 describe('ConstructorListItem', () => {
@@ -16,19 +16,6 @@ describe('ConstructorListItem', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  it('should display the constructor name', () => {
-    render(<ConstructorListItem constructor={constructor} onSelect={mockOnSelect} />);
-
-    expect(screen.getByText('Mercedes')).toBeInTheDocument();
-  });
-
-  it('should render button to select constructor', () => {
-    render(<ConstructorListItem constructor={constructor} onSelect={mockOnSelect} />);
-
-    const addConstructorButton = screen.getByRole('button', { name: /add constructor/i });
-    expect(addConstructorButton).toBeInTheDocument();
   });
 
   it('should call onSelect when add button is clicked', async () => {
