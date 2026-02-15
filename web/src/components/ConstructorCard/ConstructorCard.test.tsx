@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Constructor } from '@/contracts/Role';
+import { createMockConstructor } from '@/test-utils/mockFactories';
 
 import { ConstructorCard } from './ConstructorCard';
 
@@ -95,12 +95,12 @@ describe('ConstructorCard', () => {
   });
 
   describe('Constructor Selected - Edit Mode', () => {
-    const constructor: Constructor = {
-      id: 1,
+    const constructor = createMockConstructor({
       name: 'Ferrari',
       fullName: 'Scuderia Ferrari',
+      abbreviation: 'FER',
       countryAbbreviation: 'ITA',
-    };
+    });
 
     it('displays constructor name when constructor is selected', () => {
       render(
@@ -161,12 +161,11 @@ describe('ConstructorCard', () => {
   });
 
   describe('Constructor Selected - Read-Only Mode', () => {
-    const constructor: Constructor = {
-      id: 1,
+    const constructor = createMockConstructor({
       name: 'Ferrari',
       fullName: 'Scuderia Ferrari',
       countryAbbreviation: 'ITA',
-    };
+    });
 
     it('displays constructor name in read-only mode', () => {
       render(
@@ -232,12 +231,13 @@ describe('ConstructorCard', () => {
     it('allows keyboard interaction with remove button in edit mode', async () => {
       const user = userEvent.setup();
       const onRemove = vi.fn();
-      const constructor: Constructor = {
+      const constructor = createMockConstructor({
         id: 2,
         name: 'Red Bull Racing',
         fullName: 'Oracle Red Bull Racing',
+        abbreviation: 'RBR',
         countryAbbreviation: 'AUT',
-      };
+      });
 
       render(
         <ConstructorCard

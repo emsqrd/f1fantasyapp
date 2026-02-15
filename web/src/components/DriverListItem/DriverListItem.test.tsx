@@ -1,17 +1,17 @@
-import type { Driver } from '@/contracts/Role';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { createMockDriver } from '@/test-utils/mockFactories';
 import { DriverListItem } from './DriverListItem';
 
 describe('DriverListItem', () => {
-  const driver: Driver = {
-    id: 1,
+  const driver = createMockDriver({
     firstName: 'Carlos',
     lastName: 'Sainz',
+    abbreviation: 'SAI',
     countryAbbreviation: 'ESP',
-  };
+  });
   const mockOnSelect = vi.fn();
 
   beforeEach(() => {

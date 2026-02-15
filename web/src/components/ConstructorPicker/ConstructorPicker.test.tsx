@@ -3,6 +3,7 @@ import type { TeamConstructor } from '@/contracts/Team';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { createMockConstructorList } from '@/test-utils/mockFactories';
 import { ConstructorPicker } from './ConstructorPicker';
 
 // Mock useLineupPicker hook
@@ -27,18 +28,16 @@ let mockSelectedPosition: number | null;
 let mockIsPending: boolean;
 let mockError: string | null;
 
-const mockConstructors: Constructor[] = [
-  { id: 1, name: 'McLaren', fullName: 'McLaren F1 Team', countryAbbreviation: 'GBR' },
-  { id: 2, name: 'Ferrari', fullName: 'Scuderia Ferrari', countryAbbreviation: 'ITA' },
-  {
-    id: 3,
-    name: 'Red Bull Racing',
-    fullName: 'Oracle Red Bull Racing',
-    countryAbbreviation: 'AUT',
-  },
-  { id: 4, name: 'Mercedes', fullName: 'Mercedes-AMG Petronas', countryAbbreviation: 'GER' },
-  { id: 5, name: 'Aston Martin', fullName: 'Aston Martin Aramco', countryAbbreviation: 'GBR' },
-];
+const mockConstructors: Constructor[] = createMockConstructorList(5, (i) => {
+  const constructorData = [
+    { name: 'McLaren', fullName: 'McLaren F1 Team', abbreviation: 'MCL', countryAbbreviation: 'GBR' },
+    { name: 'Ferrari', fullName: 'Scuderia Ferrari', abbreviation: 'FER', countryAbbreviation: 'ITA' },
+    { name: 'Red Bull Racing', fullName: 'Oracle Red Bull Racing', abbreviation: 'RBR', countryAbbreviation: 'AUT' },
+    { name: 'Mercedes', fullName: 'Mercedes-AMG Petronas', abbreviation: 'MER', countryAbbreviation: 'GER' },
+    { name: 'Aston Martin', fullName: 'Aston Martin Aramco', abbreviation: 'AMR', countryAbbreviation: 'GBR' },
+  ];
+  return constructorData[i - 1];
+});
 
 // Helper to convert Constructor to TeamConstructor
 const toTeamConstructor = (constructor: Constructor, slotPosition: number): TeamConstructor => ({

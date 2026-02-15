@@ -1,5 +1,6 @@
 import type { Driver } from '@/contracts/Role';
 import { apiClient } from '@/lib/api';
+import { createMockDriverList } from '@/test-utils/mockFactories';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getActiveDrivers } from './driverService';
@@ -19,20 +20,24 @@ describe('driverService', () => {
 
   describe('getActiveDrivers', () => {
     it('calls apiClient.get with correct endpoint and query parameter', async () => {
-      const mockDrivers: Driver[] = [
-        {
-          id: 1,
-          firstName: 'Max',
-          lastName: 'Verstappen',
-          countryAbbreviation: 'NL',
-        },
-        {
-          id: 2,
-          firstName: 'Lewis',
-          lastName: 'Hamilton',
-          countryAbbreviation: 'GB',
-        },
-      ];
+      const mockDrivers: Driver[] = createMockDriverList(2, (i) => {
+        const driverData = [
+          {
+            firstName: 'Max',
+            lastName: 'Verstappen',
+            abbreviation: 'VER',
+            countryAbbreviation: 'NED',
+          },
+          {
+            firstName: 'Lewis',
+            lastName: 'Hamilton',
+            abbreviation: 'HAM',
+            countryAbbreviation: 'GBR',
+          },
+        ];
+
+        return driverData[i - 1];
+      });
 
       mockApiClient.get.mockResolvedValue(mockDrivers);
 

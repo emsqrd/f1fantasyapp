@@ -1,7 +1,7 @@
 import type { Race } from '@/contracts/Race';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team as TeamType } from '@/contracts/Team';
-import { createMockTeam } from '@/test-utils';
+import { createMockConstructor, createMockDriver, createMockTeam } from '@/test-utils';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -71,40 +71,40 @@ describe('Team Component', () => {
     ownerName: 'Test Owner',
   });
 
-  const mockActiveDrivers: Driver[] = [
-    {
+  const mockActiveDrivers = [
+    createMockDriver({
       id: 1,
       firstName: 'Max',
       lastName: 'Verstappen',
       countryAbbreviation: 'NL',
-    },
-    {
+    }),
+    createMockDriver({
       id: 2,
       firstName: 'Lewis',
       lastName: 'Hamilton',
       countryAbbreviation: 'GB',
-    },
-    {
+    }),
+    createMockDriver({
       id: 3,
       firstName: 'Charles',
       lastName: 'Leclerc',
       countryAbbreviation: 'MC',
-    },
+    }),
   ];
 
-  const mockActiveConstructors: Constructor[] = [
-    {
+  const mockActiveConstructors = [
+    createMockConstructor({
       id: 1,
       name: 'Red Bull',
       fullName: 'Red Bull Racing',
       countryAbbreviation: 'AT',
-    },
-    {
+    }),
+    createMockConstructor({
       id: 2,
       name: 'Ferrari',
       fullName: 'Scuderia Ferrari',
       countryAbbreviation: 'IT',
-    },
+    }),
   ];
 
   const mockRaces: Race[] = [

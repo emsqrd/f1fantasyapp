@@ -1,17 +1,17 @@
-import type { Constructor } from '@/contracts/Role';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { createMockConstructor } from '@/test-utils/mockFactories';
 import { ConstructorListItem } from './ConstructorListItem';
 
 describe('ConstructorListItem', () => {
-  const constructor: Constructor = {
-    id: 1,
+  const constructor = createMockConstructor({
     name: 'Mercedes',
     fullName: 'Mercedes-AMG Petronas F1 Team',
+    abbreviation: 'MER',
     countryAbbreviation: 'DE',
-  };
+  });
   const mockOnSelect = vi.fn();
 
   beforeEach(() => {

@@ -3,6 +3,7 @@ import type { TeamDriver } from '@/contracts/Team';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { createMockDriverList } from '@/test-utils/mockFactories';
 import { DriverPicker } from './DriverPicker';
 
 // Mock useLineupPicker hook
@@ -27,19 +28,21 @@ let mockSelectedPosition: number | null;
 let mockIsPending: boolean;
 let mockError: string | null;
 
-const mockDrivers: Driver[] = [
-  { id: 1, firstName: 'Oscar', lastName: 'Piastri', countryAbbreviation: 'AUS' },
-  { id: 2, firstName: 'Lando', lastName: 'Norris', countryAbbreviation: 'GBR' },
-  { id: 3, firstName: 'Charles', lastName: 'Leclerc', countryAbbreviation: 'MON' },
-  { id: 4, firstName: 'Max', lastName: 'Verstappen', countryAbbreviation: 'NED' },
-  { id: 5, firstName: 'Lewis', lastName: 'Hamilton', countryAbbreviation: 'GBR' },
-];
+const mockDrivers: Driver[] = createMockDriverList(5, (i) => {
+  const driverData = [
+    { firstName: 'Oscar', lastName: 'Piastri', abbreviation: 'PIA', countryAbbreviation: 'AUS' },
+    { firstName: 'Lando', lastName: 'Norris', abbreviation: 'NOR', countryAbbreviation: 'GBR' },
+    { firstName: 'Charles', lastName: 'Leclerc', abbreviation: 'LEC', countryAbbreviation: 'MON' },
+    { firstName: 'Max', lastName: 'Verstappen', abbreviation: 'VER', countryAbbreviation: 'NED' },
+    { firstName: 'Lewis', lastName: 'Hamilton', abbreviation: 'HAM', countryAbbreviation: 'GBR' },
+  ];
+  return driverData[i - 1];
+});
 
 // Helper to convert Driver to TeamDriver
 const toTeamDriver = (driver: Driver, slotPosition: number): TeamDriver => ({
   ...driver,
   slotPosition,
-  abbreviation: driver.lastName.slice(0, 3).toUpperCase(),
 });
 
 describe('DriverPicker', () => {

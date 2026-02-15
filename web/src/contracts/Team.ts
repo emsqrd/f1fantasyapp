@@ -12,6 +12,7 @@ export interface TeamConstructor {
   id: number;
   name: string;
   fullName: string;
+  abbreviation: string;
   countryAbbreviation: string;
 }
 
