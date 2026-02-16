@@ -27,22 +27,27 @@ export function createMockDriver(overrides: Partial<Driver> = {}): Driver {
  * // Creates: Driver 1, Driver 2, Driver 3
  *
  * @example
- * const drivers = createMockDriverList(2, (i) => ({
- *   firstName: 'Max',
- *   lastName: `Verstappen ${i}`
- * }));
+ * const drivers = createMockDriverList([
+ *   { firstName: 'Max', lastName: 'Verstappen' },
+ *   { firstName: 'Lewis', lastName: 'Hamilton' },
+ * ]);
  */
 export function createMockDriverList(
-  count: number,
-  overridesFn?: (index: number) => Partial<Driver>,
+  countOrOverrides: number | Partial<Driver>[],
 ): Driver[] {
-  return Array.from({ length: count }, (_, i) => {
+  const items = Array.isArray(countOrOverrides)
+    ? countOrOverrides
+    : Array.from({ length: countOrOverrides }, () => ({}));
+
+  return items.map((overrides, i) => {
     const index = i + 1;
     return createMockDriver({
       id: index,
       firstName: 'Driver',
       lastName: `${index}`,
-      ...overridesFn?.(index),
+      abbreviation: `DS${index}`,
+      countryAbbreviation: 'DST',
+      ...overrides,
     });
   });
 }
@@ -72,22 +77,27 @@ export function createMockConstructor(overrides: Partial<Constructor> = {}): Con
  * // Creates: Constructor 1, Constructor 2, Constructor 3
  *
  * @example
- * const constructors = createMockConstructorList(2, (i) => ({
- *   name: 'Ferrari',
- *   fullName: `Ferrari ${i}`
- * }));
+ * const constructors = createMockConstructorList([
+ *   { name: 'McLaren', fullName: 'McLaren F1 Team' },
+ *   { name: 'Ferrari', fullName: 'Scuderia Ferrari' },
+ * ]);
  */
 export function createMockConstructorList(
-  count: number,
-  overridesFn?: (index: number) => Partial<Constructor>,
+  countOrOverrides: number | Partial<Constructor>[],
 ): Constructor[] {
-  return Array.from({ length: count }, (_, i) => {
+  const items = Array.isArray(countOrOverrides)
+    ? countOrOverrides
+    : Array.from({ length: countOrOverrides }, () => ({}));
+
+  return items.map((overrides, i) => {
     const index = i + 1;
     return createMockConstructor({
       id: index,
       name: `Constructor ${index}`,
+      abbreviation: `CS${index}`,
       fullName: `Constructor ${index}`,
-      ...overridesFn?.(index),
+      countryAbbreviation: 'TST',
+      ...overrides,
     });
   });
 }

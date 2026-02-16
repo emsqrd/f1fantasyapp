@@ -28,16 +28,13 @@ let mockSelectedPosition: number | null;
 let mockIsPending: boolean;
 let mockError: string | null;
 
-const mockDrivers: Driver[] = createMockDriverList(5, (i) => {
-  const driverData = [
-    { firstName: 'Oscar', lastName: 'Piastri', abbreviation: 'PIA', countryAbbreviation: 'AUS' },
-    { firstName: 'Lando', lastName: 'Norris', abbreviation: 'NOR', countryAbbreviation: 'GBR' },
-    { firstName: 'Charles', lastName: 'Leclerc', abbreviation: 'LEC', countryAbbreviation: 'MON' },
-    { firstName: 'Max', lastName: 'Verstappen', abbreviation: 'VER', countryAbbreviation: 'NED' },
-    { firstName: 'Lewis', lastName: 'Hamilton', abbreviation: 'HAM', countryAbbreviation: 'GBR' },
-  ];
-  return driverData[i - 1];
-});
+const mockDrivers: Driver[] = createMockDriverList([
+  { firstName: 'Oscar', lastName: 'Piastri', abbreviation: 'PIA', countryAbbreviation: 'AUS' },
+  { firstName: 'Lando', lastName: 'Norris', abbreviation: 'NOR', countryAbbreviation: 'GBR' },
+  { firstName: 'Charles', lastName: 'Leclerc', abbreviation: 'LEC', countryAbbreviation: 'MON' },
+  { firstName: 'Max', lastName: 'Verstappen', abbreviation: 'VER', countryAbbreviation: 'NED' },
+  { firstName: 'Lewis', lastName: 'Hamilton', abbreviation: 'HAM', countryAbbreviation: 'GBR' },
+]);
 
 // Helper to convert Driver to TeamDriver
 const toTeamDriver = (driver: Driver, slotPosition: number): TeamDriver => ({

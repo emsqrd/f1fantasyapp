@@ -14,9 +14,9 @@ export function ConstructorListItem({ constructor, onSelect }: ConstructorListIt
       <div className="bg-secondary text-secondary-foreground flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold tracking-wide">
         {constructor.abbreviation}
       </div>
-      <div className="min-w-o flex-1">
+      <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-bold">{constructor.name}</div>
-        <div className="5 text-muted-foreground flex items-center gap-1 text-xs">
+        <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
           <span>{constructor.countryAbbreviation}</span>
           <span aria-hidden="true">&middot;</span>
           <span>$--.-M</span>

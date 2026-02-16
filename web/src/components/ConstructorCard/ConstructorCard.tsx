@@ -35,7 +35,7 @@ export function ConstructorCard({
                 </div>
               </div>
             </div>
-            <div className="bg-border 5 my-2 h-px" />
+            <div className="bg-border my-2.5 h-px" />
             <div className="text-muted-foreground flex justify-between px-1 text-xs">
               <span>$--.-M</span>
               <span>-- pts</span>

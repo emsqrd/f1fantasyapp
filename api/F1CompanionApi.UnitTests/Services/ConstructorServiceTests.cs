@@ -46,7 +46,7 @@ public class ConstructorServiceTests
             {
                 Name = "Williams",
                 FullName = "Williams Racing",
-                Abbreviation = "MCL",
+                Abbreviation = "WIL",
                 CountryAbbreviation = "GBR",
                 IsActive = false,
             },
@@ -84,7 +84,7 @@ public class ConstructorServiceTests
             {
                 Name = "Williams",
                 FullName = "Williams Racing",
-                Abbreviation = "MCL",
+                Abbreviation = "WIL",
                 CountryAbbreviation = "GBR",
                 IsActive = false,
             },
@@ -115,7 +115,7 @@ public class ConstructorServiceTests
             {
                 Name = "Red Bull Racing",
                 FullName = "Oracle Red Bull Racing",
-                Abbreviation = "MCL",
+                Abbreviation = "RBR",
                 CountryAbbreviation = "AUT",
                 IsActive = true,
             },
@@ -123,7 +123,7 @@ public class ConstructorServiceTests
             {
                 Name = "Ferrari",
                 FullName = "Scuderia Ferrari",
-                Abbreviation = "MCL",
+                Abbreviation = "FER",
                 CountryAbbreviation = "ITA",
                 IsActive = true,
             },

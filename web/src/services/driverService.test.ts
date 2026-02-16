@@ -20,24 +20,20 @@ describe('driverService', () => {
 
   describe('getActiveDrivers', () => {
     it('calls apiClient.get with correct endpoint and query parameter', async () => {
-      const mockDrivers: Driver[] = createMockDriverList(2, (i) => {
-        const driverData = [
-          {
-            firstName: 'Max',
-            lastName: 'Verstappen',
-            abbreviation: 'VER',
-            countryAbbreviation: 'NED',
-          },
-          {
-            firstName: 'Lewis',
-            lastName: 'Hamilton',
-            abbreviation: 'HAM',
-            countryAbbreviation: 'GBR',
-          },
-        ];
-
-        return driverData[i - 1];
-      });
+      const mockDrivers: Driver[] = createMockDriverList([
+        {
+          firstName: 'Max',
+          lastName: 'Verstappen',
+          abbreviation: 'VER',
+          countryAbbreviation: 'NED',
+        },
+        {
+          firstName: 'Lewis',
+          lastName: 'Hamilton',
+          abbreviation: 'HAM',
+          countryAbbreviation: 'GBR',
+        },
+      ]);
 
       mockApiClient.get.mockResolvedValue(mockDrivers);
 

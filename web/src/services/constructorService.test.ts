@@ -20,23 +20,20 @@ describe('constructorService', () => {
 
   describe('getActiveConstructors', () => {
     it('calls apiClient.get with correct endpoint and query parameter', async () => {
-      const mockConstructors: Constructor[] = createMockConstructorList(5, (i) => {
-        const constructorData = [
-          {
-            name: 'Red Bull Racing',
-            fullName: 'Oracle Red Bull Racing',
-            abbreviation: 'RBR',
-            countryAbbreviation: 'AUT',
-          },
-          {
-            name: 'Mercedes',
-            fullName: 'Mercedes-AMG Petronas',
-            abbreviation: 'MER',
-            countryAbbreviation: 'GER',
-          },
-        ];
-        return constructorData[i - 1];
-      });
+      const mockConstructors: Constructor[] = createMockConstructorList([
+        {
+          name: 'Red Bull Racing',
+          fullName: 'Oracle Red Bull Racing',
+          abbreviation: 'RBR',
+          countryAbbreviation: 'AUT',
+        },
+        {
+          name: 'Mercedes',
+          fullName: 'Mercedes-AMG Petronas',
+          abbreviation: 'MER',
+          countryAbbreviation: 'GER',
+        },
+      ]);
 
       mockApiClient.get.mockResolvedValue(mockConstructors);
 
