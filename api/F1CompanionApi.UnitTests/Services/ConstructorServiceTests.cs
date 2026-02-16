@@ -1,10 +1,8 @@
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Services;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-
 using Moq;
 
 namespace F1CompanionApi.UnitTests.Services;
