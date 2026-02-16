@@ -11,5 +11,6 @@ public class Team : UserOwnedEntity
     public UserProfile Owner { get; set; } = null!;
     public ICollection<LeagueTeam> LeagueTeams { get; set; } = new List<LeagueTeam>();
     public ICollection<TeamDriver> TeamDrivers { get; set; } = new List<TeamDriver>();
-    public ICollection<TeamConstructor> TeamConstructors { get; set; } = new List<TeamConstructor>();
+    public ICollection<TeamConstructor> TeamConstructors { get; set; } =
+        new List<TeamConstructor>();
 }

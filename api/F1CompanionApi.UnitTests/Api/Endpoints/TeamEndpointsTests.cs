@@ -45,22 +45,22 @@ public class TeamEndpointsTests
                 AccountId = Guid.NewGuid().ToString(),
                 Email = "owner1@test.com",
                 FirstName = "Owner",
-                LastName = "One"
+                LastName = "One",
             },
             new UserProfile
             {
                 AccountId = Guid.NewGuid().ToString(),
                 Email = "owner2@test.com",
                 FirstName = "Owner",
-                LastName = "Two"
+                LastName = "Two",
             },
             new UserProfile
             {
                 AccountId = Guid.NewGuid().ToString(),
                 Email = "owner3@test.com",
                 FirstName = "Owner",
-                LastName = "Three"
-            }
+                LastName = "Three",
+            },
         };
 
         context.UserProfiles.AddRange(owners);
@@ -68,9 +68,24 @@ public class TeamEndpointsTests
 
         var teams = new List<Team>
         {
-            new Team { Name = "Team Alpha", UserId = owners[0].Id, CreatedBy = owners[0].Id },
-            new Team { Name = "Team Beta", UserId = owners[1].Id, CreatedBy = owners[1].Id },
-            new Team { Name = "Team Gamma", UserId = owners[2].Id, CreatedBy = owners[2].Id }
+            new Team
+            {
+                Name = "Team Alpha",
+                UserId = owners[0].Id,
+                CreatedBy = owners[0].Id,
+            },
+            new Team
+            {
+                Name = "Team Beta",
+                UserId = owners[1].Id,
+                CreatedBy = owners[1].Id,
+            },
+            new Team
+            {
+                Name = "Team Gamma",
+                UserId = owners[2].Id,
+                CreatedBy = owners[2].Id,
+            },
         };
 
         context.Teams.AddRange(teams);
@@ -99,13 +114,13 @@ public class TeamEndpointsTests
             AccountId = Guid.NewGuid().ToString(),
             Email = "owner@test.com",
             FirstName = "Test",
-            LastName = "Owner"
+            LastName = "Owner",
         };
         var team = new Team
         {
             Id = 1,
             Name = "Findable Team",
-            Owner = owner
+            Owner = owner,
         };
 
         context.UserProfiles.Add(owner);
@@ -148,29 +163,24 @@ public class TeamEndpointsTests
             Email = "user@test.com",
             FirstName = "John",
             LastName = "Doe",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
-        var request = new CreateTeamRequest
-        {
-            Name = "Test Team"
-        };
+        var request = new CreateTeamRequest { Name = "Test Team" };
 
         var teamResponse = new TeamResponse
         {
             Id = 1,
             Name = "Test Team",
             OwnerId = 1,
-            OwnerName = "John Doe"
+            OwnerName = "John Doe",
         };
 
         _mockUserProfileService
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
             .ReturnsAsync(user);
 
-        _mockTeamService
-            .Setup(x => x.CreateTeamAsync(request, user.Id))
-            .ReturnsAsync(teamResponse);
+        _mockTeamService.Setup(x => x.CreateTeamAsync(request, user.Id)).ReturnsAsync(teamResponse);
 
         // Act
         var result = await InvokeCreateTeamAsync(request);
@@ -192,13 +202,10 @@ public class TeamEndpointsTests
             Email = "user@test.com",
             FirstName = "John",
             LastName = "Doe",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
-        var request = new CreateTeamRequest
-        {
-            Name = "Test Team"
-        };
+        var request = new CreateTeamRequest { Name = "Test Team" };
 
         _mockUserProfileService
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
@@ -227,13 +234,10 @@ public class TeamEndpointsTests
             Email = "user@test.com",
             FirstName = "John",
             LastName = "Doe",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
-        var request = new CreateTeamRequest
-        {
-            Name = "Test Team"
-        };
+        var request = new CreateTeamRequest { Name = "Test Team" };
 
         _mockUserProfileService
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
@@ -295,7 +299,7 @@ public class TeamEndpointsTests
             AccountId = Guid.NewGuid().ToString(),
             Email = "owner@test.com",
             FirstName = "Test",
-            LastName = "Owner"
+            LastName = "Owner",
         };
 
         var driver = new Driver
@@ -305,7 +309,7 @@ public class TeamEndpointsTests
             LastName = "Hamilton",
             Abbreviation = "HAM",
             CountryAbbreviation = "GBR",
-            IsActive = true
+            IsActive = true,
         };
 
         var constructor = new Constructor
@@ -314,7 +318,7 @@ public class TeamEndpointsTests
             Name = "Mercedes",
             FullName = "Mercedes-AMG Petronas F1 Team",
             CountryAbbreviation = "GER",
-            IsActive = true
+            IsActive = true,
         };
 
         var team = new Team
@@ -324,12 +328,22 @@ public class TeamEndpointsTests
             Owner = owner,
             TeamDrivers = new List<TeamDriver>
             {
-                new TeamDriver { DriverId = 1, Driver = driver, SlotPosition = 0 }
+                new TeamDriver
+                {
+                    DriverId = 1,
+                    Driver = driver,
+                    SlotPosition = 0,
+                },
             },
             TeamConstructors = new List<TeamConstructor>
             {
-                new TeamConstructor { ConstructorId = 1, Constructor = constructor, SlotPosition = 0 }
-            }
+                new TeamConstructor
+                {
+                    ConstructorId = 1,
+                    Constructor = constructor,
+                    SlotPosition = 0,
+                },
+            },
         };
 
         context.UserProfiles.Add(owner);
@@ -360,10 +374,7 @@ public class TeamEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[] { db, _mockLogger.Object }
-        )!;
+        var task = (Task<IResult>)method!.Invoke(null, new object[] { db, _mockLogger.Object })!;
 
         var result = await task;
         var okResult = (Ok<IEnumerable<TeamResponse>>)result;
@@ -377,10 +388,8 @@ public class TeamEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[] { id, db, _mockLogger.Object }
-        )!;
+        var task =
+            (Task<IResult>)method!.Invoke(null, new object[] { id, db, _mockLogger.Object })!;
 
         return await task;
     }
@@ -392,16 +401,18 @@ public class TeamEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[]
-            {
-                request,
-                _mockTeamService.Object,
-                _mockUserProfileService.Object,
-                _mockLogger.Object
-            }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[]
+                    {
+                        request,
+                        _mockTeamService.Object,
+                        _mockUserProfileService.Object,
+                        _mockLogger.Object,
+                    }
+                )!;
 
         return await task;
     }

@@ -14,7 +14,8 @@ builder.WebHost.UseSentry(options =>
     // DSN and basic configuration from appsettings.json
     options.Dsn = builder.Configuration["Sentry:Dsn"];
     options.Debug = builder.Configuration.GetValue<bool>("Sentry:Debug");
-    options.Environment = builder.Configuration["Sentry:Environment"] ?? builder.Environment.EnvironmentName;
+    options.Environment =
+        builder.Configuration["Sentry:Environment"] ?? builder.Environment.EnvironmentName;
 
     // Enable Spotlight for local development
     if (builder.Environment.IsDevelopment())
@@ -27,22 +28,29 @@ builder.WebHost.UseSentry(options =>
     options.Experimental.EnableLogs = true;
 
     // Performance monitoring (can be overridden via Sentry__TracesSampleRate env var)
-    options.TracesSampleRate = builder.Configuration.GetValue<double?>("Sentry:TracesSampleRate") ?? 0.1;
+    options.TracesSampleRate =
+        builder.Configuration.GetValue<double?>("Sentry:TracesSampleRate") ?? 0.1;
 
     // Filtering callback to exclude server name for privacy
-    options.SetBeforeSend((@event, hint) =>
-    {
-        // Never report server names for privacy
-        @event.ServerName = null;
-        return @event;
-    });
+    options.SetBeforeSend(
+        (@event, hint) =>
+        {
+            // Never report server names for privacy
+            @event.ServerName = null;
+            return @event;
+        }
+    );
 
     // Filtering callback for structured logs
     options.Experimental.SetBeforeSendLog(log =>
     {
         // Filter out trace and debug logs in production
-        if (!builder.Environment.IsDevelopment() &&
-            (log.Level is Sentry.SentryLogLevel.Debug || log.Level is Sentry.SentryLogLevel.Trace))
+        if (
+            !builder.Environment.IsDevelopment()
+            && (
+                log.Level is Sentry.SentryLogLevel.Debug || log.Level is Sentry.SentryLogLevel.Trace
+            )
+        )
         {
             return null;
         }

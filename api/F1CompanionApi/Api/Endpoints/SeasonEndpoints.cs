@@ -1,7 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-
 using F1CompanionApi.Domain.Services;
-
 using Microsoft.AspNetCore.Mvc;
 
 namespace F1CompanionApi.Api.Endpoints;
@@ -11,15 +9,15 @@ public static class SeasonEndpoints
     [ExcludeFromCodeCoverage]
     public static IEndpointRouteBuilder MapSeasonEndpoints(this IEndpointRouteBuilder app)
     {
-        var seasonsGroup = app.MapGroup("/seasons")
-            .RequireAuthorization()
-            .WithOpenApi();
+        var seasonsGroup = app.MapGroup("/seasons").RequireAuthorization().WithOpenApi();
 
-        seasonsGroup.MapGet("/", GetSeasonsAsync)
+        seasonsGroup
+            .MapGet("/", GetSeasonsAsync)
             .WithName("GetSeasons")
             .WithDescription("Get all seasons");
 
-        seasonsGroup.MapGet("/{id}", GetSeasonByIdAsync)
+        seasonsGroup
+            .MapGet("/{id}", GetSeasonByIdAsync)
             .WithName("GetSeasonById")
             .WithDescription("Get a season by ID");
 

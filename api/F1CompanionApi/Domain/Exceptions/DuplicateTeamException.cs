@@ -23,7 +23,9 @@ public class DuplicateTeamException : Exception
     /// <param name="userId">The ID of the user who attempted to create a duplicate team.</param>
     /// <param name="existingTeamId">The ID of the existing team that the user already owns.</param>
     public DuplicateTeamException(int userId, int existingTeamId)
-        : base($"User {userId} already has a team (ID: {existingTeamId}). Each user can only create one team.")
+        : base(
+            $"User {userId} already has a team (ID: {existingTeamId}). Each user can only create one team."
+        )
     {
         UserId = userId;
         ExistingTeamId = existingTeamId;

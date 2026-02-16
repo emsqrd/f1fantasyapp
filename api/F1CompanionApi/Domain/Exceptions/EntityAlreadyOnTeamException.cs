@@ -29,7 +29,9 @@ public class EntityAlreadyOnTeamException : Exception
     /// <param name="entityType">The type of entity (e.g., "driver" or "constructor").</param>
     /// <param name="teamId">The ID of the team that already contains this entity.</param>
     public EntityAlreadyOnTeamException(int entityId, string entityType, int teamId)
-        : base($"{char.ToUpper(entityType[0])}{entityType[1..]} {entityId} is already on team {teamId}")
+        : base(
+            $"{char.ToUpper(entityType[0])}{entityType[1..]} {entityId} is already on team {teamId}"
+        )
     {
         EntityId = entityId;
         EntityType = entityType;

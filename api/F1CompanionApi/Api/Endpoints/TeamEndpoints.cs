@@ -37,7 +37,8 @@ public static class TeamEndpoints
         CreateTeamRequest request,
         ITeamService teamService,
         IUserProfileService userProfileService,
-        [FromServices] ILogger logger)
+        [FromServices] ILogger logger
+    )
     {
         var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
 
@@ -57,7 +58,8 @@ public static class TeamEndpoints
 
     private static async Task<IResult> GetTeamsAsync(
         ApplicationDbContext db,
-        [FromServices] ILogger logger)
+        [FromServices] ILogger logger
+    )
     {
         logger.LogDebug("Fetching all teams");
         var teams = await db.Teams.Include(t => t.Owner).ToListAsync() ?? [];
@@ -68,12 +70,13 @@ public static class TeamEndpoints
     private static async Task<IResult> GetTeamByIdAsync(
         int id,
         ApplicationDbContext db,
-        [FromServices] ILogger logger)
+        [FromServices] ILogger logger
+    )
     {
         logger.LogDebug("Fetching team {TeamId}", id);
 
-        var team = await db.Teams
-            .Include(t => t.Owner)
+        var team = await db
+            .Teams.Include(t => t.Owner)
             .Include(t => t.TeamDrivers)
                 .ThenInclude(td => td.Driver)
             .Include(t => t.TeamConstructors)

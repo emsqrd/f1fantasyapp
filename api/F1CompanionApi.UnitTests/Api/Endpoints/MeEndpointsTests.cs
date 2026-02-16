@@ -43,16 +43,12 @@ public class MeEndpointsTests
             Id = 1,
             Email = userEmail,
             DisplayName = displayName,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
-        _mockAuthService
-            .Setup(x => x.GetRequiredUserId())
-            .Returns(userId);
+        _mockAuthService.Setup(x => x.GetRequiredUserId()).Returns(userId);
 
-        _mockAuthService
-            .Setup(x => x.GetUserEmail())
-            .Returns(userEmail);
+        _mockAuthService.Setup(x => x.GetUserEmail()).Returns(userEmail);
 
         _mockUserProfileService
             .Setup(x => x.GetUserProfileByAccountIdAsync(userId))
@@ -79,13 +75,9 @@ public class MeEndpointsTests
         var userId = "test-user-id";
         var request = new MeEndpoints.RegisterUserRequest("Test User");
 
-        _mockAuthService
-            .Setup(x => x.GetRequiredUserId())
-            .Returns(userId);
+        _mockAuthService.Setup(x => x.GetRequiredUserId()).Returns(userId);
 
-        _mockAuthService
-            .Setup(x => x.GetUserEmail())
-            .Returns((string?)null);
+        _mockAuthService.Setup(x => x.GetUserEmail()).Returns((string?)null);
 
         // Act
         var result = await InvokeRegisterUserAsync(request);
@@ -108,16 +100,12 @@ public class MeEndpointsTests
         {
             Id = 1,
             Email = userEmail,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
-        _mockAuthService
-            .Setup(x => x.GetRequiredUserId())
-            .Returns(userId);
+        _mockAuthService.Setup(x => x.GetRequiredUserId()).Returns(userId);
 
-        _mockAuthService
-            .Setup(x => x.GetUserEmail())
-            .Returns(userEmail);
+        _mockAuthService.Setup(x => x.GetUserEmail()).Returns(userEmail);
 
         _mockUserProfileService
             .Setup(x => x.GetUserProfileByAccountIdAsync(userId))
@@ -141,7 +129,7 @@ public class MeEndpointsTests
             Id = 1,
             Email = "test@test.com",
             DisplayName = "Old Name",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var updateRequest = new UpdateUserProfileRequest
@@ -149,7 +137,7 @@ public class MeEndpointsTests
             Id = 1,
             DisplayName = "New Name",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
         };
 
         var updatedResponse = new UserProfileResponse
@@ -160,7 +148,7 @@ public class MeEndpointsTests
             FirstName = "John",
             LastName = "Doe",
             CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTime.UtcNow,
         };
 
         _mockUserProfileService
@@ -184,11 +172,7 @@ public class MeEndpointsTests
     public async Task UpdateUserProfileAsync_UserProfileNotFound_ReturnsNotFound()
     {
         // Arrange
-        var updateRequest = new UpdateUserProfileRequest
-        {
-            Id = 1,
-            DisplayName = "New Name"
-        };
+        var updateRequest = new UpdateUserProfileRequest { Id = 1, DisplayName = "New Name" };
 
         _mockUserProfileService
             .Setup(x => x.GetCurrentUserProfileAsync())
@@ -213,7 +197,7 @@ public class MeEndpointsTests
             Email = "test@test.com",
             FirstName = "John",
             LastName = "Doe",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var leagues = new List<LeagueResponse>
@@ -225,7 +209,7 @@ public class MeEndpointsTests
                 Description = "League I own",
                 OwnerName = "John Doe",
                 MaxTeams = 15,
-                IsPrivate = true
+                IsPrivate = true,
             },
             new LeagueResponse
             {
@@ -234,8 +218,8 @@ public class MeEndpointsTests
                 Description = "League I joined",
                 OwnerName = "Jane Smith",
                 MaxTeams = 20,
-                IsPrivate = false
-            }
+                IsPrivate = false,
+            },
         };
 
         _mockUserProfileService
@@ -270,7 +254,7 @@ public class MeEndpointsTests
             Email = "test@test.com",
             FirstName = "John",
             LastName = "Doe",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         _mockUserProfileService
@@ -318,7 +302,7 @@ public class MeEndpointsTests
             Email = "user@test.com",
             FirstName = "John",
             LastName = "Doe",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var teamResponse = new TeamDetailsResponse
@@ -328,16 +312,14 @@ public class MeEndpointsTests
             OwnerId = 1,
             OwnerName = "John Doe",
             Drivers = new List<TeamDriverResponse>(),
-            Constructors = new List<TeamConstructorResponse>()
+            Constructors = new List<TeamConstructorResponse>(),
         };
 
         _mockUserProfileService
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
             .ReturnsAsync(user);
 
-        _mockTeamService
-            .Setup(x => x.GetUserTeamAsync(user.Id))
-            .ReturnsAsync(teamResponse);
+        _mockTeamService.Setup(x => x.GetUserTeamAsync(user.Id)).ReturnsAsync(teamResponse);
 
         // Act
         var result = await InvokeGetMyTeamAsync();
@@ -359,7 +341,7 @@ public class MeEndpointsTests
             Email = "user@test.com",
             FirstName = "John",
             LastName = "Doe",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         _mockUserProfileService
@@ -386,7 +368,7 @@ public class MeEndpointsTests
             Id = 1,
             Email = "test@test.com",
             DisplayName = "Test User",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         _mockUserProfileService
@@ -423,20 +405,33 @@ public class MeEndpointsTests
     public async Task AddDriverToTeamAsync_Success_ReturnsNoContent()
     {
         // Arrange
-        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
-        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerId = 1, OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var user = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            CreatedAt = DateTime.UtcNow,
+        };
+        var team = new TeamDetailsResponse
+        {
+            Id = 10,
+            Name = "Team",
+            OwnerId = 1,
+            OwnerName = "User",
+            Drivers = new List<TeamDriverResponse>(),
+            Constructors = new List<TeamConstructorResponse>(),
+        };
         var request = new AddDriverToTeamRequest { DriverId = 5, SlotPosition = 1 };
 
         _mockUserProfileService
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
             .ReturnsAsync(user);
 
-        _mockTeamService
-            .Setup(x => x.GetUserTeamAsync(user.Id))
-            .ReturnsAsync(team);
+        _mockTeamService.Setup(x => x.GetUserTeamAsync(user.Id)).ReturnsAsync(team);
 
         _mockTeamService
-            .Setup(x => x.AddDriverToTeamAsync(team.Id, request.DriverId, request.SlotPosition, user.Id))
+            .Setup(x =>
+                x.AddDriverToTeamAsync(team.Id, request.DriverId, request.SlotPosition, user.Id)
+            )
             .Returns(Task.CompletedTask);
 
         // Act
@@ -444,14 +439,22 @@ public class MeEndpointsTests
 
         // Assert
         Assert.IsType<NoContent>(result);
-        _mockTeamService.Verify(x => x.AddDriverToTeamAsync(team.Id, request.DriverId, request.SlotPosition, user.Id), Times.Once);
+        _mockTeamService.Verify(
+            x => x.AddDriverToTeamAsync(team.Id, request.DriverId, request.SlotPosition, user.Id),
+            Times.Once
+        );
     }
 
     [Fact]
     public async Task AddDriverToTeamAsync_UserHasNoTeam_ReturnsBadRequest()
     {
         // Arrange
-        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
+        var user = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            CreatedAt = DateTime.UtcNow,
+        };
         var request = new AddDriverToTeamRequest { DriverId = 5, SlotPosition = 1 };
 
         _mockUserProfileService
@@ -475,20 +478,33 @@ public class MeEndpointsTests
     public async Task AddDriverToTeamAsync_ServiceThrowsInvalidOperation_ReturnsBadRequest()
     {
         // Arrange
-        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
-        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerId = 1, OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var user = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            CreatedAt = DateTime.UtcNow,
+        };
+        var team = new TeamDetailsResponse
+        {
+            Id = 10,
+            Name = "Team",
+            OwnerId = 1,
+            OwnerName = "User",
+            Drivers = new List<TeamDriverResponse>(),
+            Constructors = new List<TeamConstructorResponse>(),
+        };
         var request = new AddDriverToTeamRequest { DriverId = 5, SlotPosition = 1 };
 
         _mockUserProfileService
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
             .ReturnsAsync(user);
 
-        _mockTeamService
-            .Setup(x => x.GetUserTeamAsync(user.Id))
-            .ReturnsAsync(team);
+        _mockTeamService.Setup(x => x.GetUserTeamAsync(user.Id)).ReturnsAsync(team);
 
         _mockTeamService
-            .Setup(x => x.AddDriverToTeamAsync(team.Id, request.DriverId, request.SlotPosition, user.Id))
+            .Setup(x =>
+                x.AddDriverToTeamAsync(team.Id, request.DriverId, request.SlotPosition, user.Id)
+            )
             .ThrowsAsync(new InvalidOperationException("Slot already occupied"));
 
         // Act
@@ -504,17 +520,28 @@ public class MeEndpointsTests
     public async Task RemoveDriverFromTeamAsync_Success_ReturnsNoContent()
     {
         // Arrange
-        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
-        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerId = 1, OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var user = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            CreatedAt = DateTime.UtcNow,
+        };
+        var team = new TeamDetailsResponse
+        {
+            Id = 10,
+            Name = "Team",
+            OwnerId = 1,
+            OwnerName = "User",
+            Drivers = new List<TeamDriverResponse>(),
+            Constructors = new List<TeamConstructorResponse>(),
+        };
         int slotPosition = 1;
 
         _mockUserProfileService
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
             .ReturnsAsync(user);
 
-        _mockTeamService
-            .Setup(x => x.GetUserTeamAsync(user.Id))
-            .ReturnsAsync(team);
+        _mockTeamService.Setup(x => x.GetUserTeamAsync(user.Id)).ReturnsAsync(team);
 
         _mockTeamService
             .Setup(x => x.RemoveDriverFromTeamAsync(team.Id, slotPosition, user.Id))
@@ -525,14 +552,22 @@ public class MeEndpointsTests
 
         // Assert
         Assert.IsType<NoContent>(result);
-        _mockTeamService.Verify(x => x.RemoveDriverFromTeamAsync(team.Id, slotPosition, user.Id), Times.Once);
+        _mockTeamService.Verify(
+            x => x.RemoveDriverFromTeamAsync(team.Id, slotPosition, user.Id),
+            Times.Once
+        );
     }
 
     [Fact]
     public async Task RemoveDriverFromTeamAsync_UserHasNoTeam_ReturnsBadRequest()
     {
         // Arrange
-        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
+        var user = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            CreatedAt = DateTime.UtcNow,
+        };
         int slotPosition = 1;
 
         _mockUserProfileService
@@ -556,17 +591,28 @@ public class MeEndpointsTests
     public async Task RemoveDriverFromTeamAsync_ServiceThrowsInvalidOperation_ReturnsBadRequest()
     {
         // Arrange
-        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
-        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerId = 1, OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var user = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            CreatedAt = DateTime.UtcNow,
+        };
+        var team = new TeamDetailsResponse
+        {
+            Id = 10,
+            Name = "Team",
+            OwnerId = 1,
+            OwnerName = "User",
+            Drivers = new List<TeamDriverResponse>(),
+            Constructors = new List<TeamConstructorResponse>(),
+        };
         int slotPosition = 1;
 
         _mockUserProfileService
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
             .ReturnsAsync(user);
 
-        _mockTeamService
-            .Setup(x => x.GetUserTeamAsync(user.Id))
-            .ReturnsAsync(team);
+        _mockTeamService.Setup(x => x.GetUserTeamAsync(user.Id)).ReturnsAsync(team);
 
         _mockTeamService
             .Setup(x => x.RemoveDriverFromTeamAsync(team.Id, slotPosition, user.Id))
@@ -585,20 +631,38 @@ public class MeEndpointsTests
     public async Task AddConstructorToTeamAsync_Success_ReturnsNoContent()
     {
         // Arrange
-        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
-        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerId = 1, OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var user = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            CreatedAt = DateTime.UtcNow,
+        };
+        var team = new TeamDetailsResponse
+        {
+            Id = 10,
+            Name = "Team",
+            OwnerId = 1,
+            OwnerName = "User",
+            Drivers = new List<TeamDriverResponse>(),
+            Constructors = new List<TeamConstructorResponse>(),
+        };
         var request = new AddConstructorToTeamRequest { ConstructorId = 3, SlotPosition = 1 };
 
         _mockUserProfileService
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
             .ReturnsAsync(user);
 
-        _mockTeamService
-            .Setup(x => x.GetUserTeamAsync(user.Id))
-            .ReturnsAsync(team);
+        _mockTeamService.Setup(x => x.GetUserTeamAsync(user.Id)).ReturnsAsync(team);
 
         _mockTeamService
-            .Setup(x => x.AddConstructorToTeamAsync(team.Id, request.ConstructorId, request.SlotPosition, user.Id))
+            .Setup(x =>
+                x.AddConstructorToTeamAsync(
+                    team.Id,
+                    request.ConstructorId,
+                    request.SlotPosition,
+                    user.Id
+                )
+            )
             .Returns(Task.CompletedTask);
 
         // Act
@@ -606,14 +670,28 @@ public class MeEndpointsTests
 
         // Assert
         Assert.IsType<NoContent>(result);
-        _mockTeamService.Verify(x => x.AddConstructorToTeamAsync(team.Id, request.ConstructorId, request.SlotPosition, user.Id), Times.Once);
+        _mockTeamService.Verify(
+            x =>
+                x.AddConstructorToTeamAsync(
+                    team.Id,
+                    request.ConstructorId,
+                    request.SlotPosition,
+                    user.Id
+                ),
+            Times.Once
+        );
     }
 
     [Fact]
     public async Task AddConstructorToTeamAsync_UserHasNoTeam_ReturnsBadRequest()
     {
         // Arrange
-        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
+        var user = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            CreatedAt = DateTime.UtcNow,
+        };
         var request = new AddConstructorToTeamRequest { ConstructorId = 3, SlotPosition = 1 };
 
         _mockUserProfileService
@@ -637,20 +715,38 @@ public class MeEndpointsTests
     public async Task AddConstructorToTeamAsync_ServiceThrowsInvalidOperation_ReturnsBadRequest()
     {
         // Arrange
-        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
-        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerId = 1, OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var user = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            CreatedAt = DateTime.UtcNow,
+        };
+        var team = new TeamDetailsResponse
+        {
+            Id = 10,
+            Name = "Team",
+            OwnerId = 1,
+            OwnerName = "User",
+            Drivers = new List<TeamDriverResponse>(),
+            Constructors = new List<TeamConstructorResponse>(),
+        };
         var request = new AddConstructorToTeamRequest { ConstructorId = 3, SlotPosition = 1 };
 
         _mockUserProfileService
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
             .ReturnsAsync(user);
 
-        _mockTeamService
-            .Setup(x => x.GetUserTeamAsync(user.Id))
-            .ReturnsAsync(team);
+        _mockTeamService.Setup(x => x.GetUserTeamAsync(user.Id)).ReturnsAsync(team);
 
         _mockTeamService
-            .Setup(x => x.AddConstructorToTeamAsync(team.Id, request.ConstructorId, request.SlotPosition, user.Id))
+            .Setup(x =>
+                x.AddConstructorToTeamAsync(
+                    team.Id,
+                    request.ConstructorId,
+                    request.SlotPosition,
+                    user.Id
+                )
+            )
             .ThrowsAsync(new InvalidOperationException("Constructor slot already occupied"));
 
         // Act
@@ -666,17 +762,28 @@ public class MeEndpointsTests
     public async Task RemoveConstructorFromTeamAsync_Success_ReturnsNoContent()
     {
         // Arrange
-        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
-        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerId = 1, OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var user = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            CreatedAt = DateTime.UtcNow,
+        };
+        var team = new TeamDetailsResponse
+        {
+            Id = 10,
+            Name = "Team",
+            OwnerId = 1,
+            OwnerName = "User",
+            Drivers = new List<TeamDriverResponse>(),
+            Constructors = new List<TeamConstructorResponse>(),
+        };
         int slotPosition = 1;
 
         _mockUserProfileService
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
             .ReturnsAsync(user);
 
-        _mockTeamService
-            .Setup(x => x.GetUserTeamAsync(user.Id))
-            .ReturnsAsync(team);
+        _mockTeamService.Setup(x => x.GetUserTeamAsync(user.Id)).ReturnsAsync(team);
 
         _mockTeamService
             .Setup(x => x.RemoveConstructorFromTeamAsync(team.Id, slotPosition, user.Id))
@@ -687,14 +794,22 @@ public class MeEndpointsTests
 
         // Assert
         Assert.IsType<NoContent>(result);
-        _mockTeamService.Verify(x => x.RemoveConstructorFromTeamAsync(team.Id, slotPosition, user.Id), Times.Once);
+        _mockTeamService.Verify(
+            x => x.RemoveConstructorFromTeamAsync(team.Id, slotPosition, user.Id),
+            Times.Once
+        );
     }
 
     [Fact]
     public async Task RemoveConstructorFromTeamAsync_UserHasNoTeam_ReturnsBadRequest()
     {
         // Arrange
-        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
+        var user = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            CreatedAt = DateTime.UtcNow,
+        };
         int slotPosition = 1;
 
         _mockUserProfileService
@@ -718,17 +833,28 @@ public class MeEndpointsTests
     public async Task RemoveConstructorFromTeamAsync_ServiceThrowsInvalidOperation_ReturnsBadRequest()
     {
         // Arrange
-        var user = new UserProfileResponse { Id = 1, Email = "test@test.com", CreatedAt = DateTime.UtcNow };
-        var team = new TeamDetailsResponse { Id = 10, Name = "Team", OwnerId = 1, OwnerName = "User", Drivers = new List<TeamDriverResponse>(), Constructors = new List<TeamConstructorResponse>() };
+        var user = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            CreatedAt = DateTime.UtcNow,
+        };
+        var team = new TeamDetailsResponse
+        {
+            Id = 10,
+            Name = "Team",
+            OwnerId = 1,
+            OwnerName = "User",
+            Drivers = new List<TeamDriverResponse>(),
+            Constructors = new List<TeamConstructorResponse>(),
+        };
         int slotPosition = 1;
 
         _mockUserProfileService
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
             .ReturnsAsync(user);
 
-        _mockTeamService
-            .Setup(x => x.GetUserTeamAsync(user.Id))
-            .ReturnsAsync(team);
+        _mockTeamService.Setup(x => x.GetUserTeamAsync(user.Id)).ReturnsAsync(team);
 
         _mockTeamService
             .Setup(x => x.RemoveConstructorFromTeamAsync(team.Id, slotPosition, user.Id))
@@ -751,41 +877,43 @@ public class MeEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[]
-            {
-                _mockHttpContext.Object,
-                _mockAuthService.Object,
-                _mockUserProfileService.Object,
-                request,
-                _mockLogger.Object
-            }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[]
+                    {
+                        _mockHttpContext.Object,
+                        _mockAuthService.Object,
+                        _mockUserProfileService.Object,
+                        request,
+                        _mockLogger.Object,
+                    }
+                )!;
 
         return await task;
     }
 
-    private async Task<IResult> InvokeUpdateUserProfileAsync(
-        UpdateUserProfileRequest updateRequest
-    )
+    private async Task<IResult> InvokeUpdateUserProfileAsync(UpdateUserProfileRequest updateRequest)
     {
         var method = typeof(MeEndpoints).GetMethod(
             "UpdateUserProfileAsync",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[]
-            {
-                _mockHttpContext.Object,
-                _mockAuthService.Object,
-                _mockUserProfileService.Object,
-                updateRequest,
-                _mockLogger.Object
-            }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[]
+                    {
+                        _mockHttpContext.Object,
+                        _mockAuthService.Object,
+                        _mockUserProfileService.Object,
+                        updateRequest,
+                        _mockLogger.Object,
+                    }
+                )!;
 
         return await task;
     }
@@ -797,15 +925,17 @@ public class MeEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[]
-            {
-                _mockUserProfileService.Object,
-                _mockLeagueService.Object,
-                _mockLogger.Object
-            }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[]
+                    {
+                        _mockUserProfileService.Object,
+                        _mockLeagueService.Object,
+                        _mockLogger.Object,
+                    }
+                )!;
 
         return await task;
     }
@@ -817,15 +947,17 @@ public class MeEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[]
-            {
-                _mockTeamService.Object,
-                _mockUserProfileService.Object,
-                _mockLogger.Object
-            }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[]
+                    {
+                        _mockTeamService.Object,
+                        _mockUserProfileService.Object,
+                        _mockLogger.Object,
+                    }
+                )!;
 
         return await task;
     }
@@ -837,14 +969,12 @@ public class MeEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[]
-            {
-                _mockUserProfileService.Object,
-                _mockLogger.Object
-            }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[] { _mockUserProfileService.Object, _mockLogger.Object }
+                )!;
 
         return await task;
     }
@@ -856,16 +986,18 @@ public class MeEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[]
-            {
-                request,
-                _mockTeamService.Object,
-                _mockUserProfileService.Object,
-                _mockLogger.Object
-            }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[]
+                    {
+                        request,
+                        _mockTeamService.Object,
+                        _mockUserProfileService.Object,
+                        _mockLogger.Object,
+                    }
+                )!;
 
         return await task;
     }
@@ -877,16 +1009,18 @@ public class MeEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[]
-            {
-                slotPosition,
-                _mockTeamService.Object,
-                _mockUserProfileService.Object,
-                _mockLogger.Object
-            }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[]
+                    {
+                        slotPosition,
+                        _mockTeamService.Object,
+                        _mockUserProfileService.Object,
+                        _mockLogger.Object,
+                    }
+                )!;
 
         return await task;
     }
@@ -898,16 +1032,18 @@ public class MeEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[]
-            {
-                request,
-                _mockTeamService.Object,
-                _mockUserProfileService.Object,
-                _mockLogger.Object
-            }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[]
+                    {
+                        request,
+                        _mockTeamService.Object,
+                        _mockUserProfileService.Object,
+                        _mockLogger.Object,
+                    }
+                )!;
 
         return await task;
     }
@@ -919,16 +1055,18 @@ public class MeEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[]
-            {
-                slotPosition,
-                _mockTeamService.Object,
-                _mockUserProfileService.Object,
-                _mockLogger.Object
-            }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[]
+                    {
+                        slotPosition,
+                        _mockTeamService.Object,
+                        _mockUserProfileService.Object,
+                        _mockLogger.Object,
+                    }
+                )!;
 
         return await task;
     }

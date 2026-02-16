@@ -21,10 +21,7 @@ public class LeagueInviteService : ILeagueInviteService
     private readonly ApplicationDbContext _dbContext;
     private readonly ILogger<LeagueInviteService> _logger;
 
-    public LeagueInviteService(
-        ApplicationDbContext dbContext,
-        ILogger<LeagueInviteService> logger
-    )
+    public LeagueInviteService(ApplicationDbContext dbContext, ILogger<LeagueInviteService> logger)
     {
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(logger);
@@ -33,7 +30,10 @@ public class LeagueInviteService : ILeagueInviteService
         _logger = logger;
     }
 
-    public async Task<LeagueInviteTokenResponse> GetOrCreateLeagueInviteAsync(int leagueId, int requesterId)
+    public async Task<LeagueInviteTokenResponse> GetOrCreateLeagueInviteAsync(
+        int leagueId,
+        int requesterId
+    )
     {
         var league = await _dbContext.Leagues.FindAsync(leagueId);
         if (league is null)
@@ -52,8 +52,8 @@ public class LeagueInviteService : ILeagueInviteService
         }
 
         // Check if invite already exists
-        var existingInvite = await _dbContext.LeagueInvites
-            .Include(x => x.CreatedByUser)
+        var existingInvite = await _dbContext
+            .LeagueInvites.Include(x => x.CreatedByUser)
             .FirstOrDefaultAsync(x => x.LeagueId == leagueId);
 
         if (existingInvite != null)
@@ -75,8 +75,7 @@ public class LeagueInviteService : ILeagueInviteService
             {
                 throw new InvalidOperationException("Failed to generate unique invite token");
             }
-        }
-        while (await _dbContext.LeagueInvites.AnyAsync(x => x.Token == token));
+        } while (await _dbContext.LeagueInvites.AnyAsync(x => x.Token == token));
 
         var leagueInvite = new LeagueInvite
         {
@@ -95,10 +94,12 @@ public class LeagueInviteService : ILeagueInviteService
         return leagueInvite.ToResponseModel();
     }
 
-    public async Task<LeagueInviteTokenPreviewResponse> ValidateAndPreviewLeagueInviteAsync(string token)
+    public async Task<LeagueInviteTokenPreviewResponse> ValidateAndPreviewLeagueInviteAsync(
+        string token
+    )
     {
-        var invite = await _dbContext.LeagueInvites
-            .Include(x => x.League)
+        var invite = await _dbContext
+            .LeagueInvites.Include(x => x.League)
                 .ThenInclude(l => l.Owner)
             .Include(x => x.League)
                 .ThenInclude(l => l.LeagueTeams)
@@ -122,7 +123,7 @@ public class LeagueInviteService : ILeagueInviteService
             OwnerName = league.Owner.GetFullName(),
             CurrentTeamCount = league.LeagueTeams.Count,
             MaxTeams = league.MaxTeams,
-            IsLeagueFull = league.LeagueTeams.Count >= league.MaxTeams
+            IsLeagueFull = league.LeagueTeams.Count >= league.MaxTeams,
         };
     }
 
@@ -134,8 +135,7 @@ public class LeagueInviteService : ILeagueInviteService
             throw new ArgumentOutOfRangeException(nameof(userId), "User ID must be greater than 0");
         }
 
-        var invite = await _dbContext.LeagueInvites
-            .FirstOrDefaultAsync(x => x.Token == token);
+        var invite = await _dbContext.LeagueInvites.FirstOrDefaultAsync(x => x.Token == token);
 
         if (invite == null)
         {
@@ -143,8 +143,8 @@ public class LeagueInviteService : ILeagueInviteService
         }
 
         var leagueId = invite.LeagueId;
-        var league = await _dbContext.Leagues
-            .Include(x => x.Owner)
+        var league = await _dbContext
+            .Leagues.Include(x => x.Owner)
             .Include(x => x.LeagueTeams)
             .FirstOrDefaultAsync(x => x.Id == leagueId);
 
@@ -164,7 +164,11 @@ public class LeagueInviteService : ILeagueInviteService
         var userTeam = await _dbContext.Teams.FirstOrDefaultAsync(t => t.UserId == userId);
         if (userTeam is null)
         {
-            _logger.LogWarning("No team found for user {UserId} when joining league {LeagueId}", userId, leagueId);
+            _logger.LogWarning(
+                "No team found for user {UserId} when joining league {LeagueId}",
+                userId,
+                leagueId
+            );
             throw new TeamNotFoundException(userId);
         }
 
@@ -172,7 +176,11 @@ public class LeagueInviteService : ILeagueInviteService
 
         if (existingMembership is not null)
         {
-            _logger.LogWarning("Team {TeamId} is already in league {LeagueId}", userTeam.Id, leagueId);
+            _logger.LogWarning(
+                "Team {TeamId} is already in league {LeagueId}",
+                userTeam.Id,
+                leagueId
+            );
             throw new AlreadyInLeagueException(leagueId, userTeam.Id);
         }
 
@@ -188,7 +196,12 @@ public class LeagueInviteService : ILeagueInviteService
         _dbContext.LeagueTeams.Add(leagueTeam);
         await _dbContext.SaveChangesAsync();
 
-        _logger.LogInformation("User {UserId} successfully joined League {LeagueId} with team {TeamId}", userId, leagueId, userTeam.Id);
+        _logger.LogInformation(
+            "User {UserId} successfully joined League {LeagueId} with team {TeamId}",
+            userId,
+            leagueId,
+            userTeam.Id
+        );
 
         return league.ToResponseModel();
     }

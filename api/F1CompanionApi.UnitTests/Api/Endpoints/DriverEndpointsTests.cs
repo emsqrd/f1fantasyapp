@@ -31,7 +31,7 @@ public class DriverEndpointsTests
                 FirstName = "Oscar",
                 LastName = "Piastri",
                 Abbreviation = "PIA",
-                CountryAbbreviation = "AUS"
+                CountryAbbreviation = "AUS",
             },
             new DriverResponse
             {
@@ -39,12 +39,11 @@ public class DriverEndpointsTests
                 FirstName = "Lando",
                 LastName = "Norris",
                 Abbreviation = "NOR",
-                CountryAbbreviation = "GBR"
-            }
+                CountryAbbreviation = "GBR",
+            },
         };
 
-        _mockDriverService.Setup(x => x.GetDriversAsync(null))
-            .ReturnsAsync(drivers);
+        _mockDriverService.Setup(x => x.GetDriversAsync(null)).ReturnsAsync(drivers);
 
         // Act
         var result = await InvokeGetDriversAsync(null);
@@ -67,12 +66,11 @@ public class DriverEndpointsTests
                 FirstName = "Oscar",
                 LastName = "Piastri",
                 Abbreviation = "PIA",
-                CountryAbbreviation = "AUS"
-            }
+                CountryAbbreviation = "AUS",
+            },
         };
 
-        _mockDriverService.Setup(x => x.GetDriversAsync(true))
-            .ReturnsAsync(drivers);
+        _mockDriverService.Setup(x => x.GetDriversAsync(true)).ReturnsAsync(drivers);
 
         // Act
         var result = await InvokeGetDriversAsync(true);
@@ -93,11 +91,10 @@ public class DriverEndpointsTests
             FirstName = "Oscar",
             LastName = "Piastri",
             Abbreviation = "PIA",
-            CountryAbbreviation = "AUS"
+            CountryAbbreviation = "AUS",
         };
 
-        _mockDriverService.Setup(x => x.GetDriverByIdAsync(1))
-            .ReturnsAsync(driver);
+        _mockDriverService.Setup(x => x.GetDriverByIdAsync(1)).ReturnsAsync(driver);
 
         // Act
         var result = await InvokeGetDriverByIdAsync(1);
@@ -114,7 +111,8 @@ public class DriverEndpointsTests
     public async Task GetDriverByIdAsync_NonExistentDriver_ReturnsProblem()
     {
         // Arrange
-        _mockDriverService.Setup(x => x.GetDriverByIdAsync(999))
+        _mockDriverService
+            .Setup(x => x.GetDriverByIdAsync(999))
             .ReturnsAsync((DriverResponse?)null);
 
         // Act
@@ -132,8 +130,7 @@ public class DriverEndpointsTests
         // Arrange
         var emptyDrivers = new List<DriverResponse>();
 
-        _mockDriverService.Setup(x => x.GetDriversAsync(null))
-            .ReturnsAsync(emptyDrivers);
+        _mockDriverService.Setup(x => x.GetDriversAsync(null)).ReturnsAsync(emptyDrivers);
 
         // Act
         var result = await InvokeGetDriversAsync(null);
@@ -156,7 +153,7 @@ public class DriverEndpointsTests
                 FirstName = "Oscar",
                 LastName = "Piastri",
                 Abbreviation = "PIA",
-                CountryAbbreviation = "AUS"
+                CountryAbbreviation = "AUS",
             },
             new DriverResponse
             {
@@ -164,12 +161,11 @@ public class DriverEndpointsTests
                 FirstName = "Fernando",
                 LastName = "Alonso",
                 Abbreviation = "ALO",
-                CountryAbbreviation = "ESP"
-            }
+                CountryAbbreviation = "ESP",
+            },
         };
 
-        _mockDriverService.Setup(x => x.GetDriversAsync(false))
-            .ReturnsAsync(drivers);
+        _mockDriverService.Setup(x => x.GetDriversAsync(false)).ReturnsAsync(drivers);
 
         // Act
         var result = await InvokeGetDriversAsync(false);
@@ -187,7 +183,8 @@ public class DriverEndpointsTests
     public async Task GetDriverByIdAsync_BoundaryValues_ReturnsProblem(int id)
     {
         // Arrange
-        _mockDriverService.Setup(x => x.GetDriverByIdAsync(id))
+        _mockDriverService
+            .Setup(x => x.GetDriverByIdAsync(id))
             .ReturnsAsync((DriverResponse?)null);
 
         // Act
@@ -209,11 +206,10 @@ public class DriverEndpointsTests
             FirstName = "Max",
             LastName = "Verstappen",
             Abbreviation = "VER",
-            CountryAbbreviation = "NED"
+            CountryAbbreviation = "NED",
         };
 
-        _mockDriverService.Setup(x => x.GetDriverByIdAsync(1))
-            .ReturnsAsync(driver);
+        _mockDriverService.Setup(x => x.GetDriverByIdAsync(1)).ReturnsAsync(driver);
 
         // Act
         var result = await InvokeGetDriverByIdAsync(1);
@@ -233,10 +229,12 @@ public class DriverEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object?[] { _mockDriverService.Object, activeOnly, _mockLogger.Object }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object?[] { _mockDriverService.Object, activeOnly, _mockLogger.Object }
+                )!;
 
         return await task;
     }
@@ -248,10 +246,12 @@ public class DriverEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[] { _mockDriverService.Object, id, _mockLogger.Object }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[] { _mockDriverService.Object, id, _mockLogger.Object }
+                )!;
 
         return await task;
     }

@@ -33,7 +33,7 @@ public class SeasonEndpointsTests
                 Year = 2023,
                 StartDate = new DateTime(2023, 3, 5, 0, 0, 0, DateTimeKind.Utc),
                 EndDate = new DateTime(2023, 11, 26, 0, 0, 0, DateTimeKind.Utc),
-                IsCurrent = false
+                IsCurrent = false,
             },
             new SeasonResponse
             {
@@ -41,12 +41,11 @@ public class SeasonEndpointsTests
                 Year = 2024,
                 StartDate = new DateTime(2024, 3, 2, 0, 0, 0, DateTimeKind.Utc),
                 EndDate = new DateTime(2024, 12, 8, 0, 0, 0, DateTimeKind.Utc),
-                IsCurrent = true
-            }
+                IsCurrent = true,
+            },
         };
 
-        _mockSeasonService.Setup(x => x.GetSeasonsAsync())
-            .ReturnsAsync(seasons);
+        _mockSeasonService.Setup(x => x.GetSeasonsAsync()).ReturnsAsync(seasons);
 
         // Act
         var result = await InvokeGetSeasonsAsync();
@@ -63,8 +62,7 @@ public class SeasonEndpointsTests
         // Arrange
         var emptySeasons = new List<SeasonResponse>();
 
-        _mockSeasonService.Setup(x => x.GetSeasonsAsync())
-            .ReturnsAsync(emptySeasons);
+        _mockSeasonService.Setup(x => x.GetSeasonsAsync()).ReturnsAsync(emptySeasons);
 
         // Act
         var result = await InvokeGetSeasonsAsync();
@@ -89,11 +87,10 @@ public class SeasonEndpointsTests
             Year = 2024,
             StartDate = new DateTime(2024, 3, 2, 0, 0, 0, DateTimeKind.Utc),
             EndDate = new DateTime(2024, 12, 8, 0, 0, 0, DateTimeKind.Utc),
-            IsCurrent = true
+            IsCurrent = true,
         };
 
-        _mockSeasonService.Setup(x => x.GetSeasonByIdAsync(1))
-            .ReturnsAsync(season);
+        _mockSeasonService.Setup(x => x.GetSeasonByIdAsync(1)).ReturnsAsync(season);
 
         // Act
         var result = await InvokeGetSeasonByIdAsync(1);
@@ -108,7 +105,8 @@ public class SeasonEndpointsTests
     public async Task GetSeasonByIdAsync_Returns404_WhenSeasonDoesNotExist()
     {
         // Arrange
-        _mockSeasonService.Setup(x => x.GetSeasonByIdAsync(999))
+        _mockSeasonService
+            .Setup(x => x.GetSeasonByIdAsync(999))
             .ReturnsAsync((SeasonResponse?)null);
 
         // Act
@@ -132,10 +130,12 @@ public class SeasonEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[] { _mockSeasonService.Object, _mockLogger.Object }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[] { _mockSeasonService.Object, _mockLogger.Object }
+                )!;
 
         return await task;
     }
@@ -147,10 +147,12 @@ public class SeasonEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[] { _mockSeasonService.Object, id, _mockLogger.Object }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[] { _mockSeasonService.Object, id, _mockLogger.Object }
+                )!;
 
         return await task;
     }

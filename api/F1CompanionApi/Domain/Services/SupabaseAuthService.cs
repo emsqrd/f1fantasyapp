@@ -27,7 +27,9 @@ public class SupabaseAuthService : ISupabaseAuthService
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentNullException.ThrowIfNull(httpContextAccessor);
 
-        _jwtSecret = configuration["Supabase:JwtSecret"] ?? throw new InvalidOperationException("Supabase JWT secret not configured");
+        _jwtSecret =
+            configuration["Supabase:JwtSecret"]
+            ?? throw new InvalidOperationException("Supabase JWT secret not configured");
         _tokenHandler = new JwtSecurityTokenHandler();
         _httpContextAccessor = httpContextAccessor;
     }
@@ -71,7 +73,6 @@ public class SupabaseAuthService : ISupabaseAuthService
     public string? GetUserEmail()
     {
         var user = _httpContextAccessor.HttpContext?.User;
-        return user?.FindFirst(ClaimTypes.Email)?.Value
-            ?? user?.FindFirst("email")?.Value;
+        return user?.FindFirst(ClaimTypes.Email)?.Value ?? user?.FindFirst("email")?.Value;
     }
 }

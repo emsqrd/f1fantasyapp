@@ -11,62 +11,77 @@ public static class MeEndpoints
     [ExcludeFromCodeCoverage]
     public static IEndpointRouteBuilder MapMeEndpoints(this IEndpointRouteBuilder app)
     {
-        var meGroup = app.MapGroup("/me")
-            .RequireAuthorization();
+        var meGroup = app.MapGroup("/me").RequireAuthorization();
 
-        meGroup.MapGet("/profile", GetUserProfileAsync)
+        meGroup
+            .MapGet("/profile", GetUserProfileAsync)
             .WithName("Get User Profile")
             .WithOpenApi()
             .WithDescription("Gets user profile");
 
-        meGroup.MapPost("/register", RegisterUserAsync)
+        meGroup
+            .MapPost("/register", RegisterUserAsync)
             .WithName("Register User")
             .WithOpenApi()
             .WithDescription("Creates user account and profile");
 
-        meGroup.MapPatch("/profile", UpdateUserProfileAsync)
+        meGroup
+            .MapPatch("/profile", UpdateUserProfileAsync)
             .WithName("Update User Profile")
             .WithOpenApi()
             .WithDescription("Updates user profile");
 
-        meGroup.MapGet("/leagues", GetMyLeaguesAsync)
+        meGroup
+            .MapGet("/leagues", GetMyLeaguesAsync)
             .WithName("Get My Leagues")
             .WithOpenApi()
             .WithDescription("Gets leagues owned by the authenticated user");
 
         var teamGroup = meGroup.MapGroup("/team");
 
-        teamGroup.MapGet("/", GetMyTeamAsync)
+        teamGroup
+            .MapGet("/", GetMyTeamAsync)
             .WithName("Get My Team")
             .WithOpenApi()
             .WithDescription("Get current user's team or null if none exists");
 
-        teamGroup.MapPost("/drivers", AddDriverToTeamAsync)
+        teamGroup
+            .MapPost("/drivers", AddDriverToTeamAsync)
             .WithName("Add Driver to Team")
             .WithOpenApi()
             .WithDescription("Add a driver to the current user's team at a specific slot position");
 
-        teamGroup.MapDelete("/drivers/{slotPosition}", RemoveDriverFromTeamAsync)
+        teamGroup
+            .MapDelete("/drivers/{slotPosition}", RemoveDriverFromTeamAsync)
             .WithName("Remove Driver from Team")
             .WithOpenApi()
-            .WithDescription("Remove a driver from the current user's team at a specific slot position");
+            .WithDescription(
+                "Remove a driver from the current user's team at a specific slot position"
+            );
 
-        teamGroup.MapPost("/constructors", AddConstructorToTeamAsync)
+        teamGroup
+            .MapPost("/constructors", AddConstructorToTeamAsync)
             .WithName("Add Constructor to Team")
             .WithOpenApi()
-            .WithDescription("Add a constructor to the current user's team at a specific slot position");
+            .WithDescription(
+                "Add a constructor to the current user's team at a specific slot position"
+            );
 
-        teamGroup.MapDelete("/constructors/{slotPosition}", RemoveConstructorFromTeamAsync)
+        teamGroup
+            .MapDelete("/constructors/{slotPosition}", RemoveConstructorFromTeamAsync)
             .WithName("Remove Constructor from Team")
             .WithOpenApi()
-            .WithDescription("Remove a constructor from the current user's team at a specific slot position");
+            .WithDescription(
+                "Remove a constructor from the current user's team at a specific slot position"
+            );
 
         return app;
     }
 
     private static async Task<IResult> GetUserProfileAsync(
         IUserProfileService userProfileService,
-        ILogger logger)
+        ILogger logger
+    )
     {
         logger.LogDebug("Fetching current user profile");
         var user = await userProfileService.GetCurrentUserProfileAsync();
@@ -123,8 +138,11 @@ public static class MeEndpoints
                 request.DisplayName
             );
 
-            logger.LogInformation("Successfully registered user {UserId} with profile {ProfileId}",
-                userId, userProfile.Id);
+            logger.LogInformation(
+                "Successfully registered user {UserId} with profile {ProfileId}",
+                userId,
+                userProfile.Id
+            );
 
             return Results.Created($"/me/profile", userProfile);
         }
@@ -161,24 +179,29 @@ public static class MeEndpoints
                 updateUserProfileRequest
             );
 
-            logger.LogInformation("Successfully updated user profile {ProfileId}",
-                updateUserProfileRequest.Id);
+            logger.LogInformation(
+                "Successfully updated user profile {ProfileId}",
+                updateUserProfileRequest.Id
+            );
 
             return Results.Ok(updatedProfile);
         }
         catch (KeyNotFoundException ex)
         {
-            logger.LogWarning(ex, "User profile {ProfileId} not found during update",
-                updateUserProfileRequest.Id);
-            return Results.Problem(
-                detail: ex.Message,
-                statusCode: StatusCodes.Status404NotFound
+            logger.LogWarning(
+                ex,
+                "User profile {ProfileId} not found during update",
+                updateUserProfileRequest.Id
             );
+            return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status404NotFound);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to update user profile {ProfileId}",
-                updateUserProfileRequest.Id);
+            logger.LogError(
+                ex,
+                "Failed to update user profile {ProfileId}",
+                updateUserProfileRequest.Id
+            );
             throw;
         }
     }
@@ -203,10 +226,7 @@ public static class MeEndpoints
         catch (InvalidOperationException ex)
         {
             logger.LogWarning(ex, "User profile not found when fetching leagues");
-            return Results.Problem(
-                detail: ex.Message,
-                statusCode: StatusCodes.Status400BadRequest
-            );
+            return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status400BadRequest);
         }
         catch (Exception ex)
         {
@@ -245,8 +265,12 @@ public static class MeEndpoints
     {
         var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
 
-        logger.LogInformation("User {UserId} adding driver {DriverId} at slot {SlotPosition}",
-            user.Id, request.DriverId, request.SlotPosition);
+        logger.LogInformation(
+            "User {UserId} adding driver {DriverId} at slot {SlotPosition}",
+            user.Id,
+            request.DriverId,
+            request.SlotPosition
+        );
 
         try
         {
@@ -261,7 +285,12 @@ public static class MeEndpoints
                 );
             }
 
-            await teamService.AddDriverToTeamAsync(team.Id, request.DriverId, request.SlotPosition, user.Id);
+            await teamService.AddDriverToTeamAsync(
+                team.Id,
+                request.DriverId,
+                request.SlotPosition,
+                user.Id
+            );
             return Results.NoContent();
         }
         catch (InvalidOperationException ex)
@@ -280,8 +309,11 @@ public static class MeEndpoints
     {
         var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
 
-        logger.LogInformation("User {UserId} removing driver from slot {SlotPosition}",
-            user.Id, slotPosition);
+        logger.LogInformation(
+            "User {UserId} removing driver from slot {SlotPosition}",
+            user.Id,
+            slotPosition
+        );
 
         try
         {
@@ -315,8 +347,12 @@ public static class MeEndpoints
     {
         var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
 
-        logger.LogInformation("User {UserId} adding constructor {ConstructorId} at slot {SlotPosition}",
-            user.Id, request.ConstructorId, request.SlotPosition);
+        logger.LogInformation(
+            "User {UserId} adding constructor {ConstructorId} at slot {SlotPosition}",
+            user.Id,
+            request.ConstructorId,
+            request.SlotPosition
+        );
 
         try
         {
@@ -331,7 +367,12 @@ public static class MeEndpoints
                 );
             }
 
-            await teamService.AddConstructorToTeamAsync(team.Id, request.ConstructorId, request.SlotPosition, user.Id);
+            await teamService.AddConstructorToTeamAsync(
+                team.Id,
+                request.ConstructorId,
+                request.SlotPosition,
+                user.Id
+            );
             return Results.NoContent();
         }
         catch (InvalidOperationException ex)
@@ -350,8 +391,11 @@ public static class MeEndpoints
     {
         var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
 
-        logger.LogInformation("User {UserId} removing constructor from slot {SlotPosition}",
-            user.Id, slotPosition);
+        logger.LogInformation(
+            "User {UserId} removing constructor from slot {SlotPosition}",
+            user.Id,
+            slotPosition
+        );
 
         try
         {
@@ -371,7 +415,11 @@ public static class MeEndpoints
         }
         catch (InvalidOperationException ex)
         {
-            logger.LogWarning(ex, "Failed to remove constructor from team for user {UserId}", user.Id);
+            logger.LogWarning(
+                ex,
+                "Failed to remove constructor from team for user {UserId}",
+                user.Id
+            );
             return Results.BadRequest(ex.Message);
         }
     }

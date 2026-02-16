@@ -39,7 +39,7 @@ public class RaceEndpointsTests
                 Country = "Bahrain",
                 RaceDate = new DateTime(2024, 3, 2, 0, 0, 0, DateTimeKind.Utc),
                 LockDeadline = new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc),
-                IsCurrent = false
+                IsCurrent = false,
             },
             new RaceResponse
             {
@@ -52,12 +52,11 @@ public class RaceEndpointsTests
                 Country = "Saudi Arabia",
                 RaceDate = new DateTime(2024, 3, 9, 0, 0, 0, DateTimeKind.Utc),
                 LockDeadline = new DateTime(2024, 3, 8, 0, 0, 0, DateTimeKind.Utc),
-                IsCurrent = true
-            }
+                IsCurrent = true,
+            },
         };
 
-        _mockRaceService.Setup(x => x.GetRacesAsync(seasonId))
-            .ReturnsAsync(races);
+        _mockRaceService.Setup(x => x.GetRacesAsync(seasonId)).ReturnsAsync(races);
 
         // Act
         var result = await InvokeGetRacesAsync(seasonId);
@@ -86,12 +85,11 @@ public class RaceEndpointsTests
                 Country = "Australia",
                 RaceDate = new DateTime(2024, 3, 24, 0, 0, 0, DateTimeKind.Utc),
                 LockDeadline = null,
-                IsCurrent = true
-            }
+                IsCurrent = true,
+            },
         };
 
-        _mockRaceService.Setup(x => x.GetRacesAsync(seasonId))
-            .ReturnsAsync(races);
+        _mockRaceService.Setup(x => x.GetRacesAsync(seasonId)).ReturnsAsync(races);
 
         // Act
         var result = await InvokeGetRacesAsync(seasonId);
@@ -110,8 +108,7 @@ public class RaceEndpointsTests
         var seasonId = 999;
         var emptyRaces = new List<RaceResponse>();
 
-        _mockRaceService.Setup(x => x.GetRacesAsync(seasonId))
-            .ReturnsAsync(emptyRaces);
+        _mockRaceService.Setup(x => x.GetRacesAsync(seasonId)).ReturnsAsync(emptyRaces);
 
         // Act
         var result = await InvokeGetRacesAsync(seasonId);
@@ -129,8 +126,7 @@ public class RaceEndpointsTests
         int? seasonId = null;
         var emptyRaces = new List<RaceResponse>();
 
-        _mockRaceService.Setup(x => x.GetRacesAsync(seasonId))
-            .ReturnsAsync(emptyRaces);
+        _mockRaceService.Setup(x => x.GetRacesAsync(seasonId)).ReturnsAsync(emptyRaces);
 
         // Act
         var result = await InvokeGetRacesAsync(seasonId);
@@ -160,11 +156,10 @@ public class RaceEndpointsTests
             Country = "Monaco",
             RaceDate = new DateTime(2024, 5, 26, 0, 0, 0, DateTimeKind.Utc),
             LockDeadline = new DateTime(2024, 5, 25, 12, 0, 0, DateTimeKind.Utc),
-            IsCurrent = true
+            IsCurrent = true,
         };
 
-        _mockRaceService.Setup(x => x.GetRaceByIdAsync(1))
-            .ReturnsAsync(race);
+        _mockRaceService.Setup(x => x.GetRaceByIdAsync(1)).ReturnsAsync(race);
 
         // Act
         var result = await InvokeGetRaceByIdAsync(1);
@@ -180,8 +175,7 @@ public class RaceEndpointsTests
     public async Task GetRaceByIdAsync_Returns404_WhenRaceDoesNotExist()
     {
         // Arrange
-        _mockRaceService.Setup(x => x.GetRaceByIdAsync(999))
-            .ReturnsAsync((RaceResponse?)null);
+        _mockRaceService.Setup(x => x.GetRaceByIdAsync(999)).ReturnsAsync((RaceResponse?)null);
 
         // Act
         var result = await InvokeGetRaceByIdAsync(999);
@@ -208,11 +202,10 @@ public class RaceEndpointsTests
             Country = "United Kingdom",
             RaceDate = new DateTime(2024, 7, 7, 0, 0, 0, DateTimeKind.Utc),
             LockDeadline = null,
-            IsCurrent = false
+            IsCurrent = false,
         };
 
-        _mockRaceService.Setup(x => x.GetRaceByIdAsync(2))
-            .ReturnsAsync(race);
+        _mockRaceService.Setup(x => x.GetRaceByIdAsync(2)).ReturnsAsync(race);
 
         // Act
         var result = await InvokeGetRaceByIdAsync(2);
@@ -235,10 +228,12 @@ public class RaceEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object?[] { _mockRaceService.Object, seasonId, _mockLogger.Object }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object?[] { _mockRaceService.Object, seasonId, _mockLogger.Object }
+                )!;
 
         return await task;
     }
@@ -250,10 +245,12 @@ public class RaceEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[] { _mockRaceService.Object, id, _mockLogger.Object }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[] { _mockRaceService.Object, id, _mockLogger.Object }
+                )!;
 
         return await task;
     }

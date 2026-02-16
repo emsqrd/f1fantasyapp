@@ -40,7 +40,7 @@ public class DriverServiceTests
                 LastName = "Piastri",
                 Abbreviation = "PIA",
                 CountryAbbreviation = "AUS",
-                IsActive = true
+                IsActive = true,
             },
             new Driver
             {
@@ -48,8 +48,8 @@ public class DriverServiceTests
                 LastName = "Alonso",
                 Abbreviation = "ALO",
                 CountryAbbreviation = "ESP",
-                IsActive = false
-            }
+                IsActive = false,
+            },
         };
 
         context.Drivers.AddRange(drivers);
@@ -78,7 +78,7 @@ public class DriverServiceTests
                 LastName = "Piastri",
                 Abbreviation = "PIA",
                 CountryAbbreviation = "AUS",
-                IsActive = true
+                IsActive = true,
             },
             new Driver
             {
@@ -86,8 +86,8 @@ public class DriverServiceTests
                 LastName = "Alonso",
                 Abbreviation = "ALO",
                 CountryAbbreviation = "ESP",
-                IsActive = false
-            }
+                IsActive = false,
+            },
         };
 
         context.Drivers.AddRange(drivers);
@@ -117,7 +117,7 @@ public class DriverServiceTests
                 LastName = "Verstappen",
                 Abbreviation = "VER",
                 CountryAbbreviation = "NED",
-                IsActive = true
+                IsActive = true,
             },
             new Driver
             {
@@ -125,8 +125,8 @@ public class DriverServiceTests
                 LastName = "Alonso",
                 Abbreviation = "ALO",
                 CountryAbbreviation = "ESP",
-                IsActive = true
-            }
+                IsActive = true,
+            },
         };
 
         context.Drivers.AddRange(drivers);
@@ -154,7 +154,7 @@ public class DriverServiceTests
             LastName = "Piastri",
             Abbreviation = "PIA",
             CountryAbbreviation = "AUS",
-            IsActive = true
+            IsActive = true,
         };
 
         context.Drivers.Add(driver);

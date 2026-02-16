@@ -13,7 +13,7 @@ public static class DriverResponseMapper
             FirstName = driver.FirstName,
             LastName = driver.LastName,
             Abbreviation = driver.Abbreviation,
-            CountryAbbreviation = driver.CountryAbbreviation
+            CountryAbbreviation = driver.CountryAbbreviation,
         };
     }
 

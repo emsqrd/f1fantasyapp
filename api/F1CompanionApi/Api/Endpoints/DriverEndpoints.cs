@@ -27,8 +27,9 @@ public static class DriverEndpoints
 
     private static async Task<IResult> GetDriversAsync(
         IDriverService driverService,
-        [FromQuery][Description("Filter to active drivers only")] bool? activeOnly,
-        [FromServices] ILogger logger)
+        [FromQuery] [Description("Filter to active drivers only")] bool? activeOnly,
+        [FromServices] ILogger logger
+    )
     {
         logger.LogDebug("Fetching all drivers");
 
@@ -40,7 +41,8 @@ public static class DriverEndpoints
     private static async Task<IResult> GetDriverByIdAsync(
         IDriverService driverService,
         int id,
-        [FromServices] ILogger logger)
+        [FromServices] ILogger logger
+    )
     {
         logger.LogDebug("Fetching driver {DriverId}", id);
 

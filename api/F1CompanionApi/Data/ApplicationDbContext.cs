@@ -32,7 +32,8 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Id).HasMaxLength(36); // UUID length
         });
 
-        modelBuilder.Entity<League>()
+        modelBuilder
+            .Entity<League>()
             .HasOne(e => e.Owner)
             .WithMany()
             .HasForeignKey(e => e.OwnerId)
@@ -40,7 +41,8 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<LeagueInvite>(entity =>
         {
-            entity.HasOne(e => e.League)
+            entity
+                .HasOne(e => e.League)
                 .WithMany()
                 .HasForeignKey(e => e.LeagueId)
                 .OnDelete(DeleteBehavior.Cascade);

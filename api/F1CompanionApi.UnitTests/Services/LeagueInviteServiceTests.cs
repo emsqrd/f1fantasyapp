@@ -26,14 +26,16 @@ public class LeagueInviteServiceTests
         return new ApplicationDbContext(options);
     }
 
-    private async Task<(UserProfile owner, League league)> SeedPrivateLeagueWithOwner(ApplicationDbContext context)
+    private async Task<(UserProfile owner, League league)> SeedPrivateLeagueWithOwner(
+        ApplicationDbContext context
+    )
     {
         var owner = new UserProfile
         {
             AccountId = "test-account",
             Email = "owner@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
         };
         context.UserProfiles.Add(owner);
         await context.SaveChangesAsync();
@@ -46,7 +48,7 @@ public class LeagueInviteServiceTests
             MaxTeams = 10,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.Add(league);
         await context.SaveChangesAsync();
@@ -75,7 +77,9 @@ public class LeagueInviteServiceTests
         Assert.Equal(league.Id, result.LeagueId);
 
         // Verify invite was persisted
-        var savedInvite = await context.LeagueInvites.FirstOrDefaultAsync(x => x.LeagueId == league.Id);
+        var savedInvite = await context.LeagueInvites.FirstOrDefaultAsync(x =>
+            x.LeagueId == league.Id
+        );
         Assert.NotNull(savedInvite);
         Assert.Equal(result.Token, savedInvite.Token);
         Assert.Equal(owner.Id, savedInvite.CreatedBy);
@@ -93,7 +97,7 @@ public class LeagueInviteServiceTests
             LeagueId = league.Id,
             Token = "existing-token-123",
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.LeagueInvites.Add(existingInvite);
         await context.SaveChangesAsync();
@@ -121,8 +125,8 @@ public class LeagueInviteServiceTests
         var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<LeagueNotFoundException>(
-            () => service.GetOrCreateLeagueInviteAsync(999, 1)
+        var exception = await Assert.ThrowsAsync<LeagueNotFoundException>(() =>
+            service.GetOrCreateLeagueInviteAsync(999, 1)
         );
 
         Assert.Equal(999, exception.LeagueId);
@@ -140,7 +144,7 @@ public class LeagueInviteServiceTests
             AccountId = "non-owner-account",
             Email = "nonowner@test.com",
             FirstName = "Jane",
-            LastName = "Smith"
+            LastName = "Smith",
         };
         context.UserProfiles.Add(nonOwner);
         await context.SaveChangesAsync();
@@ -148,8 +152,8 @@ public class LeagueInviteServiceTests
         var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => service.GetOrCreateLeagueInviteAsync(league.Id, nonOwner.Id)
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            service.GetOrCreateLeagueInviteAsync(league.Id, nonOwner.Id)
         );
 
         Assert.Equal("Only league owner can create invites", exception.Message);
@@ -166,7 +170,7 @@ public class LeagueInviteServiceTests
             AccountId = "test-account",
             Email = "owner@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
         };
         context.UserProfiles.Add(owner);
         await context.SaveChangesAsync();
@@ -179,7 +183,7 @@ public class LeagueInviteServiceTests
             MaxTeams = 10,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.Add(publicLeague);
         await context.SaveChangesAsync();
@@ -187,8 +191,8 @@ public class LeagueInviteServiceTests
         var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.GetOrCreateLeagueInviteAsync(publicLeague.Id, owner.Id)
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.GetOrCreateLeagueInviteAsync(publicLeague.Id, owner.Id)
         );
 
         Assert.Equal("Public leagues cannot be joined by league invite", exception.Message);
@@ -211,27 +215,53 @@ public class LeagueInviteServiceTests
             AccountId = "user1-account",
             Email = "user1@test.com",
             FirstName = "User",
-            LastName = "One"
+            LastName = "One",
         };
         var user2 = new UserProfile
         {
             AccountId = "user2-account",
             Email = "user2@test.com",
             FirstName = "User",
-            LastName = "Two"
+            LastName = "Two",
         };
         context.UserProfiles.AddRange(user1, user2);
         await context.SaveChangesAsync();
 
         // Add some teams to the league
-        var team1 = new Team { Name = "Team 1", UserId = user1.Id, CreatedBy = user1.Id, CreatedAt = DateTime.UtcNow };
-        var team2 = new Team { Name = "Team 2", UserId = user2.Id, CreatedBy = user2.Id, CreatedAt = DateTime.UtcNow };
+        var team1 = new Team
+        {
+            Name = "Team 1",
+            UserId = user1.Id,
+            CreatedBy = user1.Id,
+            CreatedAt = DateTime.UtcNow,
+        };
+        var team2 = new Team
+        {
+            Name = "Team 2",
+            UserId = user2.Id,
+            CreatedBy = user2.Id,
+            CreatedAt = DateTime.UtcNow,
+        };
         context.Teams.AddRange(team1, team2);
         await context.SaveChangesAsync();
 
         context.LeagueTeams.AddRange(
-            new LeagueTeam { LeagueId = league.Id, TeamId = team1.Id, JoinedAt = DateTime.UtcNow, CreatedBy = user1.Id, CreatedAt = DateTime.UtcNow },
-            new LeagueTeam { LeagueId = league.Id, TeamId = team2.Id, JoinedAt = DateTime.UtcNow, CreatedBy = user2.Id, CreatedAt = DateTime.UtcNow }
+            new LeagueTeam
+            {
+                LeagueId = league.Id,
+                TeamId = team1.Id,
+                JoinedAt = DateTime.UtcNow,
+                CreatedBy = user1.Id,
+                CreatedAt = DateTime.UtcNow,
+            },
+            new LeagueTeam
+            {
+                LeagueId = league.Id,
+                TeamId = team2.Id,
+                JoinedAt = DateTime.UtcNow,
+                CreatedBy = user2.Id,
+                CreatedAt = DateTime.UtcNow,
+            }
         );
         await context.SaveChangesAsync();
 
@@ -241,7 +271,7 @@ public class LeagueInviteServiceTests
             LeagueId = league.Id,
             Token = token,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.LeagueInvites.Add(invite);
         await context.SaveChangesAsync();
@@ -278,27 +308,53 @@ public class LeagueInviteServiceTests
             AccountId = "user1-account",
             Email = "user1@test.com",
             FirstName = "User",
-            LastName = "One"
+            LastName = "One",
         };
         var user2 = new UserProfile
         {
             AccountId = "user2-account",
             Email = "user2@test.com",
             FirstName = "User",
-            LastName = "Two"
+            LastName = "Two",
         };
         context.UserProfiles.AddRange(user1, user2);
         await context.SaveChangesAsync();
 
         // Add 2 teams (filling the league)
-        var team1 = new Team { Name = "Team 1", UserId = user1.Id, CreatedBy = user1.Id, CreatedAt = DateTime.UtcNow };
-        var team2 = new Team { Name = "Team 2", UserId = user2.Id, CreatedBy = user2.Id, CreatedAt = DateTime.UtcNow };
+        var team1 = new Team
+        {
+            Name = "Team 1",
+            UserId = user1.Id,
+            CreatedBy = user1.Id,
+            CreatedAt = DateTime.UtcNow,
+        };
+        var team2 = new Team
+        {
+            Name = "Team 2",
+            UserId = user2.Id,
+            CreatedBy = user2.Id,
+            CreatedAt = DateTime.UtcNow,
+        };
         context.Teams.AddRange(team1, team2);
         await context.SaveChangesAsync();
 
         context.LeagueTeams.AddRange(
-            new LeagueTeam { LeagueId = league.Id, TeamId = team1.Id, JoinedAt = DateTime.UtcNow, CreatedBy = user1.Id, CreatedAt = DateTime.UtcNow },
-            new LeagueTeam { LeagueId = league.Id, TeamId = team2.Id, JoinedAt = DateTime.UtcNow, CreatedBy = user2.Id, CreatedAt = DateTime.UtcNow }
+            new LeagueTeam
+            {
+                LeagueId = league.Id,
+                TeamId = team1.Id,
+                JoinedAt = DateTime.UtcNow,
+                CreatedBy = user1.Id,
+                CreatedAt = DateTime.UtcNow,
+            },
+            new LeagueTeam
+            {
+                LeagueId = league.Id,
+                TeamId = team2.Id,
+                JoinedAt = DateTime.UtcNow,
+                CreatedBy = user2.Id,
+                CreatedAt = DateTime.UtcNow,
+            }
         );
         await context.SaveChangesAsync();
 
@@ -308,7 +364,7 @@ public class LeagueInviteServiceTests
             LeagueId = league.Id,
             Token = token,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.LeagueInvites.Add(invite);
         await context.SaveChangesAsync();
@@ -337,8 +393,8 @@ public class LeagueInviteServiceTests
         var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidLeagueInviteTokenException>(
-            () => service.ValidateAndPreviewLeagueInviteAsync(token)
+        var exception = await Assert.ThrowsAsync<InvalidLeagueInviteTokenException>(() =>
+            service.ValidateAndPreviewLeagueInviteAsync(token)
         );
 
         Assert.Equal("Invalid or expired invite", exception.InviteToken);
@@ -360,7 +416,7 @@ public class LeagueInviteServiceTests
             AccountId = "new-user-account",
             Email = "newuser@test.com",
             FirstName = "Alice",
-            LastName = "Johnson"
+            LastName = "Johnson",
         };
         context.UserProfiles.Add(newUser);
         await context.SaveChangesAsync();
@@ -370,7 +426,7 @@ public class LeagueInviteServiceTests
             Name = "Alice's Team",
             UserId = newUser.Id,
             CreatedBy = newUser.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Teams.Add(userTeam);
         await context.SaveChangesAsync();
@@ -381,7 +437,7 @@ public class LeagueInviteServiceTests
             LeagueId = league.Id,
             Token = token,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.LeagueInvites.Add(invite);
         await context.SaveChangesAsync();
@@ -398,8 +454,9 @@ public class LeagueInviteServiceTests
         Assert.Equal("Private League", result.Name);
 
         // Verify LeagueTeam was created
-        var leagueTeam = await context.LeagueTeams
-            .FirstOrDefaultAsync(lt => lt.LeagueId == league.Id && lt.TeamId == userTeam.Id);
+        var leagueTeam = await context.LeagueTeams.FirstOrDefaultAsync(lt =>
+            lt.LeagueId == league.Id && lt.TeamId == userTeam.Id
+        );
 
         Assert.NotNull(leagueTeam);
         Assert.Equal(newUser.Id, leagueTeam.CreatedBy);
@@ -418,7 +475,7 @@ public class LeagueInviteServiceTests
             AccountId = "new-user-account",
             Email = "newuser@test.com",
             FirstName = "Alice",
-            LastName = "Johnson"
+            LastName = "Johnson",
         };
         context.UserProfiles.Add(newUser);
         await context.SaveChangesAsync();
@@ -429,7 +486,7 @@ public class LeagueInviteServiceTests
             LeagueId = 999, // League ID 999 doesn't exist
             Token = token,
             CreatedBy = newUser.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.LeagueInvites.Add(invite);
         await context.SaveChangesAsync();
@@ -437,8 +494,8 @@ public class LeagueInviteServiceTests
         var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<LeagueNotFoundException>(
-            () => service.JoinLeagueViaLeagueInviteAsync(token, newUser.Id)
+        var exception = await Assert.ThrowsAsync<LeagueNotFoundException>(() =>
+            service.JoinLeagueViaLeagueInviteAsync(token, newUser.Id)
         );
 
         Assert.Equal(999, exception.LeagueId);
@@ -461,7 +518,7 @@ public class LeagueInviteServiceTests
             AccountId = "existing-user",
             Email = "existing@test.com",
             FirstName = "Bob",
-            LastName = "Smith"
+            LastName = "Smith",
         };
         context.UserProfiles.Add(existingUser);
         await context.SaveChangesAsync();
@@ -471,19 +528,21 @@ public class LeagueInviteServiceTests
             Name = "Bob's Team",
             UserId = existingUser.Id,
             CreatedBy = existingUser.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Teams.Add(existingTeam);
         await context.SaveChangesAsync();
 
-        context.LeagueTeams.Add(new LeagueTeam
-        {
-            LeagueId = league.Id,
-            TeamId = existingTeam.Id,
-            JoinedAt = DateTime.UtcNow,
-            CreatedBy = existingUser.Id,
-            CreatedAt = DateTime.UtcNow
-        });
+        context.LeagueTeams.Add(
+            new LeagueTeam
+            {
+                LeagueId = league.Id,
+                TeamId = existingTeam.Id,
+                JoinedAt = DateTime.UtcNow,
+                CreatedBy = existingUser.Id,
+                CreatedAt = DateTime.UtcNow,
+            }
+        );
         await context.SaveChangesAsync();
 
         // New user trying to join
@@ -492,7 +551,7 @@ public class LeagueInviteServiceTests
             AccountId = "new-user-account",
             Email = "newuser@test.com",
             FirstName = "Alice",
-            LastName = "Johnson"
+            LastName = "Johnson",
         };
         context.UserProfiles.Add(newUser);
         await context.SaveChangesAsync();
@@ -502,7 +561,7 @@ public class LeagueInviteServiceTests
             Name = "Alice's Team",
             UserId = newUser.Id,
             CreatedBy = newUser.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Teams.Add(userTeam);
         await context.SaveChangesAsync();
@@ -513,7 +572,7 @@ public class LeagueInviteServiceTests
             LeagueId = league.Id,
             Token = token,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.LeagueInvites.Add(invite);
         await context.SaveChangesAsync();
@@ -521,8 +580,8 @@ public class LeagueInviteServiceTests
         var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<LeagueFullException>(
-            () => service.JoinLeagueViaLeagueInviteAsync(token, newUser.Id)
+        var exception = await Assert.ThrowsAsync<LeagueFullException>(() =>
+            service.JoinLeagueViaLeagueInviteAsync(token, newUser.Id)
         );
 
         Assert.Equal(league.Id, exception.LeagueId);
@@ -541,7 +600,7 @@ public class LeagueInviteServiceTests
             AccountId = "new-user-account",
             Email = "newuser@test.com",
             FirstName = "Alice",
-            LastName = "Johnson"
+            LastName = "Johnson",
         };
         context.UserProfiles.Add(newUser);
         await context.SaveChangesAsync();
@@ -553,7 +612,7 @@ public class LeagueInviteServiceTests
             LeagueId = league.Id,
             Token = token,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.LeagueInvites.Add(invite);
         await context.SaveChangesAsync();
@@ -561,8 +620,8 @@ public class LeagueInviteServiceTests
         var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<TeamNotFoundException>(
-            () => service.JoinLeagueViaLeagueInviteAsync(token, newUser.Id)
+        var exception = await Assert.ThrowsAsync<TeamNotFoundException>(() =>
+            service.JoinLeagueViaLeagueInviteAsync(token, newUser.Id)
         );
 
         Assert.Equal(newUser.Id, exception.UserId);
@@ -580,7 +639,7 @@ public class LeagueInviteServiceTests
             AccountId = "existing-member",
             Email = "existing@test.com",
             FirstName = "Charlie",
-            LastName = "Brown"
+            LastName = "Brown",
         };
         context.UserProfiles.Add(existingMember);
         await context.SaveChangesAsync();
@@ -590,20 +649,22 @@ public class LeagueInviteServiceTests
             Name = "Charlie's Team",
             UserId = existingMember.Id,
             CreatedBy = existingMember.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Teams.Add(memberTeam);
         await context.SaveChangesAsync();
 
         // Add team to league
-        context.LeagueTeams.Add(new LeagueTeam
-        {
-            LeagueId = league.Id,
-            TeamId = memberTeam.Id,
-            JoinedAt = DateTime.UtcNow,
-            CreatedBy = existingMember.Id,
-            CreatedAt = DateTime.UtcNow
-        });
+        context.LeagueTeams.Add(
+            new LeagueTeam
+            {
+                LeagueId = league.Id,
+                TeamId = memberTeam.Id,
+                JoinedAt = DateTime.UtcNow,
+                CreatedBy = existingMember.Id,
+                CreatedAt = DateTime.UtcNow,
+            }
+        );
         await context.SaveChangesAsync();
 
         var token = "testToken5";
@@ -612,7 +673,7 @@ public class LeagueInviteServiceTests
             LeagueId = league.Id,
             Token = token,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.LeagueInvites.Add(invite);
         await context.SaveChangesAsync();
@@ -620,8 +681,8 @@ public class LeagueInviteServiceTests
         var service = new LeagueInviteService(context, _mockLogger.Object);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<AlreadyInLeagueException>(
-            () => service.JoinLeagueViaLeagueInviteAsync(token, existingMember.Id)
+        var exception = await Assert.ThrowsAsync<AlreadyInLeagueException>(() =>
+            service.JoinLeagueViaLeagueInviteAsync(token, existingMember.Id)
         );
 
         Assert.Equal(league.Id, exception.LeagueId);
@@ -648,7 +709,7 @@ public class LeagueInviteServiceTests
             MaxTeams = 10,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.Add(league2);
         await context.SaveChangesAsync();

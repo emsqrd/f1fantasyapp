@@ -14,7 +14,7 @@ public class UserProfileExtensionsTests
             AccountId = "test-123",
             Email = "test@example.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
         };
 
         // Act
@@ -33,7 +33,7 @@ public class UserProfileExtensionsTests
             AccountId = "test-123",
             Email = "test@example.com",
             FirstName = "John",
-            LastName = null
+            LastName = null,
         };
 
         // Act
@@ -52,7 +52,7 @@ public class UserProfileExtensionsTests
             AccountId = "test-123",
             Email = "test@example.com",
             FirstName = null,
-            LastName = "Doe"
+            LastName = "Doe",
         };
 
         // Act
@@ -71,7 +71,7 @@ public class UserProfileExtensionsTests
             AccountId = "test-123",
             Email = "test@example.com",
             FirstName = null,
-            LastName = null
+            LastName = null,
         };
 
         // Act
@@ -90,7 +90,7 @@ public class UserProfileExtensionsTests
             AccountId = "test-123",
             Email = "test@example.com",
             FirstName = "   ",
-            LastName = "   "
+            LastName = "   ",
         };
 
         // Act
@@ -109,7 +109,7 @@ public class UserProfileExtensionsTests
             AccountId = "test-123",
             Email = "test@example.com",
             FirstName = "   ",
-            LastName = "Doe"
+            LastName = "Doe",
         };
 
         // Act
@@ -128,7 +128,7 @@ public class UserProfileExtensionsTests
             AccountId = "test-123",
             Email = "test@example.com",
             FirstName = "John",
-            LastName = "   "
+            LastName = "   ",
         };
 
         // Act
@@ -147,7 +147,7 @@ public class UserProfileExtensionsTests
             AccountId = "test-123",
             Email = "test@example.com",
             FirstName = "  John  ",
-            LastName = "  Doe  "
+            LastName = "  Doe  ",
         };
 
         // Act
@@ -166,7 +166,7 @@ public class UserProfileExtensionsTests
             AccountId = "test-123",
             Email = "test@example.com",
             FirstName = "",
-            LastName = ""
+            LastName = "",
         };
 
         // Act
@@ -185,7 +185,7 @@ public class UserProfileExtensionsTests
             AccountId = "test-123",
             Email = "test@example.com",
             FirstName = "",
-            LastName = "Doe"
+            LastName = "Doe",
         };
 
         // Act
@@ -204,7 +204,7 @@ public class UserProfileExtensionsTests
             AccountId = "test-123",
             Email = "test@example.com",
             FirstName = "Mary Jane",
-            LastName = "Watson-Parker"
+            LastName = "Watson-Parker",
         };
 
         // Act
@@ -224,7 +224,7 @@ public class UserProfileExtensionsTests
             Email = "test@example.com",
             DisplayName = "CoolRacer99",
             FirstName = null,
-            LastName = null
+            LastName = null,
         };
 
         // Act
@@ -244,7 +244,7 @@ public class UserProfileExtensionsTests
             Email = "test@example.com",
             DisplayName = "SpeedDemon",
             FirstName = "",
-            LastName = ""
+            LastName = "",
         };
 
         // Act
@@ -264,7 +264,7 @@ public class UserProfileExtensionsTests
             Email = "test@example.com",
             DisplayName = "F1Fan",
             FirstName = "   ",
-            LastName = "   "
+            LastName = "   ",
         };
 
         // Act
@@ -284,7 +284,7 @@ public class UserProfileExtensionsTests
             Email = "test@example.com",
             DisplayName = "CoolRacer99",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
         };
 
         // Act
@@ -304,7 +304,7 @@ public class UserProfileExtensionsTests
             Email = "test@example.com",
             DisplayName = "CoolRacer99",
             FirstName = "John",
-            LastName = null
+            LastName = null,
         };
 
         // Act
@@ -324,7 +324,7 @@ public class UserProfileExtensionsTests
             Email = "test@example.com",
             DisplayName = null,
             FirstName = null,
-            LastName = null
+            LastName = null,
         };
 
         // Act
@@ -344,7 +344,7 @@ public class UserProfileExtensionsTests
             Email = "test@example.com",
             DisplayName = "   ",
             FirstName = null,
-            LastName = null
+            LastName = null,
         };
 
         // Act

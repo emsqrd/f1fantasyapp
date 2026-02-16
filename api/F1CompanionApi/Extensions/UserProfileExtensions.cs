@@ -13,10 +13,12 @@ public static class UserProfileExtensions
     /// <returns>Full name, DisplayName, or empty string if all values are null/whitespace</returns>
     public static string GetFullName(this UserProfile profile)
     {
-        var fullName = string.Join(" ",
+        var fullName = string.Join(
+            " ",
             from s in new[] { profile.FirstName, profile.LastName }
             where s != null && !string.IsNullOrWhiteSpace(s)
-            select s.Trim());
+            select s.Trim()
+        );
 
         return !string.IsNullOrWhiteSpace(fullName)
             ? fullName

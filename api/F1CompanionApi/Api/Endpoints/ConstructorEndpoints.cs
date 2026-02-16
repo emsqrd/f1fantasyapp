@@ -27,8 +27,9 @@ public static class ConstructorEndpoints
 
     private static async Task<IResult> GetConstructorsAsync(
         IConstructorService constructorService,
-        [FromQuery][Description("Filter to active constructors only")] bool? activeOnly,
-        [FromServices] ILogger logger)
+        [FromQuery] [Description("Filter to active constructors only")] bool? activeOnly,
+        [FromServices] ILogger logger
+    )
     {
         logger.LogDebug("Fetching all constructors");
 
@@ -40,7 +41,8 @@ public static class ConstructorEndpoints
     private static async Task<IResult> GetConstructorByIdAsync(
         IConstructorService constructorService,
         int id,
-        [FromServices] ILogger logger)
+        [FromServices] ILogger logger
+    )
     {
         logger.LogDebug("Fetching Constructor {ConstructorId}", id);
 
@@ -58,5 +60,4 @@ public static class ConstructorEndpoints
 
         return Results.Ok(constructor);
     }
-
 }

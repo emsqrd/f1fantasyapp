@@ -1,8 +1,6 @@
 using System.Text;
-
 using F1CompanionApi.Data;
 using F1CompanionApi.Domain.Services;
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -26,7 +24,10 @@ public static class ServiceExtensions
 
         // Register non-generic ILogger for endpoints (creates logger with "F1CompanionApi.Api.Endpoints" category)
         builder.Services.AddSingleton(serviceProvider =>
-            serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("F1CompanionApi.Api.Endpoints"));
+            serviceProvider
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("F1CompanionApi.Api.Endpoints")
+        );
 
         builder.Services.AddServices(builder.Configuration);
         builder.Services.AddDbContext(builder.Configuration);

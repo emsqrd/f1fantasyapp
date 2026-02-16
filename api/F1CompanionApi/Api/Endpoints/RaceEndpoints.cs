@@ -1,7 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-
 using F1CompanionApi.Domain.Services;
-
 using Microsoft.AspNetCore.Mvc;
 
 namespace F1CompanionApi.Api.Endpoints;
@@ -11,15 +9,12 @@ public static class RaceEndpoints
     [ExcludeFromCodeCoverage]
     public static IEndpointRouteBuilder MapRaceEndpoints(this IEndpointRouteBuilder app)
     {
-        var racesGroup = app.MapGroup("/races")
-            .RequireAuthorization()
-            .WithOpenApi();
+        var racesGroup = app.MapGroup("/races").RequireAuthorization().WithOpenApi();
 
-        racesGroup.MapGet("/", GetRacesAsync)
-            .WithName("GetRaces")
-            .WithDescription("Get all races");
+        racesGroup.MapGet("/", GetRacesAsync).WithName("GetRaces").WithDescription("Get all races");
 
-        racesGroup.MapGet("/{id}", GetRaceByIdAsync)
+        racesGroup
+            .MapGet("/{id}", GetRaceByIdAsync)
             .WithName("GetRaceById")
             .WithDescription("Get a race by ID");
 

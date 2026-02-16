@@ -34,9 +34,7 @@ public class ConstructorService : IConstructorService
             query = query.Where(constructor => constructor.IsActive == activeOnly);
         }
 
-        var constructors = await query
-            .OrderBy(x => x.Name)
-            .ToListAsync();
+        var constructors = await query.OrderBy(x => x.Name).ToListAsync();
 
         _logger.LogDebug("Retrieved {ConstructorCount} constructors", constructors.Count);
 
@@ -54,5 +52,4 @@ public class ConstructorService : IConstructorService
 
         return constructor?.ToResponseModel();
     }
-
 }

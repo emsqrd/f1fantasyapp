@@ -39,15 +39,15 @@ public class ConstructorServiceTests
                 Name = "McLaren",
                 FullName = "McLaren F1 Team",
                 CountryAbbreviation = "GBR",
-                IsActive = true
+                IsActive = true,
             },
             new Constructor
             {
                 Name = "Williams",
                 FullName = "Williams Racing",
                 CountryAbbreviation = "GBR",
-                IsActive = false
-            }
+                IsActive = false,
+            },
         };
 
         context.Constructors.AddRange(constructors);
@@ -75,15 +75,15 @@ public class ConstructorServiceTests
                 Name = "McLaren",
                 FullName = "McLaren F1 Team",
                 CountryAbbreviation = "GBR",
-                IsActive = true
+                IsActive = true,
             },
             new Constructor
             {
                 Name = "Williams",
                 FullName = "Williams Racing",
                 CountryAbbreviation = "GBR",
-                IsActive = false
-            }
+                IsActive = false,
+            },
         };
 
         context.Constructors.AddRange(constructors);
@@ -112,15 +112,15 @@ public class ConstructorServiceTests
                 Name = "Red Bull Racing",
                 FullName = "Oracle Red Bull Racing",
                 CountryAbbreviation = "AUT",
-                IsActive = true
+                IsActive = true,
             },
             new Constructor
             {
                 Name = "Ferrari",
                 FullName = "Scuderia Ferrari",
                 CountryAbbreviation = "ITA",
-                IsActive = true
-            }
+                IsActive = true,
+            },
         };
 
         context.Constructors.AddRange(constructors);
@@ -147,7 +147,7 @@ public class ConstructorServiceTests
             Name = "McLaren",
             FullName = "McLaren F1 Team",
             CountryAbbreviation = "GBR",
-            IsActive = true
+            IsActive = true,
         };
 
         context.Constructors.Add(constructor);
