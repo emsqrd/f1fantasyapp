@@ -13,6 +13,7 @@ public static class TeamConstructorResponseMapper
             Id = teamConstructor.Constructor.Id,
             Name = teamConstructor.Constructor.Name,
             FullName = teamConstructor.Constructor.FullName,
+            Abbreviation = teamConstructor.Constructor.Abbreviation,
             CountryAbbreviation = teamConstructor.Constructor.CountryAbbreviation,
             IsActive = teamConstructor.Constructor.IsActive,
         };

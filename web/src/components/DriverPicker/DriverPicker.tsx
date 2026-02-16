@@ -63,7 +63,7 @@ export function DriverPicker({ activeDrivers, teamDrivers, readOnly }: DriverPic
           <InlineError message={error} />
         </div>
       )}
-      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2 sm:grid-rows-2">
         {displayLineup.map((driver, idx) => (
           <DriverCard
             key={idx}

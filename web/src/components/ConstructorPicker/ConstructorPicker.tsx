@@ -67,7 +67,7 @@ export function ConstructorPicker({
           <InlineError message={error} />
         </div>
       )}
-      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2 sm:grid-rows-2">
         {displayLineup.map((constructor, idx) => (
           <ConstructorCard
             key={idx}
