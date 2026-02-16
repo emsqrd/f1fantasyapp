@@ -7,7 +7,8 @@ public static class SeasonResponseMapper
 {
     public static IEnumerable<SeasonResponse> ToResponseModel(
         this IEnumerable<Season> seasons,
-        int? currentSeasonId)
+        int? currentSeasonId
+    )
     {
         return seasons.Select(s => s.ToResponseModel(currentSeasonId));
     }

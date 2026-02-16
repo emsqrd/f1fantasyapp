@@ -34,10 +34,9 @@ public class RaceServiceTests
             Id = seasonId,
             Year = 2024,
             StartDate = DateTime.UtcNow.AddMonths(-3),
-            EndDate = DateTime.UtcNow.AddMonths(3)
+            EndDate = DateTime.UtcNow.AddMonths(3),
         };
-        _mockSeasonService.Setup(s => s.GetCurrentSeasonAsync())
-            .ReturnsAsync(currentSeason);
+        _mockSeasonService.Setup(s => s.GetCurrentSeasonAsync()).ReturnsAsync(currentSeason);
     }
 
     #region GetRacesAsync Tests
@@ -60,7 +59,7 @@ public class RaceServiceTests
                 Location = "Sakhir",
                 Circuit = "Bahrain International Circuit",
                 Country = "Bahrain",
-                RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc)
+                RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
             new Race
             {
@@ -70,7 +69,7 @@ public class RaceServiceTests
                 Location = "Jeddah",
                 Circuit = "Jeddah Corniche Circuit",
                 Country = "Saudi Arabia",
-                RaceDate = new DateTime(2024, 3, 9, 17, 0, 0, DateTimeKind.Utc)
+                RaceDate = new DateTime(2024, 3, 9, 17, 0, 0, DateTimeKind.Utc),
             },
             new Race
             {
@@ -80,8 +79,8 @@ public class RaceServiceTests
                 Location = "Melbourne",
                 Circuit = "Albert Park Circuit",
                 Country = "Australia",
-                RaceDate = new DateTime(2024, 3, 24, 5, 0, 0, DateTimeKind.Utc)
-            }
+                RaceDate = new DateTime(2024, 3, 24, 5, 0, 0, DateTimeKind.Utc),
+            },
         };
 
         context.Races.AddRange(races);
@@ -129,8 +128,7 @@ public class RaceServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        _mockSeasonService.Setup(s => s.GetCurrentSeasonAsync())
-            .ReturnsAsync((Season?)null);
+        _mockSeasonService.Setup(s => s.GetCurrentSeasonAsync()).ReturnsAsync((Season?)null);
         var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
 
         var races = new[]
@@ -143,8 +141,8 @@ public class RaceServiceTests
                 Location = "Sakhir",
                 Circuit = "Bahrain International Circuit",
                 Country = "Bahrain",
-                RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc)
-            }
+                RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
+            },
         };
 
         context.Races.AddRange(races);
@@ -192,7 +190,7 @@ public class RaceServiceTests
                 Location = "Location 1",
                 Circuit = "Circuit 1",
                 Country = "Country 1",
-                RaceDate = new DateTime(2023, 3, 2, 15, 0, 0, DateTimeKind.Utc)
+                RaceDate = new DateTime(2023, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
             new Race
             {
@@ -202,7 +200,7 @@ public class RaceServiceTests
                 Location = "Location 2",
                 Circuit = "Circuit 2",
                 Country = "Country 2",
-                RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc)
+                RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
             new Race
             {
@@ -212,8 +210,8 @@ public class RaceServiceTests
                 Location = "Location 3",
                 Circuit = "Circuit 3",
                 Country = "Country 3",
-                RaceDate = new DateTime(2024, 3, 9, 17, 0, 0, DateTimeKind.Utc)
-            }
+                RaceDate = new DateTime(2024, 3, 9, 17, 0, 0, DateTimeKind.Utc),
+            },
         };
 
         context.Races.AddRange(races);
@@ -246,7 +244,7 @@ public class RaceServiceTests
                 Location = "Location 1",
                 Circuit = "Circuit 1",
                 Country = "Country 1",
-                RaceDate = new DateTime(2023, 3, 2, 15, 0, 0, DateTimeKind.Utc)
+                RaceDate = new DateTime(2023, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
             new Race
             {
@@ -256,8 +254,8 @@ public class RaceServiceTests
                 Location = "Location 2",
                 Circuit = "Circuit 2",
                 Country = "Country 2",
-                RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc)
-            }
+                RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
+            },
         };
 
         context.Races.AddRange(races);
@@ -291,7 +289,7 @@ public class RaceServiceTests
                 Location = "Melbourne",
                 Circuit = "Albert Park Circuit",
                 Country = "Australia",
-                RaceDate = new DateTime(2024, 3, 24, 5, 0, 0, DateTimeKind.Utc)
+                RaceDate = new DateTime(2024, 3, 24, 5, 0, 0, DateTimeKind.Utc),
             },
             new Race
             {
@@ -301,7 +299,7 @@ public class RaceServiceTests
                 Location = "Sakhir",
                 Circuit = "Bahrain International Circuit",
                 Country = "Bahrain",
-                RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc)
+                RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
             new Race
             {
@@ -311,8 +309,8 @@ public class RaceServiceTests
                 Location = "Jeddah",
                 Circuit = "Jeddah Corniche Circuit",
                 Country = "Saudi Arabia",
-                RaceDate = new DateTime(2024, 3, 9, 17, 0, 0, DateTimeKind.Utc)
-            }
+                RaceDate = new DateTime(2024, 3, 9, 17, 0, 0, DateTimeKind.Utc),
+            },
         };
 
         context.Races.AddRange(races);
@@ -347,7 +345,7 @@ public class RaceServiceTests
                 Location = "Past Location",
                 Circuit = "Past Circuit",
                 Country = "Past Country",
-                RaceDate = now.AddDays(-10)
+                RaceDate = now.AddDays(-10),
             },
             new Race
             {
@@ -357,7 +355,7 @@ public class RaceServiceTests
                 Location = "Current Location",
                 Circuit = "Current Circuit",
                 Country = "Current Country",
-                RaceDate = now.AddDays(5)
+                RaceDate = now.AddDays(5),
             },
             new Race
             {
@@ -367,8 +365,8 @@ public class RaceServiceTests
                 Location = "Future Location",
                 Circuit = "Future Circuit",
                 Country = "Future Country",
-                RaceDate = now.AddDays(15)
-            }
+                RaceDate = now.AddDays(15),
+            },
         };
 
         context.Races.AddRange(races);
@@ -380,7 +378,7 @@ public class RaceServiceTests
         // Assert
         var raceList = result.ToList();
         Assert.False(raceList[0].IsCurrent); // Past race
-        Assert.True(raceList[1].IsCurrent);  // First upcoming race
+        Assert.True(raceList[1].IsCurrent); // First upcoming race
         Assert.False(raceList[2].IsCurrent); // Future race
     }
 
@@ -403,7 +401,7 @@ public class RaceServiceTests
                 Location = "Location 1",
                 Circuit = "Circuit 1",
                 Country = "Country 1",
-                RaceDate = now.AddDays(-20)
+                RaceDate = now.AddDays(-20),
             },
             new Race
             {
@@ -413,8 +411,8 @@ public class RaceServiceTests
                 Location = "Location 2",
                 Circuit = "Circuit 2",
                 Country = "Country 2",
-                RaceDate = now.AddDays(-10)
-            }
+                RaceDate = now.AddDays(-10),
+            },
         };
 
         context.Races.AddRange(races);
@@ -447,7 +445,7 @@ public class RaceServiceTests
                 Location = "Location 1",
                 Circuit = "Circuit 1",
                 Country = "Country 1",
-                RaceDate = now.AddDays(5)
+                RaceDate = now.AddDays(5),
             },
             new Race
             {
@@ -457,8 +455,8 @@ public class RaceServiceTests
                 Location = "Location 2",
                 Circuit = "Circuit 2",
                 Country = "Country 2",
-                RaceDate = now.AddDays(12)
-            }
+                RaceDate = now.AddDays(12),
+            },
         };
 
         context.Races.AddRange(races);
@@ -469,7 +467,7 @@ public class RaceServiceTests
 
         // Assert
         var raceList = result.ToList();
-        Assert.True(raceList[0].IsCurrent);  // First upcoming
+        Assert.True(raceList[0].IsCurrent); // First upcoming
         Assert.False(raceList[1].IsCurrent); // Second upcoming
     }
 
@@ -490,7 +488,7 @@ public class RaceServiceTests
             Location = "Current Location",
             Circuit = "Current Circuit",
             Country = "Current Country",
-            RaceDate = now.AddSeconds(1) // Add 1 second buffer to account for test execution time
+            RaceDate = now.AddSeconds(1), // Add 1 second buffer to account for test execution time
         };
 
         context.Races.Add(race);
@@ -524,7 +522,7 @@ public class RaceServiceTests
             Circuit = "Bahrain International Circuit",
             Country = "Bahrain",
             RaceDate = raceDate,
-            LockDeadline = lockDeadline
+            LockDeadline = lockDeadline,
         };
 
         context.Races.Add(race);
@@ -565,7 +563,7 @@ public class RaceServiceTests
             Location = "Sakhir",
             Circuit = "Bahrain International Circuit",
             Country = "Bahrain",
-            RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc)
+            RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
         };
 
         context.Races.Add(race);
@@ -626,7 +624,7 @@ public class RaceServiceTests
                 Location = "Location",
                 Circuit = "Circuit",
                 Country = "Country",
-                RaceDate = now.AddDays(-10)
+                RaceDate = now.AddDays(-10),
             },
             new Race
             {
@@ -636,7 +634,7 @@ public class RaceServiceTests
                 Location = "Location",
                 Circuit = "Circuit",
                 Country = "Country",
-                RaceDate = now.AddDays(5)
+                RaceDate = now.AddDays(5),
             },
             new Race
             {
@@ -646,8 +644,8 @@ public class RaceServiceTests
                 Location = "Location",
                 Circuit = "Circuit",
                 Country = "Country",
-                RaceDate = now.AddDays(15)
-            }
+                RaceDate = now.AddDays(15),
+            },
         };
 
         context.Races.AddRange(races);
@@ -681,7 +679,7 @@ public class RaceServiceTests
                 Location = "Location",
                 Circuit = "Circuit",
                 Country = "Country",
-                RaceDate = now.AddDays(5)
+                RaceDate = now.AddDays(5),
             },
             new Race
             {
@@ -691,8 +689,8 @@ public class RaceServiceTests
                 Location = "Location",
                 Circuit = "Circuit",
                 Country = "Country",
-                RaceDate = now.AddDays(15)
-            }
+                RaceDate = now.AddDays(15),
+            },
         };
 
         context.Races.AddRange(races);
@@ -724,7 +722,7 @@ public class RaceServiceTests
             Location = "Location",
             Circuit = "Circuit",
             Country = "Country",
-            RaceDate = now.AddDays(-5)
+            RaceDate = now.AddDays(-5),
         };
 
         context.Races.Add(race);
@@ -754,7 +752,7 @@ public class RaceServiceTests
             Location = "Location",
             Circuit = "Circuit",
             Country = "Country",
-            RaceDate = now.AddSeconds(1) // Add 1 second buffer to account for test execution time
+            RaceDate = now.AddSeconds(1), // Add 1 second buffer to account for test execution time
         };
 
         context.Races.Add(race);
@@ -787,7 +785,7 @@ public class RaceServiceTests
             Circuit = "Bahrain International Circuit",
             Country = "Bahrain",
             RaceDate = raceDate,
-            LockDeadline = lockDeadline
+            LockDeadline = lockDeadline,
         };
 
         context.Races.Add(race);

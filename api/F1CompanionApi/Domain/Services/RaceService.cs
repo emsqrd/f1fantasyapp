@@ -1,7 +1,6 @@
 using F1CompanionApi.Api.Mappers;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
-
 using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Domain.Services;
@@ -21,7 +20,8 @@ public class RaceService : IRaceService
     public RaceService(
         ApplicationDbContext dbContext,
         ILogger<RaceService> logger,
-        ISeasonService seasonService)
+        ISeasonService seasonService
+    )
     {
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(logger);
@@ -49,8 +49,8 @@ public class RaceService : IRaceService
             }
         }
 
-        var races = await _dbContext.Races
-            .Where(r => r.SeasonId == seasonId)
+        var races = await _dbContext
+            .Races.Where(r => r.SeasonId == seasonId)
             .OrderBy(r => r.Round)
             .ToListAsync();
 
@@ -68,11 +68,12 @@ public class RaceService : IRaceService
 
         var race = await _dbContext.Races.FindAsync(id);
 
-        if (race is null) return null;
+        if (race is null)
+            return null;
 
         var now = DateTime.UtcNow;
-        var currentRaceId = await _dbContext.Races
-            .Where(r => r.SeasonId == race.SeasonId && r.RaceDate >= now)
+        var currentRaceId = await _dbContext
+            .Races.Where(r => r.SeasonId == race.SeasonId && r.RaceDate >= now)
             .OrderBy(r => r.Round)
             .Select(r => (int?)r.Id)
             .FirstOrDefaultAsync();

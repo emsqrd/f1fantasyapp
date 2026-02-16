@@ -1,11 +1,9 @@
 using F1CompanionApi.Api.Endpoints;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Domain.Services;
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
-
 using Moq;
 
 namespace F1CompanionApi.UnitTests.Api.Endpoints;
@@ -33,7 +31,7 @@ public class ConstructorEndpointsTests
                 Name = "McLaren",
                 FullName = "McLaren F1 Team",
                 CountryAbbreviation = "GBR",
-                IsActive = true
+                IsActive = true,
             },
             new ConstructorResponse
             {
@@ -41,12 +39,11 @@ public class ConstructorEndpointsTests
                 Name = "Ferrari",
                 FullName = "Scuderia Ferrari",
                 CountryAbbreviation = "ITA",
-                IsActive = true
-            }
+                IsActive = true,
+            },
         };
 
-        _mockConstructorService.Setup(x => x.GetConstructorsAsync(null))
-            .ReturnsAsync(constructors);
+        _mockConstructorService.Setup(x => x.GetConstructorsAsync(null)).ReturnsAsync(constructors);
 
         // Act
         var result = await InvokeGetConstructorsAsync(null);
@@ -69,12 +66,11 @@ public class ConstructorEndpointsTests
                 Name = "McLaren",
                 FullName = "McLaren F1 Team",
                 CountryAbbreviation = "GBR",
-                IsActive = true
-            }
+                IsActive = true,
+            },
         };
 
-        _mockConstructorService.Setup(x => x.GetConstructorsAsync(true))
-            .ReturnsAsync(constructors);
+        _mockConstructorService.Setup(x => x.GetConstructorsAsync(true)).ReturnsAsync(constructors);
 
         // Act
         var result = await InvokeGetConstructorsAsync(true);
@@ -96,11 +92,10 @@ public class ConstructorEndpointsTests
             Name = "McLaren",
             FullName = "McLaren F1 Team",
             CountryAbbreviation = "GBR",
-            IsActive = true
+            IsActive = true,
         };
 
-        _mockConstructorService.Setup(x => x.GetConstructorByIdAsync(1))
-            .ReturnsAsync(constructor);
+        _mockConstructorService.Setup(x => x.GetConstructorByIdAsync(1)).ReturnsAsync(constructor);
 
         // Act
         var result = await InvokeGetConstructorByIdAsync(1);
@@ -117,7 +112,8 @@ public class ConstructorEndpointsTests
     public async Task GetConstructorByIdAsync_NonExistentConstructor_ReturnsProblem()
     {
         // Arrange
-        _mockConstructorService.Setup(x => x.GetConstructorByIdAsync(999))
+        _mockConstructorService
+            .Setup(x => x.GetConstructorByIdAsync(999))
             .ReturnsAsync((ConstructorResponse?)null);
 
         // Act
@@ -135,7 +131,8 @@ public class ConstructorEndpointsTests
         // Arrange
         var emptyConstructors = new List<ConstructorResponse>();
 
-        _mockConstructorService.Setup(x => x.GetConstructorsAsync(null))
+        _mockConstructorService
+            .Setup(x => x.GetConstructorsAsync(null))
             .ReturnsAsync(emptyConstructors);
 
         // Act
@@ -159,7 +156,7 @@ public class ConstructorEndpointsTests
                 Name = "McLaren",
                 FullName = "McLaren F1 Team",
                 CountryAbbreviation = "GBR",
-                IsActive = true
+                IsActive = true,
             },
             new ConstructorResponse
             {
@@ -167,11 +164,12 @@ public class ConstructorEndpointsTests
                 Name = "Williams",
                 FullName = "Williams Racing",
                 CountryAbbreviation = "GBR",
-                IsActive = false
-            }
+                IsActive = false,
+            },
         };
 
-        _mockConstructorService.Setup(x => x.GetConstructorsAsync(false))
+        _mockConstructorService
+            .Setup(x => x.GetConstructorsAsync(false))
             .ReturnsAsync(constructors);
 
         // Act
@@ -190,7 +188,8 @@ public class ConstructorEndpointsTests
     public async Task GetConstructorByIdAsync_BoundaryValues_ReturnsProblem(int id)
     {
         // Arrange
-        _mockConstructorService.Setup(x => x.GetConstructorByIdAsync(id))
+        _mockConstructorService
+            .Setup(x => x.GetConstructorByIdAsync(id))
             .ReturnsAsync((ConstructorResponse?)null);
 
         // Act
@@ -212,11 +211,10 @@ public class ConstructorEndpointsTests
             Name = "Red Bull",
             FullName = "Oracle Red Bull Racing",
             CountryAbbreviation = "AUT",
-            IsActive = true
+            IsActive = true,
         };
 
-        _mockConstructorService.Setup(x => x.GetConstructorByIdAsync(1))
-            .ReturnsAsync(constructor);
+        _mockConstructorService.Setup(x => x.GetConstructorByIdAsync(1)).ReturnsAsync(constructor);
 
         // Act
         var result = await InvokeGetConstructorByIdAsync(1);
@@ -238,10 +236,12 @@ public class ConstructorEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            [_mockConstructorService.Object, activeOnly, _mockLogger.Object]
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    [_mockConstructorService.Object, activeOnly, _mockLogger.Object]
+                )!;
 
         return await task;
     }
@@ -253,10 +253,12 @@ public class ConstructorEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[] { _mockConstructorService.Object, id, _mockLogger.Object }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[] { _mockConstructorService.Object, id, _mockLogger.Object }
+                )!;
 
         return await task;
     }

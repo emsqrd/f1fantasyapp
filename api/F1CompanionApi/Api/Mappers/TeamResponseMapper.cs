@@ -25,14 +25,14 @@ public static class TeamResponseMapper
             Name = team.Name,
             OwnerId = team.UserId,
             OwnerName = team.Owner.GetFullName(),
-            Drivers = team.TeamDrivers
-                .OrderBy(teamDriver => teamDriver.SlotPosition)
+            Drivers = team
+                .TeamDrivers.OrderBy(teamDriver => teamDriver.SlotPosition)
                 .Select(teamDriver => teamDriver.ToResponseModel())
                 .ToList(),
-            Constructors = team.TeamConstructors
-                .OrderBy(teamConstructor => teamConstructor.SlotPosition)
+            Constructors = team
+                .TeamConstructors.OrderBy(teamConstructor => teamConstructor.SlotPosition)
                 .Select(teamConstructor => teamConstructor.ToResponseModel())
-                .ToList()
+                .ToList(),
         };
     }
 }

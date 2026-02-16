@@ -31,7 +31,8 @@ public class UserProfileService : IUserProfileService
     public UserProfileService(
         ApplicationDbContext dbContext,
         ISupabaseAuthService authService,
-        ILogger<UserProfileService> logger)
+        ILogger<UserProfileService> logger
+    )
     {
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(authService);
@@ -46,9 +47,8 @@ public class UserProfileService : IUserProfileService
     {
         _logger.LogDebug("Fetching user profile for account {AccountId}", accountId);
         var profile = await _dbContext
-            .UserProfiles
-                .Include(x => x.Account)
-                .Include(x => x.Team)
+            .UserProfiles.Include(x => x.Account)
+            .Include(x => x.Team)
             .FirstOrDefaultAsync(x => x.AccountId == accountId);
 
         if (profile is null)
@@ -92,8 +92,11 @@ public class UserProfileService : IUserProfileService
         string? displayName = null
     )
     {
-        _logger.LogInformation("Creating user profile for account {AccountId} with email {Email}",
-            accountId, email);
+        _logger.LogInformation(
+            "Creating user profile for account {AccountId} with email {Email}",
+            accountId,
+            email
+        );
 
         using var transaction = await _dbContext.Database.BeginTransactionAsync();
 
@@ -125,15 +128,21 @@ public class UserProfileService : IUserProfileService
             await _dbContext.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            _logger.LogInformation("Successfully created user profile {ProfileId} for account {AccountId}",
-                userProfile.Id, accountId);
+            _logger.LogInformation(
+                "Successfully created user profile {ProfileId} for account {AccountId}",
+                userProfile.Id,
+                accountId
+            );
 
             return userProfile.ToResponseModel();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create user profile for account {AccountId}. Transaction rolled back.",
-                accountId);
+            _logger.LogError(
+                ex,
+                "Failed to create user profile for account {AccountId}. Transaction rolled back.",
+                accountId
+            );
             await transaction.RollbackAsync();
             throw;
         }
@@ -145,14 +154,16 @@ public class UserProfileService : IUserProfileService
     {
         _logger.LogDebug("Updating user profile {ProfileId}", updateUserProfileRequest.Id);
 
-        var existingUserProfile = await _dbContext.UserProfiles
-            .Include(x => x.Team)
+        var existingUserProfile = await _dbContext
+            .UserProfiles.Include(x => x.Team)
             .FirstOrDefaultAsync(x => x.Id == updateUserProfileRequest.Id);
 
         if (existingUserProfile is null)
         {
-            _logger.LogError("User profile {ProfileId} not found when attempting update",
-                updateUserProfileRequest.Id);
+            _logger.LogError(
+                "User profile {ProfileId} not found when attempting update",
+                updateUserProfileRequest.Id
+            );
             throw new KeyNotFoundException($"User with ID {updateUserProfileRequest.Id} not found");
         }
 
@@ -175,7 +186,10 @@ public class UserProfileService : IUserProfileService
 
         await _dbContext.SaveChangesAsync();
 
-        _logger.LogInformation("Successfully updated user profile {ProfileId}", existingUserProfile.Id);
+        _logger.LogInformation(
+            "Successfully updated user profile {ProfileId}",
+            existingUserProfile.Id
+        );
 
         return existingUserProfile.ToResponseModel();
     }

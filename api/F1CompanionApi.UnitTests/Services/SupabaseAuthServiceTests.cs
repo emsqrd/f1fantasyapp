@@ -19,12 +19,10 @@ public class SupabaseAuthServiceTests
     {
         var configData = new Dictionary<string, string?>
         {
-            { "Supabase:JwtSecret", TestJwtSecret }
+            { "Supabase:JwtSecret", TestJwtSecret },
         };
 
-        return new ConfigurationBuilder()
-            .AddInMemoryCollection(configData)
-            .Build();
+        return new ConfigurationBuilder().AddInMemoryCollection(configData).Build();
     }
 
     private static string GenerateValidToken(string userId, string email)
@@ -34,18 +32,17 @@ public class SupabaseAuthServiceTests
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(
-            [
+            Subject = new ClaimsIdentity([
                 new Claim(ClaimTypes.NameIdentifier, userId),
                 new Claim(ClaimTypes.Email, email),
-                new Claim("email", email)
+                new Claim("email", email),
             ]),
             Expires = DateTime.UtcNow.AddHours(1),
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(key),
                 SecurityAlgorithms.HmacSha256Signature
             ),
-            Audience = "authenticated"
+            Audience = "authenticated",
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
@@ -59,10 +56,9 @@ public class SupabaseAuthServiceTests
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(
-            [
+            Subject = new ClaimsIdentity([
                 new Claim(ClaimTypes.NameIdentifier, userId),
-                new Claim(ClaimTypes.Email, email)
+                new Claim(ClaimTypes.Email, email),
             ]),
             NotBefore = DateTime.UtcNow.AddHours(-2),
             Expires = DateTime.UtcNow.AddHours(-1),
@@ -70,7 +66,7 @@ public class SupabaseAuthServiceTests
                 new SymmetricSecurityKey(key),
                 SecurityAlgorithms.HmacSha256Signature
             ),
-            Audience = "authenticated"
+            Audience = "authenticated",
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
@@ -82,15 +78,13 @@ public class SupabaseAuthServiceTests
     {
         // Arrange
         var configData = new Dictionary<string, string?>();
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(configData)
-            .Build();
+        var config = new ConfigurationBuilder().AddInMemoryCollection(configData).Build();
 
         var httpContextAccessor = new Mock<IHttpContextAccessor>();
 
         // Act & Assert
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => new SupabaseAuthService(config, httpContextAccessor.Object)
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            new SupabaseAuthService(config, httpContextAccessor.Object)
         );
         Assert.Contains("Supabase JWT secret not configured", exception.Message);
     }
@@ -102,9 +96,7 @@ public class SupabaseAuthServiceTests
         var config = CreateConfiguration();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(
-            () => new SupabaseAuthService(config, null!)
-        );
+        Assert.Throws<ArgumentNullException>(() => new SupabaseAuthService(config, null!));
     }
 
     [Fact]
@@ -156,16 +148,13 @@ public class SupabaseAuthServiceTests
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(
-            [
-                new Claim(ClaimTypes.NameIdentifier, TestUserId)
-            ]),
+            Subject = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, TestUserId)]),
             Expires = DateTime.UtcNow.AddHours(1),
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(wrongKey),
                 SecurityAlgorithms.HmacSha256Signature
             ),
-            Audience = "authenticated"
+            Audience = "authenticated",
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
@@ -206,16 +195,13 @@ public class SupabaseAuthServiceTests
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(
-            [
-                new Claim(ClaimTypes.NameIdentifier, TestUserId)
-            ]),
+            Subject = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, TestUserId)]),
             Expires = DateTime.UtcNow.AddHours(1),
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(key),
                 SecurityAlgorithms.HmacSha256Signature
             ),
-            Audience = "wrong-audience"
+            Audience = "wrong-audience",
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
@@ -236,10 +222,7 @@ public class SupabaseAuthServiceTests
         var httpContextAccessor = new Mock<IHttpContextAccessor>();
         var httpContext = new DefaultHttpContext();
 
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, TestUserId)
-        };
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, TestUserId) };
         var identity = new ClaimsIdentity(claims, "TestAuth");
         httpContext.User = new ClaimsPrincipal(identity);
 
@@ -302,10 +285,7 @@ public class SupabaseAuthServiceTests
         var httpContextAccessor = new Mock<IHttpContextAccessor>();
         var httpContext = new DefaultHttpContext();
 
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, TestUserId)
-        };
+        var claims = new[] { new Claim(ClaimTypes.NameIdentifier, TestUserId) };
         var identity = new ClaimsIdentity(claims, "TestAuth");
         httpContext.User = new ClaimsPrincipal(identity);
 
@@ -337,9 +317,7 @@ public class SupabaseAuthServiceTests
         var service = new SupabaseAuthService(config, httpContextAccessor.Object);
 
         // Act & Assert
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => service.GetRequiredUserId()
-        );
+        var exception = Assert.Throws<InvalidOperationException>(() => service.GetRequiredUserId());
         Assert.Contains("User ID not found", exception.Message);
     }
 
@@ -351,10 +329,7 @@ public class SupabaseAuthServiceTests
         var httpContextAccessor = new Mock<IHttpContextAccessor>();
         var httpContext = new DefaultHttpContext();
 
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.Email, TestUserEmail)
-        };
+        var claims = new[] { new Claim(ClaimTypes.Email, TestUserEmail) };
         var identity = new ClaimsIdentity(claims, "TestAuth");
         httpContext.User = new ClaimsPrincipal(identity);
 
@@ -377,10 +352,7 @@ public class SupabaseAuthServiceTests
         var httpContextAccessor = new Mock<IHttpContextAccessor>();
         var httpContext = new DefaultHttpContext();
 
-        var claims = new[]
-        {
-            new Claim("email", TestUserEmail)
-        };
+        var claims = new[] { new Claim("email", TestUserEmail) };
         var identity = new ClaimsIdentity(claims, "TestAuth");
         httpContext.User = new ClaimsPrincipal(identity);
 

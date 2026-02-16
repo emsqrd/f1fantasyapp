@@ -14,7 +14,7 @@ public static class TeamDriverResponseMapper
             FirstName = teamDriver.Driver.FirstName,
             LastName = teamDriver.Driver.LastName,
             Abbreviation = teamDriver.Driver.Abbreviation,
-            CountryAbbreviation = teamDriver.Driver.CountryAbbreviation
+            CountryAbbreviation = teamDriver.Driver.CountryAbbreviation,
         };
     }
 }

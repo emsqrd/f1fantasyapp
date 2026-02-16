@@ -2,7 +2,6 @@ using F1CompanionApi.Api.Mappers;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
-
 using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Domain.Services;
@@ -32,9 +31,7 @@ public class SeasonService : ISeasonService
     {
         _logger.LogDebug("Fetching all seasons");
 
-        var seasons = await _dbContext.Seasons
-            .OrderBy(s => s.Year)
-            .ToListAsync();
+        var seasons = await _dbContext.Seasons.OrderBy(s => s.Year).ToListAsync();
 
         _logger.LogDebug("Found {SeasonsCount} seasons", seasons.Count);
 
@@ -50,7 +47,8 @@ public class SeasonService : ISeasonService
 
         var season = await _dbContext.Seasons.FindAsync(id);
 
-        if (season is null) return null;
+        if (season is null)
+            return null;
 
         var currentSeason = await GetCurrentSeasonAsync();
         var currentSeasonId = currentSeason?.Id;
@@ -63,8 +61,9 @@ public class SeasonService : ISeasonService
         _logger.LogDebug("Fetching current season");
 
         var now = DateTime.UtcNow;
-        var currentSeason = await _dbContext.Seasons
-            .FirstOrDefaultAsync(s => now >= s.StartDate && now <= s.EndDate);
+        var currentSeason = await _dbContext.Seasons.FirstOrDefaultAsync(s =>
+            now >= s.StartDate && now <= s.EndDate
+        );
 
         if (currentSeason is not null)
         {

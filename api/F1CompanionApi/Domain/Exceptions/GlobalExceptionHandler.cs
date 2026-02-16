@@ -11,7 +11,8 @@ public class GlobalExceptionHandler : IExceptionHandler
 
     public GlobalExceptionHandler(
         ILogger<GlobalExceptionHandler> logger,
-        IProblemDetailsService problemDetailsService)
+        IProblemDetailsService problemDetailsService
+    )
     {
         ArgumentNullException.ThrowIfNull(logger, nameof(logger));
         ArgumentNullException.ThrowIfNull(problemDetailsService, nameof(problemDetailsService));
@@ -23,205 +24,239 @@ public class GlobalExceptionHandler : IExceptionHandler
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
         Exception exception,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         // Handle different exception types
         var (statusCode, title, detail) = exception switch
         {
             // Custom Domain Exceptions - Resource Not Found
-            LeagueNotFoundException ex =>
-                (StatusCodes.Status404NotFound,
-                 "League Not Found",
-                 ex.Message),
+            LeagueNotFoundException ex => (
+                StatusCodes.Status404NotFound,
+                "League Not Found",
+                ex.Message
+            ),
 
             // Custom Domain Exceptions - Authentication/Authorization
-            UserProfileNotFoundException _ =>
-                (StatusCodes.Status400BadRequest,
-                 "User Profile Required",
-                 "Please complete your registration before accessing this resource."),
+            UserProfileNotFoundException _ => (
+                StatusCodes.Status400BadRequest,
+                "User Profile Required",
+                "Please complete your registration before accessing this resource."
+            ),
 
-            TeamNotFoundException _ =>
-                (StatusCodes.Status400BadRequest,
-                 "Team Required",
-                 "Please create a team before creating a league."),
+            TeamNotFoundException _ => (
+                StatusCodes.Status400BadRequest,
+                "Team Required",
+                "Please create a team before creating a league."
+            ),
 
-            TeamOwnershipException _ =>
-                (StatusCodes.Status403Forbidden,
-                 "Permission Denied",
-                 "You do not have permission to modify this team."),
+            TeamOwnershipException _ => (
+                StatusCodes.Status403Forbidden,
+                "Permission Denied",
+                "You do not have permission to modify this team."
+            ),
 
-            LeagueIsPrivateException ex =>
-                (StatusCodes.Status403Forbidden,
-                 "Private League",
-                 ex.Message),
+            LeagueIsPrivateException ex => (
+                StatusCodes.Status403Forbidden,
+                "Private League",
+                ex.Message
+            ),
 
-            UnauthorizedAccessException ex =>
-                (StatusCodes.Status403Forbidden,
-                 "Forbidden",
-                 ex.Message),
+            UnauthorizedAccessException ex => (
+                StatusCodes.Status403Forbidden,
+                "Forbidden",
+                ex.Message
+            ),
 
             // Custom Domain Exceptions - Resource Conflicts
-            SlotOccupiedException ex =>
-                (StatusCodes.Status409Conflict,
-                 "Slot Already Occupied",
-                 ex.Message),
+            SlotOccupiedException ex => (
+                StatusCodes.Status409Conflict,
+                "Slot Already Occupied",
+                ex.Message
+            ),
 
-            DuplicateTeamException _ =>
-                (StatusCodes.Status409Conflict,
-                 "Duplicate Team",
-                 "You already have a team. Each user can only create one team."),
+            DuplicateTeamException _ => (
+                StatusCodes.Status409Conflict,
+                "Duplicate Team",
+                "You already have a team. Each user can only create one team."
+            ),
 
-            EntityAlreadyOnTeamException ex =>
-                (StatusCodes.Status409Conflict,
-                 "Entity Already on Team",
-                 ex.Message),
+            EntityAlreadyOnTeamException ex => (
+                StatusCodes.Status409Conflict,
+                "Entity Already on Team",
+                ex.Message
+            ),
 
-            AlreadyInLeagueException ex =>
-                (StatusCodes.Status409Conflict,
-                 "Already in League",
-                 "Your team has already joined this league"),
+            AlreadyInLeagueException ex => (
+                StatusCodes.Status409Conflict,
+                "Already in League",
+                "Your team has already joined this league"
+            ),
 
-            LeagueFullException ex =>
-                (StatusCodes.Status409Conflict,
-                 "League Full",
-                 ex.Message),
+            LeagueFullException ex => (StatusCodes.Status409Conflict, "League Full", ex.Message),
 
             // Custom Domain Exceptions - Validation Failures
-            TeamFullException ex =>
-                (StatusCodes.Status400BadRequest,
-                 "Team Full",
-                 ex.Message),
+            TeamFullException ex => (StatusCodes.Status400BadRequest, "Team Full", ex.Message),
 
-            InvalidSlotPositionException ex =>
-                (StatusCodes.Status400BadRequest,
-                 "Invalid Slot Position",
-                 ex.Message),
+            InvalidSlotPositionException ex => (
+                StatusCodes.Status400BadRequest,
+                "Invalid Slot Position",
+                ex.Message
+            ),
 
-            InvalidLeagueInviteTokenException ex =>
-                (StatusCodes.Status400BadRequest,
+            InvalidLeagueInviteTokenException ex => (
+                StatusCodes.Status400BadRequest,
                 "Invalid League Invite Token",
-                ex.Message),
+                ex.Message
+            ),
 
             // Standard .NET Exceptions (order matters: most specific first)
-            ArgumentNullException ex =>
-                (StatusCodes.Status400BadRequest,
-                 "Missing Required Value",
-                 ex.Message),
+            ArgumentNullException ex => (
+                StatusCodes.Status400BadRequest,
+                "Missing Required Value",
+                ex.Message
+            ),
 
-            ArgumentOutOfRangeException ex =>
-                (StatusCodes.Status400BadRequest,
-                 "Value Out of Range",
-                 ex.Message),
+            ArgumentOutOfRangeException ex => (
+                StatusCodes.Status400BadRequest,
+                "Value Out of Range",
+                ex.Message
+            ),
 
-            ArgumentException ex =>
-                (StatusCodes.Status400BadRequest,
-                 "Invalid Argument",
-                 ex.Message),
+            ArgumentException ex => (
+                StatusCodes.Status400BadRequest,
+                "Invalid Argument",
+                ex.Message
+            ),
 
             // Generic Authentication/Authorization (legacy - to be removed after migration)
-            InvalidOperationException ex when ex.Message.Contains("User profile not found") =>
-                (StatusCodes.Status400BadRequest,
-                 "User Profile Required",
-                 "Please complete your registration before accessing this resource."),
+            InvalidOperationException ex when ex.Message.Contains("User profile not found") => (
+                StatusCodes.Status400BadRequest,
+                "User Profile Required",
+                "Please complete your registration before accessing this resource."
+            ),
 
-            InvalidOperationException ex when ex.Message.Contains("User ID not found") =>
-                (StatusCodes.Status401Unauthorized,
-                 "Authentication Required",
-                 "Valid authentication token is required."),
+            InvalidOperationException ex when ex.Message.Contains("User ID not found") => (
+                StatusCodes.Status401Unauthorized,
+                "Authentication Required",
+                "Valid authentication token is required."
+            ),
 
             // Database errors - PostgreSQL
-            PostgresException pgEx =>
-                HandlePostgresException(pgEx),
+            PostgresException pgEx => HandlePostgresException(pgEx),
 
             // Database errors - EF Core
             DbUpdateException dbEx when dbEx.InnerException is PostgresException pgEx =>
                 HandlePostgresException(pgEx),
 
-            DbUpdateConcurrencyException =>
-                (StatusCodes.Status409Conflict,
-                 "Concurrency Conflict",
-                 "The data was modified by another user. Please refresh and try again."),
+            DbUpdateConcurrencyException => (
+                StatusCodes.Status409Conflict,
+                "Concurrency Conflict",
+                "The data was modified by another user. Please refresh and try again."
+            ),
 
             // Business logic violations (generic fallback)
-            InvalidOperationException ex =>
-                (StatusCodes.Status400BadRequest,
-                 "Invalid Operation",
-                 ex.Message),
+            InvalidOperationException ex => (
+                StatusCodes.Status400BadRequest,
+                "Invalid Operation",
+                ex.Message
+            ),
 
-            KeyNotFoundException ex =>
-                (StatusCodes.Status404NotFound,
-                 "Resource Not Found",
-                 ex.Message),
+            KeyNotFoundException ex => (
+                StatusCodes.Status404NotFound,
+                "Resource Not Found",
+                ex.Message
+            ),
 
             // Unexpected errors
-            _ =>
-                (StatusCodes.Status500InternalServerError,
-                 "Internal Server Error",
-                 "An unexpected error occurred. Please try again later.")
+            _ => (
+                StatusCodes.Status500InternalServerError,
+                "Internal Server Error",
+                "An unexpected error occurred. Please try again later."
+            ),
         };
 
         // Log with appropriate level
         if (statusCode >= 500)
         {
-            _logger.LogError(exception,
+            _logger.LogError(
+                exception,
                 "Unhandled exception: {Message}. Status: {StatusCode}",
-                exception.Message, statusCode);
+                exception.Message,
+                statusCode
+            );
         }
         else
         {
-            _logger.LogWarning(exception,
+            _logger.LogWarning(
+                exception,
                 "Client error: {Message}. Status: {StatusCode}",
-                exception.Message, statusCode);
+                exception.Message,
+                statusCode
+            );
         }
 
         // Write RFC 7807 Problem Details response
         httpContext.Response.StatusCode = statusCode;
 
-        await _problemDetailsService.WriteAsync(new ProblemDetailsContext
-        {
-            HttpContext = httpContext,
-            ProblemDetails =
+        await _problemDetailsService.WriteAsync(
+            new ProblemDetailsContext
             {
-                Status = statusCode,
-                Title = title,
-                Detail = detail,
-                Type = $"https://httpstatuses.com/{statusCode}",
-                Instance = httpContext.Request.Path
-            },
-            Exception = statusCode >= 500 ? exception : null
-        });
+                HttpContext = httpContext,
+                ProblemDetails =
+                {
+                    Status = statusCode,
+                    Title = title,
+                    Detail = detail,
+                    Type = $"https://httpstatuses.com/{statusCode}",
+                    Instance = httpContext.Request.Path,
+                },
+                Exception = statusCode >= 500 ? exception : null,
+            }
+        );
 
         return true;
     }
 
     private (int StatusCode, string Title, string Detail) HandlePostgresException(
-        PostgresException pgEx)
+        PostgresException pgEx
+    )
     {
         return pgEx.SqlState switch
         {
             // 42P01 - Undefined table (schema not migrated)
-            "42P01" => (StatusCodes.Status503ServiceUnavailable,
-                       "Service Configuration Error",
-                       "The service is not properly configured. Please contact support."),
+            "42P01" => (
+                StatusCodes.Status503ServiceUnavailable,
+                "Service Configuration Error",
+                "The service is not properly configured. Please contact support."
+            ),
 
             // 23505 - Unique violation
-            "23505" => (StatusCodes.Status409Conflict,
-                       "Duplicate Resource",
-                       "This resource already exists."),
+            "23505" => (
+                StatusCodes.Status409Conflict,
+                "Duplicate Resource",
+                "This resource already exists."
+            ),
 
             // 23503 - Foreign key violation
-            "23503" => (StatusCodes.Status400BadRequest,
-                       "Invalid Reference",
-                       "The referenced resource does not exist."),
+            "23503" => (
+                StatusCodes.Status400BadRequest,
+                "Invalid Reference",
+                "The referenced resource does not exist."
+            ),
 
             // 23502 - Not null violation
-            "23502" => (StatusCodes.Status400BadRequest,
-                       "Missing Required Field",
-                       "A required field is missing."),
+            "23502" => (
+                StatusCodes.Status400BadRequest,
+                "Missing Required Field",
+                "A required field is missing."
+            ),
 
-            _ => (StatusCodes.Status500InternalServerError,
-                 "Database Error",
-                 "A database error occurred. Please try again later.")
+            _ => (
+                StatusCodes.Status500InternalServerError,
+                "Database Error",
+                "A database error occurred. Please try again later."
+            ),
         };
     }
 }

@@ -1,10 +1,8 @@
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Services;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-
 using Moq;
 
 namespace F1CompanionApi.UnitTests.Services;
@@ -42,20 +40,20 @@ public class SeasonServiceTests
             {
                 Year = 2023,
                 StartDate = new DateTime(2023, 3, 5, 0, 0, 0, DateTimeKind.Utc),
-                EndDate = new DateTime(2023, 11, 26, 0, 0, 0, DateTimeKind.Utc)
+                EndDate = new DateTime(2023, 11, 26, 0, 0, 0, DateTimeKind.Utc),
             },
             new Season
             {
                 Year = 2024,
                 StartDate = new DateTime(2024, 3, 2, 0, 0, 0, DateTimeKind.Utc),
-                EndDate = new DateTime(2024, 12, 8, 0, 0, 0, DateTimeKind.Utc)
+                EndDate = new DateTime(2024, 12, 8, 0, 0, 0, DateTimeKind.Utc),
             },
             new Season
             {
                 Year = 2025,
                 StartDate = new DateTime(2025, 3, 16, 0, 0, 0, DateTimeKind.Utc),
-                EndDate = new DateTime(2025, 11, 30, 0, 0, 0, DateTimeKind.Utc)
-            }
+                EndDate = new DateTime(2025, 11, 30, 0, 0, 0, DateTimeKind.Utc),
+            },
         };
 
         context.Seasons.AddRange(seasons);
@@ -97,20 +95,20 @@ public class SeasonServiceTests
             {
                 Year = 2025,
                 StartDate = new DateTime(2025, 3, 16, 0, 0, 0, DateTimeKind.Utc),
-                EndDate = new DateTime(2025, 11, 30, 0, 0, 0, DateTimeKind.Utc)
+                EndDate = new DateTime(2025, 11, 30, 0, 0, 0, DateTimeKind.Utc),
             },
             new Season
             {
                 Year = 2023,
                 StartDate = new DateTime(2023, 3, 5, 0, 0, 0, DateTimeKind.Utc),
-                EndDate = new DateTime(2023, 11, 26, 0, 0, 0, DateTimeKind.Utc)
+                EndDate = new DateTime(2023, 11, 26, 0, 0, 0, DateTimeKind.Utc),
             },
             new Season
             {
                 Year = 2024,
                 StartDate = new DateTime(2024, 3, 2, 0, 0, 0, DateTimeKind.Utc),
-                EndDate = new DateTime(2024, 12, 8, 0, 0, 0, DateTimeKind.Utc)
-            }
+                EndDate = new DateTime(2024, 12, 8, 0, 0, 0, DateTimeKind.Utc),
+            },
         };
 
         context.Seasons.AddRange(seasons);
@@ -140,20 +138,20 @@ public class SeasonServiceTests
             {
                 Year = 2023,
                 StartDate = now.AddYears(-2),
-                EndDate = now.AddYears(-1)
+                EndDate = now.AddYears(-1),
             },
             new Season
             {
                 Year = 2024,
                 StartDate = now.AddMonths(-1),
-                EndDate = now.AddMonths(1)
+                EndDate = now.AddMonths(1),
             },
             new Season
             {
                 Year = 2025,
                 StartDate = now.AddYears(1),
-                EndDate = now.AddYears(2)
-            }
+                EndDate = now.AddYears(2),
+            },
         };
 
         context.Seasons.AddRange(seasons);
@@ -165,7 +163,7 @@ public class SeasonServiceTests
         // Assert
         var seasonList = result.ToList();
         Assert.False(seasonList[0].IsCurrent); // 2023
-        Assert.True(seasonList[1].IsCurrent);  // 2024 - current
+        Assert.True(seasonList[1].IsCurrent); // 2024 - current
         Assert.False(seasonList[2].IsCurrent); // 2025
     }
 
@@ -183,14 +181,14 @@ public class SeasonServiceTests
             {
                 Year = 2023,
                 StartDate = now.AddYears(-2),
-                EndDate = now.AddDays(-10)
+                EndDate = now.AddDays(-10),
             },
             new Season
             {
                 Year = 2024,
                 StartDate = now.AddDays(10),
-                EndDate = now.AddYears(1)
-            }
+                EndDate = now.AddYears(1),
+            },
         };
 
         context.Seasons.AddRange(seasons);
@@ -216,7 +214,7 @@ public class SeasonServiceTests
         {
             Year = 2024,
             StartDate = now,
-            EndDate = now.AddMonths(6)
+            EndDate = now.AddMonths(6),
         };
 
         context.Seasons.Add(season);
@@ -242,7 +240,7 @@ public class SeasonServiceTests
         {
             Year = 2024,
             StartDate = now.AddMonths(-6),
-            EndDate = now.AddSeconds(1) // Add 1 second buffer to account for test execution time
+            EndDate = now.AddSeconds(1), // Add 1 second buffer to account for test execution time
         };
 
         context.Seasons.Add(season);
@@ -270,7 +268,7 @@ public class SeasonServiceTests
         {
             Year = 2024,
             StartDate = startDate,
-            EndDate = endDate
+            EndDate = endDate,
         };
 
         context.Seasons.Add(season);
@@ -302,7 +300,7 @@ public class SeasonServiceTests
         {
             Year = 2024,
             StartDate = new DateTime(2024, 3, 2, 0, 0, 0, DateTimeKind.Utc),
-            EndDate = new DateTime(2024, 12, 8, 0, 0, 0, DateTimeKind.Utc)
+            EndDate = new DateTime(2024, 12, 8, 0, 0, 0, DateTimeKind.Utc),
         };
 
         context.Seasons.Add(season);
@@ -357,7 +355,7 @@ public class SeasonServiceTests
         {
             Year = 2024,
             StartDate = now.AddMonths(-3),
-            EndDate = now.AddMonths(3)
+            EndDate = now.AddMonths(3),
         };
 
         context.Seasons.Add(season);
@@ -383,7 +381,7 @@ public class SeasonServiceTests
         {
             Year = 2025,
             StartDate = now.AddMonths(3),
-            EndDate = now.AddMonths(9)
+            EndDate = now.AddMonths(9),
         };
 
         context.Seasons.Add(season);
@@ -409,7 +407,7 @@ public class SeasonServiceTests
         {
             Year = 2023,
             StartDate = now.AddMonths(-9),
-            EndDate = now.AddMonths(-3)
+            EndDate = now.AddMonths(-3),
         };
 
         context.Seasons.Add(season);
@@ -435,7 +433,7 @@ public class SeasonServiceTests
         {
             Year = 2024,
             StartDate = now,
-            EndDate = now.AddMonths(6)
+            EndDate = now.AddMonths(6),
         };
 
         context.Seasons.Add(season);
@@ -461,7 +459,7 @@ public class SeasonServiceTests
         {
             Year = 2024,
             StartDate = now.AddMonths(-6),
-            EndDate = now.AddSeconds(1) // Add 1 second buffer to account for test execution time
+            EndDate = now.AddSeconds(1), // Add 1 second buffer to account for test execution time
         };
 
         context.Seasons.Add(season);
@@ -489,7 +487,7 @@ public class SeasonServiceTests
         {
             Year = 2024,
             StartDate = startDate,
-            EndDate = endDate
+            EndDate = endDate,
         };
 
         context.Seasons.Add(season);
@@ -524,20 +522,20 @@ public class SeasonServiceTests
             {
                 Year = 2023,
                 StartDate = now.AddYears(-2),
-                EndDate = now.AddYears(-1)
+                EndDate = now.AddYears(-1),
             },
             new Season
             {
                 Year = 2024,
                 StartDate = now.AddMonths(-3),
-                EndDate = now.AddMonths(3)
+                EndDate = now.AddMonths(3),
             },
             new Season
             {
                 Year = 2025,
                 StartDate = now.AddYears(1),
-                EndDate = now.AddYears(2)
-            }
+                EndDate = now.AddYears(2),
+            },
         };
 
         context.Seasons.AddRange(seasons);
@@ -565,14 +563,14 @@ public class SeasonServiceTests
             {
                 Year = 2023,
                 StartDate = now.AddYears(-2),
-                EndDate = now.AddDays(-10)
+                EndDate = now.AddDays(-10),
             },
             new Season
             {
                 Year = 2024,
                 StartDate = now.AddDays(10),
-                EndDate = now.AddYears(1)
-            }
+                EndDate = now.AddYears(1),
+            },
         };
 
         context.Seasons.AddRange(seasons);
@@ -600,7 +598,7 @@ public class SeasonServiceTests
         {
             Year = 2024,
             StartDate = startDate,
-            EndDate = endDate
+            EndDate = endDate,
         };
 
         context.Seasons.Add(season);
@@ -631,14 +629,14 @@ public class SeasonServiceTests
             {
                 Year = 2024,
                 StartDate = now.AddMonths(-6),
-                EndDate = now.AddMonths(6)
+                EndDate = now.AddMonths(6),
             },
             new Season
             {
                 Year = 2025,
                 StartDate = now.AddMonths(-1),
-                EndDate = now.AddMonths(1)
-            }
+                EndDate = now.AddMonths(1),
+            },
         };
 
         context.Seasons.AddRange(seasons);

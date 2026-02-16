@@ -39,15 +39,12 @@ public class TeamServiceTests
             AccountId = "test-account",
             Email = "user@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
         };
         context.UserProfiles.Add(user);
         await context.SaveChangesAsync();
 
-        var request = new CreateTeamRequest
-        {
-            Name = "Test Team"
-        };
+        var request = new CreateTeamRequest { Name = "Test Team" };
 
         // Act
         var result = await service.CreateTeamAsync(request, user.Id);
@@ -70,15 +67,12 @@ public class TeamServiceTests
             AccountId = "test-account",
             Email = "user@test.com",
             FirstName = "Jane",
-            LastName = "Smith"
+            LastName = "Smith",
         };
         context.UserProfiles.Add(user);
         await context.SaveChangesAsync();
 
-        var request = new CreateTeamRequest
-        {
-            Name = "Persistent Team"
-        };
+        var request = new CreateTeamRequest { Name = "Persistent Team" };
 
         // Act
         await service.CreateTeamAsync(request, user.Id);
@@ -103,7 +97,7 @@ public class TeamServiceTests
             AccountId = "test-account",
             Email = "user@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
         };
         context.UserProfiles.Add(user);
         await context.SaveChangesAsync();
@@ -113,19 +107,16 @@ public class TeamServiceTests
             Name = "Existing Team",
             UserId = user.Id,
             CreatedBy = user.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Teams.Add(existingTeam);
         await context.SaveChangesAsync();
 
-        var request = new CreateTeamRequest
-        {
-            Name = "New Team"
-        };
+        var request = new CreateTeamRequest { Name = "New Team" };
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<DuplicateTeamException>(
-            () => service.CreateTeamAsync(request, user.Id)
+        var exception = await Assert.ThrowsAsync<DuplicateTeamException>(() =>
+            service.CreateTeamAsync(request, user.Id)
         );
         Assert.Contains(user.Id.ToString(), exception.Message);
         Assert.Contains(existingTeam.Id.ToString(), exception.Message);
@@ -138,14 +129,11 @@ public class TeamServiceTests
         using var context = CreateInMemoryContext();
         var service = new TeamService(context, _mockLogger.Object);
 
-        var request = new CreateTeamRequest
-        {
-            Name = "Test Team"
-        };
+        var request = new CreateTeamRequest { Name = "Test Team" };
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<UserProfileNotFoundException>(
-            () => service.CreateTeamAsync(request, 999)
+        var exception = await Assert.ThrowsAsync<UserProfileNotFoundException>(() =>
+            service.CreateTeamAsync(request, 999)
         );
         Assert.Contains("999", exception.Message);
     }
@@ -168,15 +156,12 @@ public class TeamServiceTests
             AccountId = "test-account",
             Email = "user@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
         };
         context.UserProfiles.Add(user);
         await context.SaveChangesAsync();
 
-        var request = new CreateTeamRequest
-        {
-            Name = inputName
-        };
+        var request = new CreateTeamRequest { Name = inputName };
 
         // Act
         var result = await service.CreateTeamAsync(request, user.Id);
@@ -201,7 +186,7 @@ public class TeamServiceTests
             AccountId = "test-account",
             Email = "user@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
         };
         context.UserProfiles.Add(user);
         await context.SaveChangesAsync();
@@ -211,7 +196,7 @@ public class TeamServiceTests
             Name = "Findable Team",
             UserId = user.Id,
             CreatedBy = user.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Teams.Add(team);
         await context.SaveChangesAsync();
@@ -238,7 +223,7 @@ public class TeamServiceTests
             AccountId = "test-account",
             Email = "user@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
         };
         context.UserProfiles.Add(user);
         await context.SaveChangesAsync();
@@ -276,7 +261,7 @@ public class TeamServiceTests
             AccountId = "test-account",
             Email = "user@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
         };
         context.UserProfiles.Add(user);
         await context.SaveChangesAsync();
@@ -288,8 +273,8 @@ public class TeamServiceTests
         var result = await service.CreateTeamAsync(request1, user.Id);
 
         // Act & Assert - second request fails
-        var exception = await Assert.ThrowsAsync<DuplicateTeamException>(
-            () => service.CreateTeamAsync(request2, user.Id)
+        var exception = await Assert.ThrowsAsync<DuplicateTeamException>(() =>
+            service.CreateTeamAsync(request2, user.Id)
         );
 
         Assert.Equal(user.Id, exception.UserId);
@@ -317,8 +302,9 @@ public class TeamServiceTests
         await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
 
         // Assert
-        var teamDriver = await context.TeamDrivers
-            .FirstOrDefaultAsync(td => td.TeamId == team.Id && td.DriverId == driver.Id);
+        var teamDriver = await context.TeamDrivers.FirstOrDefaultAsync(td =>
+            td.TeamId == team.Id && td.DriverId == driver.Id
+        );
 
         Assert.NotNull(teamDriver);
     }
@@ -333,8 +319,8 @@ public class TeamServiceTests
         var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.AddDriverToTeamAsync(999, driver.Id, 0, 1)
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.AddDriverToTeamAsync(999, driver.Id, 0, 1)
         );
         Assert.Equal("Team not found", exception.Message);
     }
@@ -352,8 +338,8 @@ public class TeamServiceTests
         var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<TeamOwnershipException>(
-            () => service.AddDriverToTeamAsync(team.Id, driver.Id, 0, otherUser.Id)
+        var exception = await Assert.ThrowsAsync<TeamOwnershipException>(() =>
+            service.AddDriverToTeamAsync(team.Id, driver.Id, 0, otherUser.Id)
         );
         Assert.Equal(team.Id, exception.TeamId);
         Assert.Equal(owner.Id, exception.OwnerId);
@@ -363,7 +349,9 @@ public class TeamServiceTests
     [Theory]
     [InlineData(-1)]
     [InlineData(5)]
-    public async Task AddDriverToTeamAsync_InvalidSlotPosition_ThrowsInvalidOperationException(int slotPosition)
+    public async Task AddDriverToTeamAsync_InvalidSlotPosition_ThrowsInvalidOperationException(
+        int slotPosition
+    )
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -374,8 +362,8 @@ public class TeamServiceTests
         var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidSlotPositionException>(
-            () => service.AddDriverToTeamAsync(team.Id, driver.Id, slotPosition, user.Id)
+        var exception = await Assert.ThrowsAsync<InvalidSlotPositionException>(() =>
+            service.AddDriverToTeamAsync(team.Id, driver.Id, slotPosition, user.Id)
         );
         Assert.Equal(slotPosition, exception.Position);
         Assert.Contains("drivers", exception.Message);
@@ -401,8 +389,8 @@ public class TeamServiceTests
         var newDriver = CreateTestDriver(context, "NEW", "New", "Driver");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<TeamFullException>(
-            () => service.AddDriverToTeamAsync(team.Id, newDriver.Id, 0, user.Id)
+        var exception = await Assert.ThrowsAsync<TeamFullException>(() =>
+            service.AddDriverToTeamAsync(team.Id, newDriver.Id, 0, user.Id)
         );
         Assert.Equal(team.Id, exception.TeamId);
         Assert.Equal(4, exception.MaxSlots);
@@ -424,8 +412,8 @@ public class TeamServiceTests
         await service.AddDriverToTeamAsync(team.Id, driver1.Id, 0, user.Id);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<SlotOccupiedException>(
-            () => service.AddDriverToTeamAsync(team.Id, driver2.Id, 0, user.Id)
+        var exception = await Assert.ThrowsAsync<SlotOccupiedException>(() =>
+            service.AddDriverToTeamAsync(team.Id, driver2.Id, 0, user.Id)
         );
         Assert.Equal(0, exception.Position);
         Assert.Equal(team.Id, exception.TeamId);
@@ -445,8 +433,8 @@ public class TeamServiceTests
         await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<EntityAlreadyOnTeamException>(
-            () => service.AddDriverToTeamAsync(team.Id, driver.Id, 1, user.Id)
+        var exception = await Assert.ThrowsAsync<EntityAlreadyOnTeamException>(() =>
+            service.AddDriverToTeamAsync(team.Id, driver.Id, 1, user.Id)
         );
         Assert.Equal(driver.Id, exception.EntityId);
         Assert.Equal("driver", exception.EntityType);
@@ -464,8 +452,8 @@ public class TeamServiceTests
         var team = CreateTestTeam(context, user.Id);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.AddDriverToTeamAsync(team.Id, 999, 0, user.Id)
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.AddDriverToTeamAsync(team.Id, 999, 0, user.Id)
         );
         Assert.Equal("Driver not found", exception.Message);
     }
@@ -491,8 +479,9 @@ public class TeamServiceTests
         await service.RemoveDriverFromTeamAsync(team.Id, 0, user.Id);
 
         // Assert
-        var teamDriver = await context.TeamDrivers
-            .FirstOrDefaultAsync(td => td.TeamId == team.Id && td.SlotPosition == 0);
+        var teamDriver = await context.TeamDrivers.FirstOrDefaultAsync(td =>
+            td.TeamId == team.Id && td.SlotPosition == 0
+        );
 
         Assert.Null(teamDriver);
     }
@@ -505,8 +494,8 @@ public class TeamServiceTests
         var service = new TeamService(context, _mockLogger.Object);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.RemoveDriverFromTeamAsync(999, 0, 1)
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.RemoveDriverFromTeamAsync(999, 0, 1)
         );
         Assert.Equal("Team not found", exception.Message);
     }
@@ -526,8 +515,8 @@ public class TeamServiceTests
         await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, owner.Id);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<TeamOwnershipException>(
-            () => service.RemoveDriverFromTeamAsync(team.Id, 0, otherUser.Id)
+        var exception = await Assert.ThrowsAsync<TeamOwnershipException>(() =>
+            service.RemoveDriverFromTeamAsync(team.Id, 0, otherUser.Id)
         );
         Assert.Equal(team.Id, exception.TeamId);
         Assert.Equal(owner.Id, exception.OwnerId);
@@ -545,8 +534,8 @@ public class TeamServiceTests
         var team = CreateTestTeam(context, user.Id);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.RemoveDriverFromTeamAsync(team.Id, 0, user.Id)
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.RemoveDriverFromTeamAsync(team.Id, 0, user.Id)
         );
         Assert.Equal("No driver found at slot position 0", exception.Message);
     }
@@ -570,8 +559,9 @@ public class TeamServiceTests
         await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id);
 
         // Assert
-        var teamConstructor = await context.TeamConstructors
-            .FirstOrDefaultAsync(tc => tc.TeamId == team.Id && tc.ConstructorId == constructor.Id);
+        var teamConstructor = await context.TeamConstructors.FirstOrDefaultAsync(tc =>
+            tc.TeamId == team.Id && tc.ConstructorId == constructor.Id
+        );
 
         Assert.NotNull(teamConstructor);
     }
@@ -586,8 +576,8 @@ public class TeamServiceTests
         var constructor = CreateTestConstructor(context, "Red Bull Racing");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.AddConstructorToTeamAsync(999, constructor.Id, 0, 1)
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.AddConstructorToTeamAsync(999, constructor.Id, 0, 1)
         );
         Assert.Equal("Team not found", exception.Message);
     }
@@ -605,8 +595,8 @@ public class TeamServiceTests
         var constructor = CreateTestConstructor(context, "Red Bull Racing");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<TeamOwnershipException>(
-            () => service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, otherUser.Id)
+        var exception = await Assert.ThrowsAsync<TeamOwnershipException>(() =>
+            service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, otherUser.Id)
         );
         Assert.Equal(team.Id, exception.TeamId);
         Assert.Equal(owner.Id, exception.OwnerId);
@@ -616,7 +606,9 @@ public class TeamServiceTests
     [Theory]
     [InlineData(-1)]
     [InlineData(4)]
-    public async Task AddConstructorToTeamAsync_InvalidSlotPosition_ThrowsInvalidOperationException(int slotPosition)
+    public async Task AddConstructorToTeamAsync_InvalidSlotPosition_ThrowsInvalidOperationException(
+        int slotPosition
+    )
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -627,8 +619,8 @@ public class TeamServiceTests
         var constructor = CreateTestConstructor(context, "Red Bull Racing");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidSlotPositionException>(
-            () => service.AddConstructorToTeamAsync(team.Id, constructor.Id, slotPosition, user.Id)
+        var exception = await Assert.ThrowsAsync<InvalidSlotPositionException>(() =>
+            service.AddConstructorToTeamAsync(team.Id, constructor.Id, slotPosition, user.Id)
         );
         Assert.Equal(slotPosition, exception.Position);
         Assert.Contains("constructors", exception.Message);
@@ -654,8 +646,8 @@ public class TeamServiceTests
         var newConstructor = CreateTestConstructor(context, "Mercedes");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<TeamFullException>(
-            () => service.AddConstructorToTeamAsync(team.Id, newConstructor.Id, 0, user.Id)
+        var exception = await Assert.ThrowsAsync<TeamFullException>(() =>
+            service.AddConstructorToTeamAsync(team.Id, newConstructor.Id, 0, user.Id)
         );
         Assert.Equal(team.Id, exception.TeamId);
         Assert.Equal(4, exception.MaxSlots);
@@ -677,8 +669,8 @@ public class TeamServiceTests
         await service.AddConstructorToTeamAsync(team.Id, constructor1.Id, 0, user.Id);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<SlotOccupiedException>(
-            () => service.AddConstructorToTeamAsync(team.Id, constructor2.Id, 0, user.Id)
+        var exception = await Assert.ThrowsAsync<SlotOccupiedException>(() =>
+            service.AddConstructorToTeamAsync(team.Id, constructor2.Id, 0, user.Id)
         );
         Assert.Equal(0, exception.Position);
         Assert.Equal(team.Id, exception.TeamId);
@@ -698,8 +690,8 @@ public class TeamServiceTests
         await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<EntityAlreadyOnTeamException>(
-            () => service.AddConstructorToTeamAsync(team.Id, constructor.Id, 1, user.Id)
+        var exception = await Assert.ThrowsAsync<EntityAlreadyOnTeamException>(() =>
+            service.AddConstructorToTeamAsync(team.Id, constructor.Id, 1, user.Id)
         );
         Assert.Equal(constructor.Id, exception.EntityId);
         Assert.Equal("constructor", exception.EntityType);
@@ -717,8 +709,8 @@ public class TeamServiceTests
         var team = CreateTestTeam(context, user.Id);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.AddConstructorToTeamAsync(team.Id, 999, 0, user.Id)
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.AddConstructorToTeamAsync(team.Id, 999, 0, user.Id)
         );
         Assert.Equal("Constructor not found", exception.Message);
     }
@@ -744,8 +736,9 @@ public class TeamServiceTests
         await service.RemoveConstructorFromTeamAsync(team.Id, 0, user.Id);
 
         // Assert
-        var teamConstructor = await context.TeamConstructors
-            .FirstOrDefaultAsync(tc => tc.TeamId == team.Id && tc.SlotPosition == 0);
+        var teamConstructor = await context.TeamConstructors.FirstOrDefaultAsync(tc =>
+            tc.TeamId == team.Id && tc.SlotPosition == 0
+        );
 
         Assert.Null(teamConstructor);
     }
@@ -758,8 +751,8 @@ public class TeamServiceTests
         var service = new TeamService(context, _mockLogger.Object);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.RemoveConstructorFromTeamAsync(999, 0, 1)
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.RemoveConstructorFromTeamAsync(999, 0, 1)
         );
         Assert.Equal("Team not found", exception.Message);
     }
@@ -779,8 +772,8 @@ public class TeamServiceTests
         await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, owner.Id);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<TeamOwnershipException>(
-            () => service.RemoveConstructorFromTeamAsync(team.Id, 0, otherUser.Id)
+        var exception = await Assert.ThrowsAsync<TeamOwnershipException>(() =>
+            service.RemoveConstructorFromTeamAsync(team.Id, 0, otherUser.Id)
         );
         Assert.Equal(team.Id, exception.TeamId);
         Assert.Equal(owner.Id, exception.OwnerId);
@@ -798,8 +791,8 @@ public class TeamServiceTests
         var team = CreateTestTeam(context, user.Id);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.RemoveConstructorFromTeamAsync(team.Id, 0, user.Id)
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.RemoveConstructorFromTeamAsync(team.Id, 0, user.Id)
         );
         Assert.Equal("No constructor found at slot position 0", exception.Message);
     }
@@ -815,7 +808,7 @@ public class TeamServiceTests
             AccountId = Guid.NewGuid().ToString(),
             Email = email,
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
         };
         context.UserProfiles.Add(user);
         context.SaveChanges();
@@ -829,14 +822,19 @@ public class TeamServiceTests
             Name = name,
             UserId = userId,
             CreatedBy = userId,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Teams.Add(team);
         context.SaveChanges();
         return team;
     }
 
-    private Driver CreateTestDriver(ApplicationDbContext context, string abbreviation, string firstName, string lastName)
+    private Driver CreateTestDriver(
+        ApplicationDbContext context,
+        string abbreviation,
+        string firstName,
+        string lastName
+    )
     {
         var driver = new Driver
         {
@@ -844,7 +842,7 @@ public class TeamServiceTests
             LastName = lastName,
             Abbreviation = abbreviation,
             CountryAbbreviation = "NL",
-            IsActive = true
+            IsActive = true,
         };
         context.Drivers.Add(driver);
         context.SaveChanges();
@@ -857,7 +855,7 @@ public class TeamServiceTests
         {
             Name = name,
             CountryAbbreviation = "AT",
-            IsActive = true
+            IsActive = true,
         };
         context.Constructors.Add(constructor);
         context.SaveChanges();

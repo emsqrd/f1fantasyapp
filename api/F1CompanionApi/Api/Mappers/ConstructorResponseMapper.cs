@@ -13,11 +13,13 @@ public static class ConstructorResponseMapper
             FullName = constructor.FullName,
             CountryAbbreviation = constructor.CountryAbbreviation,
             Name = constructor.Name,
-            IsActive = constructor.IsActive
+            IsActive = constructor.IsActive,
         };
     }
 
-    public static IEnumerable<ConstructorResponse> ToResponseModel(this IEnumerable<Constructor> constructors)
+    public static IEnumerable<ConstructorResponse> ToResponseModel(
+        this IEnumerable<Constructor> constructors
+    )
     {
         return constructors.Select(constructor => constructor.ToResponseModel());
     }

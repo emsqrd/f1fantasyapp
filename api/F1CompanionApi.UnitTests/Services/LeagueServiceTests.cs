@@ -39,7 +39,7 @@ public class LeagueServiceTests
             AccountId = "test-account",
             Email = "owner@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
         };
         context.UserProfiles.Add(owner);
         await context.SaveChangesAsync();
@@ -49,7 +49,7 @@ public class LeagueServiceTests
             Name = "Owner's Team",
             UserId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Teams.Add(team);
         await context.SaveChangesAsync();
@@ -85,7 +85,7 @@ public class LeagueServiceTests
             AccountId = "test-account",
             Email = "owner@test.com",
             FirstName = "Jane",
-            LastName = "Smith"
+            LastName = "Smith",
         };
         context.UserProfiles.Add(owner);
         await context.SaveChangesAsync();
@@ -95,7 +95,7 @@ public class LeagueServiceTests
             Name = "Owner's Team",
             UserId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Teams.Add(team);
         await context.SaveChangesAsync();
@@ -113,8 +113,8 @@ public class LeagueServiceTests
         await service.CreateLeagueAsync(request, owner.Id);
 
         // Assert - League is persisted
-        var savedLeague = await context.Leagues
-            .Include(l => l.LeagueTeams)
+        var savedLeague = await context
+            .Leagues.Include(l => l.LeagueTeams)
                 .ThenInclude(lt => lt.Team)
             .FirstOrDefaultAsync();
 
@@ -150,12 +150,12 @@ public class LeagueServiceTests
         var request = new CreateLeagueRequest
         {
             Name = "Test League",
-            Description = "Test Description"
+            Description = "Test Description",
         };
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<UserProfileNotFoundException>(
-            () => service.CreateLeagueAsync(request, 999)
+        var exception = await Assert.ThrowsAsync<UserProfileNotFoundException>(() =>
+            service.CreateLeagueAsync(request, 999)
         );
         Assert.Contains("999", exception.Message);
     }
@@ -172,7 +172,7 @@ public class LeagueServiceTests
             AccountId = "test-account",
             Email = "owner@test.com",
             FirstName = "No",
-            LastName = "Team"
+            LastName = "Team",
         };
         context.UserProfiles.Add(owner);
         await context.SaveChangesAsync();
@@ -180,12 +180,12 @@ public class LeagueServiceTests
         var request = new CreateLeagueRequest
         {
             Name = "Test League",
-            Description = "Test Description"
+            Description = "Test Description",
         };
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<TeamNotFoundException>(
-            () => service.CreateLeagueAsync(request, owner.Id)
+        var exception = await Assert.ThrowsAsync<TeamNotFoundException>(() =>
+            service.CreateLeagueAsync(request, owner.Id)
         );
         Assert.Equal(owner.Id, exception.UserId);
     }
@@ -217,7 +217,7 @@ public class LeagueServiceTests
             AccountId = "test-account",
             Email = "owner@test.com",
             FirstName = "Test",
-            LastName = "Owner"
+            LastName = "Owner",
         };
         context.UserProfiles.Add(owner);
 
@@ -226,14 +226,14 @@ public class LeagueServiceTests
             Name = "League 1",
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         var league2 = new League
         {
             Name = "League 2",
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         context.Leagues.AddRange(league1, league2);
@@ -259,7 +259,7 @@ public class LeagueServiceTests
             AccountId = "test-account",
             Email = "owner@test.com",
             FirstName = "Test",
-            LastName = "Owner"
+            LastName = "Owner",
         };
         context.UserProfiles.Add(owner);
 
@@ -269,7 +269,7 @@ public class LeagueServiceTests
             Description = "Test Description",
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.Add(league);
         await context.SaveChangesAsync();
@@ -309,14 +309,14 @@ public class LeagueServiceTests
             AccountId = "owner1-account",
             Email = "owner1@test.com",
             FirstName = "Owner",
-            LastName = "One"
+            LastName = "One",
         };
         var owner2 = new UserProfile
         {
             AccountId = "owner2-account",
             Email = "owner2@test.com",
             FirstName = "Owner",
-            LastName = "Two"
+            LastName = "Two",
         };
         context.UserProfiles.AddRange(owner1, owner2);
         await context.SaveChangesAsync();
@@ -326,14 +326,14 @@ public class LeagueServiceTests
             Name = "Owner 1 League",
             OwnerId = owner1.Id,
             CreatedBy = owner1.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         var league2 = new League
         {
             Name = "Owner 2 League",
             OwnerId = owner2.Id,
             CreatedBy = owner2.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.AddRange(league1, league2);
         await context.SaveChangesAsync();
@@ -359,7 +359,7 @@ public class LeagueServiceTests
             AccountId = "owner-account",
             Email = "owner@test.com",
             FirstName = "Test",
-            LastName = "Owner"
+            LastName = "Owner",
         };
         context.UserProfiles.Add(owner);
         await context.SaveChangesAsync();
@@ -384,14 +384,14 @@ public class LeagueServiceTests
             AccountId = "test-account",
             Email = "owner@test.com",
             FirstName = "Test",
-            LastName = "Owner"
+            LastName = "Owner",
         };
         var requestingUser = new UserProfile
         {
             AccountId = "requesting-account",
             Email = "requesting@test.com",
             FirstName = "Requesting",
-            LastName = "User"
+            LastName = "User",
         };
         context.UserProfiles.AddRange(owner, requestingUser);
         await context.SaveChangesAsync();
@@ -403,7 +403,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         var league2 = new League
         {
@@ -412,7 +412,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.AddRange(league1, league2);
         await context.SaveChangesAsync();
@@ -437,14 +437,14 @@ public class LeagueServiceTests
             AccountId = "test-account",
             Email = "owner@test.com",
             FirstName = "Test",
-            LastName = "Owner"
+            LastName = "Owner",
         };
         var requestingUser = new UserProfile
         {
             AccountId = "requesting-account",
             Email = "requesting@test.com",
             FirstName = "Requesting",
-            LastName = "User"
+            LastName = "User",
         };
         context.UserProfiles.AddRange(owner, requestingUser);
         await context.SaveChangesAsync();
@@ -456,7 +456,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         var casualLeague = new League
         {
@@ -465,7 +465,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         var eliteLeague = new League
         {
@@ -474,7 +474,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.AddRange(premierLeague, casualLeague, eliteLeague);
         await context.SaveChangesAsync();
@@ -501,14 +501,14 @@ public class LeagueServiceTests
             AccountId = "test-account",
             Email = "owner@test.com",
             FirstName = "Test",
-            LastName = "Owner"
+            LastName = "Owner",
         };
         var requestingUser = new UserProfile
         {
             AccountId = "requesting-account",
             Email = "requesting@test.com",
             FirstName = "Requesting",
-            LastName = "User"
+            LastName = "User",
         };
         context.UserProfiles.AddRange(owner, requestingUser);
         await context.SaveChangesAsync();
@@ -520,7 +520,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         var casualLeague = new League
         {
@@ -529,7 +529,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.AddRange(competitiveLeague, casualLeague);
         await context.SaveChangesAsync();
@@ -555,14 +555,14 @@ public class LeagueServiceTests
             AccountId = "test-account",
             Email = "owner@test.com",
             FirstName = "Test",
-            LastName = "Owner"
+            LastName = "Owner",
         };
         var requestingUser = new UserProfile
         {
             AccountId = "requesting-account",
             Email = "requesting@test.com",
             FirstName = "Requesting",
-            LastName = "User"
+            LastName = "User",
         };
         context.UserProfiles.AddRange(owner, requestingUser);
         await context.SaveChangesAsync();
@@ -574,14 +574,17 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.Add(league);
         await context.SaveChangesAsync();
 
         // Act - Search with different casing
         var resultLower = await service.GetAvailableLeaguesAsync(requestingUser.Id, "premier");
-        var resultDescUpper = await service.GetAvailableLeaguesAsync(requestingUser.Id, "COMPETITION");
+        var resultDescUpper = await service.GetAvailableLeaguesAsync(
+            requestingUser.Id,
+            "COMPETITION"
+        );
 
         // Assert
         Assert.Single(resultLower);
@@ -600,14 +603,14 @@ public class LeagueServiceTests
             AccountId = "test-account",
             Email = "owner@test.com",
             FirstName = "Test",
-            LastName = "Owner"
+            LastName = "Owner",
         };
         var requestingUser = new UserProfile
         {
             AccountId = "requesting-account",
             Email = "requesting@test.com",
             FirstName = "Requesting",
-            LastName = "User"
+            LastName = "User",
         };
         context.UserProfiles.AddRange(owner, requestingUser);
         await context.SaveChangesAsync();
@@ -619,7 +622,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.Add(league);
         await context.SaveChangesAsync();
@@ -644,14 +647,14 @@ public class LeagueServiceTests
             AccountId = "test-account",
             Email = "owner@test.com",
             FirstName = "Test",
-            LastName = "Owner"
+            LastName = "Owner",
         };
         var requestingUser = new UserProfile
         {
             AccountId = "requesting-account",
             Email = "requesting@test.com",
             FirstName = "Requesting",
-            LastName = "User"
+            LastName = "User",
         };
         context.UserProfiles.AddRange(owner, requestingUser);
         await context.SaveChangesAsync();
@@ -662,7 +665,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         var league2 = new League
         {
@@ -670,7 +673,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.AddRange(league1, league2);
         await context.SaveChangesAsync();
@@ -698,14 +701,14 @@ public class LeagueServiceTests
             AccountId = "test-account",
             Email = "owner@test.com",
             FirstName = "Test",
-            LastName = "Owner"
+            LastName = "Owner",
         };
         var requestingUser = new UserProfile
         {
             AccountId = "requesting-account",
             Email = "requesting@test.com",
             FirstName = "Requesting",
-            LastName = "User"
+            LastName = "User",
         };
         context.UserProfiles.AddRange(owner, requestingUser);
         await context.SaveChangesAsync();
@@ -717,7 +720,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.Add(leagueWithoutDescription);
         await context.SaveChangesAsync();
@@ -742,14 +745,14 @@ public class LeagueServiceTests
             AccountId = "test-account",
             Email = "owner@test.com",
             FirstName = "John",
-            LastName = "Doe"
+            LastName = "Doe",
         };
         var requestingUser = new UserProfile
         {
             AccountId = "requesting-account",
             Email = "requesting@test.com",
             FirstName = "Requesting",
-            LastName = "User"
+            LastName = "User",
         };
         context.UserProfiles.AddRange(owner, requestingUser);
         await context.SaveChangesAsync();
@@ -760,7 +763,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.Add(league);
         await context.SaveChangesAsync();
@@ -786,14 +789,14 @@ public class LeagueServiceTests
             AccountId = "owner-account",
             Email = "owner@test.com",
             FirstName = "Owner",
-            LastName = "User"
+            LastName = "User",
         };
         var requestingUser = new UserProfile
         {
             AccountId = "requesting-account",
             Email = "requesting@test.com",
             FirstName = "Requesting",
-            LastName = "User"
+            LastName = "User",
         };
         context.UserProfiles.AddRange(owner, requestingUser);
         await context.SaveChangesAsync();
@@ -805,7 +808,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         var fullLeague = new League
         {
@@ -814,7 +817,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.AddRange(availableLeague, fullLeague);
         await context.SaveChangesAsync();
@@ -827,7 +830,7 @@ public class LeagueServiceTests
                 AccountId = $"dummy-{i}",
                 Email = $"dummy{i}@test.com",
                 FirstName = "Dummy",
-                LastName = $"User{i}"
+                LastName = $"User{i}",
             };
             context.UserProfiles.Add(dummyUser);
             await context.SaveChangesAsync();
@@ -837,7 +840,7 @@ public class LeagueServiceTests
                 Name = $"Dummy Team {i}",
                 UserId = dummyUser.Id,
                 CreatedBy = dummyUser.Id,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
             };
             context.Teams.Add(dummyTeam);
             await context.SaveChangesAsync();
@@ -848,7 +851,7 @@ public class LeagueServiceTests
                 TeamId = dummyTeam.Id,
                 JoinedAt = DateTime.UtcNow,
                 CreatedBy = dummyUser.Id,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
             };
             context.LeagueTeams.Add(leagueTeam);
             await context.SaveChangesAsync();
@@ -875,14 +878,14 @@ public class LeagueServiceTests
             AccountId = "owner-account",
             Email = "owner@test.com",
             FirstName = "Owner",
-            LastName = "User"
+            LastName = "User",
         };
         var requestingUser = new UserProfile
         {
             AccountId = "requesting-account",
             Email = "requesting@test.com",
             FirstName = "Requesting",
-            LastName = "User"
+            LastName = "User",
         };
         context.UserProfiles.AddRange(owner, requestingUser);
         await context.SaveChangesAsync();
@@ -892,7 +895,7 @@ public class LeagueServiceTests
             Name = "Requesting User Team",
             UserId = requestingUser.Id,
             CreatedBy = requestingUser.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Teams.Add(requestingUserTeam);
         await context.SaveChangesAsync();
@@ -903,7 +906,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         var alreadyJoinedLeague = new League
         {
@@ -911,7 +914,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.AddRange(joinableLeague, alreadyJoinedLeague);
         await context.SaveChangesAsync();
@@ -923,7 +926,7 @@ public class LeagueServiceTests
             TeamId = requestingUserTeam.Id,
             JoinedAt = DateTime.UtcNow,
             CreatedBy = requestingUser.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.LeagueTeams.Add(existingMembership);
         await context.SaveChangesAsync();
@@ -958,14 +961,14 @@ public class LeagueServiceTests
             AccountId = "owner-account",
             Email = "owner@test.com",
             FirstName = "League",
-            LastName = "Owner"
+            LastName = "Owner",
         };
         var member = new UserProfile
         {
             AccountId = "member-account",
             Email = "member@test.com",
             FirstName = "Member",
-            LastName = "User"
+            LastName = "User",
         };
         context.UserProfiles.AddRange(leagueOwner, member);
         await context.SaveChangesAsync();
@@ -975,7 +978,7 @@ public class LeagueServiceTests
             Name = "Member Team",
             UserId = member.Id,
             CreatedBy = member.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Teams.Add(memberTeam);
         await context.SaveChangesAsync();
@@ -985,14 +988,14 @@ public class LeagueServiceTests
             Name = "League 1",
             OwnerId = leagueOwner.Id,
             CreatedBy = leagueOwner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         var league2 = new League
         {
             Name = "League 2",
             OwnerId = leagueOwner.Id,
             CreatedBy = leagueOwner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.AddRange(league1, league2);
         await context.SaveChangesAsync();
@@ -1004,7 +1007,7 @@ public class LeagueServiceTests
             TeamId = memberTeam.Id,
             JoinedAt = DateTime.UtcNow,
             CreatedBy = member.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.LeagueTeams.Add(leagueTeam);
         await context.SaveChangesAsync();
@@ -1034,14 +1037,14 @@ public class LeagueServiceTests
             AccountId = "owner-account",
             Email = "owner@test.com",
             FirstName = "League",
-            LastName = "Owner"
+            LastName = "Owner",
         };
         var joiningUser = new UserProfile
         {
             AccountId = "user-account",
             Email = "user@test.com",
             FirstName = "Joining",
-            LastName = "User"
+            LastName = "User",
         };
         context.UserProfiles.AddRange(owner, joiningUser);
         await context.SaveChangesAsync();
@@ -1051,7 +1054,7 @@ public class LeagueServiceTests
             Name = "User Team",
             UserId = joiningUser.Id,
             CreatedBy = joiningUser.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Teams.Add(userTeam);
         await context.SaveChangesAsync();
@@ -1062,7 +1065,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.Add(league);
         await context.SaveChangesAsync();
@@ -1077,8 +1080,9 @@ public class LeagueServiceTests
         Assert.Equal("Public League", result.Name);
 
         // Assert - LeagueTeam is persisted
-        var leagueTeam = await context.LeagueTeams
-            .FirstOrDefaultAsync(lt => lt.LeagueId == league.Id && lt.TeamId == userTeam.Id);
+        var leagueTeam = await context.LeagueTeams.FirstOrDefaultAsync(lt =>
+            lt.LeagueId == league.Id && lt.TeamId == userTeam.Id
+        );
 
         Assert.NotNull(leagueTeam);
         Assert.Equal(league.Id, leagueTeam.LeagueId);
@@ -1096,8 +1100,8 @@ public class LeagueServiceTests
         var service = new LeagueService(context, _mockLogger.Object);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => service.JoinLeagueAsync(0, 1)
+        var exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            service.JoinLeagueAsync(0, 1)
         );
         Assert.Equal("leagueId", exception.ParamName);
     }
@@ -1110,8 +1114,8 @@ public class LeagueServiceTests
         var service = new LeagueService(context, _mockLogger.Object);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => service.JoinLeagueAsync(1, 0)
+        var exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            service.JoinLeagueAsync(1, 0)
         );
         Assert.Equal("userId", exception.ParamName);
     }
@@ -1128,7 +1132,7 @@ public class LeagueServiceTests
             AccountId = "user-account",
             Email = "user@test.com",
             FirstName = "Test",
-            LastName = "User"
+            LastName = "User",
         };
         context.UserProfiles.Add(user);
         await context.SaveChangesAsync();
@@ -1136,8 +1140,8 @@ public class LeagueServiceTests
         var nonExistentLeagueId = 9999;
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<LeagueNotFoundException>(
-            () => service.JoinLeagueAsync(nonExistentLeagueId, user.Id)
+        var exception = await Assert.ThrowsAsync<LeagueNotFoundException>(() =>
+            service.JoinLeagueAsync(nonExistentLeagueId, user.Id)
         );
         Assert.Equal(nonExistentLeagueId, exception.LeagueId);
     }
@@ -1154,14 +1158,14 @@ public class LeagueServiceTests
             AccountId = "owner-account",
             Email = "owner@test.com",
             FirstName = "Owner",
-            LastName = "User"
+            LastName = "User",
         };
         var joiningUser = new UserProfile
         {
             AccountId = "user-account",
             Email = "user@test.com",
             FirstName = "Joining",
-            LastName = "User"
+            LastName = "User",
         };
         context.UserProfiles.AddRange(owner, joiningUser);
         await context.SaveChangesAsync();
@@ -1171,7 +1175,7 @@ public class LeagueServiceTests
             Name = "User Team",
             UserId = joiningUser.Id,
             CreatedBy = joiningUser.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Teams.Add(userTeam);
         await context.SaveChangesAsync();
@@ -1182,14 +1186,14 @@ public class LeagueServiceTests
             IsPrivate = true,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.Add(privateLeague);
         await context.SaveChangesAsync();
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<LeagueIsPrivateException>(
-            () => service.JoinLeagueAsync(privateLeague.Id, joiningUser.Id)
+        var exception = await Assert.ThrowsAsync<LeagueIsPrivateException>(() =>
+            service.JoinLeagueAsync(privateLeague.Id, joiningUser.Id)
         );
         Assert.Equal(privateLeague.Id, exception.LeagueId);
     }
@@ -1206,14 +1210,14 @@ public class LeagueServiceTests
             AccountId = "owner-account",
             Email = "owner@test.com",
             FirstName = "Owner",
-            LastName = "User"
+            LastName = "User",
         };
         var joiningUser = new UserProfile
         {
             AccountId = "user-account",
             Email = "user@test.com",
             FirstName = "Joining",
-            LastName = "User"
+            LastName = "User",
         };
         context.UserProfiles.AddRange(owner, joiningUser);
         await context.SaveChangesAsync();
@@ -1223,7 +1227,7 @@ public class LeagueServiceTests
             Name = "User Team",
             UserId = joiningUser.Id,
             CreatedBy = joiningUser.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Teams.Add(userTeam);
         await context.SaveChangesAsync();
@@ -1235,7 +1239,7 @@ public class LeagueServiceTests
             MaxTeams = 2,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.Add(league);
         await context.SaveChangesAsync();
@@ -1248,7 +1252,7 @@ public class LeagueServiceTests
                 AccountId = $"dummy-{i}",
                 Email = $"dummy{i}@test.com",
                 FirstName = "Dummy",
-                LastName = $"User{i}"
+                LastName = $"User{i}",
             };
             context.UserProfiles.Add(dummyUser);
             await context.SaveChangesAsync();
@@ -1258,7 +1262,7 @@ public class LeagueServiceTests
                 Name = $"Dummy Team {i}",
                 UserId = dummyUser.Id,
                 CreatedBy = dummyUser.Id,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
             };
             context.Teams.Add(dummyTeam);
             await context.SaveChangesAsync();
@@ -1269,15 +1273,15 @@ public class LeagueServiceTests
                 TeamId = dummyTeam.Id,
                 JoinedAt = DateTime.UtcNow,
                 CreatedBy = dummyUser.Id,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
             };
             context.LeagueTeams.Add(leagueTeam);
             await context.SaveChangesAsync();
         }
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<LeagueFullException>(
-            () => service.JoinLeagueAsync(league.Id, joiningUser.Id)
+        var exception = await Assert.ThrowsAsync<LeagueFullException>(() =>
+            service.JoinLeagueAsync(league.Id, joiningUser.Id)
         );
         Assert.Equal(league.Id, exception.LeagueId);
         Assert.Equal(2, exception.MaxTeams);
@@ -1295,14 +1299,14 @@ public class LeagueServiceTests
             AccountId = "owner-account",
             Email = "owner@test.com",
             FirstName = "Owner",
-            LastName = "User"
+            LastName = "User",
         };
         var userWithoutTeam = new UserProfile
         {
             AccountId = "user-account",
             Email = "user@test.com",
             FirstName = "No",
-            LastName = "Team"
+            LastName = "Team",
         };
         context.UserProfiles.AddRange(owner, userWithoutTeam);
         await context.SaveChangesAsync();
@@ -1313,14 +1317,14 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.Add(league);
         await context.SaveChangesAsync();
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<TeamNotFoundException>(
-            () => service.JoinLeagueAsync(league.Id, userWithoutTeam.Id)
+        var exception = await Assert.ThrowsAsync<TeamNotFoundException>(() =>
+            service.JoinLeagueAsync(league.Id, userWithoutTeam.Id)
         );
         Assert.Equal(userWithoutTeam.Id, exception.UserId);
     }
@@ -1337,14 +1341,14 @@ public class LeagueServiceTests
             AccountId = "owner-account",
             Email = "owner@test.com",
             FirstName = "Owner",
-            LastName = "User"
+            LastName = "User",
         };
         var user = new UserProfile
         {
             AccountId = "user-account",
             Email = "user@test.com",
             FirstName = "Test",
-            LastName = "User"
+            LastName = "User",
         };
         context.UserProfiles.AddRange(owner, user);
         await context.SaveChangesAsync();
@@ -1354,7 +1358,7 @@ public class LeagueServiceTests
             Name = "User Team",
             UserId = user.Id,
             CreatedBy = user.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Teams.Add(userTeam);
         await context.SaveChangesAsync();
@@ -1365,7 +1369,7 @@ public class LeagueServiceTests
             IsPrivate = false,
             OwnerId = owner.Id,
             CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Leagues.Add(league);
         await context.SaveChangesAsync();
@@ -1377,14 +1381,14 @@ public class LeagueServiceTests
             TeamId = userTeam.Id,
             JoinedAt = DateTime.UtcNow,
             CreatedBy = user.Id,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.LeagueTeams.Add(existingLeagueTeam);
         await context.SaveChangesAsync();
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<AlreadyInLeagueException>(
-            () => service.JoinLeagueAsync(league.Id, user.Id)
+        var exception = await Assert.ThrowsAsync<AlreadyInLeagueException>(() =>
+            service.JoinLeagueAsync(league.Id, user.Id)
         );
         Assert.Equal(league.Id, exception.LeagueId);
         Assert.Equal(userTeam.Id, exception.TeamId);

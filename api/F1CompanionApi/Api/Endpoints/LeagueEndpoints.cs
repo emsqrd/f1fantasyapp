@@ -10,44 +10,51 @@ public static class LeagueEndpoints
     [ExcludeFromCodeCoverage]
     public static IEndpointRouteBuilder MapLeagueEndpoints(this IEndpointRouteBuilder app)
     {
-        var leaguesGroup = app.MapGroup("/leagues")
-            .WithOpenApi();
+        var leaguesGroup = app.MapGroup("/leagues").WithOpenApi();
 
-        leaguesGroup.MapPost("/", CreateLeagueAsync)
+        leaguesGroup
+            .MapPost("/", CreateLeagueAsync)
             .RequireAuthorization()
             .WithName("CreateLeague")
             .WithDescription("Create a new league");
 
-        leaguesGroup.MapGet("/", GetLeaguesAsync)
+        leaguesGroup
+            .MapGet("/", GetLeaguesAsync)
             .RequireAuthorization()
             .WithName("GetLeagues")
             .WithDescription("Get all leagues");
 
-        leaguesGroup.MapGet("/available", GetAvailableLeaguesAsync)
+        leaguesGroup
+            .MapGet("/available", GetAvailableLeaguesAsync)
             .RequireAuthorization()
             .WithName("GetAvailableLeagues")
             .WithDescription("Get all available leagues");
 
-        leaguesGroup.MapGet("/{id}", GetLeagueByIdAsync)
+        leaguesGroup
+            .MapGet("/{id}", GetLeagueByIdAsync)
             .RequireAuthorization()
             .WithName("GetLeagueById")
             .WithDescription("Get a league by ID");
 
-        leaguesGroup.MapPost("/{id}/join", JoinLeagueAsync)
+        leaguesGroup
+            .MapPost("/{id}/join", JoinLeagueAsync)
             .RequireAuthorization()
             .WithName("JoinLeague")
             .WithDescription("Join a league");
 
-        leaguesGroup.MapPost("/{id}/invite", GetOrCreateInviteAsync)
+        leaguesGroup
+            .MapPost("/{id}/invite", GetOrCreateInviteAsync)
             .RequireAuthorization()
             .WithName("GetOrCreateInvite")
             .WithDescription("Get or Create a League Invite");
 
-        leaguesGroup.MapGet("/join/{token}/preview", ValidateAndPreviewLeagueInviteAsync)
+        leaguesGroup
+            .MapGet("/join/{token}/preview", ValidateAndPreviewLeagueInviteAsync)
             .WithName("ValidateAndPreviewLeagueInvite")
             .WithDescription("Validate and Preview a League Invite");
 
-        leaguesGroup.MapPost("/join/{token}", JoinLeagueViaLeagueInviteAsync)
+        leaguesGroup
+            .MapPost("/join/{token}", JoinLeagueViaLeagueInviteAsync)
             .RequireAuthorization()
             .WithName("JoinLeagueViaLeagueInvite")
             .WithDescription("Join a League with a League Invite");
@@ -69,15 +76,19 @@ public static class LeagueEndpoints
         var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
         var leagueResponse = await leagueService.CreateLeagueAsync(createLeagueRequest, user.Id);
 
-        logger.LogInformation("Successfully created league {LeagueId} for user {UserId}",
-            leagueResponse.Id, user.Id);
+        logger.LogInformation(
+            "Successfully created league {LeagueId} for user {UserId}",
+            leagueResponse.Id,
+            user.Id
+        );
 
         return Results.Created($"/leagues/{leagueResponse.Id}", leagueResponse);
     }
 
     private static async Task<IResult> GetLeaguesAsync(
         ILeagueService leagueService,
-        [FromServices] ILogger logger)
+        [FromServices] ILogger logger
+    )
     {
         logger.LogDebug("Fetching all leagues");
         var leagues = await leagueService.GetLeaguesAsync();
@@ -89,7 +100,8 @@ public static class LeagueEndpoints
         ILeagueService leagueService,
         IUserProfileService userProfileService,
         [FromQuery] string? searchTerm,
-        [FromServices] ILogger logger)
+        [FromServices] ILogger logger
+    )
     {
         var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
 
@@ -147,7 +159,11 @@ public static class LeagueEndpoints
     {
         var requester = await userProfileService.GetRequiredCurrentUserProfileAsync();
 
-        logger.LogInformation("Requestor {RequestorId} is requesting to join league {LeagueId}", requester.Id, id);
+        logger.LogInformation(
+            "Requestor {RequestorId} is requesting to join league {LeagueId}",
+            requester.Id,
+            id
+        );
 
         var leagueInvite = await leagueInviteService.GetOrCreateLeagueInviteAsync(id, requester.Id);
 
@@ -161,7 +177,8 @@ public static class LeagueEndpoints
         [FromServices] ILogger logger
     )
     {
-        var leagueInviteTokenPreview = await leagueInviteService.ValidateAndPreviewLeagueInviteAsync(token);
+        var leagueInviteTokenPreview =
+            await leagueInviteService.ValidateAndPreviewLeagueInviteAsync(token);
 
         return Results.Ok(leagueInviteTokenPreview);
     }
@@ -179,7 +196,11 @@ public static class LeagueEndpoints
 
         var joinedLeague = await leagueInviteService.JoinLeagueViaLeagueInviteAsync(token, user.Id);
 
-        logger.LogInformation("UserId {UserId} successfully joined league {LeagueId}", user.Id, joinedLeague.Id);
+        logger.LogInformation(
+            "UserId {UserId} successfully joined league {LeagueId}",
+            user.Id,
+            joinedLeague.Id
+        );
 
         return Results.Ok(joinedLeague);
     }

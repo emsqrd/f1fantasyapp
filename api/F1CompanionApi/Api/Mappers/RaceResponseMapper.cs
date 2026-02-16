@@ -7,7 +7,8 @@ public static class RaceResponseMapper
 {
     public static IEnumerable<RaceResponse> ToResponseModel(
         this IEnumerable<Race> races,
-        int? currentRaceId)
+        int? currentRaceId
+    )
     {
         return races.Select(r => r.ToResponseModel(currentRaceId));
     }

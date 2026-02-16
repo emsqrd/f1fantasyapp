@@ -11,7 +11,10 @@ public interface ILeagueService
 {
     Task<LeagueResponse> CreateLeagueAsync(CreateLeagueRequest createLeagueRequest, int ownerId);
     Task<IEnumerable<LeagueResponse>> GetLeaguesAsync();
-    Task<IEnumerable<LeagueResponse>> GetAvailableLeaguesAsync(int userId, string? searchTerm = null);
+    Task<IEnumerable<LeagueResponse>> GetAvailableLeaguesAsync(
+        int userId,
+        string? searchTerm = null
+    );
     Task<LeagueDetailsResponse?> GetLeagueByIdAsync(int id);
     Task<IEnumerable<LeagueResponse>> GetLeaguesByOwnerIdAsync(int ownerId);
     Task<IEnumerable<LeagueResponse>> GetLeaguesForUserAsync(int userId);
@@ -37,8 +40,11 @@ public class LeagueService : ILeagueService
         int ownerId
     )
     {
-        _logger.LogDebug("Creating league {LeagueName} for owner {OwnerId}",
-            createLeagueRequest.Name, ownerId);
+        _logger.LogDebug(
+            "Creating league {LeagueName} for owner {OwnerId}",
+            createLeagueRequest.Name,
+            ownerId
+        );
 
         var owner = await _dbContext.UserProfiles.FindAsync(ownerId);
         if (owner is null)
@@ -60,8 +66,12 @@ public class LeagueService : ILeagueService
         await _dbContext.Leagues.AddAsync(newLeague);
         await _dbContext.SaveChangesAsync();
 
-        _logger.LogInformation("Successfully created league {LeagueId} with name {LeagueName} for owner {OwnerId}",
-            newLeague.Id, newLeague.Name, ownerId);
+        _logger.LogInformation(
+            "Successfully created league {LeagueId} with name {LeagueName} for owner {OwnerId}",
+            newLeague.Id,
+            newLeague.Name,
+            ownerId
+        );
 
         // Load the owner for mapping
         newLeague.Owner = owner;
@@ -81,7 +91,7 @@ public class LeagueService : ILeagueService
             TeamId = userTeam.Id,
             JoinedAt = DateTime.UtcNow,
             CreatedBy = ownerId,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         _dbContext.LeagueTeams.Add(leagueTeam);
@@ -101,18 +111,21 @@ public class LeagueService : ILeagueService
         return leagues.Select(league => league.ToResponseModel());
     }
 
-    public async Task<IEnumerable<LeagueResponse>> GetAvailableLeaguesAsync(int userId, string? searchTerm = null)
+    public async Task<IEnumerable<LeagueResponse>> GetAvailableLeaguesAsync(
+        int userId,
+        string? searchTerm = null
+    )
     {
         _logger.LogDebug("Fetching all public leagues");
 
         // available = has capacity && user not already joined
-        var query = _dbContext.Leagues
-            .Include(x => x.Owner)
+        var query = _dbContext
+            .Leagues.Include(x => x.Owner)
             .Include(x => x.LeagueTeams)
             .Where(x =>
-                !x.IsPrivate &&
-                x.LeagueTeams.Count < x.MaxTeams &&
-                !x.LeagueTeams.Any(lt => lt.Team.UserId == userId)
+                !x.IsPrivate
+                && x.LeagueTeams.Count < x.MaxTeams
+                && !x.LeagueTeams.Any(lt => lt.Team.UserId == userId)
             );
 
         // apply search filter if provided
@@ -121,8 +134,8 @@ public class LeagueService : ILeagueService
             var lowerSearchTerm = searchTerm.ToLower();
 
             query = query.Where(x =>
-                x.Name.ToLower().Contains(lowerSearchTerm) ||
-                (x.Description != null && x.Description.ToLower().Contains(lowerSearchTerm))
+                x.Name.ToLower().Contains(lowerSearchTerm)
+                || (x.Description != null && x.Description.ToLower().Contains(lowerSearchTerm))
             );
         }
 
@@ -136,12 +149,12 @@ public class LeagueService : ILeagueService
     public async Task<LeagueDetailsResponse?> GetLeagueByIdAsync(int id)
     {
         _logger.LogDebug("Fetching league {LeagueId}", id);
-        var league = await _dbContext.Leagues
-                        .Include(x => x.Owner)
-                        .Include(x => x.LeagueTeams)
-                            .ThenInclude(lt => lt.Team)
-                                .ThenInclude(t => t.Owner)
-                        .FirstOrDefaultAsync(x => x.Id == id);
+        var league = await _dbContext
+            .Leagues.Include(x => x.Owner)
+            .Include(x => x.LeagueTeams)
+                .ThenInclude(lt => lt.Team)
+                    .ThenInclude(t => t.Owner)
+            .FirstOrDefaultAsync(x => x.Id == id);
 
         if (league is null)
         {
@@ -155,12 +168,16 @@ public class LeagueService : ILeagueService
     public async Task<IEnumerable<LeagueResponse>> GetLeaguesByOwnerIdAsync(int ownerId)
     {
         _logger.LogDebug("Fetching leagues for owner {OwnerId}", ownerId);
-        var leagues = await _dbContext.Leagues
-            .Include(x => x.Owner)
+        var leagues = await _dbContext
+            .Leagues.Include(x => x.Owner)
             .Include(x => x.LeagueTeams)
             .Where(x => x.OwnerId == ownerId)
             .ToListAsync();
-        _logger.LogDebug("Retrieved {LeagueCount} leagues for owner {OwnerId}", leagues.Count, ownerId);
+        _logger.LogDebug(
+            "Retrieved {LeagueCount} leagues for owner {OwnerId}",
+            leagues.Count,
+            ownerId
+        );
         return leagues.Select(league => league.ToResponseModel());
     }
 
@@ -169,14 +186,18 @@ public class LeagueService : ILeagueService
     {
         _logger.LogDebug("Fetching leagues for user {UserId}", userId);
 
-        var leagues = await _dbContext.Leagues
-            .Include(x => x.Owner)
+        var leagues = await _dbContext
+            .Leagues.Include(x => x.Owner)
             .Include(x => x.LeagueTeams)
             .Where(x => x.LeagueTeams.Any(lt => lt.Team.UserId == userId))
             .Distinct()
             .ToListAsync();
 
-        _logger.LogDebug("Retrieved {LeagueCount} leagues for user {UserId}", leagues.Count, userId);
+        _logger.LogDebug(
+            "Retrieved {LeagueCount} leagues for user {UserId}",
+            leagues.Count,
+            userId
+        );
 
         return leagues.Select(league => league.ToResponseModel());
     }
@@ -187,7 +208,10 @@ public class LeagueService : ILeagueService
 
         if (leagueId <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(leagueId), "League ID must be greater than 0");
+            throw new ArgumentOutOfRangeException(
+                nameof(leagueId),
+                "League ID must be greater than 0"
+            );
         }
 
         if (userId <= 0)
@@ -198,26 +222,39 @@ public class LeagueService : ILeagueService
         // League validation
         _logger.LogDebug("User {UserId} attempting to join league {LeagueId}", userId, leagueId);
 
-        var league = await _dbContext.Leagues
-            .Include(x => x.LeagueTeams)
+        var league = await _dbContext
+            .Leagues.Include(x => x.LeagueTeams)
             .Include(x => x.Owner)
             .FirstOrDefaultAsync(x => x.Id == leagueId);
 
         if (league is null)
         {
-            _logger.LogWarning("League {LeagueId} not found when user {UserId} attempted to join", leagueId, userId);
+            _logger.LogWarning(
+                "League {LeagueId} not found when user {UserId} attempted to join",
+                leagueId,
+                userId
+            );
             throw new LeagueNotFoundException(leagueId);
         }
 
         if (league.IsPrivate)
         {
-            _logger.LogWarning("User {UserId} attempted to join private league {LeagueId}", userId, leagueId);
+            _logger.LogWarning(
+                "User {UserId} attempted to join private league {LeagueId}",
+                userId,
+                leagueId
+            );
             throw new LeagueIsPrivateException(leagueId);
         }
 
         if (league.LeagueTeams.Count >= league.MaxTeams)
         {
-            _logger.LogWarning("User {UserId} attempted to join full league {LeagueId} (max: {MaxTeams})", userId, leagueId, league.MaxTeams);
+            _logger.LogWarning(
+                "User {UserId} attempted to join full league {LeagueId} (max: {MaxTeams})",
+                userId,
+                leagueId,
+                league.MaxTeams
+            );
             throw new LeagueFullException(leagueId, league.MaxTeams);
         }
 
@@ -225,7 +262,11 @@ public class LeagueService : ILeagueService
 
         if (userTeam is null)
         {
-            _logger.LogWarning("No team found for user {UserId} when joining league {LeagueId}", userId, leagueId);
+            _logger.LogWarning(
+                "No team found for user {UserId} when joining league {LeagueId}",
+                userId,
+                leagueId
+            );
             throw new TeamNotFoundException(userId);
         }
 
@@ -233,7 +274,11 @@ public class LeagueService : ILeagueService
 
         if (existingMembership is not null)
         {
-            _logger.LogWarning("Team {TeamId} is already in league {LeagueId}", userTeam.Id, leagueId);
+            _logger.LogWarning(
+                "Team {TeamId} is already in league {LeagueId}",
+                userTeam.Id,
+                leagueId
+            );
             throw new AlreadyInLeagueException(leagueId, userTeam.Id);
         }
 
@@ -249,7 +294,12 @@ public class LeagueService : ILeagueService
         _dbContext.LeagueTeams.Add(leagueTeam);
         await _dbContext.SaveChangesAsync();
 
-        _logger.LogInformation("User {UserId} successfully joined league {LeagueId} with team {TeamId}", userId, leagueId, userTeam.Id);
+        _logger.LogInformation(
+            "User {UserId} successfully joined league {LeagueId} with team {TeamId}",
+            userId,
+            leagueId,
+            userTeam.Id
+        );
 
         return league.ToResponseModel();
     }

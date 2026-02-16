@@ -38,13 +38,13 @@ public class LeagueEndpointsTests
             Email = "test@test.com",
             FirstName = "John",
             LastName = "Doe",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var request = new CreateLeagueRequest
         {
             Name = "Test League",
-            Description = "Test Description"
+            Description = "Test Description",
         };
 
         var expectedResponse = new LeagueResponse
@@ -54,7 +54,7 @@ public class LeagueEndpointsTests
             Description = "Test Description",
             OwnerName = "John Doe",
             MaxTeams = 15,
-            IsPrivate = true
+            IsPrivate = true,
         };
 
         _mockUserProfileService
@@ -85,13 +85,10 @@ public class LeagueEndpointsTests
             Email = "test@test.com",
             FirstName = "John",
             LastName = "Doe",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
-        var request = new CreateLeagueRequest
-        {
-            Name = "Test League"
-        };
+        var request = new CreateLeagueRequest { Name = "Test League" };
 
         _mockUserProfileService
             .Setup(x => x.GetRequiredCurrentUserProfileAsync())
@@ -102,9 +99,7 @@ public class LeagueEndpointsTests
             .ThrowsAsync(new Exception("Database connection failed"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<Exception>(
-            () => InvokeCreateLeagueAsync(request)
-        );
+        await Assert.ThrowsAsync<Exception>(() => InvokeCreateLeagueAsync(request));
     }
 
     [Fact]
@@ -120,7 +115,7 @@ public class LeagueEndpointsTests
                 Description = "Description 1",
                 OwnerName = "John Doe",
                 MaxTeams = 15,
-                IsPrivate = true
+                IsPrivate = true,
             },
             new LeagueResponse
             {
@@ -128,13 +123,11 @@ public class LeagueEndpointsTests
                 Name = "League 2",
                 OwnerName = "John Doe",
                 MaxTeams = 20,
-                IsPrivate = false
-            }
+                IsPrivate = false,
+            },
         };
 
-        _mockLeagueService
-            .Setup(x => x.GetLeaguesAsync())
-            .ReturnsAsync(leagues);
+        _mockLeagueService.Setup(x => x.GetLeaguesAsync()).ReturnsAsync(leagues);
 
         // Act
         var result = await InvokeGetLeaguesAsync();
@@ -196,12 +189,10 @@ public class LeagueEndpointsTests
             Description = "Test Description",
             OwnerName = "John Doe",
             MaxTeams = 15,
-            IsPrivate = true
+            IsPrivate = true,
         };
 
-        _mockLeagueService
-            .Setup(x => x.GetLeagueByIdAsync(1))
-            .ReturnsAsync(league);
+        _mockLeagueService.Setup(x => x.GetLeagueByIdAsync(1)).ReturnsAsync(league);
 
         // Act
         var result = await InvokeGetLeagueByIdAsync(1);
@@ -242,7 +233,7 @@ public class LeagueEndpointsTests
             Email = "test@test.com",
             FirstName = "John",
             LastName = "Doe",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var availableLeagues = new List<LeagueResponse>
@@ -254,7 +245,7 @@ public class LeagueEndpointsTests
                 OwnerName = "John Doe",
                 MaxTeams = 15,
                 TeamCount = 5,
-                IsPrivate = false
+                IsPrivate = false,
             },
             new LeagueResponse
             {
@@ -263,8 +254,8 @@ public class LeagueEndpointsTests
                 OwnerName = "Jane Smith",
                 MaxTeams = 20,
                 TeamCount = 10,
-                IsPrivate = false
-            }
+                IsPrivate = false,
+            },
         };
 
         _mockUserProfileService
@@ -283,7 +274,10 @@ public class LeagueEndpointsTests
         var okResult = (Ok<IEnumerable<LeagueResponse>>)result;
         Assert.NotNull(okResult.Value);
         Assert.Equal(availableLeagues, okResult.Value);
-        _mockLeagueService.Verify(x => x.GetAvailableLeaguesAsync(userProfile.Id, null), Times.Once);
+        _mockLeagueService.Verify(
+            x => x.GetAvailableLeaguesAsync(userProfile.Id, null),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -296,7 +290,7 @@ public class LeagueEndpointsTests
             Email = "test@test.com",
             FirstName = "John",
             LastName = "Doe",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var searchTerm = "Championship";
@@ -309,8 +303,8 @@ public class LeagueEndpointsTests
                 OwnerName = "Admin User",
                 MaxTeams = 30,
                 TeamCount = 15,
-                IsPrivate = false
-            }
+                IsPrivate = false,
+            },
         };
 
         _mockUserProfileService
@@ -329,7 +323,10 @@ public class LeagueEndpointsTests
         var okResult = (Ok<IEnumerable<LeagueResponse>>)result;
         Assert.NotNull(okResult.Value);
         Assert.Equal(filteredLeagues, okResult.Value);
-        _mockLeagueService.Verify(x => x.GetAvailableLeaguesAsync(userProfile.Id, searchTerm), Times.Once);
+        _mockLeagueService.Verify(
+            x => x.GetAvailableLeaguesAsync(userProfile.Id, searchTerm),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -342,7 +339,7 @@ public class LeagueEndpointsTests
             Email = "joiner@test.com",
             FirstName = "Jane",
             LastName = "Joiner",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var leagueResponse = new LeagueResponse
@@ -352,7 +349,7 @@ public class LeagueEndpointsTests
             Description = "Open to all",
             OwnerName = "League Owner",
             MaxTeams = 15,
-            IsPrivate = false
+            IsPrivate = false,
         };
 
         _mockUserProfileService
@@ -385,7 +382,7 @@ public class LeagueEndpointsTests
             Email = "joiner@test.com",
             FirstName = "Jane",
             LastName = "Joiner",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         _mockUserProfileService
@@ -397,9 +394,7 @@ public class LeagueEndpointsTests
             .ThrowsAsync(new LeagueNotFoundException(999));
 
         // Act & Assert
-        await Assert.ThrowsAsync<LeagueNotFoundException>(
-            () => InvokeJoinLeagueAsync(999)
-        );
+        await Assert.ThrowsAsync<LeagueNotFoundException>(() => InvokeJoinLeagueAsync(999));
     }
 
     [Fact]
@@ -412,7 +407,7 @@ public class LeagueEndpointsTests
             Email = "joiner@test.com",
             FirstName = "Jane",
             LastName = "Joiner",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         _mockUserProfileService
@@ -424,9 +419,7 @@ public class LeagueEndpointsTests
             .ThrowsAsync(new LeagueIsPrivateException(10));
 
         // Act & Assert
-        await Assert.ThrowsAsync<LeagueIsPrivateException>(
-            () => InvokeJoinLeagueAsync(10)
-        );
+        await Assert.ThrowsAsync<LeagueIsPrivateException>(() => InvokeJoinLeagueAsync(10));
     }
 
     [Fact]
@@ -439,7 +432,7 @@ public class LeagueEndpointsTests
             Email = "joiner@test.com",
             FirstName = "Jane",
             LastName = "Joiner",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         _mockUserProfileService
@@ -451,9 +444,7 @@ public class LeagueEndpointsTests
             .ThrowsAsync(new LeagueFullException(10, 15));
 
         // Act & Assert
-        await Assert.ThrowsAsync<LeagueFullException>(
-            () => InvokeJoinLeagueAsync(10)
-        );
+        await Assert.ThrowsAsync<LeagueFullException>(() => InvokeJoinLeagueAsync(10));
     }
 
     [Fact]
@@ -466,7 +457,7 @@ public class LeagueEndpointsTests
             Email = "joiner@test.com",
             FirstName = "Jane",
             LastName = "Joiner",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         _mockUserProfileService
@@ -478,9 +469,7 @@ public class LeagueEndpointsTests
             .ThrowsAsync(new AlreadyInLeagueException(10, 20));
 
         // Act & Assert
-        await Assert.ThrowsAsync<AlreadyInLeagueException>(
-            () => InvokeJoinLeagueAsync(10)
-        );
+        await Assert.ThrowsAsync<AlreadyInLeagueException>(() => InvokeJoinLeagueAsync(10));
     }
 
     [Fact]
@@ -493,7 +482,7 @@ public class LeagueEndpointsTests
             Email = "joiner@test.com",
             FirstName = "Jane",
             LastName = "Joiner",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         _mockUserProfileService
@@ -505,9 +494,7 @@ public class LeagueEndpointsTests
             .ThrowsAsync(new TeamNotFoundException(userProfile.Id));
 
         // Act & Assert
-        await Assert.ThrowsAsync<TeamNotFoundException>(
-            () => InvokeJoinLeagueAsync(10)
-        );
+        await Assert.ThrowsAsync<TeamNotFoundException>(() => InvokeJoinLeagueAsync(10));
     }
 
     #region GetOrCreateInviteAsync Tests
@@ -522,7 +509,7 @@ public class LeagueEndpointsTests
             Email = "owner@test.com",
             FirstName = "League",
             LastName = "Owner",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var expectedInvite = new LeagueInviteTokenResponse
@@ -531,7 +518,7 @@ public class LeagueEndpointsTests
             LeagueId = 10,
             Token = "encrypted-token-abc123",
             CreatedAt = DateTime.UtcNow.AddDays(-1),
-            CreatedByName = "League Owner"
+            CreatedByName = "League Owner",
         };
 
         _mockUserProfileService
@@ -552,7 +539,10 @@ public class LeagueEndpointsTests
         Assert.Equal(expectedInvite.Id, okResult.Value.Id);
         Assert.Equal(expectedInvite.Token, okResult.Value.Token);
         Assert.Equal(expectedInvite.LeagueId, okResult.Value.LeagueId);
-        _mockLeagueInviteService.Verify(x => x.GetOrCreateLeagueInviteAsync(10, userProfile.Id), Times.Once);
+        _mockLeagueInviteService.Verify(
+            x => x.GetOrCreateLeagueInviteAsync(10, userProfile.Id),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -565,7 +555,7 @@ public class LeagueEndpointsTests
             Email = "owner@test.com",
             FirstName = "League",
             LastName = "Owner",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         _mockUserProfileService
@@ -577,9 +567,7 @@ public class LeagueEndpointsTests
             .ThrowsAsync(new LeagueNotFoundException(999));
 
         // Act & Assert
-        await Assert.ThrowsAsync<LeagueNotFoundException>(
-            () => InvokeGetOrCreateInviteAsync(999)
-        );
+        await Assert.ThrowsAsync<LeagueNotFoundException>(() => InvokeGetOrCreateInviteAsync(999));
     }
 
     [Fact]
@@ -592,7 +580,7 @@ public class LeagueEndpointsTests
             Email = "notowner@test.com",
             FirstName = "Not",
             LastName = "Owner",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         _mockUserProfileService
@@ -604,8 +592,8 @@ public class LeagueEndpointsTests
             .ThrowsAsync(new UnauthorizedAccessException("Only league owner can create invites"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => InvokeGetOrCreateInviteAsync(10)
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            InvokeGetOrCreateInviteAsync(10)
         );
     }
 
@@ -619,7 +607,7 @@ public class LeagueEndpointsTests
             Email = "owner@test.com",
             FirstName = "League",
             LastName = "Owner",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         _mockUserProfileService
@@ -628,12 +616,12 @@ public class LeagueEndpointsTests
 
         _mockLeagueInviteService
             .Setup(x => x.GetOrCreateLeagueInviteAsync(10, userProfile.Id))
-            .ThrowsAsync(new InvalidOperationException("Public leagues cannot be joined by league invite"));
+            .ThrowsAsync(
+                new InvalidOperationException("Public leagues cannot be joined by league invite")
+            );
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => InvokeGetOrCreateInviteAsync(10)
-        );
+        await Assert.ThrowsAsync<InvalidOperationException>(() => InvokeGetOrCreateInviteAsync(10));
     }
 
     #endregion
@@ -650,7 +638,7 @@ public class LeagueEndpointsTests
             Email = "joiner@test.com",
             FirstName = "John",
             LastName = "Joiner",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var token = "valid-encrypted-token-abc123";
@@ -661,7 +649,7 @@ public class LeagueEndpointsTests
             OwnerName = "League Master",
             CurrentTeamCount = 8,
             MaxTeams = 15,
-            IsLeagueFull = false
+            IsLeagueFull = false,
         };
 
         _mockUserProfileService
@@ -684,7 +672,10 @@ public class LeagueEndpointsTests
         Assert.Equal(8, okResult.Value.CurrentTeamCount);
         Assert.Equal(15, okResult.Value.MaxTeams);
         Assert.False(okResult.Value.IsLeagueFull);
-        _mockLeagueInviteService.Verify(x => x.ValidateAndPreviewLeagueInviteAsync(token), Times.Once);
+        _mockLeagueInviteService.Verify(
+            x => x.ValidateAndPreviewLeagueInviteAsync(token),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -697,7 +688,7 @@ public class LeagueEndpointsTests
             Email = "joiner@test.com",
             FirstName = "John",
             LastName = "Joiner",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var invalidToken = "invalid-malformed-token";
@@ -711,8 +702,8 @@ public class LeagueEndpointsTests
             .ThrowsAsync(new InvalidLeagueInviteTokenException("Invalid token format"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidLeagueInviteTokenException>(
-            () => InvokeValidateAndPreviewLeagueInviteAsync(invalidToken)
+        await Assert.ThrowsAsync<InvalidLeagueInviteTokenException>(() =>
+            InvokeValidateAndPreviewLeagueInviteAsync(invalidToken)
         );
     }
 
@@ -726,7 +717,7 @@ public class LeagueEndpointsTests
             Email = "joiner@test.com",
             FirstName = "John",
             LastName = "Joiner",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var tokenForDeletedLeague = "valid-token-for-deleted-league";
@@ -740,8 +731,8 @@ public class LeagueEndpointsTests
             .ThrowsAsync(new InvalidLeagueInviteTokenException("League not found"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidLeagueInviteTokenException>(
-            () => InvokeValidateAndPreviewLeagueInviteAsync(tokenForDeletedLeague)
+        await Assert.ThrowsAsync<InvalidLeagueInviteTokenException>(() =>
+            InvokeValidateAndPreviewLeagueInviteAsync(tokenForDeletedLeague)
         );
     }
 
@@ -759,7 +750,7 @@ public class LeagueEndpointsTests
             Email = "newmember@test.com",
             FirstName = "New",
             LastName = "Member",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var token = "valid-invite-token-abc123";
@@ -771,7 +762,7 @@ public class LeagueEndpointsTests
             OwnerName = "League Owner",
             MaxTeams = 15,
             TeamCount = 9,
-            IsPrivate = true
+            IsPrivate = true,
         };
 
         _mockUserProfileService
@@ -792,7 +783,10 @@ public class LeagueEndpointsTests
         Assert.Equal(10, okResult.Value.Id);
         Assert.Equal("Private F1 League", okResult.Value.Name);
         Assert.True(okResult.Value.IsPrivate);
-        _mockLeagueInviteService.Verify(x => x.JoinLeagueViaLeagueInviteAsync(token, userProfile.Id), Times.Once);
+        _mockLeagueInviteService.Verify(
+            x => x.JoinLeagueViaLeagueInviteAsync(token, userProfile.Id),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -805,7 +799,7 @@ public class LeagueEndpointsTests
             Email = "newmember@test.com",
             FirstName = "New",
             LastName = "Member",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var token = "token-for-deleted-league";
@@ -819,8 +813,8 @@ public class LeagueEndpointsTests
             .ThrowsAsync(new LeagueNotFoundException(999));
 
         // Act & Assert
-        await Assert.ThrowsAsync<LeagueNotFoundException>(
-            () => InvokeJoinLeagueViaLeagueInviteAsync(token)
+        await Assert.ThrowsAsync<LeagueNotFoundException>(() =>
+            InvokeJoinLeagueViaLeagueInviteAsync(token)
         );
     }
 
@@ -834,7 +828,7 @@ public class LeagueEndpointsTests
             Email = "newmember@test.com",
             FirstName = "New",
             LastName = "Member",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var token = "token-for-full-league";
@@ -848,8 +842,8 @@ public class LeagueEndpointsTests
             .ThrowsAsync(new LeagueFullException(10, 15));
 
         // Act & Assert
-        await Assert.ThrowsAsync<LeagueFullException>(
-            () => InvokeJoinLeagueViaLeagueInviteAsync(token)
+        await Assert.ThrowsAsync<LeagueFullException>(() =>
+            InvokeJoinLeagueViaLeagueInviteAsync(token)
         );
     }
 
@@ -863,7 +857,7 @@ public class LeagueEndpointsTests
             Email = "newmember@test.com",
             FirstName = "New",
             LastName = "Member",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var token = "valid-invite-token";
@@ -877,8 +871,8 @@ public class LeagueEndpointsTests
             .ThrowsAsync(new TeamNotFoundException(userProfile.Id));
 
         // Act & Assert
-        await Assert.ThrowsAsync<TeamNotFoundException>(
-            () => InvokeJoinLeagueViaLeagueInviteAsync(token)
+        await Assert.ThrowsAsync<TeamNotFoundException>(() =>
+            InvokeJoinLeagueViaLeagueInviteAsync(token)
         );
     }
 
@@ -892,7 +886,7 @@ public class LeagueEndpointsTests
             Email = "existing@test.com",
             FirstName = "Existing",
             LastName = "Member",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var token = "valid-invite-token";
@@ -906,8 +900,8 @@ public class LeagueEndpointsTests
             .ThrowsAsync(new AlreadyInLeagueException(10, 50));
 
         // Act & Assert
-        await Assert.ThrowsAsync<AlreadyInLeagueException>(
-            () => InvokeJoinLeagueViaLeagueInviteAsync(token)
+        await Assert.ThrowsAsync<AlreadyInLeagueException>(() =>
+            InvokeJoinLeagueViaLeagueInviteAsync(token)
         );
     }
 
@@ -921,7 +915,7 @@ public class LeagueEndpointsTests
             Email = "newmember@test.com",
             FirstName = "New",
             LastName = "Member",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         var invalidToken = "corrupted-token-data";
@@ -935,8 +929,8 @@ public class LeagueEndpointsTests
             .ThrowsAsync(new InvalidLeagueInviteTokenException("Invalid token format"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidLeagueInviteTokenException>(
-            () => InvokeJoinLeagueViaLeagueInviteAsync(invalidToken)
+        await Assert.ThrowsAsync<InvalidLeagueInviteTokenException>(() =>
+            InvokeJoinLeagueViaLeagueInviteAsync(invalidToken)
         );
     }
 
@@ -950,18 +944,20 @@ public class LeagueEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[]
-            {
-                _mockHttpContext.Object,
-                _mockAuthService.Object,
-                _mockUserProfileService.Object,
-                _mockLeagueService.Object,
-                request,
-                _mockLogger.Object
-            }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[]
+                    {
+                        _mockHttpContext.Object,
+                        _mockAuthService.Object,
+                        _mockUserProfileService.Object,
+                        _mockLeagueService.Object,
+                        request,
+                        _mockLogger.Object,
+                    }
+                )!;
 
         return await task;
     }
@@ -973,10 +969,12 @@ public class LeagueEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[] { _mockLeagueService.Object, _mockLogger.Object }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[] { _mockLeagueService.Object, _mockLogger.Object }
+                )!;
 
         return await task;
     }
@@ -988,10 +986,12 @@ public class LeagueEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[] { _mockLeagueService.Object, id, _mockLogger.Object }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[] { _mockLeagueService.Object, id, _mockLogger.Object }
+                )!;
 
         return await task;
     }
@@ -1003,10 +1003,18 @@ public class LeagueEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object?[] { _mockLeagueService.Object, _mockUserProfileService.Object, searchTerm, _mockLogger.Object }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object?[]
+                    {
+                        _mockLeagueService.Object,
+                        _mockUserProfileService.Object,
+                        searchTerm,
+                        _mockLogger.Object,
+                    }
+                )!;
 
         return await task;
     }
@@ -1018,16 +1026,18 @@ public class LeagueEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[]
-            {
-                _mockLeagueService.Object,
-                _mockUserProfileService.Object,
-                leagueId,
-                _mockLogger.Object
-            }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[]
+                    {
+                        _mockLeagueService.Object,
+                        _mockUserProfileService.Object,
+                        leagueId,
+                        _mockLogger.Object,
+                    }
+                )!;
 
         return await task;
     }
@@ -1039,16 +1049,18 @@ public class LeagueEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[]
-            {
-                _mockLeagueInviteService.Object,
-                _mockUserProfileService.Object,
-                leagueId,
-                _mockLogger.Object
-            }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[]
+                    {
+                        _mockLeagueInviteService.Object,
+                        _mockUserProfileService.Object,
+                        leagueId,
+                        _mockLogger.Object,
+                    }
+                )!;
 
         return await task;
     }
@@ -1060,16 +1072,18 @@ public class LeagueEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[]
-            {
-                _mockLeagueInviteService.Object,
-                _mockUserProfileService.Object,
-                token,
-                _mockLogger.Object
-            }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[]
+                    {
+                        _mockLeagueInviteService.Object,
+                        _mockUserProfileService.Object,
+                        token,
+                        _mockLogger.Object,
+                    }
+                )!;
 
         return await task;
     }
@@ -1081,16 +1095,18 @@ public class LeagueEndpointsTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 
-        var task = (Task<IResult>)method!.Invoke(
-            null,
-            new object[]
-            {
-                _mockLeagueInviteService.Object,
-                _mockUserProfileService.Object,
-                token,
-                _mockLogger.Object
-            }
-        )!;
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[]
+                    {
+                        _mockLeagueInviteService.Object,
+                        _mockUserProfileService.Object,
+                        token,
+                        _mockLogger.Object,
+                    }
+                )!;
 
         return await task;
     }

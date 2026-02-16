@@ -25,7 +25,15 @@ public class UserProfileServiceTests
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .ConfigureWarnings(x => x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
+            .ConfigureWarnings(x =>
+                x.Ignore(
+                    Microsoft
+                        .EntityFrameworkCore
+                        .Diagnostics
+                        .InMemoryEventId
+                        .TransactionIgnoredWarning
+                )
+            )
             .Options;
 
         return new ApplicationDbContext(options);
@@ -38,8 +46,8 @@ public class UserProfileServiceTests
         var authService = new Mock<ISupabaseAuthService>();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(
-            () => new UserProfileService(null!, authService.Object, _mockLogger.Object)
+        Assert.Throws<ArgumentNullException>(() =>
+            new UserProfileService(null!, authService.Object, _mockLogger.Object)
         );
     }
 
@@ -50,8 +58,8 @@ public class UserProfileServiceTests
         using var context = CreateInMemoryContext();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(
-            () => new UserProfileService(context, null!, _mockLogger.Object)
+        Assert.Throws<ArgumentNullException>(() =>
+            new UserProfileService(context, null!, _mockLogger.Object)
         );
     }
 
@@ -68,7 +76,7 @@ public class UserProfileServiceTests
             Id = TestAccountId,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            IsActive = true
+            IsActive = true,
         };
 
         var userProfile = new UserProfile
@@ -77,7 +85,7 @@ public class UserProfileServiceTests
             Email = TestEmail,
             DisplayName = TestDisplayName,
             CreatedAt = DateTime.UtcNow,
-            Account = account
+            Account = account,
         };
 
         context.Accounts.Add(account);
@@ -124,7 +132,7 @@ public class UserProfileServiceTests
             Id = TestAccountId,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            IsActive = true
+            IsActive = true,
         };
 
         var userProfile = new UserProfile
@@ -133,7 +141,7 @@ public class UserProfileServiceTests
             Email = TestEmail,
             DisplayName = TestDisplayName,
             CreatedAt = DateTime.UtcNow,
-            Account = account
+            Account = account,
         };
 
         context.Accounts.Add(account);
@@ -182,7 +190,7 @@ public class UserProfileServiceTests
             Id = TestAccountId,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            IsActive = true
+            IsActive = true,
         };
 
         var userProfile = new UserProfile
@@ -191,7 +199,7 @@ public class UserProfileServiceTests
             Email = TestEmail,
             DisplayName = TestDisplayName,
             CreatedAt = DateTime.UtcNow,
-            Account = account
+            Account = account,
         };
 
         context.Accounts.Add(account);
@@ -218,8 +226,8 @@ public class UserProfileServiceTests
         var service = new UserProfileService(context, authService.Object, _mockLogger.Object);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<UserProfileNotFoundException>(
-            () => service.GetRequiredCurrentUserProfileAsync()
+        var exception = await Assert.ThrowsAsync<UserProfileNotFoundException>(() =>
+            service.GetRequiredCurrentUserProfileAsync()
         );
         Assert.Contains(TestAccountId, exception.Message);
     }
@@ -248,8 +256,8 @@ public class UserProfileServiceTests
         Assert.NotNull(savedAccount);
         Assert.True(savedAccount.IsActive);
 
-        var savedProfile = await context.UserProfiles.FirstOrDefaultAsync(
-            x => x.AccountId == TestAccountId
+        var savedProfile = await context.UserProfiles.FirstOrDefaultAsync(x =>
+            x.AccountId == TestAccountId
         );
         Assert.NotNull(savedProfile);
         Assert.Equal(TestEmail, savedProfile.Email);
@@ -287,20 +295,18 @@ public class UserProfileServiceTests
             Id = TestAccountId,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            IsActive = true
+            IsActive = true,
         };
         context.Accounts.Add(existingAccount);
         await context.SaveChangesAsync();
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.CreateUserProfileAsync(TestAccountId, TestEmail, TestDisplayName)
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CreateUserProfileAsync(TestAccountId, TestEmail, TestDisplayName)
         );
 
         // Verify rollback - no profile should be created
-        var profileCount = await context.UserProfiles.CountAsync(
-            x => x.AccountId == TestAccountId
-        );
+        var profileCount = await context.UserProfiles.CountAsync(x => x.AccountId == TestAccountId);
         Assert.Equal(0, profileCount);
     }
 
@@ -317,7 +323,7 @@ public class UserProfileServiceTests
             Id = TestAccountId,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            IsActive = true
+            IsActive = true,
         };
 
         var userProfile = new UserProfile
@@ -329,7 +335,7 @@ public class UserProfileServiceTests
             LastName = "User",
             AvatarUrl = "old-url.jpg",
             CreatedAt = DateTime.UtcNow,
-            Account = account
+            Account = account,
         };
 
         context.Accounts.Add(account);
@@ -343,7 +349,7 @@ public class UserProfileServiceTests
             Email = "new@example.com",
             FirstName = "New",
             LastName = "Person",
-            AvatarUrl = "new-url.jpg"
+            AvatarUrl = "new-url.jpg",
         };
 
         // Act
@@ -375,7 +381,7 @@ public class UserProfileServiceTests
             Id = TestAccountId,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            IsActive = true
+            IsActive = true,
         };
 
         var userProfile = new UserProfile
@@ -387,7 +393,7 @@ public class UserProfileServiceTests
             LastName = "User",
             AvatarUrl = "original-url.jpg",
             CreatedAt = DateTime.UtcNow,
-            Account = account
+            Account = account,
         };
 
         context.Accounts.Add(account);
@@ -397,7 +403,7 @@ public class UserProfileServiceTests
         var updateRequest = new UpdateUserProfileRequest
         {
             Id = userProfile.Id,
-            FirstName = "Updated"
+            FirstName = "Updated",
             // Other fields are null, should not update
         };
 
@@ -420,15 +426,11 @@ public class UserProfileServiceTests
         var authService = new Mock<ISupabaseAuthService>();
         var service = new UserProfileService(context, authService.Object, _mockLogger.Object);
 
-        var updateRequest = new UpdateUserProfileRequest
-        {
-            Id = 999,
-            DisplayName = "New Name"
-        };
+        var updateRequest = new UpdateUserProfileRequest { Id = 999, DisplayName = "New Name" };
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => service.UpdateUserProfileAsync(updateRequest)
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            service.UpdateUserProfileAsync(updateRequest)
         );
         Assert.Contains("User with ID 999 not found", exception.Message);
     }
@@ -446,7 +448,7 @@ public class UserProfileServiceTests
             Id = TestAccountId,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            IsActive = true
+            IsActive = true,
         };
 
         var userProfile = new UserProfile
@@ -458,7 +460,7 @@ public class UserProfileServiceTests
             LastName = "User",
             AvatarUrl = "existing-url.jpg",
             CreatedAt = DateTime.UtcNow,
-            Account = account
+            Account = account,
         };
 
         context.Accounts.Add(account);
@@ -467,7 +469,7 @@ public class UserProfileServiceTests
 
         var updateRequest = new UpdateUserProfileRequest
         {
-            Id = userProfile.Id
+            Id = userProfile.Id,
             // All fields are null
         };
 

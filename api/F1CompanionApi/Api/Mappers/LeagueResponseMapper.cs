@@ -33,9 +33,7 @@ public static class LeagueResponseMapper
             TeamCount = league.LeagueTeams.Count,
             MaxTeams = league.MaxTeams,
             IsPrivate = league.IsPrivate,
-            Teams = league.LeagueTeams
-                        .Select(lt => lt.Team.ToResponseModel())
-                        .ToList(),
+            Teams = league.LeagueTeams.Select(lt => lt.Team.ToResponseModel()).ToList(),
         };
     }
 }

@@ -36,9 +36,7 @@ public class DriverService : IDriverService
             query = query.Where(driver => driver.IsActive == activeOnly);
         }
 
-        var drivers = await query
-            .OrderBy(o => o.LastName)
-            .ToListAsync();
+        var drivers = await query.OrderBy(o => o.LastName).ToListAsync();
 
         _logger.LogDebug("Retrieved {DriverCount} drivers", drivers.Count);
 

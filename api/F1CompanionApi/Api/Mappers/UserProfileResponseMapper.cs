@@ -17,7 +17,7 @@ public static class UserProfileResponseMapper
             AvatarUrl = userProfile.AvatarUrl,
             CreatedAt = userProfile.CreatedAt,
             UpdatedAt = userProfile.UpdatedAt,
-            Team = userProfile.Team?.ToResponseModel()
+            Team = userProfile.Team?.ToResponseModel(),
         };
     }
 }

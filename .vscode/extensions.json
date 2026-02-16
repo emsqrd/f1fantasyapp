@@ -6,6 +6,7 @@
     "ms-dotnettools.csharp",
     "ms-dotnettools.csdevkit",
     "ms-dotnettools.vscode-dotnet-runtime",
-    "eamodio.gitlens"
+    "eamodio.gitlens",
+    "csharpier.csharpier-vscode"
   ]
 }

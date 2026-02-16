@@ -29,7 +29,9 @@ public class InvalidSlotPositionException : Exception
     /// <param name="maxPosition">The maximum valid position for this entity type.</param>
     /// <param name="entityType">The type of entity (e.g., "driver" or "constructor").</param>
     public InvalidSlotPositionException(int position, int maxPosition, string entityType)
-        : base($"Slot position {position} is invalid for {entityType}s. Position must be between 0 and {maxPosition}.")
+        : base(
+            $"Slot position {position} is invalid for {entityType}s. Position must be between 0 and {maxPosition}."
+        )
     {
         Position = position;
         MaxPosition = maxPosition;
