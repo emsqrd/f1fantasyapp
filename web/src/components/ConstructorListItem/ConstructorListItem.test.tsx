@@ -18,6 +18,16 @@ describe('ConstructorListItem', () => {
     vi.clearAllMocks();
   });
 
+  it('should render all constructor details', () => {
+    render(<ConstructorListItem constructor={constructor} onSelect={mockOnSelect} />);
+
+    expect(screen.getByText('MER')).toBeInTheDocument();
+    expect(screen.getByText('Mercedes')).toBeInTheDocument();
+    expect(screen.getByText('DE')).toBeInTheDocument();
+    expect(screen.getByText('$--.-M')).toBeInTheDocument();
+    expect(screen.getByText('-- pts')).toBeInTheDocument();
+  });
+
   it('should call onSelect when add button is clicked', async () => {
     render(<ConstructorListItem constructor={constructor} onSelect={mockOnSelect} />);
 

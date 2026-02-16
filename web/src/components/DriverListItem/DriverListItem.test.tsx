@@ -18,6 +18,16 @@ describe('DriverListItem', () => {
     vi.clearAllMocks();
   });
 
+  it('should render all driver details', () => {
+    render(<DriverListItem driver={driver} onSelect={mockOnSelect} />);
+
+    expect(screen.getByText('SAI')).toBeInTheDocument();
+    expect(screen.getByText('Carlos Sainz')).toBeInTheDocument();
+    expect(screen.getByText('ESP')).toBeInTheDocument();
+    expect(screen.getByText('$--.-M')).toBeInTheDocument();
+    expect(screen.getByText('-- pts')).toBeInTheDocument();
+  });
+
   it('should call onSelect when add button is clicked', async () => {
     render(<DriverListItem driver={driver} onSelect={mockOnSelect} />);
 
