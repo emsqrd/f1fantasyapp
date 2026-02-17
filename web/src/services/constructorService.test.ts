@@ -1,5 +1,6 @@
 import type { Constructor } from '@/contracts/Role';
 import { apiClient } from '@/lib/api';
+import { createMockConstructorList } from '@/test-utils/mockFactories';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getActiveConstructors } from './constructorService';
@@ -19,20 +20,20 @@ describe('constructorService', () => {
 
   describe('getActiveConstructors', () => {
     it('calls apiClient.get with correct endpoint and query parameter', async () => {
-      const mockConstructors: Constructor[] = [
+      const mockConstructors: Constructor[] = createMockConstructorList([
         {
-          id: 1,
-          name: 'Red Bull',
+          name: 'Red Bull Racing',
           fullName: 'Oracle Red Bull Racing',
-          countryAbbreviation: 'AT',
+          abbreviation: 'RBR',
+          countryAbbreviation: 'AUT',
         },
         {
-          id: 2,
           name: 'Mercedes',
-          fullName: 'Mercedes-AMG Petronas F1 Team',
-          countryAbbreviation: 'DE',
+          fullName: 'Mercedes-AMG Petronas',
+          abbreviation: 'MER',
+          countryAbbreviation: 'GER',
         },
-      ];
+      ]);
 
       mockApiClient.get.mockResolvedValue(mockConstructors);
 

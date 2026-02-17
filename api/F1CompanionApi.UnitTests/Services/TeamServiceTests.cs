@@ -854,6 +854,8 @@ public class TeamServiceTests
         var constructor = new Constructor
         {
             Name = name,
+            FullName = "Test Constructor",
+            Abbreviation = "TES",
             CountryAbbreviation = "AT",
             IsActive = true,
         };

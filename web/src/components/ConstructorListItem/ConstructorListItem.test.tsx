@@ -1,4 +1,4 @@
-import type { Constructor } from '@/contracts/Role';
+import { createMockConstructor } from '@/test-utils/mockFactories';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,29 +6,26 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConstructorListItem } from './ConstructorListItem';
 
 describe('ConstructorListItem', () => {
-  const constructor: Constructor = {
-    id: 1,
+  const constructor = createMockConstructor({
     name: 'Mercedes',
     fullName: 'Mercedes-AMG Petronas F1 Team',
+    abbreviation: 'MER',
     countryAbbreviation: 'DE',
-  };
+  });
   const mockOnSelect = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should display the constructor name', () => {
+  it('should render all constructor details', () => {
     render(<ConstructorListItem constructor={constructor} onSelect={mockOnSelect} />);
 
+    expect(screen.getByText('MER')).toBeInTheDocument();
     expect(screen.getByText('Mercedes')).toBeInTheDocument();
-  });
-
-  it('should render button to select constructor', () => {
-    render(<ConstructorListItem constructor={constructor} onSelect={mockOnSelect} />);
-
-    const addConstructorButton = screen.getByRole('button', { name: /add constructor/i });
-    expect(addConstructorButton).toBeInTheDocument();
+    expect(screen.getByText('DE')).toBeInTheDocument();
+    expect(screen.getByText('$--.-M')).toBeInTheDocument();
+    expect(screen.getByText('-- pts')).toBeInTheDocument();
   });
 
   it('should call onSelect when add button is clicked', async () => {

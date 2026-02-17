@@ -10,11 +10,23 @@ interface DriverListItemProps {
 
 export function DriverListItem({ driver, onSelect }: DriverListItemProps) {
   return (
-    <li key={driver.id} className="flex items-center justify-between pb-4">
-      <span>
-        {driver.firstName} {driver.lastName}
-      </span>
-      <Button variant="ghost" aria-label="Add Driver" onClick={onSelect}>
+    <li className="flex items-center gap-3 py-2.5">
+      <div className="bg-secondary text-secondary-foreground flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold tracking-wide">
+        {driver.abbreviation}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-bold">
+          {driver.firstName} {driver.lastName}
+        </div>
+        <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
+          <span>{driver.countryAbbreviation}</span>
+          <span aria-hidden="true">&middot;</span>
+          <span>$--.-M</span>
+          <span aria-hidden="true">&middot;</span>
+          <span>-- pts</span>
+        </div>
+      </div>
+      <Button variant="ghost" size="icon" aria-label="Add Driver" onClick={onSelect}>
         <CirclePlus />
       </Button>
     </li>

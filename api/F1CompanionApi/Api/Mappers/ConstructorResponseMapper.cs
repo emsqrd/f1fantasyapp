@@ -11,6 +11,7 @@ public static class ConstructorResponseMapper
         {
             Id = constructor.Id,
             FullName = constructor.FullName,
+            Abbreviation = constructor.Abbreviation,
             CountryAbbreviation = constructor.CountryAbbreviation,
             Name = constructor.Name,
             IsActive = constructor.IsActive,

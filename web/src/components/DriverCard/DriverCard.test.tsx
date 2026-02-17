@@ -72,6 +72,7 @@ describe('DriverCard', () => {
     const driver = createMockDriver({
       firstName: 'Carlos',
       lastName: 'Sainz',
+      abbreviation: 'SAI',
     });
 
     it('displays driver full name when driver is selected', () => {
@@ -116,6 +117,7 @@ describe('DriverCard', () => {
     const driver = createMockDriver({
       firstName: 'Carlos',
       lastName: 'Sainz',
+      abbreviation: 'SAI',
     });
 
     it('displays driver full name in read-only mode', () => {
@@ -167,7 +169,7 @@ describe('DriverCard', () => {
     it('allows keyboard interaction with remove button in edit mode', async () => {
       const user = userEvent.setup();
       const onRemove = vi.fn();
-      const driver = createMockDriver({ firstName: 'Max', lastName: 'Verstappen' });
+      const driver = createMockDriver({ firstName: 'Max', lastName: 'Verstappen', abbreviation: 'VER' });
 
       render(
         <DriverCard driver={driver} onOpenPicker={vi.fn()} onRemove={onRemove} readOnly={false} />,

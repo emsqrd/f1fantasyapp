@@ -67,7 +67,7 @@ export function ConstructorPicker({
           <InlineError message={error} />
         </div>
       )}
-      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2 sm:grid-rows-2">
         {displayLineup.map((constructor, idx) => (
           <ConstructorCard
             key={idx}
@@ -89,7 +89,7 @@ export function ConstructorPicker({
           <SheetTrigger asChild>
             <div />
           </SheetTrigger>
-          <SheetContent className="flex h-full w-80 flex-col">
+          <SheetContent className="bg-card flex h-full flex-col sm:max-w-md">
             <SheetHeader>
               <SheetTitle>Select Constructor</SheetTitle>
               <SheetDescription>
@@ -97,7 +97,7 @@ export function ConstructorPicker({
               </SheetDescription>
             </SheetHeader>
             <ScrollArea className="h-full min-h-0 flex-1 pr-4 pl-4">
-              <ul className="space-y-2">
+              <ul className="divide-border divide-y">
                 {pool.map((constructor) => (
                   <ConstructorListItem
                     key={constructor.id}

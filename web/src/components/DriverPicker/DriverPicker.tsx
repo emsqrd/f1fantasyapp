@@ -63,7 +63,7 @@ export function DriverPicker({ activeDrivers, teamDrivers, readOnly }: DriverPic
           <InlineError message={error} />
         </div>
       )}
-      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2 sm:grid-rows-2">
         {displayLineup.map((driver, idx) => (
           <DriverCard
             key={idx}
@@ -86,7 +86,7 @@ export function DriverPicker({ activeDrivers, teamDrivers, readOnly }: DriverPic
           <SheetTrigger asChild>
             <div />
           </SheetTrigger>
-          <SheetContent className="flex h-full w-80 flex-col">
+          <SheetContent className="bg-card flex h-full flex-col sm:max-w-md">
             <SheetHeader>
               <SheetTitle>Select Driver</SheetTitle>
               <SheetDescription>
@@ -94,7 +94,7 @@ export function DriverPicker({ activeDrivers, teamDrivers, readOnly }: DriverPic
               </SheetDescription>
             </SheetHeader>
             <ScrollArea className="h-full min-h-0 flex-1 pr-4 pl-4">
-              <ul className="space-y-2">
+              <ul className="divide-border divide-y">
                 {pool.map((driver) => (
                   <DriverListItem
                     key={driver.id}

@@ -18,37 +18,46 @@ export function ConstructorCard({
   readOnly,
 }: ConstructorCardProps) {
   return (
-    <Card className="bg-secondary relative py-4">
-      <CardContent className="group flex h-full items-center justify-between px-3">
+    <Card className="bg-secondary relative p-0">
+      <CardContent className="px-3 py-4">
         {constructor ? (
-          <div className="flex w-full">
-            <span className="aspect-square w-14 self-center rounded-full border-2 border-gray-300" />
-            <div className="flex flex-1 flex-col items-start justify-between pl-4">
-              <h3 className="text-lg font-bold">{constructor.name}</h3>
+          <>
+            <div className="flex items-center gap-3">
+              <div className="border-border text-secondary-foreground flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold tracking-wide">
+                {constructor.abbreviation}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="overflow-hidden pr-6 leading-tight font-bold text-ellipsis whitespace-nowrap">
+                  {constructor.name}
+                </h3>
+                <div className="text-muted-foreground text-xs">
+                  {constructor.countryAbbreviation}
+                </div>
+              </div>
             </div>
-          </div>
+            <div className="bg-border my-2.5 h-px" />
+            <div className="text-muted-foreground flex justify-between px-1 text-xs">
+              <span>$--.-M</span>
+              <span>-- pts</span>
+            </div>
+          </>
         ) : readOnly ? (
           // Read-only mode: Show placeholder matching filled card layout
-          <div className="flex h-full w-full items-center">
-            <span className="aspect-square w-14 self-center rounded-full border-2 border-dashed border-gray-600" />
-
-            <div className="flex flex-1 flex-col items-start justify-between pl-4">
-              <h3 className="text-muted-foreground text-lg font-medium">Empty Slot</h3>
-            </div>
+          <div className="flex items-center gap-3">
+            <span className="h-14 w-14 shrink-0 rounded-full border-2 border-dashed border-gray-600" />
+            <span className="text-muted-foreground text-sm">Empty Slot</span>
           </div>
         ) : (
           // Edit mode: Show add button matching filled card layout
           <Button
             onClick={onOpenPicker}
             variant="ghost"
-            className="flex h-full w-full items-center !bg-transparent p-0 hover:opacity-80"
+            className="h-auto w-full justify-start gap-3 p-0 hover:opacity-80"
           >
-            <span className="bg-primary/10 text-primary flex aspect-square w-14 items-center justify-center self-center rounded-full border-2 border-dashed border-gray-600">
-              <CirclePlus className="size-6" />
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-gray-600">
+              <CirclePlus className="text-primary h-6 w-6" />
             </span>
-            <div className="flex flex-1 flex-col items-start justify-between pl-4">
-              <h3 className="text-muted-foreground text-lg font-medium">Add Constructor</h3>
-            </div>
+            <span className="text-muted-foreground text-sm">Add Constructor</span>
           </Button>
         )}
       </CardContent>
@@ -56,11 +65,11 @@ export function ConstructorCard({
         <Button
           size="icon"
           variant="ghost"
-          className="bg-secondary absolute top-2 right-2 h-6 w-6 rounded-full text-white"
+          className="text-muted-foreground absolute top-2 right-2 h-6 w-6"
           aria-label="Remove constructor"
           onClick={onRemove}
         >
-          <X className="h-3 w-3" />
+          <X className="h-4 w-4" />
         </Button>
       )}
     </Card>

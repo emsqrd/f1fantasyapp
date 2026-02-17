@@ -1,6 +1,6 @@
 import type { League } from '@/contracts/League';
-import type { Driver } from '@/contracts/Role';
-import type { Team, TeamDriver } from '@/contracts/Team';
+import type { Constructor, Driver } from '@/contracts/Role';
+import type { Team, TeamConstructor, TeamDriver } from '@/contracts/Team';
 
 /**
  * Test utility: Creates a mock Driver with sensible defaults.
@@ -13,6 +13,7 @@ export function createMockDriver(overrides: Partial<Driver> = {}): Driver {
     id: 1,
     firstName: 'Test',
     lastName: 'Driver',
+    abbreviation: 'TDS',
     countryAbbreviation: 'TST',
     ...overrides,
   };
@@ -26,22 +27,77 @@ export function createMockDriver(overrides: Partial<Driver> = {}): Driver {
  * // Creates: Driver 1, Driver 2, Driver 3
  *
  * @example
- * const drivers = createMockDriverList(2, (i) => ({
- *   firstName: 'Max',
- *   lastName: `Verstappen ${i}`
- * }));
+ * const drivers = createMockDriverList([
+ *   { firstName: 'Max', lastName: 'Verstappen' },
+ *   { firstName: 'Lewis', lastName: 'Hamilton' },
+ * ]);
  */
 export function createMockDriverList(
-  count: number,
-  overridesFn?: (index: number) => Partial<Driver>,
+  countOrOverrides: number | Partial<Driver>[],
 ): Driver[] {
-  return Array.from({ length: count }, (_, i) => {
+  const items = Array.isArray(countOrOverrides)
+    ? countOrOverrides
+    : Array.from({ length: countOrOverrides }, () => ({}));
+
+  return items.map((overrides, i) => {
     const index = i + 1;
     return createMockDriver({
       id: index,
       firstName: 'Driver',
       lastName: `${index}`,
-      ...overridesFn?.(index),
+      abbreviation: `DS${index}`,
+      countryAbbreviation: 'DST',
+      ...overrides,
+    });
+  });
+}
+
+/**
+ * Test utility: Creates a mock Constructor with sensible defaults.
+ *
+ * @example
+ * const constructor = createMockConstructor({ name: 'Red Bull Racing', fullName: 'Oracle Red Bull Racing' });
+ */
+export function createMockConstructor(overrides: Partial<Constructor> = {}): Constructor {
+  return {
+    id: 1,
+    name: 'Test',
+    fullName: 'Test Constructor',
+    abbreviation: 'TST',
+    countryAbbreviation: 'TST',
+    ...overrides,
+  };
+}
+
+/**
+ * Test utility: Creates an array of mock constructors with auto-incrementing IDs.
+ *
+ * @example
+ * const constructors = createMockConstructorList(3);
+ * // Creates: Constructor 1, Constructor 2, Constructor 3
+ *
+ * @example
+ * const constructors = createMockConstructorList([
+ *   { name: 'McLaren', fullName: 'McLaren F1 Team' },
+ *   { name: 'Ferrari', fullName: 'Scuderia Ferrari' },
+ * ]);
+ */
+export function createMockConstructorList(
+  countOrOverrides: number | Partial<Constructor>[],
+): Constructor[] {
+  const items = Array.isArray(countOrOverrides)
+    ? countOrOverrides
+    : Array.from({ length: countOrOverrides }, () => ({}));
+
+  return items.map((overrides, i) => {
+    const index = i + 1;
+    return createMockConstructor({
+      id: index,
+      name: `Constructor ${index}`,
+      abbreviation: `CS${index}`,
+      fullName: `Constructor ${index}`,
+      countryAbbreviation: 'TST',
+      ...overrides,
     });
   });
 }
@@ -83,6 +139,52 @@ export function createMockTeamDriverList(
 ): TeamDriver[] {
   return Array.from({ length: count }, (_, i) => {
     return createMockTeamDriver({
+      slotPosition: i,
+      id: i + 1,
+      ...overridesFn?.(i),
+    });
+  });
+}
+
+/**
+ * Test utility: Creates a mock TeamConstructor with sensible defaults.
+ *
+ * @example
+ * const constructor = createMockTeamConstructor({ name: 'Ferrari', fullName: 'Scuderia Ferrari' });
+ */
+export function createMockTeamConstructor(
+  overrides: Partial<TeamConstructor> = {},
+): TeamConstructor {
+  return {
+    slotPosition: 0,
+    id: 1,
+    name: 'Test',
+    abbreviation: 'TS',
+    fullName: 'Test Constructor',
+    countryAbbreviation: 'TST',
+    ...overrides,
+  };
+}
+
+/**
+ * Test utility: Creates an array of mock team constructors with auto-incrementing IDs and slot positions.
+ *
+ * @example
+ * const constructors = createMockTeamConstructorList(2);
+ * // Creates 2 constructors with slotPosition 0 and 1
+ *
+ * @example
+ * const constructors = createMockTeamConstructorList(2, (i) => ({
+ *   name: i === 0 ? 'Ferrari' : 'McLaren',
+ *   fullName: i === 0 ? 'Scuderia Ferrari' : 'McLaren F1 Team'
+ * }));
+ */
+export function createMockTeamConstructorList(
+  count: number,
+  overridesFn?: (index: number) => Partial<TeamConstructor>,
+): TeamConstructor[] {
+  return Array.from({ length: count }, (_, i) => {
+    return createMockTeamConstructor({
       slotPosition: i,
       id: i + 1,
       ...overridesFn?.(i),

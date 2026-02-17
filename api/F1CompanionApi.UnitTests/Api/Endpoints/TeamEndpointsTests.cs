@@ -317,6 +317,7 @@ public class TeamEndpointsTests
             Id = 1,
             Name = "Mercedes",
             FullName = "Mercedes-AMG Petronas F1 Team",
+            Abbreviation = "MER",
             CountryAbbreviation = "GER",
             IsActive = true,
         };
