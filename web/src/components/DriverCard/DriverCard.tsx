@@ -43,7 +43,7 @@ export function DriverCard({ driver, onOpenPicker, onRemove, readOnly }: DriverC
           <Button
             onClick={onOpenPicker}
             variant="ghost"
-            className="h-auto w-full justify-start gap-3 !bg-transparent p-0 hover:opacity-80"
+            className="h-auto w-full justify-start gap-3 p-0 hover:opacity-80"
           >
             <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-gray-600">
               <CirclePlus className="text-primary h-6 w-6" />
