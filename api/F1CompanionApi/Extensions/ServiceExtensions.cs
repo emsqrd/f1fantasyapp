@@ -69,16 +69,23 @@ public static class ServiceExtensions
 
     private static void AddDbContext(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(
-                configuration.GetConnectionString("DefaultConnection"),
-                npgsqlOptions =>
-                    npgsqlOptions.EnableRetryOnFailure(
-                        maxRetryCount: 3,
-                        maxRetryDelay: TimeSpan.FromSeconds(5),
-                        errorCodesToAdd: null
+        services.AddSingleton<ConnectionDiagnosticsInterceptor>();
+
+        services.AddDbContext<ApplicationDbContext>(
+            (serviceProvider, options) =>
+                options
+                    .UseNpgsql(
+                        configuration.GetConnectionString("DefaultConnection"),
+                        npgsqlOptions =>
+                            npgsqlOptions.EnableRetryOnFailure(
+                                maxRetryCount: 3,
+                                maxRetryDelay: TimeSpan.FromSeconds(5),
+                                errorCodesToAdd: null
+                            )
                     )
-            )
+                    .AddInterceptors(
+                        serviceProvider.GetRequiredService<ConnectionDiagnosticsInterceptor>()
+                    )
         );
     }
 
