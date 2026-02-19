@@ -677,7 +677,7 @@ public class TeamServiceTests
     }
 
     [Fact]
-    public async Task AddConstructorToTeamAsync_ConstructorAlreadyOnTeam_ThrowsInvalidOperationException()
+    public async Task AddConstructorToTeamAsync_SameConstructorTwice_Succeeds()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -689,13 +689,64 @@ public class TeamServiceTests
 
         await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id);
 
+        // Act
+        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 1, user.Id);
+
+        // Assert
+        var teamConstructors = context
+            .TeamConstructors.Where(tc =>
+                tc.TeamId == team.Id && tc.ConstructorId == constructor.Id
+            )
+            .ToList();
+        Assert.Equal(2, teamConstructors.Count);
+    }
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_SameConstructorThreeTimes_ThrowsEntityAlreadyOnTeamException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var constructor = CreateTestConstructor(context, "Red Bull Racing");
+
+        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id);
+        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 1, user.Id);
+
         // Act & Assert
         var exception = await Assert.ThrowsAsync<EntityAlreadyOnTeamException>(() =>
-            service.AddConstructorToTeamAsync(team.Id, constructor.Id, 1, user.Id)
+            service.AddConstructorToTeamAsync(team.Id, constructor.Id, 2, user.Id)
         );
         Assert.Equal(constructor.Id, exception.EntityId);
         Assert.Equal("constructor", exception.EntityType);
         Assert.Equal(team.Id, exception.TeamId);
+    }
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_TwoDifferentConstructorsEachTwice_FillsAllSlots()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var constructor1 = CreateTestConstructor(context, "Red Bull Racing");
+        var constructor2 = CreateTestConstructor(context, "Ferrari");
+
+        // Act
+        await service.AddConstructorToTeamAsync(team.Id, constructor1.Id, 0, user.Id);
+        await service.AddConstructorToTeamAsync(team.Id, constructor1.Id, 1, user.Id);
+        await service.AddConstructorToTeamAsync(team.Id, constructor2.Id, 2, user.Id);
+        await service.AddConstructorToTeamAsync(team.Id, constructor2.Id, 3, user.Id);
+
+        // Assert
+        var teamConstructors = context.TeamConstructors.Where(tc => tc.TeamId == team.Id).ToList();
+        Assert.Equal(4, teamConstructors.Count);
+        Assert.Equal(2, teamConstructors.Count(tc => tc.ConstructorId == constructor1.Id));
+        Assert.Equal(2, teamConstructors.Count(tc => tc.ConstructorId == constructor2.Id));
     }
 
     [Fact]

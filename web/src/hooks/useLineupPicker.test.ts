@@ -139,6 +139,58 @@ describe('useLineupPicker', () => {
 
       expect(result.current.pool).toEqual([]);
     });
+
+    it('keeps items in pool below maxDuplicates threshold', () => {
+      const { result } = renderHook(() =>
+        useLineupPicker({
+          items: mockItems,
+          lineup: [mockItems[0], null, null, null],
+          lineupSize: 4,
+          itemType: 'constructor',
+          addToTeam: mockAddToTeam,
+          removeFromTeam: mockRemoveFromTeam,
+          maxDuplicates: 2,
+        }),
+      );
+
+      // Item 1 is in lineup once but maxDuplicates is 2, so it should still be in pool
+      expect(result.current.pool).toContainEqual(mockItems[0]);
+    });
+
+    it('removes items from pool at maxDuplicates threshold', () => {
+      const { result } = renderHook(() =>
+        useLineupPicker({
+          items: mockItems,
+          lineup: [mockItems[0], mockItems[0], null, null],
+          lineupSize: 4,
+          itemType: 'constructor',
+          addToTeam: mockAddToTeam,
+          removeFromTeam: mockRemoveFromTeam,
+          maxDuplicates: 2,
+        }),
+      );
+
+      // Item 1 is in lineup twice and maxDuplicates is 2, so it should be removed from pool
+      expect(result.current.pool).not.toContainEqual(mockItems[0]);
+      // Other items should still be available
+      expect(result.current.pool).toContainEqual(mockItems[1]);
+    });
+
+    it('defaults maxDuplicates to 1 when not specified', () => {
+      const { result } = renderHook(() =>
+        useLineupPicker({
+          items: mockItems,
+          lineup: [mockItems[0], null, null, null],
+          lineupSize: 4,
+          itemType: 'driver',
+          addToTeam: mockAddToTeam,
+          removeFromTeam: mockRemoveFromTeam,
+        }),
+      );
+
+      // Without maxDuplicates, items used once should be excluded (default maxDuplicates=1)
+      expect(result.current.pool).not.toContainEqual(mockItems[0]);
+    });
   });
 
   describe('openPicker', () => {

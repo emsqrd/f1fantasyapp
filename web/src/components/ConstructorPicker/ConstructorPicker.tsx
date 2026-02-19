@@ -58,6 +58,7 @@ export function ConstructorPicker({
     itemType: 'constructor',
     addToTeam: addConstructorToTeam,
     removeFromTeam: removeConstructorFromTeam,
+    maxDuplicates: 2,
   });
 
   return (
@@ -93,7 +94,7 @@ export function ConstructorPicker({
             <SheetHeader>
               <SheetTitle>Select Constructor</SheetTitle>
               <SheetDescription>
-                Choose a constructor from the list below to add to your team.
+                Choose a constructor to add to your team (you can pick the same one twice).
               </SheetDescription>
             </SheetHeader>
             <ScrollArea className="h-full min-h-0 flex-1 pr-4 pl-4">

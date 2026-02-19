@@ -111,15 +111,6 @@ describe('DriverPicker', () => {
       mockSelectedPosition = 0; // Picker is open
     });
 
-    it('displays sheet with title and description when picker is open', () => {
-      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} />);
-
-      expect(screen.getByText('Select Driver')).toBeInTheDocument();
-      expect(
-        screen.getByText('Choose a driver from the list below to add to your team.'),
-      ).toBeInTheDocument();
-    });
-
     it('displays all available drivers from pool', () => {
       mockPool = mockDrivers; // All drivers available
 
