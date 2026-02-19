@@ -75,3 +75,20 @@ Use `ILogger<T>` with structured logging (named placeholders, not string interpo
 ```csharp
 _logger.LogInformation("Creating league {LeagueName} for user {UserId}", name, userId);
 ```
+
+## Observability
+
+**ConnectionDiagnosticsInterceptor** (`Data/ConnectionDiagnosticsInterceptor.cs`) — logs a
+warning for any DB connection that takes >1s to open. Look for `Slow DB connection` entries in
+Render logs when diagnosing connectivity issues. The log includes a connection GUID, host:port,
+and duration in ms.
+
+**DbContext is Scoped** — all services in a single HTTP request share the same `ApplicationDbContext`
+instance. However, when using Supabase Supavisor in **Transaction mode** (port 6543), the physical
+Postgres connection is returned to Supavisor's pool after each implicit transaction (i.e. each
+EF Core query). This means each query in a request pays a reconnection cost through Supavisor.
+If connection overhead is suspected, check Render logs for repeated `Slow DB connection` entries
+with the same connection GUID — that indicates Transaction mode re-establishment overhead.
+
+**Production connection string** is in the `ConnectionStrings__DefaultConnection` env var on Render
+(not in source). Check `ServiceExtensions.cs:AddDbContext` for how it's consumed.
