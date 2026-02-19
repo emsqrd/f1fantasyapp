@@ -28,7 +28,7 @@ public class ConnectionDiagnosticsInterceptor(ILogger<ConnectionDiagnosticsInter
         }
         else
         {
-            logger.LogInformation(
+            logger.LogDebug(
                 "DB connection {ConnectionId} to {Host}:{Port} opened in {DurationMs:F0}ms",
                 eventData.ConnectionId,
                 host,
