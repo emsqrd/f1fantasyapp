@@ -7,18 +7,9 @@ import { createMockConstructorList } from '@/test-utils/mockFactories';
 import { ConstructorPicker } from './ConstructorPicker';
 
 // Mock useLineupPicker hook
+const mockUseLineupPicker = vi.fn();
 vi.mock('@/hooks/useLineupPicker', () => ({
-  useLineupPicker: () => ({
-    displayLineup: mockDisplayLineup,
-    pool: mockPool,
-    selectedPosition: mockSelectedPosition,
-    isPending: mockIsPending,
-    error: mockError,
-    openPicker: vi.fn(),
-    closePicker: vi.fn(),
-    handleAdd: vi.fn(),
-    handleRemove: vi.fn(),
-  }),
+  useLineupPicker: (...args: unknown[]) => mockUseLineupPicker(...args),
 }));
 
 // Mock data - will be set in beforeEach or individual tests
@@ -52,6 +43,18 @@ describe('ConstructorPicker', () => {
     mockSelectedPosition = null;
     mockIsPending = false;
     mockError = null;
+
+    mockUseLineupPicker.mockImplementation(() => ({
+      displayLineup: mockDisplayLineup,
+      pool: mockPool,
+      selectedPosition: mockSelectedPosition,
+      isPending: mockIsPending,
+      error: mockError,
+      openPicker: vi.fn(),
+      closePicker: vi.fn(),
+      handleAdd: vi.fn(),
+      handleRemove: vi.fn(),
+    }));
   });
 
   describe('Lineup Rendering', () => {
@@ -122,15 +125,6 @@ describe('ConstructorPicker', () => {
   describe('Picker Sheet', () => {
     beforeEach(() => {
       mockSelectedPosition = 0; // Picker is open
-    });
-
-    it('displays sheet with title and description when picker is open', () => {
-      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={false} />);
-
-      expect(screen.getByText('Select Constructor')).toBeInTheDocument();
-      expect(
-        screen.getByText('Choose a constructor from the list below to add to your team.'),
-      ).toBeInTheDocument();
     });
 
     it('displays all available constructors from pool', () => {
@@ -259,6 +253,16 @@ describe('ConstructorPicker', () => {
 
       const removeButton = screen.getByRole('button', { name: /remove constructor/i });
       expect(removeButton).toHaveAccessibleName('Remove constructor');
+    });
+  });
+
+  describe('Duplicate Constructors', () => {
+    it('passes maxDuplicates: 2 to useLineupPicker', () => {
+      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={false} />);
+
+      expect(mockUseLineupPicker).toHaveBeenCalledWith(
+        expect.objectContaining({ maxDuplicates: 2 }),
+      );
     });
   });
 

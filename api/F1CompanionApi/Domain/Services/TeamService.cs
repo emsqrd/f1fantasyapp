@@ -303,11 +303,12 @@ public class TeamService : ITeamService
             throw new SlotOccupiedException(slotPosition, teamId);
         }
 
-        // Check if constructor already on team
-        if (team.TeamConstructors.Any(tc => tc.ConstructorId == constructorId))
+        // Check if constructor already at maximum (2) on team
+        var constructorCount = team.TeamConstructors.Count(tc => tc.ConstructorId == constructorId);
+        if (constructorCount >= 2)
         {
             _logger.LogWarning(
-                "Constructor {ConstructorId} already on team {TeamId}",
+                "Constructor {ConstructorId} already at maximum (2) on team {TeamId}",
                 constructorId,
                 teamId
             );
