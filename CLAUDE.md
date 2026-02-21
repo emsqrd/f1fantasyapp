@@ -92,18 +92,17 @@ Open this folder in VSCode and use:
 
 ## Production Infrastructure
 
-Hosted on Render (free tier, spins down after inactivity) + Supabase (free tier).
+Hosted on Fly.io + Supabase (free tier).
 
 | Resource | Identifier |
 |---|---|
-| Render service name | `f1fantasyappapi` |
-| Render service ID | `srv-d2pqsbbe5dus73bcttfg` |
+| Fly.io app name | `f1fantasyapp` |
+| Fly.io region | `iad` (Virginia) |
 | Supabase project ref | `cfuccajsckqzecbfyqrv` |
-| Supabase pooler host | `aws-1-us-east-2.pooler.supabase.com` |
 | Supabase direct DB host | `db.cfuccajsckqzecbfyqrv.supabase.co` |
 
 **MCP servers available for investigation:**
-- `mcp__render__list_logs` — runtime logs from the API (use `srv-d2pqsbbe5dus73bcttfg`)
+- `fly logs -a f1fantasyapp` — runtime logs from the API
 - `mcp__sentry__search_events` — error events (project slug: `f1-fantasy-api` or `f1-fantasy-web`, org: `emsqrd`, regionUrl: `https://us.sentry.io`)
 - `mcp__supabase__get_logs` — Postgres and API gateway logs (service: `postgres` or `api`)
 
