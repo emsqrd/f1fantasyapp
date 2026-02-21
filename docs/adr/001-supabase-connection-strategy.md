@@ -60,6 +60,62 @@ options.UseNpgsql(connectionString, npgsqlOptions =>
 - Upgrading Render would allow IPv6, also enabling direct connections
 - Either upgrade would allow increasing `Maximum Pool Size` and removing the Supavisor middleman
 
+## Post-Deployment Investigation (2026-02-21)
+
+### Status: Root cause identified, mitigation deployed (incomplete)
+
+A thorough multi-phase investigation using Sentry error data, Render logs, Supabase logs, and git history revealed a more complex reality than initial hypothesis.
+
+**Key findings:**
+
+1. **Error rate was NOT hidden — it was real and increasing**
+   - Sentry active since Nov 2025 (would have caught earlier errors)
+   - Dec 14, 2025: First DB issue appeared (`DbCommand` 45s slow queries)
+   - Jan 11, 2026: Pool exhaustion errors (`MaxClientsInSessionMode`)
+   - Feb 16, 2026: TCP-level connection failures emerged (completely new failure mode)
+   - Error rate accelerated: Feb 7-10 (1), Feb 14-17 (270), Feb 18-21 (415)
+
+2. **What changed in mid-February**
+   - 9 merges to main in 1 week (vs. 3 the previous week) = many cold starts
+   - Race/Season features deployed Feb 5, increasing DB calls per session
+   - UX redesign deployed Feb 16, increased page load frequency
+   - `EnableRetryOnFailure` added Feb 16 — meant to help but **tripled** TCP connection attempts (1 timeout → 3 timeouts)
+   - Pool exhaustion fixed Feb 18 with `Maximum Pool Size=10`, but TCP failures continued
+
+3. **Root cause is multi-layered, not a single tuning issue**
+   - **Layer 1:** Render free tier drops outbound TCP packets (confirmed: "our GCP gateway was indeed dropping packets")
+   - **Layer 2:** Supavisor has `client_idle_timeout` that closes idle connections on free tier (not configurable)
+   - **Layer 3:** Npgsql default `Minimum Pool Size=0` allows pool to drain, forcing expensive reconnections
+   - All three layers must align badly simultaneously for failures to occur
+
+4. **Failures are NOT just cold-start failures**
+   - Timeline analysis shows failures on FIRST connection attempt (pool empty, no eviction)
+   - Some instances failed continuously for 10+ minutes even when API was running
+   - When connections succeed after failure, they take 2-4s (Supavisor warming), not 15s timeout
+   - Bimodal distribution (success or complete failure) suggests **packet drops**, not latency
+
+**Mitigation (in code, not yet deployed):**
+1. **`Timeout=30`** — allows more time for TCP handshake, helps cold-start case
+2. **DB warmup at startup** — absorbs startup connection latency before first user request
+
+**Why mitigation is incomplete:**
+- Mid-lifecycle failures (after pool eviction or connection reuse) still hit unreachable Supavisor
+- Dropped packets don't become less dropped just because timeout is longer
+- Warmup only covers app startup, not subsequent request bursts
+
+**Why the problem only became visible in mid-February:**
+- App functionality grew (new endpoints, more DB calls per session)
+- Deployment frequency increased (more cold starts)
+- Retry strategy was added (amplified error count 3x)
+- More people may have been using the app
+- Underlying infrastructure flakiness was always there, but error rate is proportional to connection attempt frequency
+
+**Long-term options:**
+1. **Proper fix:** Upgrade Supabase to paid plan for direct IPv4 ($4/month) or Render for IPv6 — removes Supavisor
+2. **Better mitigation:** Set `Minimum Pool Size=1` to keep connection alive (let Keepalive pings prevent tenant pool cold start)
+3. **Architectural change:** Use Supabase REST API instead of raw TCP (bypasses Supavisor entirely)
+4. **Accept the limitation:** Document as a known issue of free-tier deployment
+
 ## Alternatives Considered
 
 ### Session mode with default pool size (Attempt 1)
