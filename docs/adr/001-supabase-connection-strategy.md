@@ -1,16 +1,16 @@
-# ADR 001: Supabase Connection Strategy for Render Free Tier
+# ADR 001: Supabase Connection Strategy
 
 **Date:** 2026-02-18
-**Status:** Accepted
+**Status:** Superseded (2026-02-21) — Migrated to Fly.io with direct Supabase connections
 
-## Context
+## Context (Render Era — Deprecated)
 
-The F1 Fantasy API runs on Render's free tier and connects to a PostgreSQL database hosted on Supabase's free tier. Two platform constraints collide:
+The F1 Fantasy API initially ran on Render's free tier and connected to Supabase's free tier via Supavisor. Two platform constraints collided:
 
 1. **Supabase switched direct database connections to IPv6-only** (Feb 2024). The IPv4 add-on requires a paid plan ($4/month).
 2. **Render's free tier does not support IPv6 outbound connections.**
 
-This means the API cannot reach Supabase's direct connection host (`db.cfuccajsckqzecbfyqrv.supabase.co`). All database traffic must go through **Supavisor**, Supabase's connection pooler (`aws-1-us-east-2.pooler.supabase.com`), which supports IPv4.
+This prevented direct connections. All database traffic had to go through **Supavisor**, Supabase's connection pooler (`aws-1-us-east-2.pooler.supabase.com`), which supports IPv4. Render's free tier would intermittently drop TCP packets to Supavisor, causing failures.
 
 Supavisor offers two connection modes:
 - **Session mode** (port 5432) — binds a backend Postgres connection to the client connection for its lifetime. Suitable for persistent servers.
@@ -23,14 +23,20 @@ Supabase free tier limits:
 
 Npgsql (the .NET PostgreSQL driver) defaults to `Maximum Pool Size=100`, which silently exceeds Supavisor's per-user pool size limit.
 
-## Decision
+## Original Decision (Deprecated)
 
-Use **session mode (port 5432)** via Supavisor with `Maximum Pool Size=10` in the Npgsql connection string, combined with EF Core's retry-on-failure (3 retries, 5-second max delay).
+Use **session mode (port 5432)** via Supavisor with `Maximum Pool Size=10`. This worked but was limited by Render's packet loss.
+
+## New Decision (2026-02-21)
+
+Migrate to **Fly.io** for reliable IPv6 outbound connectivity, enabling direct Supabase connections (IPv6-only). Use direct connection to `db.cfuccajsckqzecbfyqrv.supabase.co` without Supavisor.
 
 Connection string format:
 ```
-User Id=postgres.<project-ref>;Password=<pw>;Server=aws-1-us-east-2.pooler.supabase.com;Port=5432;Database=postgres;SSL Mode=Require;Maximum Pool Size=10
+User Id=postgres;Password=<pw>;Server=db.cfuccajsckqzecbfyqrv.supabase.co;Port=5432;Database=postgres;SSL Mode=Require
 ```
+
+**Key difference from Supavisor:** Use `User Id=postgres` (not `postgres.<project-ref>`). Supavisor requires the project ref suffix; direct connections use the base `postgres` user.
 
 EF Core configuration (in `ServiceExtensions.cs`):
 ```csharp
@@ -42,23 +48,24 @@ options.UseNpgsql(connectionString, npgsqlOptions =>
     ))
 ```
 
-## Consequences
+## Consequences (Fly.io + Direct Connections)
 
 **What this enables:**
-- Stable database connectivity from Render free tier to Supabase free tier
-- Session mode keeps backend connections tied to client connections — no per-query reconnection overhead
-- Pool size of 10 stays safely within Supavisor's ~15-20 backend connection limit
-- EF Core retry handles transient failures (cold starts, brief Supavisor hiccups)
+- **No packet loss:** Fly.io has reliable outbound IPv6 to AWS/Supabase
+- **No pooler overhead:** Direct connection bypasses Supavisor entirely, lower latency
+- **Standard PostgreSQL client connection:** No connection limit imposed by Supavisor free tier
+- **Cost:** Fly.io shared-cpu-1x 256MB ≈ $2/month (vs Render Starter $7/month)
 
 **Limitations:**
-- Maximum 10 concurrent database connections, limiting API concurrency under load
-- Still dependent on Supavisor as an intermediary (adds slight latency vs. direct connections)
-- Supabase has no .NET/Npgsql-specific documentation — future Supavisor changes may require re-investigation
+- Direct connection host is IPv6-only — local testing requires IPv6 DNS/connectivity (most home networks lack this)
+- Fail2ban bans IPs after repeated authentication failures (clears in 30 minutes or via Supabase CLI)
+- Must use correct `User Id=postgres` (not `postgres.<project-ref>`) for direct connections
 
-**If moving off free tier:**
-- Upgrading Supabase to a paid plan enables direct IPv4 connections, removing the Supavisor dependency entirely
-- Upgrading Render would allow IPv6, also enabling direct connections
-- Either upgrade would allow increasing `Maximum Pool Size` and removing the Supavisor middleman
+**Credentials Critical Note:**
+Connecting to the direct host with wrong User Id (e.g., `postgres.cfuccajsckqzecbfyqrv`) will fail with "password authentication failed" and trigger Fail2ban after 2 failures, blocking the IP for 30 minutes. Always verify credentials locally against Supavisor first if troubleshooting:
+```
+psql "postgresql://postgres.<project-ref>:<password>@aws-1-us-east-2.pooler.supabase.com:5432/postgres?sslmode=require"
+```
 
 ## Post-Deployment Investigation (2026-02-21)
 
@@ -126,3 +133,40 @@ Transaction mode on port 6543 returned the physical Postgres connection to Supav
 
 ### Transaction mode with multiplexing (Attempt 3)
 Adding `Multiplexing=true` to the connection string kept existing Npgsql connections alive (0ms reopens), but new TCP connections to Supavisor still intermittently timed out. Npgsql's multiplexing is also experimental and not validated with Supavisor.
+
+## Migration to Fly.io with Direct Connections (2026-02-21)
+
+### Issue: Credentials Confusion
+
+Initial deployment to Fly.io used wrong User Id for direct connections:
+- **Attempted:** `User Id=postgres.cfuccajsckqzecbfyqrv` (Supavisor format)
+- **Correct:** `User Id=postgres` (Direct connection format)
+
+This caused repeated "password authentication failed" errors in Supabase logs and triggered Fail2ban, resulting in `SocketException: Connection refused` at the TCP level.
+
+### Root Cause
+
+Supavisor and direct connections use different authentication schemes:
+- **Supavisor** translates the `postgres.<project-ref>` user to the underlying `postgres` user
+- **Direct connections** require `postgres` user directly — the project ref suffix doesn't exist as a direct user
+
+### Resolution
+
+1. Fixed connection string in Fly.io secrets to use `User Id=postgres`
+2. Waited for Fail2ban 30-minute ban to expire
+3. Verified connection works with correct credentials
+
+### Testing Direct Connections
+
+**IPv6 DNS limitation:** The direct connection host `db.*.supabase.co` only has IPv6 DNS records (AAAA, no A). Most local machines don't have IPv6 connectivity, causing `nodename nor servname provided` errors.
+
+**Workaround:** Test password against Supavisor (IPv4, accessible locally) first:
+```bash
+psql "postgresql://postgres.<project-ref>:<password>@aws-1-us-east-2.pooler.supabase.com:5432/postgres?sslmode=require"
+```
+
+If that connects, the password is correct. Test direct connection from Fly.io:
+```bash
+fly ssh console -a f1fantasyapp
+psql "postgresql://postgres:<password>@db.cfuccajsckqzecbfyqrv.supabase.co:5432/postgres?sslmode=require"
+```
