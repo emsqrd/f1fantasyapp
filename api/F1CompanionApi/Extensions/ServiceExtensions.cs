@@ -71,11 +71,17 @@ public static class ServiceExtensions
     {
         services.AddSingleton<ConnectionDiagnosticsInterceptor>();
 
+        var connectionString =
+            configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException(
+                "DefaultConnection connection string not configured"
+            );
+
         services.AddDbContext<ApplicationDbContext>(
             (serviceProvider, options) =>
                 options
                     .UseNpgsql(
-                        configuration.GetConnectionString("DefaultConnection"),
+                        connectionString,
                         npgsqlOptions =>
                             npgsqlOptions.EnableRetryOnFailure(
                                 maxRetryCount: 3,
