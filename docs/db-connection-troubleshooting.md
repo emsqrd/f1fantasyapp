@@ -217,6 +217,58 @@ Added in `api/F1CompanionApi/Data/ConnectionDiagnosticsInterceptor.cs`, this EF 
 Use the Render MCP server to check production logs:
 - `mcp__render__list_logs` with service ID `srv-d2pqsbbe5dus73bcttfg`
 
+## Fly.io Migration & Direct Connection Credentials (2026-02-21)
+
+### Problem: Connection Refused After Fly.io Migration
+
+After migrating from Render to Fly.io, initial deployment showed `SocketException: Connection refused` when connecting to Supabase's direct database host (`db.cfuccajsckqzecbfyqrv.supabase.co`).
+
+### Root Cause: Wrong User Id for Direct Connections
+
+**Supavisor connection string (IPv4 pooler):**
+```
+User Id=postgres.cfuccajsckqzecbfyqrv;Password=<pw>;Server=aws-1-us-east-2.pooler.supabase.com;Port=5432;Database=postgres;SSL Mode=Require
+```
+
+**Direct connection string (IPv6, no pooler):**
+```
+User Id=postgres;Password=<pw>;Server=db.cfuccajsckqzecbfyqrv.supabase.co;Port=5432;Database=postgres;SSL Mode=Require
+```
+
+The key difference: **Direct connections use `User Id=postgres` (no project ref suffix).** Supavisor requires the project ref suffix (`postgres.<project-ref>`) because it translates that user to the underlying `postgres` user. Direct connections go straight to Postgres and require the actual user name.
+
+Using `postgres.cfuccajsckqzecbfyqrv` with a direct connection causes "password authentication failed" errors, which trigger Supabase's Fail2ban after 2 failures, banning the IP for 30 minutes.
+
+### Debugging Direct Connection Credentials
+
+**IPv6 DNS limitation:** The direct host `db.*.supabase.co` only has IPv6 AAAA records. Most local machines lack IPv6 connectivity and will get `nodename nor servname provided, or not known` errors.
+
+**Safe testing approach:**
+
+1. **Verify password against Supavisor first** (IPv4, accessible locally):
+```bash
+psql "postgresql://postgres.cfuccajsckqzecbfyqrv:<password>@aws-1-us-east-2.pooler.supabase.com:5432/postgres?sslmode=require"
+```
+If this connects, the password is correct.
+
+2. **Test direct connection from Fly.io** (where IPv6 works):
+```bash
+fly ssh console -a f1fantasyapp
+psql "postgresql://postgres:<password>@db.cfuccajsckqzecbfyqrv.supabase.co:5432/postgres?sslmode=require"
+```
+
+3. **If still failing:** Check Supabase Postgres logs for `FATAL: password authentication failed for user "postgres"` entries. If multiple auth failures appear, Fail2ban is active — wait 30 minutes or unban via Supabase CLI:
+```bash
+supabase projects unban --project-ref cfuccajsckqzecbfyqrv
+```
+
+### Why Fly.io + Direct Connections Work
+
+- **Fly.io has reliable IPv6 outbound** to AWS/Supabase (unlike Render free tier which drops packets)
+- **Direct connection bypasses Supavisor** — no intermediary, lower latency
+- **Standard Postgres authentication** — use standard User Id format
+- **Cost:** ~$2/month (shared-cpu-1x 256MB, always-on) vs Render Starter $7/month
+
 ## Reference
 
 ### Supabase Free Tier Limits
