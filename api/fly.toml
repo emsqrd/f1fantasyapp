@@ -1,4 +1,4 @@
-app = "f1fantasyappapi"
+app = "f1fantasyapp"
 primary_region = "iad"
 
 [build]
