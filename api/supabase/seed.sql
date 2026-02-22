@@ -1,72 +1,72 @@
 -- Insert F1 Drivers
 INSERT INTO "Drivers"
-  ("FirstName", "LastName", "Abbreviation", "CountryAbbreviation", "IsActive", "IsDeleted", "CreatedAt", "UpdatedAt", "DeletedAt")
+  ("FirstName", "LastName", "Abbreviation", "CountryAbbreviation", "IsDeleted", "CreatedAt", "UpdatedAt", "DeletedAt")
 VALUES
   -- Red Bull Racing
-  ('Max', 'Verstappen', 'VER', 'NED', true, false, NOW(), NOW(), NULL),
-  ('Isack', 'Hadjar', 'HAD', 'FRA', true, false, NOW(), NOW(), NULL),
+  ('Max', 'Verstappen', 'VER', 'NED', false, NOW(), NOW(), NULL),
+  ('Isack', 'Hadjar', 'HAD', 'FRA', false, NOW(), NOW(), NULL),
 
   -- Mercedes
-  ('George', 'Russell', 'RUS', 'GBR', true, false, NOW(), NOW(), NULL),
-  ('Kimi', 'Antonelli', 'ANT', 'ITA', true, false, NOW(), NOW(), NULL),
+  ('George', 'Russell', 'RUS', 'GBR', false, NOW(), NOW(), NULL),
+  ('Kimi', 'Antonelli', 'ANT', 'ITA', false, NOW(), NOW(), NULL),
 
   -- Ferrari
-  ('Charles', 'Leclerc', 'LEC', 'MON', true, false, NOW(), NOW(), NULL),
-  ('Lewis', 'Hamilton', 'HAM', 'GBR', true, false, NOW(), NOW(), NULL),
+  ('Charles', 'Leclerc', 'LEC', 'MON', false, NOW(), NOW(), NULL),
+  ('Lewis', 'Hamilton', 'HAM', 'GBR', false, NOW(), NOW(), NULL),
 
   -- McLaren
-  ('Lando', 'Norris', 'NOR', 'GBR', true, false, NOW(), NOW(), NULL),
-  ('Oscar', 'Piastri', 'PIA', 'AUS', true, false, NOW(), NOW(), NULL),
+  ('Lando', 'Norris', 'NOR', 'GBR', false, NOW(), NOW(), NULL),
+  ('Oscar', 'Piastri', 'PIA', 'AUS', false, NOW(), NOW(), NULL),
 
   -- Aston Martin
-  ('Fernando', 'Alonso', 'ALO', 'ESP', true, false, NOW(), NOW(), NULL),
-  ('Lance', 'Stroll', 'STR', 'CAN', true, false, NOW(), NOW(), NULL),
+  ('Fernando', 'Alonso', 'ALO', 'ESP', false, NOW(), NOW(), NULL),
+  ('Lance', 'Stroll', 'STR', 'CAN', false, NOW(), NOW(), NULL),
 
   -- Alpine
-  ('Pierre', 'Gasly', 'GAS', 'FRA', true, false, NOW(), NOW(), NULL),
-  ('Franco', 'Colapinto', 'COL', 'ARG', true, false, NOW(), NOW(), NULL),
+  ('Pierre', 'Gasly', 'GAS', 'FRA', false, NOW(), NOW(), NULL),
+  ('Franco', 'Colapinto', 'COL', 'ARG', false, NOW(), NOW(), NULL),
 
   -- Williams
-  ('Alex', 'Albon', 'ALB', 'THA', true, false, NOW(), NOW(), NULL),
-  ('Carlos', 'Sainz', 'SAI', 'ESP', true, false, NOW(), NOW(), NULL),
+  ('Alex', 'Albon', 'ALB', 'THA', false, NOW(), NOW(), NULL),
+  ('Carlos', 'Sainz', 'SAI', 'ESP', false, NOW(), NOW(), NULL),
 
   -- Racing Bulls
-  ('Liam', 'Lawson', 'LAW', 'NZL', true, false, NOW(), NOW(), NULL),
-  ('Arvid', 'Lindblad', 'LIN', 'GBR', true, false, NOW(), NOW(), NULL),
+  ('Liam', 'Lawson', 'LAW', 'NZL', false, NOW(), NOW(), NULL),
+  ('Arvid', 'Lindblad', 'LIN', 'GBR', false, NOW(), NOW(), NULL),
 
   -- Audi
-  ('Nico', 'Hulkenberg', 'HUL', 'GER', true, false, NOW(), NOW(), NULL),
-  ('Gabriel', 'Bortoleto', 'BOR', 'BRA', true, false, NOW(), NOW(), NULL),
+  ('Nico', 'Hulkenberg', 'HUL', 'GER', false, NOW(), NOW(), NULL),
+  ('Gabriel', 'Bortoleto', 'BOR', 'BRA', false, NOW(), NOW(), NULL),
 
   -- Haas
-  ('Esteban', 'Ocon', 'OCO', 'FRA', true, false, NOW(), NOW(), NULL),
-  ('Oliver', 'Bearman', 'BEA', 'GBR', true, false, NOW(), NOW(), NULL),
+  ('Esteban', 'Ocon', 'OCO', 'FRA', false, NOW(), NOW(), NULL),
+  ('Oliver', 'Bearman', 'BEA', 'GBR', false, NOW(), NOW(), NULL),
 
   -- Cadillac
-  ('Valtteri', 'Bottas', 'BOT', 'FIN', true, false, NOW(), NOW(), NULL),
-  ('Sergio', 'Perez', 'PER', 'MEX', true, false, NOW(), NOW(), NULL),
+  ('Valtteri', 'Bottas', 'BOT', 'FIN', false, NOW(), NOW(), NULL),
+  ('Sergio', 'Perez', 'PER', 'MEX', false, NOW(), NOW(), NULL),
 
   -- Historical drivers (no 2026 seat)
-  ('Jack', 'Doohan', 'DOO', 'AUS', true, false, NOW(), NOW(), NULL),
-  ('Yuki', 'Tsunoda', 'TSU', 'JPN', true, false, NOW(), NOW(), NULL)
+  ('Jack', 'Doohan', 'DOO', 'AUS', false, NOW(), NOW(), NULL),
+  ('Yuki', 'Tsunoda', 'TSU', 'JPN', false, NOW(), NOW(), NULL)
 ON CONFLICT DO NOTHING;
 
 -- Insert F1 Constructors
 INSERT INTO "Constructors"
-  ("Name", "FullName", "Abbreviation", "CountryAbbreviation", "IsActive", "IsDeleted", "CreatedAt", "UpdatedAt", "DeletedAt")
+  ("Name", "FullName", "Abbreviation", "CountryAbbreviation", "IsDeleted", "CreatedAt", "UpdatedAt", "DeletedAt")
 VALUES
-  ('Red Bull Racing', 'Oracle Red Bull Racing', 'RBR', 'AUT', true, false, NOW(), NOW(), NULL),
-  ('Mercedes', 'Mercedes-AMG Petronas F1 Team', 'MER', 'GER', true, false, NOW(), NOW(), NULL),
-  ('Ferrari', 'Scuderia Ferrari HP', 'FER', 'ITA', true, false, NOW(), NOW(), NULL),
-  ('McLaren', 'McLaren F1 Team', 'MCL', 'GBR', true, false, NOW(), NOW(), NULL),
-  ('Aston Martin', 'Aston Martin Aramco F1 Team', 'AMR', 'GBR', true, false, NOW(), NOW(), NULL),
-  ('Alpine', 'BWT Alpine F1 Team', 'ALP', 'FRA', true, false, NOW(), NOW(), NULL),
-  ('Williams', 'Williams Racing', 'WIL', 'GBR', true, false, NOW(), NOW(), NULL),
-  ('Racing Bulls', 'Visa Cash App RB F1 Team', 'RBS', 'ITA', true, false, NOW(), NOW(), NULL),
-  ('Kick Sauber', 'Stake F1 Team Kick Sauber', 'SAU', 'SUI', true, false, NOW(), NOW(), NULL),
-  ('Haas', 'MoneyGram Haas F1 Team', 'HAA', 'USA', true, false, NOW(), NOW(), NULL),
-  ('Audi', 'Audi F1 Team', 'AUD', 'GER', true, false, NOW(), NOW(), NULL),
-  ('Cadillac', 'Cadillac F1 Team', 'CAD', 'USA', true, false, NOW(), NOW(), NULL)
+  ('Red Bull Racing', 'Oracle Red Bull Racing', 'RBR', 'AUT', false, NOW(), NOW(), NULL),
+  ('Mercedes', 'Mercedes-AMG Petronas F1 Team', 'MER', 'GER', false, NOW(), NOW(), NULL),
+  ('Ferrari', 'Scuderia Ferrari HP', 'FER', 'ITA', false, NOW(), NOW(), NULL),
+  ('McLaren', 'McLaren F1 Team', 'MCL', 'GBR', false, NOW(), NOW(), NULL),
+  ('Aston Martin', 'Aston Martin Aramco F1 Team', 'AMR', 'GBR', false, NOW(), NOW(), NULL),
+  ('Alpine', 'BWT Alpine F1 Team', 'ALP', 'FRA', false, NOW(), NOW(), NULL),
+  ('Williams', 'Williams Racing', 'WIL', 'GBR', false, NOW(), NOW(), NULL),
+  ('Racing Bulls', 'Visa Cash App RB F1 Team', 'RBS', 'ITA', false, NOW(), NOW(), NULL),
+  ('Kick Sauber', 'Stake F1 Team Kick Sauber', 'SAU', 'SUI', false, NOW(), NOW(), NULL),
+  ('Haas', 'MoneyGram Haas F1 Team', 'HAA', 'USA', false, NOW(), NOW(), NULL),
+  ('Audi', 'Audi F1 Team', 'AUD', 'GER', false, NOW(), NOW(), NULL),
+  ('Cadillac', 'Cadillac F1 Team', 'CAD', 'USA', false, NOW(), NOW(), NULL)
 ON CONFLICT ("Name") DO UPDATE SET
   "FullName" = EXCLUDED."FullName",
   "Abbreviation" = EXCLUDED."Abbreviation",

@@ -46,7 +46,6 @@ public class DriverServiceTests
             FullName = "McLaren F1 Team",
             Abbreviation = "MCL",
             CountryAbbreviation = "GBR",
-            IsActive = true,
         };
         var driver1 = new Driver
         {
@@ -54,7 +53,6 @@ public class DriverServiceTests
             LastName = "Piastri",
             Abbreviation = "PIA",
             CountryAbbreviation = "AUS",
-            IsActive = true,
         };
         var driver2 = new Driver
         {
@@ -62,7 +60,6 @@ public class DriverServiceTests
             LastName = "Alonso",
             Abbreviation = "ALO",
             CountryAbbreviation = "ESP",
-            IsActive = true,
         };
 
         context.Seasons.Add(season);
@@ -112,7 +109,6 @@ public class DriverServiceTests
             FullName = "McLaren F1 Team",
             Abbreviation = "MCL",
             CountryAbbreviation = "GBR",
-            IsActive = true,
         };
         var driver = new Driver
         {
@@ -120,7 +116,6 @@ public class DriverServiceTests
             LastName = "Piastri",
             Abbreviation = "PIA",
             CountryAbbreviation = "AUS",
-            IsActive = true,
         };
 
         context.Seasons.Add(season);
@@ -169,7 +164,6 @@ public class DriverServiceTests
             FullName = "McLaren F1 Team",
             Abbreviation = "MCL",
             CountryAbbreviation = "GBR",
-            IsActive = true,
         };
         var activeDriver = new Driver
         {
@@ -177,7 +171,6 @@ public class DriverServiceTests
             LastName = "Piastri",
             Abbreviation = "PIA",
             CountryAbbreviation = "AUS",
-            IsActive = true,
         };
         var inactiveDriver = new Driver
         {
@@ -185,7 +178,6 @@ public class DriverServiceTests
             LastName = "Alonso",
             Abbreviation = "ALO",
             CountryAbbreviation = "ESP",
-            IsActive = true,
         };
 
         context.Seasons.Add(season);
@@ -242,7 +234,6 @@ public class DriverServiceTests
             FullName = "McLaren F1 Team",
             Abbreviation = "MCL",
             CountryAbbreviation = "GBR",
-            IsActive = true,
         };
         var driver1 = new Driver
         {
@@ -250,7 +241,6 @@ public class DriverServiceTests
             LastName = "Verstappen",
             Abbreviation = "VER",
             CountryAbbreviation = "NED",
-            IsActive = true,
         };
         var driver2 = new Driver
         {
@@ -258,7 +248,6 @@ public class DriverServiceTests
             LastName = "Alonso",
             Abbreviation = "ALO",
             CountryAbbreviation = "ESP",
-            IsActive = true,
         };
 
         context.Seasons.Add(season);
@@ -326,7 +315,6 @@ public class DriverServiceTests
             LastName = "Piastri",
             Abbreviation = "PIA",
             CountryAbbreviation = "AUS",
-            IsActive = true,
         };
 
         context.Drivers.Add(driver);

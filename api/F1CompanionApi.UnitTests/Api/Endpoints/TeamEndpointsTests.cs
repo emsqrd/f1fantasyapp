@@ -309,7 +309,6 @@ public class TeamEndpointsTests
             LastName = "Hamilton",
             Abbreviation = "HAM",
             CountryAbbreviation = "GBR",
-            IsActive = true,
         };
 
         var constructor = new Constructor
@@ -319,7 +318,6 @@ public class TeamEndpointsTests
             FullName = "Mercedes-AMG Petronas F1 Team",
             Abbreviation = "MER",
             CountryAbbreviation = "GER",
-            IsActive = true,
         };
 
         var team = new Team
