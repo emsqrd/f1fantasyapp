@@ -4,6 +4,7 @@ export interface Driver {
   lastName: string;
   abbreviation: string;
   countryAbbreviation: string;
+  price: number;
 }
 
 export interface Constructor {
@@ -12,4 +13,5 @@ export interface Constructor {
   fullName: string;
   abbreviation: string;
   countryAbbreviation: string;
+  price: number;
 }
