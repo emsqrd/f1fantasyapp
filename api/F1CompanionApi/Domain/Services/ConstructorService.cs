@@ -46,7 +46,6 @@ public class ConstructorService : IConstructorService
 
         var constructors = await _dbContext
             .SeasonConstructors.Where(sc => sc.SeasonId == season.Id && sc.IsActive)
-            .Include(sc => sc.Constructor)
             .OrderBy(sc => sc.Constructor.Name)
             .Select(sc => sc.Constructor)
             .ToListAsync();

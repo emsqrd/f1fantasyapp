@@ -46,7 +46,6 @@ public class DriverService : IDriverService
 
         var drivers = await _dbContext
             .SeasonDrivers.Where(sd => sd.SeasonId == season.Id && sd.IsActive)
-            .Include(sd => sd.Driver)
             .OrderBy(sd => sd.Driver.LastName)
             .Select(sd => sd.Driver)
             .ToListAsync();
