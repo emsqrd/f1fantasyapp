@@ -3,7 +3,7 @@ import { apiClient } from '@/lib/api';
 import { createMockDriverList } from '@/test-utils/mockFactories';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getActiveDrivers } from './driverService';
+import { getDrivers } from './driverService';
 
 vi.mock('@/lib/api', () => ({
   apiClient: {
@@ -18,8 +18,8 @@ describe('driverService', () => {
     vi.clearAllMocks();
   });
 
-  describe('getActiveDrivers', () => {
-    it('calls apiClient.get with correct endpoint and query parameter', async () => {
+  describe('getDrivers', () => {
+    it('calls apiClient.get with default endpoint when no season year provided', async () => {
       const mockDrivers: Driver[] = createMockDriverList([
         {
           firstName: 'Max',
@@ -37,19 +37,27 @@ describe('driverService', () => {
 
       mockApiClient.get.mockResolvedValue(mockDrivers);
 
-      const result = await getActiveDrivers();
+      const result = await getDrivers();
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/drivers?activeOnly=true', 'get drivers');
+      expect(mockApiClient.get).toHaveBeenCalledWith('/drivers', 'get drivers');
       expect(result).toEqual(mockDrivers);
     });
 
-    it('returns empty array when no active drivers exist', async () => {
+    it('calls apiClient.get with seasonYear query parameter when provided', async () => {
       mockApiClient.get.mockResolvedValue([]);
 
-      const result = await getActiveDrivers();
+      await getDrivers(2026);
+
+      expect(mockApiClient.get).toHaveBeenCalledWith('/drivers?seasonYear=2026', 'get drivers');
+    });
+
+    it('returns empty array when no drivers exist', async () => {
+      mockApiClient.get.mockResolvedValue([]);
+
+      const result = await getDrivers();
 
       expect(result).toEqual([]);
-      expect(mockApiClient.get).toHaveBeenCalledWith('/drivers?activeOnly=true', 'get drivers');
+      expect(mockApiClient.get).toHaveBeenCalledWith('/drivers', 'get drivers');
     });
 
     it('propagates API errors during driver retrieval', async () => {
@@ -57,8 +65,8 @@ describe('driverService', () => {
 
       mockApiClient.get.mockRejectedValue(mockError);
 
-      await expect(getActiveDrivers()).rejects.toThrow('Failed to fetch drivers');
-      expect(mockApiClient.get).toHaveBeenCalledWith('/drivers?activeOnly=true', 'get drivers');
+      await expect(getDrivers()).rejects.toThrow('Failed to fetch drivers');
+      expect(mockApiClient.get).toHaveBeenCalledWith('/drivers', 'get drivers');
     });
   });
 });

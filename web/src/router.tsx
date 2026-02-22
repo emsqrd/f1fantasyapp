@@ -33,8 +33,8 @@ import { BrowseLeagues } from './components/BrowseLeagues/BrowseLeagues';
 import { JoinInvite } from './components/JoinInvite/JoinInvite';
 import type { Race } from './contracts/Race';
 import type { Constructor, Driver } from './contracts/Role';
-import { getActiveConstructors } from './services/constructorService';
-import { getActiveDrivers } from './services/driverService';
+import { getConstructors } from './services/constructorService';
+import { getDrivers } from './services/driverService';
 import { previewInvite } from './services/leagueInviteService';
 import { getRaces } from './services/raceService';
 
@@ -586,8 +586,8 @@ const teamRoute = createRoute({
     // Fetch all data in parallel
     const [team, activeDrivers, activeConstructors, races] = await Promise.all([
       getTeamById(teamId),
-      getActiveDrivers(),
-      getActiveConstructors(),
+      getDrivers(),
+      getConstructors(),
       getRaces(),
     ]);
 
@@ -641,8 +641,8 @@ const myTeamRoute = createRoute({
     // Fetch all data in parallel
     const [team, activeDrivers, activeConstructors, races] = await Promise.all([
       getMyTeam(),
-      getActiveDrivers(),
-      getActiveConstructors(),
+      getDrivers(),
+      getConstructors(),
       getRaces(),
     ]);
 
