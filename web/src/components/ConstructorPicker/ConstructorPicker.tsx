@@ -21,6 +21,7 @@ interface ConstructorPickerProps {
   activeConstructors: Constructor[];
   teamConstructors?: TeamConstructor[];
   readOnly: boolean;
+  remainingBudget: number;
 }
 
 const CONSTRUCTOR_SLOTS = 4;
@@ -29,6 +30,7 @@ export function ConstructorPicker({
   activeConstructors,
   teamConstructors,
   readOnly,
+  remainingBudget,
 }: ConstructorPickerProps) {
   // build lineup with existing constructors
   const lineup = useMemo(() => {
@@ -108,6 +110,7 @@ export function ConstructorPicker({
                         handleAdd(selectedPosition, constructor);
                       }
                     }}
+                    disabled={constructor.price > remainingBudget}
                   />
                 ))}
               </ul>

@@ -29,6 +29,7 @@ vi.mock('../DriverPicker/DriverPicker', () => ({
     activeDrivers: Driver[];
     teamDrivers?: unknown[];
     readOnly: boolean;
+    remainingBudget: number;
   }) => {
     mockDriverPicker(props);
     return (
@@ -49,6 +50,7 @@ vi.mock('../ConstructorPicker/ConstructorPicker', () => ({
     activeConstructors: Constructor[];
     teamConstructors?: unknown[];
     readOnly: boolean;
+    remainingBudget: number;
   }) => {
     mockConstructorPicker(props);
     return (

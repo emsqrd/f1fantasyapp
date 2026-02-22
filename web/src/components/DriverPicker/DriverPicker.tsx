@@ -21,11 +21,17 @@ interface DriverPickerProps {
   activeDrivers: Driver[];
   teamDrivers?: TeamDriver[];
   readOnly: boolean;
+  remainingBudget: number;
 }
 
 const DRIVER_SLOTS = 4;
 
-export function DriverPicker({ activeDrivers, teamDrivers, readOnly }: DriverPickerProps) {
+export function DriverPicker({
+  activeDrivers,
+  teamDrivers,
+  readOnly,
+  remainingBudget,
+}: DriverPickerProps) {
   // build lineup with existing drivers
   const lineup = useMemo(() => {
     const slots: (Driver | null)[] = Array(DRIVER_SLOTS).fill(null);
@@ -104,6 +110,7 @@ export function DriverPicker({ activeDrivers, teamDrivers, readOnly }: DriverPic
                         handleAdd(selectedPosition, driver);
                       }
                     }}
+                    disabled={driver.price > remainingBudget}
                   />
                 ))}
               </ul>

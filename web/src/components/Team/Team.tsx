@@ -141,6 +141,7 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
                 activeDrivers={activeDrivers}
                 teamDrivers={team.drivers}
                 readOnly={readOnly}
+                remainingBudget={team.remainingBudget}
               />
             </CardContent>
           </Card>
@@ -156,6 +157,7 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
                 activeConstructors={activeConstructors}
                 teamConstructors={team.constructors}
                 readOnly={readOnly}
+                remainingBudget={team.remainingBudget}
               />
             </CardContent>
           </Card>
