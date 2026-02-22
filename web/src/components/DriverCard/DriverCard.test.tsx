@@ -91,6 +91,20 @@ describe('DriverCard', () => {
       expect(screen.queryByRole('button', { name: /add driver/i })).not.toBeInTheDocument();
     });
 
+    it('displays formatted price when driver is selected', () => {
+      const driverWithPrice = createMockDriver({ price: 18_600_000 });
+      render(
+        <DriverCard
+          driver={driverWithPrice}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={false}
+        />,
+      );
+
+      expect(screen.getByText('$18.6M')).toBeInTheDocument();
+    });
+
     it('displays remove button with accessible label in edit mode', () => {
       render(
         <DriverCard driver={driver} onOpenPicker={vi.fn()} onRemove={vi.fn()} readOnly={false} />,

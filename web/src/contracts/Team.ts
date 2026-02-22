@@ -5,6 +5,7 @@ export interface TeamDriver {
   lastName: string;
   abbreviation: string;
   countryAbbreviation: string;
+  price: number;
 }
 
 export interface TeamConstructor {
@@ -14,6 +15,7 @@ export interface TeamConstructor {
   fullName: string;
   abbreviation: string;
   countryAbbreviation: string;
+  price: number;
 }
 
 export interface Team {
@@ -21,6 +23,7 @@ export interface Team {
   name: string;
   ownerId: number;
   ownerName: string;
+  remainingBudget: number;
   drivers: TeamDriver[];
   constructors: TeamConstructor[];
 }

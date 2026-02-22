@@ -14,6 +14,7 @@ public static class ConstructorResponseMapper
             Abbreviation = constructor.Abbreviation,
             CountryAbbreviation = constructor.CountryAbbreviation,
             Name = constructor.Name,
+            Price = constructor.Price,
         };
     }
 

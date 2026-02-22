@@ -1,5 +1,6 @@
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data.Entities;
+using F1CompanionApi.Domain;
 using F1CompanionApi.Extensions;
 
 namespace F1CompanionApi.Api.Mappers;
@@ -25,6 +26,10 @@ public static class TeamResponseMapper
             Name = team.Name,
             OwnerId = team.UserId,
             OwnerName = team.Owner.GetFullName(),
+            RemainingBudget =
+                BudgetConstants.BudgetCap
+                - team.TeamDrivers.Sum(td => td.Driver.Price)
+                - team.TeamConstructors.Sum(tc => tc.Constructor.Price),
             Drivers = team
                 .TeamDrivers.OrderBy(teamDriver => teamDriver.SlotPosition)
                 .Select(teamDriver => teamDriver.ToResponseModel())

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { cn, formatMillions } from './utils';
+import { cn, formatBudget, formatMillions } from './utils';
 
 describe('utils', () => {
   describe('cn', () => {
@@ -141,6 +141,29 @@ describe('utils', () => {
     it('should handle numbers with many decimal places in input', () => {
       expect(formatMillions(1_234_567.123456789)).toBe('1.2');
       expect(formatMillions(9_876_543.987654321)).toBe('9.9');
+    });
+  });
+
+  describe('formatBudget', () => {
+    it('formats values >= 1M with M suffix', () => {
+      expect(formatBudget(100_000_000)).toBe('$100.0M');
+      expect(formatBudget(18_600_000)).toBe('$18.6M');
+      expect(formatBudget(1_000_000)).toBe('$1.0M');
+    });
+
+    it('formats values < 1M in thousands with k suffix', () => {
+      expect(formatBudget(900_000)).toBe('$900k');
+      expect(formatBudget(500_000)).toBe('$500k');
+      expect(formatBudget(100_000)).toBe('$100k');
+    });
+
+    it('rounds thousands to nearest whole number', () => {
+      expect(formatBudget(950_500)).toBe('$951k');
+      expect(formatBudget(199_499)).toBe('$199k');
+    });
+
+    it('formats zero as $0k', () => {
+      expect(formatBudget(0)).toBe('$0k');
     });
   });
 });

@@ -1,4 +1,5 @@
 import type { Constructor } from '@/contracts/Role';
+import { formatMillions } from '@/lib/utils';
 import { CirclePlus, X } from 'lucide-react';
 
 import { Button } from '../ui/button';
@@ -37,7 +38,7 @@ export function ConstructorCard({
             </div>
             <div className="bg-border my-2.5 h-px" />
             <div className="text-muted-foreground flex justify-between px-1 text-xs">
-              <span>$--.-M</span>
+              <span>${formatMillions(constructor.price)}M</span>
               <span>-- pts</span>
             </div>
           </>

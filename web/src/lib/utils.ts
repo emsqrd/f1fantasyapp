@@ -11,3 +11,10 @@ export function formatMillions(value: number): string {
     maximumFractionDigits: 1,
   });
 }
+
+export function formatBudget(value: number): string {
+  if (value < 1_000_000) {
+    return `$${Math.round(value / 1_000)}k`;
+  }
+  return `$${formatMillions(value)}M`;
+}

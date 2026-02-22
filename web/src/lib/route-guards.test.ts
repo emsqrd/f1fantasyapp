@@ -177,6 +177,7 @@ describe('route-guards', () => {
         name: 'Test Team',
         ownerId: 1,
         ownerName: 'Test Owner',
+        remainingBudget: 100_000_000,
         drivers: [],
         constructors: [],
       });
@@ -274,6 +275,7 @@ describe('route-guards', () => {
         name: 'Test Team',
         ownerId: 1,
         ownerName: 'Test Owner',
+        remainingBudget: 100_000_000,
         drivers: [],
         constructors: [],
       });
@@ -366,6 +368,7 @@ describe('route-guards', () => {
         name: 'Test Team',
         ownerId: 1,
         ownerName: 'Test Owner',
+        remainingBudget: 100_000_000,
         drivers: [],
         constructors: [],
       });

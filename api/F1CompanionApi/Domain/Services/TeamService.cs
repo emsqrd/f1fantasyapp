@@ -108,6 +108,9 @@ public class TeamService : ITeamService
         // Validate team ownership
         var team = await _dbContext
             .Teams.Include(t => t.TeamDrivers)
+                .ThenInclude(td => td.Driver)
+            .Include(t => t.TeamConstructors)
+                .ThenInclude(tc => tc.Constructor)
             .FirstOrDefaultAsync(t => t.Id == teamId);
 
         if (team is null)
@@ -166,6 +169,19 @@ public class TeamService : ITeamService
             _logger.LogWarning("Driver {DriverId} not found", driverId);
             throw new InvalidOperationException("Driver not found");
         }
+
+        // Check budget cap
+        var currentSpend =
+            team.TeamDrivers.Sum(td => td.Driver.Price)
+            + team.TeamConstructors.Sum(tc => tc.Constructor.Price);
+        var projectedSpend = currentSpend + driver.Price;
+
+        if (projectedSpend > BudgetConstants.BudgetCap)
+            throw new BudgetExceededException(
+                team.Id,
+                driver.Price,
+                BudgetConstants.BudgetCap - currentSpend
+            );
 
         var teamDriver = new TeamDriver
         {
@@ -255,7 +271,10 @@ public class TeamService : ITeamService
 
         // Validate team ownership
         var team = await _dbContext
-            .Teams.Include(t => t.TeamConstructors)
+            .Teams.Include(t => t.TeamDrivers)
+                .ThenInclude(td => td.Driver)
+            .Include(t => t.TeamConstructors)
+                .ThenInclude(tc => tc.Constructor)
             .FirstOrDefaultAsync(t => t.Id == teamId);
 
         if (team is null)
@@ -322,6 +341,19 @@ public class TeamService : ITeamService
             _logger.LogWarning("Constructor {ConstructorId} not found", constructorId);
             throw new InvalidOperationException("Constructor not found");
         }
+
+        // Check budget cap
+        var currentSpend =
+            team.TeamDrivers.Sum(td => td.Driver.Price)
+            + team.TeamConstructors.Sum(tc => tc.Constructor.Price);
+        var projectedSpend = currentSpend + constructor.Price;
+
+        if (projectedSpend > BudgetConstants.BudgetCap)
+            throw new BudgetExceededException(
+                team.Id,
+                constructor.Price,
+                BudgetConstants.BudgetCap - currentSpend
+            );
 
         var teamConstructor = new TeamConstructor
         {

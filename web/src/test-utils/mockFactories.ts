@@ -15,6 +15,7 @@ export function createMockDriver(overrides: Partial<Driver> = {}): Driver {
     lastName: 'Driver',
     abbreviation: 'TDS',
     countryAbbreviation: 'TST',
+    price: 1_000_000,
     ...overrides,
   };
 }
@@ -65,6 +66,7 @@ export function createMockConstructor(overrides: Partial<Constructor> = {}): Con
     fullName: 'Test Constructor',
     abbreviation: 'TST',
     countryAbbreviation: 'TST',
+    price: 1_000_000,
     ...overrides,
   };
 }
@@ -116,6 +118,7 @@ export function createMockTeamDriver(overrides: Partial<TeamDriver> = {}): TeamD
     lastName: 'Driver',
     abbreviation: 'TDR',
     countryAbbreviation: 'TST',
+    price: 1_000_000,
     ...overrides,
   };
 }
@@ -162,6 +165,7 @@ export function createMockTeamConstructor(
     abbreviation: 'TS',
     fullName: 'Test Constructor',
     countryAbbreviation: 'TST',
+    price: 1_000_000,
     ...overrides,
   };
 }
@@ -217,6 +221,7 @@ export function createMockTeam(overrides: Partial<Team> = {}): Team {
     name: 'Test Team',
     ownerId: 1,
     ownerName: 'Test Owner',
+    remainingBudget: 100_000_000,
     drivers: [],
     constructors: [],
     ...overrides,

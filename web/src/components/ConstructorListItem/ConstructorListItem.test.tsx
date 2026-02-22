@@ -11,6 +11,7 @@ describe('ConstructorListItem', () => {
     fullName: 'Mercedes-AMG Petronas F1 Team',
     abbreviation: 'MER',
     countryAbbreviation: 'DE',
+    price: 3_000_000,
   });
   const mockOnSelect = vi.fn();
 
@@ -24,7 +25,7 @@ describe('ConstructorListItem', () => {
     expect(screen.getByText('MER')).toBeInTheDocument();
     expect(screen.getByText('Mercedes')).toBeInTheDocument();
     expect(screen.getByText('DE')).toBeInTheDocument();
-    expect(screen.getByText('$--.-M')).toBeInTheDocument();
+    expect(screen.getByText('$3.0M')).toBeInTheDocument();
     expect(screen.getByText('-- pts')).toBeInTheDocument();
   });
 
@@ -35,5 +36,16 @@ describe('ConstructorListItem', () => {
     await userEvent.click(addConstructorButton);
 
     expect(mockOnSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it('should dim the item and not call onSelect when disabled', async () => {
+    render(<ConstructorListItem constructor={constructor} onSelect={mockOnSelect} disabled />);
+
+    expect(screen.getByRole('listitem')).toHaveClass('opacity-40');
+
+    const addConstructorButton = screen.getByRole('button', { name: /add constructor/i });
+    await userEvent.click(addConstructorButton);
+
+    expect(mockOnSelect).not.toHaveBeenCalled();
   });
 });

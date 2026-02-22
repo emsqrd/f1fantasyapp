@@ -12,4 +12,5 @@ public class Driver : BaseEntity
     public required string LastName { get; set; }
     public required string Abbreviation { get; set; }
     public required string CountryAbbreviation { get; set; }
+    public decimal Price { get; set; }
 }

@@ -3,7 +3,7 @@ import type { TeamDriver } from '@/contracts/Team';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createMockDriverList } from '@/test-utils/mockFactories';
+import { createMockDriver, createMockDriverList } from '@/test-utils/mockFactories';
 import { DriverPicker } from './DriverPicker';
 
 // Mock useLineupPicker hook
@@ -56,7 +56,7 @@ describe('DriverPicker', () => {
 
   describe('Lineup Rendering', () => {
     it('renders 4 empty driver slots by default', () => {
-      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} />);
+      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} remainingBudget={100_000_000} />);
 
       const addButtons = screen.getAllByRole('button', { name: /add driver/i });
       expect(addButtons).toHaveLength(4);
@@ -71,7 +71,7 @@ describe('DriverPicker', () => {
       mockDisplayLineup = [mockDrivers[0], mockDrivers[1], null, null];
 
       render(
-        <DriverPicker activeDrivers={mockDrivers} teamDrivers={teamDrivers} readOnly={false} />,
+        <DriverPicker activeDrivers={mockDrivers} teamDrivers={teamDrivers} readOnly={false} remainingBudget={100_000_000} />,
       );
 
       expect(screen.getByText('Oscar Piastri')).toBeInTheDocument();
@@ -93,7 +93,7 @@ describe('DriverPicker', () => {
       mockDisplayLineup = [mockDrivers[0], mockDrivers[1], mockDrivers[2], mockDrivers[3]];
 
       render(
-        <DriverPicker activeDrivers={mockDrivers} teamDrivers={teamDrivers} readOnly={false} />,
+        <DriverPicker activeDrivers={mockDrivers} teamDrivers={teamDrivers} readOnly={false} remainingBudget={100_000_000} />,
       );
 
       expect(screen.getByText('Oscar Piastri')).toBeInTheDocument();
@@ -114,7 +114,7 @@ describe('DriverPicker', () => {
     it('displays all available drivers from pool', () => {
       mockPool = mockDrivers; // All drivers available
 
-      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} />);
+      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} remainingBudget={100_000_000} />);
 
       expect(screen.getByText('Oscar Piastri')).toBeInTheDocument();
       expect(screen.getByText('Lando Norris')).toBeInTheDocument();
@@ -132,6 +132,7 @@ describe('DriverPicker', () => {
           activeDrivers={mockDrivers}
           teamDrivers={[toTeamDriver(mockDrivers[0], 0)]}
           readOnly={false}
+          remainingBudget={100_000_000}
         />,
       );
 
@@ -151,7 +152,7 @@ describe('DriverPicker', () => {
     it('does not display sheet when picker is closed', () => {
       mockSelectedPosition = null;
 
-      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} />);
+      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} remainingBudget={100_000_000} />);
 
       expect(screen.queryByText('Select Driver')).not.toBeInTheDocument();
     });
@@ -160,7 +161,7 @@ describe('DriverPicker', () => {
       mockSelectedPosition = 0;
       mockIsPending = true;
 
-      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} />);
+      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} remainingBudget={100_000_000} />);
 
       // Sheet should remain open during pending operations
       expect(screen.getByText('Select Driver')).toBeInTheDocument();
@@ -172,7 +173,7 @@ describe('DriverPicker', () => {
       mockSelectedPosition = 0; // User tried to open picker
       mockIsPending = true; // Operation is pending
 
-      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} />);
+      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} remainingBudget={100_000_000} />);
 
       // Sheet should remain open during pending operations
       expect(screen.getByText('Select Driver')).toBeInTheDocument();
@@ -183,7 +184,7 @@ describe('DriverPicker', () => {
     it('displays error message above grid when error occurs', () => {
       mockError = 'Failed to add driver. Please try again.';
 
-      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} />);
+      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} remainingBudget={100_000_000} />);
 
       const errorElement = screen.getByRole('alert');
       expect(errorElement).toHaveTextContent('Failed to add driver. Please try again.');
@@ -193,7 +194,7 @@ describe('DriverPicker', () => {
       mockError = 'Failed to add driver. Please try again.';
       mockSelectedPosition = null; // Picker closed
 
-      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} />);
+      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} remainingBudget={100_000_000} />);
 
       // Error should still be visible even when picker is closed
       const errorElement = screen.getByRole('alert');
@@ -203,7 +204,7 @@ describe('DriverPicker', () => {
     it('does not display error when no error exists', () => {
       mockError = null;
 
-      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} />);
+      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} remainingBudget={100_000_000} />);
 
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
@@ -213,7 +214,7 @@ describe('DriverPicker', () => {
     it('uses semantic HTML with proper roles', () => {
       mockSelectedPosition = 0;
 
-      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} />);
+      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} remainingBudget={100_000_000} />);
 
       // Sheet should have dialog role
       expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -224,7 +225,7 @@ describe('DriverPicker', () => {
     });
 
     it('provides descriptive button labels', async () => {
-      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} />);
+      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} remainingBudget={100_000_000} />);
 
       // Empty slot buttons should be clear
       const addButtons = screen.getAllByRole('button', { name: /add driver/i });
@@ -239,6 +240,7 @@ describe('DriverPicker', () => {
           activeDrivers={mockDrivers}
           teamDrivers={[toTeamDriver(mockDrivers[0], 0)]}
           readOnly={false}
+          remainingBudget={100_000_000}
         />,
       );
 
@@ -251,7 +253,7 @@ describe('DriverPicker', () => {
     it('does not render picker sheet when readOnly is true', () => {
       mockSelectedPosition = 0; // Even if picker would be "open"
 
-      render(<DriverPicker activeDrivers={mockDrivers} readOnly={true} />);
+      render(<DriverPicker activeDrivers={mockDrivers} readOnly={true} remainingBudget={100_000_000} />);
 
       // Sheet should not be rendered
       expect(screen.queryByText('Select Driver')).not.toBeInTheDocument();
@@ -267,7 +269,7 @@ describe('DriverPicker', () => {
       mockDisplayLineup = [mockDrivers[0], mockDrivers[1], null, null];
 
       render(
-        <DriverPicker activeDrivers={mockDrivers} teamDrivers={teamDrivers} readOnly={true} />,
+        <DriverPicker activeDrivers={mockDrivers} teamDrivers={teamDrivers} readOnly={true} remainingBudget={100_000_000} />,
       );
 
       // Drivers should still be displayed
@@ -278,7 +280,7 @@ describe('DriverPicker', () => {
     it('displays errors in read-only mode', () => {
       mockError = 'Failed to load team data.';
 
-      render(<DriverPicker activeDrivers={mockDrivers} readOnly={true} />);
+      render(<DriverPicker activeDrivers={mockDrivers} readOnly={true} remainingBudget={100_000_000} />);
 
       const errorElement = screen.getByRole('alert');
       expect(errorElement).toHaveTextContent('Failed to load team data.');
@@ -287,10 +289,32 @@ describe('DriverPicker', () => {
     it('does not render picker sheet when readOnly is false and picker is closed', () => {
       mockSelectedPosition = null;
 
-      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} />);
+      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} remainingBudget={100_000_000} />);
 
       // Sheet should not be rendered when picker is closed
       expect(screen.queryByText('Select Driver')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Budget Filtering', () => {
+    beforeEach(() => {
+      mockSelectedPosition = 0; // picker open
+    });
+
+    it('disables drivers that exceed remaining budget', () => {
+      mockPool = [createMockDriver({ id: 99, price: 25_000_000 })];
+
+      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} remainingBudget={10_000_000} />);
+
+      expect(screen.getByRole('button', { name: /add driver/i })).toBeDisabled();
+    });
+
+    it('does not disable drivers within remaining budget', () => {
+      mockPool = [createMockDriver({ id: 98, price: 5_000_000 })];
+
+      render(<DriverPicker activeDrivers={mockDrivers} readOnly={false} remainingBudget={10_000_000} />);
+
+      expect(screen.getByRole('button', { name: /add driver/i })).not.toBeDisabled();
     });
   });
 });

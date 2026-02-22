@@ -29,6 +29,7 @@ vi.mock('../DriverPicker/DriverPicker', () => ({
     activeDrivers: Driver[];
     teamDrivers?: unknown[];
     readOnly: boolean;
+    remainingBudget: number;
   }) => {
     mockDriverPicker(props);
     return (
@@ -49,6 +50,7 @@ vi.mock('../ConstructorPicker/ConstructorPicker', () => ({
     activeConstructors: Constructor[];
     teamConstructors?: unknown[];
     readOnly: boolean;
+    remainingBudget: number;
   }) => {
     mockConstructorPicker(props);
     return (
@@ -163,6 +165,36 @@ describe('Team Component', () => {
       );
 
       expect(screen.getByText('Test Team')).toBeInTheDocument();
+    });
+
+    it('displays formatted remaining budget in millions', () => {
+      const team = createMockTeam({ remainingBudget: 75_400_000 });
+      render(
+        <Team
+          team={team}
+          activeDrivers={mockActiveDrivers}
+          activeConstructors={mockActiveConstructors}
+          races={mockRaces}
+          readOnly={false}
+        />,
+      );
+
+      expect(screen.getByText('$75.4M')).toBeInTheDocument();
+    });
+
+    it('displays sub-million remaining budget in thousands', () => {
+      const team = createMockTeam({ remainingBudget: 900_000 });
+      render(
+        <Team
+          team={team}
+          activeDrivers={mockActiveDrivers}
+          activeConstructors={mockActiveConstructors}
+          races={mockRaces}
+          readOnly={false}
+        />,
+      );
+
+      expect(screen.getByText('$900k')).toBeInTheDocument();
     });
 
     it('renders with drivers tab selected by default', () => {
