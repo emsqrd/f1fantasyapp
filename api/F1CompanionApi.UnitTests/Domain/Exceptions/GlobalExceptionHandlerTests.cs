@@ -689,6 +689,51 @@ public class GlobalExceptionHandlerTests
     }
 
     [Fact]
+    public async Task TryHandleAsync_BudgetExceededException_Returns400WithBudgetExceeded()
+    {
+        // Arrange
+        var ex = new BudgetExceededException(
+            teamId: 10,
+            playerPrice: 25_000_000m,
+            remainingBudget: 10_000_000m
+        );
+
+        // Act
+        var result = await _handler.TryHandleAsync(_httpContext, ex, CancellationToken.None);
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal(StatusCodes.Status400BadRequest, _httpContext.Response.StatusCode);
+
+        _mockProblemDetailsService.Verify(
+            x =>
+                x.WriteAsync(
+                    It.Is<ProblemDetailsContext>(ctx =>
+                        ctx.ProblemDetails.Status == 400
+                        && ctx.ProblemDetails.Title == "Budget Exceeded"
+                        && ctx.ProblemDetails.Detail == ex.Message
+                        && ctx.ProblemDetails.Type == "https://httpstatuses.com/400"
+                        && ctx.Exception == null // 4xx does not include exception
+                    )
+                ),
+            Times.Once
+        );
+
+        // Verify warning logging for 4xx
+        _mockLogger.Verify(
+            x =>
+                x.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => true),
+                    ex,
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Fact]
     public async Task TryHandleAsync_InvalidSlotPositionException_Returns400WithInvalidSlotPosition()
     {
         // Arrange

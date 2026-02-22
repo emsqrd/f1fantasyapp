@@ -98,6 +98,12 @@ public class GlobalExceptionHandler : IExceptionHandler
             // Custom Domain Exceptions - Validation Failures
             TeamFullException ex => (StatusCodes.Status400BadRequest, "Team Full", ex.Message),
 
+            BudgetExceededException ex => (
+                StatusCodes.Status400BadRequest,
+                "Budget Exceeded",
+                ex.Message
+            ),
+
             InvalidSlotPositionException ex => (
                 StatusCodes.Status400BadRequest,
                 "Invalid Slot Position",
