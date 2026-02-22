@@ -4,6 +4,8 @@ import type { Team } from '@/contracts/Team';
 import { useLoaderData } from '@tanstack/react-router';
 import { useState } from 'react';
 
+import { formatBudget } from '@/lib/utils';
+
 import { AppContainer } from '../AppContainer/AppContainer';
 import { ConstructorPicker } from '../ConstructorPicker/ConstructorPicker';
 import { DriverPicker } from '../DriverPicker/DriverPicker';
@@ -76,7 +78,7 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
             <div className="grid grid-cols-2 gap-4 sm:flex sm:flex-row sm:justify-center">
               <div className="flex flex-col items-center">
                 <p className="text-muted-foreground font-medium">Budget</p>
-                <h1 className="text-lg font-bold">$200k</h1>
+                <h1 className="text-lg font-bold">{formatBudget(team.remainingBudget)}</h1>
               </div>
               <div className="flex flex-col items-center">
                 <p className="text-muted-foreground font-medium">Trades</p>
