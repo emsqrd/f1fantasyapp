@@ -29,6 +29,7 @@ React SPA (Vite) → .NET 9 Minimal API → PostgreSQL
 ## Claude Code Preferences
 
 - Avoid over-engineering; keep solutions focused on the requested task
+- Adhere to YAGNI philosophy
 - When in doubt about approach, ask rather than proceed
 - Keep solutions focused on solving the cause of a problem, not the symptom
 - Use conventional commit styling for commit messages
@@ -94,14 +95,15 @@ Open this folder in VSCode and use:
 
 Hosted on Fly.io + Supabase (free tier).
 
-| Resource | Identifier |
-|---|---|
-| Fly.io app name | `f1fantasyapp` |
-| Fly.io region | `iad` (Virginia) |
-| Supabase project ref | `cfuccajsckqzecbfyqrv` |
+| Resource                | Identifier                            |
+| ----------------------- | ------------------------------------- |
+| Fly.io app name         | `f1fantasyapp`                        |
+| Fly.io region           | `iad` (Virginia)                      |
+| Supabase project ref    | `cfuccajsckqzecbfyqrv`                |
 | Supabase direct DB host | `db.cfuccajsckqzecbfyqrv.supabase.co` |
 
 **MCP servers available for investigation:**
+
 - `fly logs -a f1fantasyapp` — runtime logs from the API
 - `mcp__sentry__search_events` — error events (project slug: `f1-fantasy-api` or `f1-fantasy-web`, org: `emsqrd`, regionUrl: `https://us.sentry.io`)
 - `mcp__supabase__get_logs` — Postgres and API gateway logs (service: `postgres` or `api`)
