@@ -458,6 +458,68 @@ public class TeamServiceTests
         Assert.Equal("Driver not found", exception.Message);
     }
 
+    [Fact]
+    public async Task AddDriverToTeamAsync_PlayerFitsWithinBudget_Succeeds()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "NOR", "Lando", "Norris", price: 50_000_000m);
+
+        // Act — 50M < 100M cap, should succeed
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+
+        // Assert
+        var teamDriver = await context.TeamDrivers.FirstOrDefaultAsync(td =>
+            td.TeamId == team.Id && td.DriverId == driver.Id
+        );
+        Assert.NotNull(teamDriver);
+    }
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_PlayerExceedsBudget_ThrowsBudgetExceededException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "NOR", "Lando", "Norris", price: 101_000_000m);
+
+        // Act & Assert — 101M > 100M cap
+        var exception = await Assert.ThrowsAsync<BudgetExceededException>(() =>
+            service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id)
+        );
+        Assert.Equal(team.Id, exception.TeamId);
+        Assert.Equal(101_000_000m, exception.PlayerPrice);
+        Assert.Equal(100_000_000m, exception.RemainingBudget);
+    }
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_ExactlyAtBudgetCap_Succeeds()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "NOR", "Lando", "Norris", price: 100_000_000m);
+
+        // Act — exactly at cap, should succeed
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+
+        // Assert
+        var teamDriver = await context.TeamDrivers.FirstOrDefaultAsync(td =>
+            td.TeamId == team.Id && td.DriverId == driver.Id
+        );
+        Assert.NotNull(teamDriver);
+    }
+
     #endregion
 
     #region RemoveDriverFromTeamAsync Tests
@@ -766,6 +828,52 @@ public class TeamServiceTests
         Assert.Equal("Constructor not found", exception.Message);
     }
 
+    [Fact]
+    public async Task AddConstructorToTeamAsync_PlayerExceedsBudget_ThrowsBudgetExceededException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var constructor = CreateTestConstructor(context, "Red Bull Racing", price: 101_000_000m);
+
+        // Act & Assert — 101M > 100M cap
+        var exception = await Assert.ThrowsAsync<BudgetExceededException>(() =>
+            service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id)
+        );
+        Assert.Equal(team.Id, exception.TeamId);
+        Assert.Equal(101_000_000m, exception.PlayerPrice);
+        Assert.Equal(100_000_000m, exception.RemainingBudget);
+    }
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_CumulativeCostExceedsBudget_ThrowsBudgetExceededException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+
+        // Add a driver costing 60M first
+        var driver = CreateTestDriver(context, "NOR", "Lando", "Norris", price: 60_000_000m);
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+
+        // Now try to add a constructor costing 50M — 60M + 50M = 110M > 100M cap
+        var constructor = CreateTestConstructor(context, "Red Bull Racing", price: 50_000_000m);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<BudgetExceededException>(() =>
+            service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id)
+        );
+        Assert.Equal(team.Id, exception.TeamId);
+        Assert.Equal(50_000_000m, exception.PlayerPrice);
+        Assert.Equal(40_000_000m, exception.RemainingBudget); // 100M - 60M = 40M remaining
+    }
+
     #endregion
 
     #region RemoveConstructorFromTeamAsync Tests
@@ -884,7 +992,8 @@ public class TeamServiceTests
         ApplicationDbContext context,
         string abbreviation,
         string firstName,
-        string lastName
+        string lastName,
+        decimal price = 1_000_000m
     )
     {
         var driver = new Driver
@@ -893,20 +1002,26 @@ public class TeamServiceTests
             LastName = lastName,
             Abbreviation = abbreviation,
             CountryAbbreviation = "NL",
+            Price = price,
         };
         context.Drivers.Add(driver);
         context.SaveChanges();
         return driver;
     }
 
-    private Constructor CreateTestConstructor(ApplicationDbContext context, string name)
+    private Constructor CreateTestConstructor(
+        ApplicationDbContext context,
+        string name,
+        decimal price = 1_000_000m
+    )
     {
         var constructor = new Constructor
         {
             Name = name,
             FullName = "Test Constructor",
-            Abbreviation = "TES",
+            Abbreviation = name[..3].ToUpper(),
             CountryAbbreviation = "AT",
+            Price = price,
         };
         context.Constructors.Add(constructor);
         context.SaveChanges();
