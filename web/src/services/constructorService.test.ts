@@ -3,7 +3,7 @@ import { apiClient } from '@/lib/api';
 import { createMockConstructorList } from '@/test-utils/mockFactories';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getActiveConstructors } from './constructorService';
+import { getConstructors } from './constructorService';
 
 vi.mock('@/lib/api', () => ({
   apiClient: {
@@ -18,8 +18,8 @@ describe('constructorService', () => {
     vi.clearAllMocks();
   });
 
-  describe('getActiveConstructors', () => {
-    it('calls apiClient.get with correct endpoint and query parameter', async () => {
+  describe('getConstructors', () => {
+    it('calls apiClient.get with default endpoint when no season year provided', async () => {
       const mockConstructors: Constructor[] = createMockConstructorList([
         {
           name: 'Red Bull Racing',
@@ -37,25 +37,30 @@ describe('constructorService', () => {
 
       mockApiClient.get.mockResolvedValue(mockConstructors);
 
-      const result = await getActiveConstructors();
+      const result = await getConstructors();
 
-      expect(mockApiClient.get).toHaveBeenCalledWith(
-        '/constructors?activeOnly=true',
-        'get constructors',
-      );
+      expect(mockApiClient.get).toHaveBeenCalledWith('/constructors', 'get constructors');
       expect(result).toEqual(mockConstructors);
     });
 
-    it('returns empty array when no active constructors exist', async () => {
+    it('calls apiClient.get with seasonYear query parameter when provided', async () => {
       mockApiClient.get.mockResolvedValue([]);
 
-      const result = await getActiveConstructors();
+      await getConstructors(2026);
 
-      expect(result).toEqual([]);
       expect(mockApiClient.get).toHaveBeenCalledWith(
-        '/constructors?activeOnly=true',
+        '/constructors?seasonYear=2026',
         'get constructors',
       );
+    });
+
+    it('returns empty array when no constructors exist', async () => {
+      mockApiClient.get.mockResolvedValue([]);
+
+      const result = await getConstructors();
+
+      expect(result).toEqual([]);
+      expect(mockApiClient.get).toHaveBeenCalledWith('/constructors', 'get constructors');
     });
 
     it('propagates API errors during constructor retrieval', async () => {
@@ -63,11 +68,8 @@ describe('constructorService', () => {
 
       mockApiClient.get.mockRejectedValue(mockError);
 
-      await expect(getActiveConstructors()).rejects.toThrow('Failed to fetch constructors');
-      expect(mockApiClient.get).toHaveBeenCalledWith(
-        '/constructors?activeOnly=true',
-        'get constructors',
-      );
+      await expect(getConstructors()).rejects.toThrow('Failed to fetch constructors');
+      expect(mockApiClient.get).toHaveBeenCalledWith('/constructors', 'get constructors');
     });
   });
 });

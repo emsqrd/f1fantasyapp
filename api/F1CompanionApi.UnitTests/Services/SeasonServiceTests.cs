@@ -652,4 +652,122 @@ public class SeasonServiceTests
     }
 
     #endregion
+
+    #region GetSeasonAsync Tests
+
+    [Fact]
+    public async Task GetSeasonAsync_WithYear_ReturnsSeason()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new SeasonService(context, _mockLogger.Object);
+
+        var season = new Season
+        {
+            Year = 2026,
+            StartDate = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
+            EndDate = new DateTime(2026, 12, 1, 0, 0, 0, DateTimeKind.Utc),
+        };
+
+        context.Seasons.Add(season);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetSeasonAsync(2026);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2026, result.Year);
+    }
+
+    [Fact]
+    public async Task GetSeasonAsync_WithYear_ReturnsNull_WhenYearNotFound()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new SeasonService(context, _mockLogger.Object);
+
+        // Act
+        var result = await service.GetSeasonAsync(2026);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetSeasonAsync_WithNull_DelegatesToGetCurrentSeasonAsync()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new SeasonService(context, _mockLogger.Object);
+
+        var now = DateTime.UtcNow;
+        var season = new Season
+        {
+            Year = 2024,
+            StartDate = now.AddMonths(-3),
+            EndDate = now.AddMonths(3),
+        };
+
+        context.Seasons.Add(season);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetSeasonAsync(null);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2024, result.Year);
+    }
+
+    [Fact]
+    public async Task GetSeasonAsync_WithNull_FallsBackToLatestSeason_WhenNoCurrentSeason()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new SeasonService(context, _mockLogger.Object);
+
+        var now = DateTime.UtcNow;
+        var seasons = new[]
+        {
+            new Season
+            {
+                Year = 2023,
+                StartDate = now.AddYears(-2),
+                EndDate = now.AddDays(-10),
+            },
+            new Season
+            {
+                Year = 2024,
+                StartDate = now.AddDays(10),
+                EndDate = now.AddYears(1),
+            },
+        };
+
+        context.Seasons.AddRange(seasons);
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetSeasonAsync(null);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(2024, result.Year);
+    }
+
+    [Fact]
+    public async Task GetSeasonAsync_WithNull_ReturnsNull_WhenNoSeasonsExist()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new SeasonService(context, _mockLogger.Object);
+
+        // Act
+        var result = await service.GetSeasonAsync(null);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    #endregion
 }

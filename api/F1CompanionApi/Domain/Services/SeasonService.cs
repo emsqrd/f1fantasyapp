@@ -11,6 +11,7 @@ public interface ISeasonService
     Task<IEnumerable<SeasonResponse>> GetSeasonsAsync();
     Task<SeasonResponse?> GetSeasonByIdAsync(int id);
     Task<Season?> GetCurrentSeasonAsync();
+    Task<Season?> GetSeasonAsync(int? seasonYear);
 }
 
 public class SeasonService : ISeasonService
@@ -75,5 +76,37 @@ public class SeasonService : ISeasonService
         }
 
         return currentSeason;
+    }
+
+    public async Task<Season?> GetSeasonAsync(int? seasonYear)
+    {
+        if (seasonYear.HasValue)
+        {
+            _logger.LogDebug("Fetching season for year {Year}", seasonYear.Value);
+            return await _dbContext.Seasons.FirstOrDefaultAsync(s => s.Year == seasonYear.Value);
+        }
+
+        var currentSeason = await GetCurrentSeasonAsync();
+        if (currentSeason is not null)
+        {
+            return currentSeason;
+        }
+
+        _logger.LogDebug("No active season found, falling back to latest season");
+
+        var latestSeason = await _dbContext
+            .Seasons.OrderByDescending(s => s.Year)
+            .FirstOrDefaultAsync();
+
+        if (latestSeason is not null)
+        {
+            _logger.LogDebug("Latest season is {Year}", latestSeason.Year);
+        }
+        else
+        {
+            _logger.LogDebug("No seasons found");
+        }
+
+        return latestSeason;
     }
 }

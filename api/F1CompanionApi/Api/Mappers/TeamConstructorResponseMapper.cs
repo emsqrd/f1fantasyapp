@@ -15,7 +15,6 @@ public static class TeamConstructorResponseMapper
             FullName = teamConstructor.Constructor.FullName,
             Abbreviation = teamConstructor.Constructor.Abbreviation,
             CountryAbbreviation = teamConstructor.Constructor.CountryAbbreviation,
-            IsActive = teamConstructor.Constructor.IsActive,
         };
     }
 }

@@ -893,7 +893,6 @@ public class TeamServiceTests
             LastName = lastName,
             Abbreviation = abbreviation,
             CountryAbbreviation = "NL",
-            IsActive = true,
         };
         context.Drivers.Add(driver);
         context.SaveChanges();
@@ -908,7 +907,6 @@ public class TeamServiceTests
             FullName = "Test Constructor",
             Abbreviation = "TES",
             CountryAbbreviation = "AT",
-            IsActive = true,
         };
         context.Constructors.Add(constructor);
         context.SaveChanges();

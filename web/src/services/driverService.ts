@@ -1,6 +1,7 @@
 import type { Driver } from '@/contracts/Role';
 import { apiClient } from '@/lib/api';
 
-export async function getActiveDrivers(): Promise<Driver[]> {
-  return apiClient.get<Driver[]>('/drivers?activeOnly=true', 'get drivers');
+export async function getDrivers(seasonYear?: number): Promise<Driver[]> {
+  const url = seasonYear ? `/drivers?seasonYear=${seasonYear}` : '/drivers';
+  return apiClient.get<Driver[]>(url, 'get drivers');
 }

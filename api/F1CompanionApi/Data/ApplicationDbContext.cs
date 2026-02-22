@@ -17,6 +17,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<LeagueTeam> LeagueTeams => Set<LeagueTeam>();
     public DbSet<Race> Races => Set<Race>();
     public DbSet<Season> Seasons => Set<Season>();
+    public DbSet<SeasonConstructor> SeasonConstructors => Set<SeasonConstructor>();
+    public DbSet<SeasonDriver> SeasonDrivers => Set<SeasonDriver>();
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<TeamDriver> TeamDrivers => Set<TeamDriver>();
     public DbSet<TeamConstructor> TeamConstructors => Set<TeamConstructor>();
@@ -72,6 +74,46 @@ public class ApplicationDbContext : DbContext
                 .WithMany(s => s.Races)
                 .HasForeignKey(e => e.SeasonId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<SeasonDriver>(entity =>
+        {
+            entity
+                .HasOne(sd => sd.Season)
+                .WithMany(s => s.SeasonDrivers)
+                .HasForeignKey(sd => sd.SeasonId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity
+                .HasOne(sd => sd.Driver)
+                .WithMany()
+                .HasForeignKey(sd => sd.DriverId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity
+                .HasOne(sd => sd.Constructor)
+                .WithMany()
+                .HasForeignKey(sd => sd.ConstructorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(sd => new { sd.SeasonId, sd.DriverId }).IsUnique();
+        });
+
+        modelBuilder.Entity<SeasonConstructor>(entity =>
+        {
+            entity
+                .HasOne(sc => sc.Season)
+                .WithMany(s => s.SeasonConstructors)
+                .HasForeignKey(sc => sc.SeasonId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity
+                .HasOne(sc => sc.Constructor)
+                .WithMany()
+                .HasForeignKey(sc => sc.ConstructorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(sc => new { sc.SeasonId, sc.ConstructorId }).IsUnique();
         });
 
         modelBuilder.Entity<Team>(entity =>

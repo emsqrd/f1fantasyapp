@@ -32,7 +32,6 @@ public class ConstructorEndpointsTests
                 FullName = "McLaren F1 Team",
                 Abbreviation = "MCL",
                 CountryAbbreviation = "GBR",
-                IsActive = true,
             },
             new ConstructorResponse
             {
@@ -41,7 +40,6 @@ public class ConstructorEndpointsTests
                 FullName = "Scuderia Ferrari",
                 Abbreviation = "FER",
                 CountryAbbreviation = "ITA",
-                IsActive = true,
             },
         };
 
@@ -57,7 +55,7 @@ public class ConstructorEndpointsTests
     }
 
     [Fact]
-    public async Task GetConstructorsAsync_WithActiveOnlyTrue_ReturnsOnlyActiveConstructors()
+    public async Task GetConstructorsAsync_WithSeasonYear_PassesSeasonYearToService()
     {
         // Arrange
         var constructors = new List<ConstructorResponse>
@@ -69,20 +67,18 @@ public class ConstructorEndpointsTests
                 FullName = "McLaren F1 Team",
                 Abbreviation = "MCL",
                 CountryAbbreviation = "GBR",
-                IsActive = true,
             },
         };
 
-        _mockConstructorService.Setup(x => x.GetConstructorsAsync(true)).ReturnsAsync(constructors);
+        _mockConstructorService.Setup(x => x.GetConstructorsAsync(2026)).ReturnsAsync(constructors);
 
         // Act
-        var result = await InvokeGetConstructorsAsync(true);
+        var result = await InvokeGetConstructorsAsync(2026);
 
         // Assert
         Assert.IsType<Ok<IEnumerable<ConstructorResponse>>>(result);
         var okResult = (Ok<IEnumerable<ConstructorResponse>>)result;
         Assert.Single(okResult.Value!);
-        Assert.True(okResult.Value!.First().IsActive);
     }
 
     [Fact]
@@ -96,7 +92,6 @@ public class ConstructorEndpointsTests
             FullName = "McLaren F1 Team",
             Abbreviation = "MCL",
             CountryAbbreviation = "GBR",
-            IsActive = true,
         };
 
         _mockConstructorService.Setup(x => x.GetConstructorByIdAsync(1)).ReturnsAsync(constructor);
@@ -148,45 +143,6 @@ public class ConstructorEndpointsTests
         Assert.Empty(okResult.Value!);
     }
 
-    [Fact]
-    public async Task GetConstructorsAsync_WithActiveOnlyFalse_ReturnsAllConstructors()
-    {
-        // Arrange
-        var constructors = new List<ConstructorResponse>
-        {
-            new ConstructorResponse
-            {
-                Id = 1,
-                Name = "McLaren",
-                FullName = "McLaren F1 Team",
-                Abbreviation = "MCL",
-                CountryAbbreviation = "GBR",
-                IsActive = true,
-            },
-            new ConstructorResponse
-            {
-                Id = 2,
-                Name = "Williams",
-                FullName = "Williams Racing",
-                Abbreviation = "WIL",
-                CountryAbbreviation = "GBR",
-                IsActive = false,
-            },
-        };
-
-        _mockConstructorService
-            .Setup(x => x.GetConstructorsAsync(false))
-            .ReturnsAsync(constructors);
-
-        // Act
-        var result = await InvokeGetConstructorsAsync(false);
-
-        // Assert
-        Assert.IsType<Ok<IEnumerable<ConstructorResponse>>>(result);
-        var okResult = (Ok<IEnumerable<ConstructorResponse>>)result;
-        Assert.Equal(2, okResult.Value!.Count());
-    }
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -218,7 +174,6 @@ public class ConstructorEndpointsTests
             FullName = "Oracle Red Bull Racing",
             Abbreviation = "RBR",
             CountryAbbreviation = "AUT",
-            IsActive = true,
         };
 
         _mockConstructorService.Setup(x => x.GetConstructorByIdAsync(1)).ReturnsAsync(constructor);
@@ -236,7 +191,7 @@ public class ConstructorEndpointsTests
         Assert.NotEmpty(okResult.Value.CountryAbbreviation);
     }
 
-    private async Task<IResult> InvokeGetConstructorsAsync(bool? activeOnly)
+    private async Task<IResult> InvokeGetConstructorsAsync(int? seasonYear)
     {
         var method = typeof(ConstructorEndpoints).GetMethod(
             "GetConstructorsAsync",
@@ -247,7 +202,7 @@ public class ConstructorEndpointsTests
             (Task<IResult>)
                 method!.Invoke(
                     null,
-                    [_mockConstructorService.Object, activeOnly, _mockLogger.Object]
+                    new object?[] { _mockConstructorService.Object, seasonYear, _mockLogger.Object }
                 )!;
 
         return await task;

@@ -55,7 +55,7 @@ public class DriverEndpointsTests
     }
 
     [Fact]
-    public async Task GetDriversAsync_WithActiveOnlyTrue_ReturnsOnlyActiveDrivers()
+    public async Task GetDriversAsync_WithSeasonYear_PassesSeasonYearToService()
     {
         // Arrange
         var drivers = new List<DriverResponse>
@@ -70,10 +70,10 @@ public class DriverEndpointsTests
             },
         };
 
-        _mockDriverService.Setup(x => x.GetDriversAsync(true)).ReturnsAsync(drivers);
+        _mockDriverService.Setup(x => x.GetDriversAsync(2026)).ReturnsAsync(drivers);
 
         // Act
-        var result = await InvokeGetDriversAsync(true);
+        var result = await InvokeGetDriversAsync(2026);
 
         // Assert
         Assert.IsType<Ok<IEnumerable<DriverResponse>>>(result);
@@ -141,41 +141,6 @@ public class DriverEndpointsTests
         Assert.Empty(okResult.Value!);
     }
 
-    [Fact]
-    public async Task GetDriversAsync_WithActiveOnlyFalse_ReturnsAllDrivers()
-    {
-        // Arrange
-        var drivers = new List<DriverResponse>
-        {
-            new DriverResponse
-            {
-                Id = 1,
-                FirstName = "Oscar",
-                LastName = "Piastri",
-                Abbreviation = "PIA",
-                CountryAbbreviation = "AUS",
-            },
-            new DriverResponse
-            {
-                Id = 2,
-                FirstName = "Fernando",
-                LastName = "Alonso",
-                Abbreviation = "ALO",
-                CountryAbbreviation = "ESP",
-            },
-        };
-
-        _mockDriverService.Setup(x => x.GetDriversAsync(false)).ReturnsAsync(drivers);
-
-        // Act
-        var result = await InvokeGetDriversAsync(false);
-
-        // Assert
-        Assert.IsType<Ok<IEnumerable<DriverResponse>>>(result);
-        var okResult = (Ok<IEnumerable<DriverResponse>>)result;
-        Assert.Equal(2, okResult.Value!.Count());
-    }
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -222,7 +187,7 @@ public class DriverEndpointsTests
         Assert.NotEmpty(okResult.Value.CountryAbbreviation);
     }
 
-    private async Task<IResult> InvokeGetDriversAsync(bool? activeOnly)
+    private async Task<IResult> InvokeGetDriversAsync(int? seasonYear)
     {
         var method = typeof(DriverEndpoints).GetMethod(
             "GetDriversAsync",
@@ -233,7 +198,7 @@ public class DriverEndpointsTests
             (Task<IResult>)
                 method!.Invoke(
                     null,
-                    new object?[] { _mockDriverService.Object, activeOnly, _mockLogger.Object }
+                    new object?[] { _mockDriverService.Object, seasonYear, _mockLogger.Object }
                 )!;
 
         return await task;
