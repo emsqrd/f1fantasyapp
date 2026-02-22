@@ -27,13 +27,13 @@ public static class ConstructorEndpoints
 
     private static async Task<IResult> GetConstructorsAsync(
         IConstructorService constructorService,
-        [FromQuery] [Description("Filter to active constructors only")] bool? activeOnly,
+        [FromQuery] [Description("Filter constructors by season year")] int? seasonYear,
         [FromServices] ILogger logger
     )
     {
         logger.LogDebug("Fetching all constructors");
 
-        var constructors = await constructorService.GetConstructorsAsync(activeOnly);
+        var constructors = await constructorService.GetConstructorsAsync(seasonYear);
 
         return Results.Ok(constructors);
     }

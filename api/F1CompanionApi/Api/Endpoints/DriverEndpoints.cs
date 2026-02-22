@@ -27,13 +27,13 @@ public static class DriverEndpoints
 
     private static async Task<IResult> GetDriversAsync(
         IDriverService driverService,
-        [FromQuery] [Description("Filter to active drivers only")] bool? activeOnly,
+        [FromQuery] [Description("Filter drivers by season year")] int? seasonYear,
         [FromServices] ILogger logger
     )
     {
         logger.LogDebug("Fetching all drivers");
 
-        var drivers = await driverService.GetDriversAsync(activeOnly);
+        var drivers = await driverService.GetDriversAsync(seasonYear);
 
         return Results.Ok(drivers);
     }

@@ -7,5 +7,4 @@ public class ConstructorResponse
     public required string FullName { get; set; }
     public required string Abbreviation { get; set; }
     public required string CountryAbbreviation { get; set; }
-    public bool IsActive { get; set; }
 }

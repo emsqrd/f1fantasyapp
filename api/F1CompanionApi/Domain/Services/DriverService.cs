@@ -7,38 +7,55 @@ namespace F1CompanionApi.Domain.Services;
 
 public interface IDriverService
 {
-    Task<IEnumerable<DriverResponse>> GetDriversAsync(bool? activeOnly);
+    Task<IEnumerable<DriverResponse>> GetDriversAsync(int? seasonYear);
     Task<DriverResponse?> GetDriverByIdAsync(int id);
 }
 
 public class DriverService : IDriverService
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly ISeasonService _seasonService;
     private readonly ILogger<DriverService> _logger;
 
-    public DriverService(ApplicationDbContext dbContext, ILogger<DriverService> logger)
+    public DriverService(
+        ApplicationDbContext dbContext,
+        ISeasonService seasonService,
+        ILogger<DriverService> logger
+    )
     {
         ArgumentNullException.ThrowIfNull(dbContext);
+        ArgumentNullException.ThrowIfNull(seasonService);
         ArgumentNullException.ThrowIfNull(logger);
 
         _dbContext = dbContext;
+        _seasonService = seasonService;
         _logger = logger;
     }
 
-    public async Task<IEnumerable<DriverResponse>> GetDriversAsync(bool? activeOnly = null)
+    public async Task<IEnumerable<DriverResponse>> GetDriversAsync(int? seasonYear = null)
     {
-        _logger.LogDebug("Fetching all drivers");
+        _logger.LogDebug("Fetching drivers for season year {SeasonYear}", seasonYear);
 
-        var query = _dbContext.Drivers.AsQueryable();
+        var season = await _seasonService.GetSeasonAsync(seasonYear);
 
-        if (activeOnly is not null)
+        if (season is null)
         {
-            query = query.Where(driver => driver.IsActive == activeOnly);
+            _logger.LogDebug("No season found, returning empty list");
+            return [];
         }
 
-        var drivers = await query.OrderBy(o => o.LastName).ToListAsync();
+        var drivers = await _dbContext
+            .SeasonDrivers.Where(sd => sd.SeasonId == season.Id && sd.IsActive)
+            .Include(sd => sd.Driver)
+            .OrderBy(sd => sd.Driver.LastName)
+            .Select(sd => sd.Driver)
+            .ToListAsync();
 
-        _logger.LogDebug("Retrieved {DriverCount} drivers", drivers.Count);
+        _logger.LogDebug(
+            "Retrieved {DriverCount} drivers for season {SeasonYear}",
+            drivers.Count,
+            season.Year
+        );
 
         return drivers.ToResponseModel();
     }
