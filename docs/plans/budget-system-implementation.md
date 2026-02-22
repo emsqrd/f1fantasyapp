@@ -2,207 +2,234 @@
 
 ## Context
 
-Add a budget cap system aligned with SportsDeck rules. Currently, drivers and constructors have no price data, and team composition is unconstrained by cost. The frontend already has placeholder stubs (`$--.-M` in picker list items, `$200k` hardcoded budget in Team page) waiting for real data.
+Add a budget cap system aligned with SportsDeck rules. Drivers and constructors currently have no price data; team composition is unconstrained by cost. The frontend has placeholder stubs (`$--.-M`, hardcoded `$200k` budget) waiting for real data.
 
-**Blockers resolved:** Issue #14 (UX Redesign) is closed. Phase 0 data collection is partially complete — scoring rules and pricing formula are documented. Driver/constructor starting prices will use known values from the research JSON where available, with $3M floor for unknowns (to be updated later when real SportsDeck prices are provided).
+**Budget cap:** $100,000,000 (confirmed)
+**Pricing source:** `docs/research/driver-value-research.json` (formula: `round_to_100K(262,000 × previous_average)`)
 
-**Scope assessment:** Single issue. All tasks form one cohesive vertical slice — the backend schema, validation, and frontend display are all interdependent.
-
-**Separate prerequisite:** Updating the grid to 2026 (new drivers/constructors, season-based associations replacing `IsActive`) should be a separate issue. This budget system works against whatever drivers/constructors currently exist in the DB.
+Each commit below is a complete, self-contained unit. Tests ship with the feature they cover. All tests must pass before requesting review.
 
 ---
 
-## Implementation Steps
-
-### Step 1: Add `Price` to entities
+## Commit 1 — Schema: add Price column to entities
 
 **Files:**
-- `api/F1CompanionApi/Data/Entities/Driver.cs`
-- `api/F1CompanionApi/Data/Entities/Constructor.cs`
+- `api/F1CompanionApi/Data/Entities/Driver.cs` — add `public decimal Price { get; set; }`
+- `api/F1CompanionApi/Data/Entities/Constructor.cs` — add `public decimal Price { get; set; }`
+- `api/F1CompanionApi/Data/ApplicationDbContext.cs` — add `HasDefaultValue(3_000_000m)` for both in `OnModelCreating`:
+  ```csharp
+  modelBuilder.Entity<Driver>(entity =>
+  {
+      entity.Property(e => e.Price).HasDefaultValue(3_000_000m);
+  });
+  modelBuilder.Entity<Constructor>(entity =>
+  {
+      entity.Property(e => e.Price).HasDefaultValue(3_000_000m);
+  });
+  ```
+- Migration: `dotnet ef migrations add AddPriceToDriversAndConstructors --project F1CompanionApi`
 
-Add `public decimal Price { get; set; }` to both entities.
+**Tests:** None — schema-only change.
 
-### Step 2: Generate schema migration
+**Commit message:** `chore: add Price column to Driver and Constructor entities`
 
-Run: `dotnet ef migrations add AddPriceToDriversAndConstructors --project F1CompanionApi`
+---
 
-This adds a `Price` decimal column (NOT NULL, default 0) to both tables.
+## Commit 2 — Seed data: price files
 
-### Step 3: Seed driver and constructor prices
+**Files:**
+- `api/supabase/seed.sql` — add `Price` inline in existing INSERT statements (column order: `FirstName, LastName, Abbreviation, CountryAbbreviation, Price, IsDeleted, CreatedAt, UpdatedAt, DeletedAt`). Known prices where available, `3000000` floor for all others.
+- `api/supabase/seed-prices.sql` *(new)* — standalone UPDATE script with every driver and constructor listed explicitly. Run manually against any environment to update prices without a deploy.
 
-**File:** `api/supabase/seed.sql`
+  ```sql
+  -- Driver prices — update values as real SportsDeck prices are confirmed
+  -- Known (from docs/research/driver-value-research.json):
+  UPDATE "Drivers" SET "Price" = 25600000 WHERE "Abbreviation" = 'NOR';
+  UPDATE "Drivers" SET "Price" = 22800000 WHERE "Abbreviation" = 'LEC';
+  UPDATE "Drivers" SET "Price" = 18600000 WHERE "Abbreviation" = 'SAI';
+  UPDATE "Drivers" SET "Price" = 18500000 WHERE "Abbreviation" = 'PIA';
+  UPDATE "Drivers" SET "Price" = 17700000 WHERE "Abbreviation" = 'RUS';
+  UPDATE "Drivers" SET "Price" = 7200000  WHERE "Abbreviation" = 'ALO';
+  UPDATE "Drivers" SET "Price" = 5300000  WHERE "Abbreviation" = 'GAS';
+  -- Placeholder ($3M floor — update when SportsDeck 2026 prices available):
+  UPDATE "Drivers" SET "Price" = 3000000 WHERE "Abbreviation" IN ('VER','HAM','ANT','HAD','STR','LAW','ALB','HUL','BOR','OCO','BEA','COL','LIN','DOO','TSU','BOT','PER');
 
-Add UPDATE statements at the end of the existing seed script (after driver/constructor INSERTs). This matches the existing seeding pattern used for drivers, constructors, seasons, and races.
+  -- Constructor prices — update values as real SportsDeck prices are confirmed
+  -- Known:
+  UPDATE "Constructors" SET "Price" = 28300000 WHERE "Abbreviation" = 'MCL';
+  UPDATE "Constructors" SET "Price" = 26500000 WHERE "Abbreviation" = 'FER';
+  UPDATE "Constructors" SET "Price" = 25200000 WHERE "Abbreviation" = 'RBR';
+  UPDATE "Constructors" SET "Price" = 8000000  WHERE "Abbreviation" = 'AMR';
+  UPDATE "Constructors" SET "Price" = 7500000  WHERE "Abbreviation" = 'ALP';
+  UPDATE "Constructors" SET "Price" = 4400000  WHERE "Abbreviation" = 'WIL';
+  -- Placeholder:
+  UPDATE "Constructors" SET "Price" = 3000000 WHERE "Abbreviation" IN ('MER','RBS','SAU','HAA','AUD','CAD');
+  ```
 
-```sql
--- Seed driver prices (known from 2025 season data)
-UPDATE "Drivers" SET "Price" = 18600000 WHERE "Abbreviation" = 'SAI';
-UPDATE "Drivers" SET "Price" = 5300000 WHERE "Abbreviation" = 'GAS';
--- ... etc for all drivers
--- Catch-all for unknowns:
-UPDATE "Drivers" SET "Price" = 3000000 WHERE "Price" = 0;
-UPDATE "Constructors" SET "Price" = 3000000 WHERE "Price" = 0;
-```
+**Tests:** None — SQL files only.
 
-**Known prices** (from `docs/research/driver-value-research.json`, calculated via `round_to_100K(262,000 * previous_average)`):
+**Commit message:** `chore: add price seed data for drivers and constructors`
 
-| Abbr | Player | Price |
-|------|--------|-------|
-| SAI | Sainz | 18,600,000 |
-| GAS | Gasly | 5,300,000 |
-| RUS | Russell | 17,700,000 |
-| NOR | Norris | 25,600,000 |
-| PIA | Piastri | 18,500,000 |
-| LEC | Leclerc | 22,800,000 |
-| ALO | Alonso | 7,200,000 |
-| MCL | McLaren | 28,300,000 |
-| WIL | Williams | 4,400,000 |
-| ALP | Alpine | 7,500,000 |
-| RBR | Red Bull | 25,200,000 |
-| FER | Ferrari | 26,500,000 |
-| AMR | Aston Martin | 8,000,000 |
+---
 
-**Remaining players** (VER, HAM, ANT, LAW, STR, DOO, ALB, TSU, HAD, HUL, BOR, OCO, BEA + MER, RBS, SAU, HAA): Use $3,000,000 floor as placeholder — will be updated when real SportsDeck 2026 prices are provided.
+## Commit 3 — Domain: BudgetExceededException + GlobalExceptionHandler
 
-### Step 4: Define budget cap constant
+**Files:**
+- `api/F1CompanionApi/Domain/BudgetConstants.cs` *(new)*:
+  ```csharp
+  namespace F1CompanionApi.Domain;
+  public static class BudgetConstants
+  {
+      public const decimal BudgetCap = 100_000_000m;
+  }
+  ```
+- `api/F1CompanionApi/Domain/Exceptions/BudgetExceededException.cs` *(new)* — follow `TeamFullException` pattern.
+- `api/F1CompanionApi/Domain/Exceptions/GlobalExceptionHandler.cs` — add alongside `TeamFullException`:
+  ```csharp
+  BudgetExceededException ex => (StatusCodes.Status400BadRequest, "Budget Exceeded", ex.Message),
+  ```
 
-**New file:** `api/F1CompanionApi/Domain/BudgetConstants.cs`
+**Tests:**
+- `api/F1CompanionApi.UnitTests/Domain/Exceptions/BudgetExceededExceptionTests.cs` *(new)* — verify properties are set and message contains expected values
+- `api/F1CompanionApi.UnitTests/Domain/Exceptions/GlobalExceptionHandlerTests.cs` — add test verifying `BudgetExceededException` → HTTP 400
 
-```csharp
-namespace F1CompanionApi.Domain;
+**Commit message:** `feat: add BudgetExceededException and register in GlobalExceptionHandler`
 
-public static class BudgetConstants
-{
-    public const decimal BudgetCap = 100_000_000m;
-}
-```
+---
 
-Kept separate from `TeamService` so the mapper can also reference it without a service dependency.
-
-### Step 5: Add `BudgetExceededException`
-
-**New file:** `api/F1CompanionApi/Domain/Exceptions/BudgetExceededException.cs`
-
-Follow the `TeamFullException` pattern — properties for `TeamId`, `PlayerPrice`, `RemainingBudget`. Message includes the budget cap value.
-
-### Step 6: Register exception in `GlobalExceptionHandler`
-
-**File:** `api/F1CompanionApi/Domain/Exceptions/GlobalExceptionHandler.cs`
-
-Add alongside the other validation failures (near `TeamFullException` on line 99):
-
-```csharp
-BudgetExceededException ex => (StatusCodes.Status400BadRequest, "Budget Exceeded", ex.Message),
-```
-
-### Step 7: Add budget validation to `TeamService`
+## Commit 4 — Service: budget validation in TeamService
 
 **File:** `api/F1CompanionApi/Domain/Services/TeamService.cs`
 
-In both `AddDriverToTeamAsync` and `AddConstructorToTeamAsync`:
+In **both** `AddDriverToTeamAsync` and `AddConstructorToTeamAsync`:
 
-1. Expand the existing team `.Include()` query to also `.ThenInclude(td => td.Driver)` and `.ThenInclude(tc => tc.Constructor)` so prices are loaded
-2. After the existing validations (slot, duplicate, entity exists) and before the DB write, compute:
+1. Expand the Include chain so both methods load both types:
+   ```csharp
+   .Include(t => t.TeamDrivers).ThenInclude(td => td.Driver)
+   .Include(t => t.TeamConstructors).ThenInclude(tc => tc.Constructor)
    ```
-   currentSpend = team.TeamDrivers.Sum(td => td.Driver.Price) + team.TeamConstructors.Sum(tc => tc.Constructor.Price)
-   projectedSpend = currentSpend + newPlayer.Price
+   (Required to sum both types for total spend.)
+
+2. After existing validations, before DB write:
+   ```csharp
+   var currentSpend = team.TeamDrivers.Sum(td => td.Driver.Price)
+                    + team.TeamConstructors.Sum(tc => tc.Constructor.Price);
+   var projectedSpend = currentSpend + newPlayer.Price;
+
+   if (projectedSpend > BudgetConstants.BudgetCap)
+       throw new BudgetExceededException(team.Id, newPlayer.Price, BudgetConstants.BudgetCap - currentSpend);
    ```
-3. If `projectedSpend > BudgetConstants.BudgetCap`, throw `BudgetExceededException`
 
-### Step 8: Add `Price` to API response models and mappers
-
-**Response models — add `public decimal Price { get; set; }`:**
-- `api/F1CompanionApi/Api/Models/DriverResponse.cs`
-- `api/F1CompanionApi/Api/Models/ConstructorResponse.cs`
-- `api/F1CompanionApi/Api/Models/TeamDriverResponse.cs`
-- `api/F1CompanionApi/Api/Models/TeamConstructorResponse.cs`
-
-**Add `RemainingBudget` to team details:**
-- `api/F1CompanionApi/Api/Models/TeamDetailsResponse.cs` — add `public decimal RemainingBudget { get; set; }`
-
-**Mappers — add `Price = entity.Price` mapping:**
-- `api/F1CompanionApi/Api/Mappers/DriverResponseMapper.cs`
-- `api/F1CompanionApi/Api/Mappers/ConstructorResponseMapper.cs`
-- `api/F1CompanionApi/Api/Mappers/TeamDriverResponseMapper.cs` — `Price = teamDriver.Driver.Price`
-- `api/F1CompanionApi/Api/Mappers/TeamConstructorResponseMapper.cs` — `Price = teamConstructor.Constructor.Price`
-- `api/F1CompanionApi/Api/Mappers/TeamResponseMapper.cs` — in `ToDetailsResponseModel()`, compute:
-  ```
-  RemainingBudget = BudgetConstants.BudgetCap - drivers.Sum(Price) - constructors.Sum(Price)
-  ```
-
-### Step 9: Backend tests
-
-**File:** `api/F1CompanionApi.UnitTests/Services/TeamServiceTests.cs`
-- Update `CreateTestDriver`/`CreateTestConstructor` helpers with a `price` parameter (default to a reasonable value so existing tests still pass)
-- Add tests:
+**Tests:** `api/F1CompanionApi.UnitTests/Services/TeamServiceTests.cs`
+- Add `price` parameter to `CreateTestDriver` / `CreateTestConstructor` (default to a small value so existing tests pass without budget concern)
+- Add:
   - `AddDriverToTeamAsync_PlayerFitsWithinBudget_Succeeds`
   - `AddDriverToTeamAsync_PlayerExceedsBudget_ThrowsBudgetExceededException`
   - `AddDriverToTeamAsync_ExactlyAtBudgetCap_Succeeds`
   - `AddConstructorToTeamAsync_PlayerExceedsBudget_ThrowsBudgetExceededException`
   - `AddConstructorToTeamAsync_CumulativeCostExceedsBudget_ThrowsBudgetExceededException`
 
-**New file:** `api/F1CompanionApi.UnitTests/Domain/Exceptions/BudgetExceededExceptionTests.cs`
-- Verify properties are set and message contains budget cap
+**Commit message:** `feat: add budget validation to TeamService`
 
-**File:** `api/F1CompanionApi.UnitTests/Domain/Exceptions/GlobalExceptionHandlerTests.cs`
-- Add test verifying `BudgetExceededException` maps to HTTP 400
+---
 
-### Step 10: Update frontend contracts
+## Commit 5 — API: expose Price and RemainingBudget in response models
 
-**File:** `web/src/contracts/Role.ts`
-- Add `price: number` to `Driver` and `Constructor` interfaces
+**Add `public decimal Price { get; set; }` to:**
+- `api/F1CompanionApi/Api/Models/DriverResponse.cs`
+- `api/F1CompanionApi/Api/Models/ConstructorResponse.cs`
+- `api/F1CompanionApi/Api/Models/TeamDriverResponse.cs`
+- `api/F1CompanionApi/Api/Models/TeamConstructorResponse.cs`
 
-**File:** `web/src/contracts/Team.ts`
-- Add `price: number` to `TeamDriver` and `TeamConstructor` interfaces
-- Add `remainingBudget: number` to `Team` interface
+**Add `public decimal RemainingBudget { get; set; }` to:**
+- `api/F1CompanionApi/Api/Models/TeamDetailsResponse.cs`
 
-### Step 11: Update mock factories
+**Update mappers:**
+- `api/F1CompanionApi/Api/Mappers/DriverResponseMapper.cs` — `Price = driver.Price`
+- `api/F1CompanionApi/Api/Mappers/ConstructorResponseMapper.cs` — `Price = constructor.Price`
+- `api/F1CompanionApi/Api/Mappers/TeamDriverResponseMapper.cs` — `Price = teamDriver.Driver.Price`
+- `api/F1CompanionApi/Api/Mappers/TeamConstructorResponseMapper.cs` — `Price = teamConstructor.Constructor.Price`
+- `api/F1CompanionApi/Api/Mappers/TeamResponseMapper.cs` — in `ToDetailsResponseModel()`:
+  ```csharp
+  RemainingBudget = BudgetConstants.BudgetCap
+      - team.TeamDrivers.Sum(td => td.Driver.Price)
+      - team.TeamConstructors.Sum(tc => tc.Constructor.Price)
+  ```
+  Note: `GetUserTeamAsync` already uses `.ThenInclude()` for both types, so prices are available without query changes.
 
-**File:** `web/src/test-utils/mockFactories.ts`
-- Add `price` field to all mock driver/constructor factories
-- Add `remainingBudget` field to mock team factory
+**Tests:** None — mappers are covered by service-level and E2E testing.
 
-### Step 12: Update frontend picker list items
+**Commit message:** `feat: expose Price and RemainingBudget in API response models`
+
+---
+
+## Commit 6 — Frontend: update contracts and mock factories
+
+**Files:**
+- `web/src/contracts/Role.ts` — add `price: number` to `Driver` and `Constructor`
+- `web/src/contracts/Team.ts` — add `price: number` to `TeamDriver` and `TeamConstructor`; add `remainingBudget: number` to `Team`
+- `web/src/test-utils/mockFactories.ts` — add `price` field to all driver/constructor/teamDriver/teamConstructor factories; add `remainingBudget` to team factory
+
+**Tests:** None — these are type definitions and test utilities.
+
+**Commit message:** `feat: add price and remainingBudget to frontend contracts and mock factories`
+
+---
+
+## Commit 7 — Frontend: prices in picker list items
 
 **Files:**
 - `web/src/components/DriverListItem/DriverListItem.tsx`
-- `web/src/components/ConstructorListItem/ConstructorListItem.tsx`
+  - Replace `$--.-M` with `` `$${formatMillions(driver.price)}M` `` (reuse `formatMillions` from `web/src/lib/utils.ts`)
+  - Add `disabled?: boolean` prop — dim item and suppress `onSelect` when true
+- `web/src/components/ConstructorListItem/ConstructorListItem.tsx` — same changes
 
-Changes:
-1. Replace `$--.-M` with `${formatMillions(driver.price)}M` (reuse existing `formatMillions` from `web/src/lib/utils.ts`)
-2. Add `disabled?: boolean` prop — when true, dim the item and prevent `onSelect` from firing
+**Tests:**
+- `web/src/components/DriverListItem/DriverListItem.test.tsx` — assert price display; test disabled state (item dimmed, onSelect not called)
+- `web/src/components/ConstructorListItem/ConstructorListItem.test.tsx` — same
 
-### Step 13: Update frontend picker components
+**Commit message:** `feat: display prices in driver and constructor picker list items`
 
-**Files:**
-- `web/src/components/DriverPicker/DriverPicker.tsx`
-- `web/src/components/ConstructorPicker/ConstructorPicker.tsx`
+---
 
-Add `remainingBudget: number` prop. When rendering list items, pass `disabled={item.price > remainingBudget}`.
-
-### Step 14: Update frontend cards
+## Commit 8 — Frontend: prices on team cards
 
 **Files:**
-- `web/src/components/DriverCard/DriverCard.tsx`
-- `web/src/components/ConstructorCard/ConstructorCard.tsx`
+- `web/src/components/DriverCard/DriverCard.tsx` — replace `$--.-M` with formatted real price
+- `web/src/components/ConstructorCard/ConstructorCard.tsx` — same
 
-Replace `$--.-M` with formatted real price from the team member data.
+**Tests:**
+- `web/src/components/DriverCard/DriverCard.test.tsx` — assert price display
+- `web/src/components/ConstructorCard/ConstructorCard.test.tsx` — assert price display
 
-### Step 15: Update Team component
+**Commit message:** `feat: display prices on driver and constructor team cards`
+
+---
+
+## Commit 9 — Frontend: disable over-budget picks in pickers
+
+**Files:**
+- `web/src/components/DriverPicker/DriverPicker.tsx` — add `remainingBudget: number` prop; pass `disabled={item.price > remainingBudget}` to each `DriverListItem`
+- `web/src/components/ConstructorPicker/ConstructorPicker.tsx` — same
+
+**Tests:**
+- `web/src/components/DriverPicker/DriverPicker.test.tsx` — add `remainingBudget` to all render calls; add tests for disabled state
+- `web/src/components/ConstructorPicker/ConstructorPicker.test.tsx` — same
+
+**Commit message:** `feat: disable over-budget picks in driver and constructor pickers`
+
+---
+
+## Commit 10 — Frontend: remaining budget on Team page
 
 **File:** `web/src/components/Team/Team.tsx`
+- Replace hardcoded `$200k` with `` `$${formatMillions(team.remainingBudget)}M` ``
+- Pass `remainingBudget={team.remainingBudget}` to both `DriverPicker` and `ConstructorPicker`
 
-1. Replace hardcoded `$200k` budget display with `${formatMillions(team.remainingBudget)}M`
-2. Pass `remainingBudget={team.remainingBudget}` to `DriverPicker` and `ConstructorPicker`
+**Tests:**
+- `web/src/components/Team/Team.test.tsx` — assert remaining budget display (not hardcoded value)
 
-### Step 16: Frontend tests
-
-Update tests in:
-- `web/src/components/DriverListItem/DriverListItem.test.tsx` — assert real price display, test disabled state
-- `web/src/components/ConstructorListItem/ConstructorListItem.test.tsx` — same
-- `web/src/components/DriverCard/DriverCard.test.tsx` — assert price display
-- `web/src/components/ConstructorCard/ConstructorCard.test.tsx` — same
-- `web/src/components/Team/Team.test.tsx` — assert remaining budget display
+**Commit message:** `feat: display remaining budget on Team page`
 
 ---
 
@@ -211,20 +238,20 @@ Update tests in:
 - **Budget cap:** $100,000,000 (100M)
 - **Budget is computed, not stored.** `RemainingBudget` is calculated in `TeamResponseMapper.ToDetailsResponseModel` from the cap minus team member prices. No new column on `Team` entity.
 - **`BudgetConstants` class** is a static class in the Domain layer, referenced by both the mapper and the service.
+- **`HasDefaultValue(3_000_000m)`** sets the DB column default so existing rows get the floor price on migration.
+- **`seed-prices.sql`** is a standalone file for updating prices in any environment without a deploy.
+- **Include chain:** Both `AddDriverToTeamAsync` and `AddConstructorToTeamAsync` load both TeamDrivers+Driver and TeamConstructors+Constructor to compute total spend accurately.
 - **Frontend disabling is a UX enhancement, not a security gate.** The backend rejects over-budget additions regardless. The frontend `disabled` prop prevents the user from attempting an obviously over-budget pick.
 - **Reuses existing `formatMillions`** utility from `web/src/lib/utils.ts` for price formatting.
 
 ---
 
-## Verification
+## Verification (after all commits)
 
-1. **Build both projects:** `npm run api:build && npm run web:build`
-2. **Run all tests:** `npm run test:all`
-3. **Manual E2E check:**
-   - Apply migration: `dotnet ef database update --project api/F1CompanionApi`
-   - Run seed script: `psql <connection_string> -f api/supabase/seed.sql`
-   - Start both servers (`npm run api:watch` + `npm run web:dev`)
-   - Navigate to My Team page — verify budget shows a real dollar amount instead of `$200k`
-   - Open driver picker — verify prices appear instead of `$--.-M`
-   - Try adding a driver that would exceed the budget — verify the item is visually disabled
-   - Try API call directly to add an over-budget player — verify 400 response with "Budget Exceeded"
+1. Apply migration: `dotnet ef database update --project api/F1CompanionApi`
+2. Run price seed: `psql <connection_string> -f api/supabase/seed-prices.sql`
+3. Start servers: `npm run api:watch` + `npm run web:dev`
+4. My Team page — budget shows a real dollar amount (not `$200k`)
+5. Driver picker — prices appear (not `$--.-M`)
+6. Add a driver that would exceed the budget — item visually disabled
+7. API call directly to add an over-budget player — 400 with "Budget Exceeded"

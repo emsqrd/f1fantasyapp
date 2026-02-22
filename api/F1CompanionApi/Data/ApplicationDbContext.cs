@@ -34,6 +34,16 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Id).HasMaxLength(36); // UUID length
         });
 
+        modelBuilder.Entity<Driver>(entity =>
+        {
+            entity.Property(e => e.Price).HasDefaultValue(3_000_000m);
+        });
+
+        modelBuilder.Entity<Constructor>(entity =>
+        {
+            entity.Property(e => e.Price).HasDefaultValue(3_000_000m);
+        });
+
         modelBuilder
             .Entity<League>()
             .HasOne(e => e.Owner)

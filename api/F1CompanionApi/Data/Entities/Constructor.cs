@@ -12,4 +12,5 @@ public class Constructor : BaseEntity
     public required string FullName { get; set; }
     public required string Abbreviation { get; set; }
     public required string CountryAbbreviation { get; set; }
+    public decimal Price { get; set; }
 }
