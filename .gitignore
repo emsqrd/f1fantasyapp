@@ -32,3 +32,6 @@ api/**/CodeCoverage/
 *.ntvs*
 *.njsproj
 *.sw?
+
+# MISC
+docs/research/
