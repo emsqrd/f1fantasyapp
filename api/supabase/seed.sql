@@ -1,49 +1,57 @@
--- Insert 2025 F1 Season Drivers
-INSERT INTO "Drivers" 
+-- Insert F1 Drivers
+INSERT INTO "Drivers"
   ("FirstName", "LastName", "Abbreviation", "CountryAbbreviation", "IsActive", "IsDeleted", "CreatedAt", "UpdatedAt", "DeletedAt")
 VALUES
   -- Red Bull Racing
   ('Max', 'Verstappen', 'VER', 'NED', true, false, NOW(), NOW(), NULL),
-  ('Liam', 'Lawson', 'LAW', 'NZL', true, false, NOW(), NOW(), NULL),
-  
+  ('Isack', 'Hadjar', 'HAD', 'FRA', true, false, NOW(), NOW(), NULL),
+
   -- Mercedes
   ('George', 'Russell', 'RUS', 'GBR', true, false, NOW(), NOW(), NULL),
   ('Kimi', 'Antonelli', 'ANT', 'ITA', true, false, NOW(), NOW(), NULL),
-  
+
   -- Ferrari
   ('Charles', 'Leclerc', 'LEC', 'MON', true, false, NOW(), NOW(), NULL),
   ('Lewis', 'Hamilton', 'HAM', 'GBR', true, false, NOW(), NOW(), NULL),
-  
+
   -- McLaren
   ('Lando', 'Norris', 'NOR', 'GBR', true, false, NOW(), NOW(), NULL),
   ('Oscar', 'Piastri', 'PIA', 'AUS', true, false, NOW(), NOW(), NULL),
-  
+
   -- Aston Martin
   ('Fernando', 'Alonso', 'ALO', 'ESP', true, false, NOW(), NOW(), NULL),
   ('Lance', 'Stroll', 'STR', 'CAN', true, false, NOW(), NOW(), NULL),
-  
+
   -- Alpine
   ('Pierre', 'Gasly', 'GAS', 'FRA', true, false, NOW(), NOW(), NULL),
-  ('Jack', 'Doohan', 'DOO', 'AUS', true, false, NOW(), NOW(), NULL),
-  
+  ('Franco', 'Colapinto', 'COL', 'ARG', true, false, NOW(), NOW(), NULL),
+
   -- Williams
   ('Alex', 'Albon', 'ALB', 'THA', true, false, NOW(), NOW(), NULL),
   ('Carlos', 'Sainz', 'SAI', 'ESP', true, false, NOW(), NOW(), NULL),
-  
-  -- RB (AlphaTauri)
-  ('Yuki', 'Tsunoda', 'TSU', 'JPN', true, false, NOW(), NOW(), NULL),
-  ('Isack', 'Hadjar', 'HAD', 'FRA', true, false, NOW(), NOW(), NULL),
-  
-  -- Kick Sauber
+
+  -- Racing Bulls
+  ('Liam', 'Lawson', 'LAW', 'NZL', true, false, NOW(), NOW(), NULL),
+  ('Arvid', 'Lindblad', 'LIN', 'GBR', true, false, NOW(), NOW(), NULL),
+
+  -- Audi
   ('Nico', 'Hulkenberg', 'HUL', 'GER', true, false, NOW(), NOW(), NULL),
   ('Gabriel', 'Bortoleto', 'BOR', 'BRA', true, false, NOW(), NOW(), NULL),
-  
+
   -- Haas
   ('Esteban', 'Ocon', 'OCO', 'FRA', true, false, NOW(), NOW(), NULL),
-  ('Oliver', 'Bearman', 'BEA', 'GBR', true, false, NOW(), NOW(), NULL)
+  ('Oliver', 'Bearman', 'BEA', 'GBR', true, false, NOW(), NOW(), NULL),
+
+  -- Cadillac
+  ('Valtteri', 'Bottas', 'BOT', 'FIN', true, false, NOW(), NOW(), NULL),
+  ('Sergio', 'Perez', 'PER', 'MEX', true, false, NOW(), NOW(), NULL),
+
+  -- Historical drivers (no 2026 seat)
+  ('Jack', 'Doohan', 'DOO', 'AUS', true, false, NOW(), NOW(), NULL),
+  ('Yuki', 'Tsunoda', 'TSU', 'JPN', true, false, NOW(), NOW(), NULL)
 ON CONFLICT DO NOTHING;
 
--- Insert 2025 F1 Season Constructors
+-- Insert F1 Constructors
 INSERT INTO "Constructors"
   ("Name", "FullName", "Abbreviation", "CountryAbbreviation", "IsActive", "IsDeleted", "CreatedAt", "UpdatedAt", "DeletedAt")
 VALUES
@@ -56,7 +64,9 @@ VALUES
   ('Williams', 'Williams Racing', 'WIL', 'GBR', true, false, NOW(), NOW(), NULL),
   ('Racing Bulls', 'Visa Cash App RB F1 Team', 'RBS', 'ITA', true, false, NOW(), NOW(), NULL),
   ('Kick Sauber', 'Stake F1 Team Kick Sauber', 'SAU', 'SUI', true, false, NOW(), NOW(), NULL),
-  ('Haas', 'MoneyGram Haas F1 Team', 'HAA', 'USA', true, false, NOW(), NOW(), NULL)
+  ('Haas', 'MoneyGram Haas F1 Team', 'HAA', 'USA', true, false, NOW(), NOW(), NULL),
+  ('Audi', 'Audi F1 Team', 'AUD', 'GER', true, false, NOW(), NOW(), NULL),
+  ('Cadillac', 'Cadillac F1 Team', 'CAD', 'USA', true, false, NOW(), NOW(), NULL)
 ON CONFLICT ("Name") DO UPDATE SET
   "FullName" = EXCLUDED."FullName",
   "Abbreviation" = EXCLUDED."Abbreviation",
@@ -70,13 +80,94 @@ VALUES
   (2026, '2026-03-08', '2026-12-06', false, NOW(), NOW(), NULL)
 ON CONFLICT ("Year") DO NOTHING;
 
--- Insert 2026 F1 Season Races
+-- Insert 2026 F1 Season Races, SeasonConstructors, and SeasonDrivers
 DO $$
 DECLARE
   season_id INTEGER;
+  -- Constructor IDs
+  rbr_id INTEGER;
+  mer_id INTEGER;
+  fer_id INTEGER;
+  mcl_id INTEGER;
+  amr_id INTEGER;
+  alp_id INTEGER;
+  wil_id INTEGER;
+  rbs_id INTEGER;
+  haa_id INTEGER;
+  aud_id INTEGER;
+  cad_id INTEGER;
 BEGIN
   -- Get the SeasonId for 2026
   SELECT "Id" INTO season_id FROM "Seasons" WHERE "Year" = 2026;
+
+  -- Get Constructor IDs
+  SELECT "Id" INTO rbr_id FROM "Constructors" WHERE "Abbreviation" = 'RBR';
+  SELECT "Id" INTO mer_id FROM "Constructors" WHERE "Abbreviation" = 'MER';
+  SELECT "Id" INTO fer_id FROM "Constructors" WHERE "Abbreviation" = 'FER';
+  SELECT "Id" INTO mcl_id FROM "Constructors" WHERE "Abbreviation" = 'MCL';
+  SELECT "Id" INTO amr_id FROM "Constructors" WHERE "Abbreviation" = 'AMR';
+  SELECT "Id" INTO alp_id FROM "Constructors" WHERE "Abbreviation" = 'ALP';
+  SELECT "Id" INTO wil_id FROM "Constructors" WHERE "Abbreviation" = 'WIL';
+  SELECT "Id" INTO rbs_id FROM "Constructors" WHERE "Abbreviation" = 'RBS';
+  SELECT "Id" INTO haa_id FROM "Constructors" WHERE "Abbreviation" = 'HAA';
+  SELECT "Id" INTO aud_id FROM "Constructors" WHERE "Abbreviation" = 'AUD';
+  SELECT "Id" INTO cad_id FROM "Constructors" WHERE "Abbreviation" = 'CAD';
+
+  -- Insert SeasonConstructors for 2026 (11 teams, Kick Sauber excluded)
+  INSERT INTO "SeasonConstructors"
+    ("SeasonId", "ConstructorId", "IsActive", "IsDeleted", "CreatedAt", "UpdatedAt", "DeletedAt")
+  VALUES
+    (season_id, rbr_id, true, false, NOW(), NOW(), NULL),
+    (season_id, mer_id, true, false, NOW(), NOW(), NULL),
+    (season_id, fer_id, true, false, NOW(), NOW(), NULL),
+    (season_id, mcl_id, true, false, NOW(), NOW(), NULL),
+    (season_id, amr_id, true, false, NOW(), NOW(), NULL),
+    (season_id, alp_id, true, false, NOW(), NOW(), NULL),
+    (season_id, wil_id, true, false, NOW(), NOW(), NULL),
+    (season_id, rbs_id, true, false, NOW(), NOW(), NULL),
+    (season_id, haa_id, true, false, NOW(), NOW(), NULL),
+    (season_id, aud_id, true, false, NOW(), NOW(), NULL),
+    (season_id, cad_id, true, false, NOW(), NOW(), NULL)
+  ON CONFLICT ("SeasonId", "ConstructorId") DO NOTHING;
+
+  -- Insert SeasonDrivers for 2026 (22 drivers)
+  INSERT INTO "SeasonDrivers"
+    ("SeasonId", "DriverId", "ConstructorId", "IsActive", "IsDeleted", "CreatedAt", "UpdatedAt", "DeletedAt")
+  VALUES
+    -- Red Bull Racing
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'VER'), rbr_id, true, false, NOW(), NOW(), NULL),
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'HAD'), rbr_id, true, false, NOW(), NOW(), NULL),
+    -- Mercedes
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'RUS'), mer_id, true, false, NOW(), NOW(), NULL),
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'ANT'), mer_id, true, false, NOW(), NOW(), NULL),
+    -- Ferrari
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'LEC'), fer_id, true, false, NOW(), NOW(), NULL),
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'HAM'), fer_id, true, false, NOW(), NOW(), NULL),
+    -- McLaren
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'NOR'), mcl_id, true, false, NOW(), NOW(), NULL),
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'PIA'), mcl_id, true, false, NOW(), NOW(), NULL),
+    -- Aston Martin
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'ALO'), amr_id, true, false, NOW(), NOW(), NULL),
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'STR'), amr_id, true, false, NOW(), NOW(), NULL),
+    -- Alpine
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'GAS'), alp_id, true, false, NOW(), NOW(), NULL),
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'COL'), alp_id, true, false, NOW(), NOW(), NULL),
+    -- Williams
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'ALB'), wil_id, true, false, NOW(), NOW(), NULL),
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'SAI'), wil_id, true, false, NOW(), NOW(), NULL),
+    -- Racing Bulls
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'LAW'), rbs_id, true, false, NOW(), NOW(), NULL),
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'LIN'), rbs_id, true, false, NOW(), NOW(), NULL),
+    -- Audi
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'HUL'), aud_id, true, false, NOW(), NOW(), NULL),
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'BOR'), aud_id, true, false, NOW(), NOW(), NULL),
+    -- Haas
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'OCO'), haa_id, true, false, NOW(), NOW(), NULL),
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'BEA'), haa_id, true, false, NOW(), NOW(), NULL),
+    -- Cadillac
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'BOT'), cad_id, true, false, NOW(), NOW(), NULL),
+    (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'PER'), cad_id, true, false, NOW(), NOW(), NULL)
+  ON CONFLICT ("SeasonId", "DriverId") DO NOTHING;
 
   -- Insert all races for 2026 season
   INSERT INTO "Races"
