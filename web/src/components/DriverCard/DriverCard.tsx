@@ -1,4 +1,5 @@
 import type { Driver } from '@/contracts/Role';
+import { formatMillions } from '@/lib/utils';
 import { CirclePlus, X } from 'lucide-react';
 
 import { Button } from '../ui/button';
@@ -30,7 +31,7 @@ export function DriverCard({ driver, onOpenPicker, onRemove, readOnly }: DriverC
             </div>
             <div className="bg-border my-2.5 h-px" />
             <div className="text-muted-foreground flex justify-between px-1 text-xs">
-              <span>$--.-M</span>
+              <span>${formatMillions(driver.price)}M</span>
               <span>-- pts</span>
             </div>
           </>

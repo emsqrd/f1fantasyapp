@@ -128,6 +128,20 @@ describe('ConstructorCard', () => {
       expect(screen.queryByRole('button', { name: /add constructor/i })).not.toBeInTheDocument();
     });
 
+    it('displays formatted price when constructor is selected', () => {
+      const constructorWithPrice = createMockConstructor({ price: 28_300_000 });
+      render(
+        <ConstructorCard
+          constructor={constructorWithPrice}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={false}
+        />,
+      );
+
+      expect(screen.getByText('$28.3M')).toBeInTheDocument();
+    });
+
     it('displays remove button with accessible label in edit mode', () => {
       render(
         <ConstructorCard
