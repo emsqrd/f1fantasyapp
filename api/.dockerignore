@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.DS_Store
+
+F1CompanionApi.UnitTests/
+
+supabase/
+fly.toml
+*.md

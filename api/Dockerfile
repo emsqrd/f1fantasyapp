@@ -18,6 +18,11 @@ WORKDIR "/src/F1CompanionApi"
 # Build the application
 RUN dotnet build "F1CompanionApi.csproj" -c Release -o /app/build
 
+# Build the EF migrations bundle
+FROM build AS migrate
+RUN dotnet tool install --global dotnet-ef \
+    && /root/.dotnet/tools/dotnet-ef migrations bundle --self-contained -r linux-x64 -o /app/efbundle
+
 # Publish the application
 FROM build AS publish
 RUN dotnet publish "F1CompanionApi.csproj" -c Release -o /app/publish /p:UseAppHost=false
@@ -26,6 +31,7 @@ RUN dotnet publish "F1CompanionApi.csproj" -c Release -o /app/publish /p:UseAppH
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+COPY --from=migrate /app/efbundle ./efbundle
 
 # Set environment variables for production
 ENV ASPNETCORE_ENVIRONMENT=Production
@@ -35,4 +41,4 @@ ENV ASPNETCORE_URLS=http://+:8080
 RUN adduser --disabled-password --gecos '' appuser && chown -R appuser /app
 USER appuser
 
-ENTRYPOINT ["dotnet", "F1CompanionApi.dll"]
+CMD ["dotnet", "F1CompanionApi.dll"]
