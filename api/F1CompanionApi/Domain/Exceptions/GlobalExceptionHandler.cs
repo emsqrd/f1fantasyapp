@@ -116,6 +116,12 @@ public class GlobalExceptionHandler : IExceptionHandler
                 ex.Message
             ),
 
+            RosterLockedException ex => (
+                StatusCodes.Status409Conflict,
+                "Roster Locked",
+                ex.Message
+            ),
+
             // Standard .NET Exceptions (order matters: most specific first)
             ArgumentNullException ex => (
                 StatusCodes.Status400BadRequest,

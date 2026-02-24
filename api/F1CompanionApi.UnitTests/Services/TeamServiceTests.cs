@@ -285,6 +285,148 @@ public class TeamServiceTests
         Assert.Equal(1, teamCount);
     }
 
+    #region Roster Lock Tests
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_WhenRosterLocked_ThrowsRosterLockedException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+        CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(-1)
+        );
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<RosterLockedException>(() =>
+            service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id)
+        );
+        Assert.Equal("Test Grand Prix", exception.RaceName);
+    }
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_WhenLockDeadlineNotPassed_Succeeds()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+        CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(1)
+        );
+
+        // Act
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+
+        // Assert
+        var teamDriver = await context.TeamDrivers.FirstOrDefaultAsync(td =>
+            td.TeamId == team.Id && td.DriverId == driver.Id
+        );
+        Assert.NotNull(teamDriver);
+    }
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_WhenNoLockDeadlineSet_Succeeds()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+        CreateTestRace(context, raceDate: DateTime.UtcNow.AddDays(2), lockDeadline: null);
+
+        // Act
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+
+        // Assert
+        var teamDriver = await context.TeamDrivers.FirstOrDefaultAsync(td =>
+            td.TeamId == team.Id && td.DriverId == driver.Id
+        );
+        Assert.NotNull(teamDriver);
+    }
+
+    [Fact]
+    public async Task RemoveDriverFromTeamAsync_WhenRosterLocked_ThrowsRosterLockedException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(-1)
+        );
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<RosterLockedException>(() =>
+            service.RemoveDriverFromTeamAsync(team.Id, 0, user.Id)
+        );
+        Assert.Equal("Test Grand Prix", exception.RaceName);
+    }
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_WhenRosterLocked_ThrowsRosterLockedException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var constructor = CreateTestConstructor(context, "Red Bull Racing");
+        CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(-1)
+        );
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<RosterLockedException>(() =>
+            service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id)
+        );
+        Assert.Equal("Test Grand Prix", exception.RaceName);
+    }
+
+    [Fact]
+    public async Task RemoveConstructorFromTeamAsync_WhenRosterLocked_ThrowsRosterLockedException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(-1)
+        );
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<RosterLockedException>(() =>
+            service.RemoveConstructorFromTeamAsync(team.Id, 0, user.Id)
+        );
+        Assert.Equal("Test Grand Prix", exception.RaceName);
+    }
+
+    #endregion
+
     #region AddDriverToTeamAsync Tests
 
     [Fact]
@@ -1026,6 +1168,28 @@ public class TeamServiceTests
         context.Constructors.Add(constructor);
         context.SaveChanges();
         return constructor;
+    }
+
+    private Race CreateTestRace(
+        ApplicationDbContext context,
+        DateTime raceDate,
+        DateTime? lockDeadline = null
+    )
+    {
+        var race = new Race
+        {
+            SeasonId = 1,
+            Round = 1,
+            Name = "Test Grand Prix",
+            Location = "Test",
+            Circuit = "Test Circuit",
+            Country = "Test Country",
+            RaceDate = raceDate,
+            LockDeadline = lockDeadline,
+        };
+        context.Races.Add(race);
+        context.SaveChanges();
+        return race;
     }
 
     #endregion

@@ -105,6 +105,8 @@ public class TeamService : ITeamService
             slotPosition
         );
 
+        await ThrowIfRosterLockedAsync();
+
         // Validate team ownership
         var team = await _dbContext
             .Teams.Include(t => t.TeamDrivers)
@@ -211,6 +213,8 @@ public class TeamService : ITeamService
             slotPosition
         );
 
+        await ThrowIfRosterLockedAsync();
+
         // Validate team ownership
         var team = await _dbContext.Teams.FirstOrDefaultAsync(t => t.Id == teamId);
 
@@ -268,6 +272,8 @@ public class TeamService : ITeamService
             teamId,
             slotPosition
         );
+
+        await ThrowIfRosterLockedAsync();
 
         // Validate team ownership
         var team = await _dbContext
@@ -383,6 +389,8 @@ public class TeamService : ITeamService
             slotPosition
         );
 
+        await ThrowIfRosterLockedAsync();
+
         // Validate team ownership
         var team = await _dbContext.Teams.FirstOrDefaultAsync(t => t.Id == teamId);
 
@@ -427,5 +435,17 @@ public class TeamService : ITeamService
             teamId,
             slotPosition
         );
+    }
+
+    private async Task ThrowIfRosterLockedAsync()
+    {
+        var now = DateTime.UtcNow;
+        var currentRace = await _dbContext
+            .Races.Where(r => r.RaceDate >= now)
+            .OrderBy(r => r.RaceDate)
+            .FirstOrDefaultAsync();
+
+        if (currentRace?.LockDeadline is not null && now >= currentRace.LockDeadline)
+            throw new RosterLockedException(currentRace.Name, currentRace.LockDeadline.Value);
     }
 }
