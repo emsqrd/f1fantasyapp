@@ -34,6 +34,17 @@ React SPA (Vite) → .NET 9 Minimal API → PostgreSQL
 - Keep solutions focused on solving the cause of a problem, not the symptom
 - Use conventional commit styling for commit messages
 
+## Feature Planning
+
+When planning features (via plan mode or when asked to plan), organize the plan into a sequence of **self-contained commits**. Each commit is a gate — wait for user approval before moving to the next one.
+
+- Each commit includes **both functionality and its tests** — never split implementation from tests.
+- Each commit must independently pass build, lint, tests, and formatting.
+- Commits should be iterative and incremental — each builds on the last.
+- Order commits so earlier ones lay the foundation (e.g., data model before API before frontend).
+- Keep commits focused. If a commit is doing too much, split it further.
+- Write the plan to `docs/plans/` when producing a full plan.
+
 ## Git Commit Message Preferences
 
 - Do not include the "Generated with Claude Code" footer in commit messages or PR descriptions
