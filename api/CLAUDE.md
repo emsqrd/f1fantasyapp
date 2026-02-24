@@ -26,6 +26,11 @@ dotnet test --filter "FullyQualifiedName~TestMethodName"
 ./run-coverage.sh
 ./run-coverage.sh --open  # opens report in browser
 
+# Formatting (CSharpier + dotnet format, enforced by pre-commit hook)
+dotnet csharpier format .
+dotnet format style --exclude **/Migrations/**
+dotnet format analyzers --exclude **/Migrations/**
+
 # Database migrations
 dotnet ef migrations add MigrationName --project F1CompanionApi
 dotnet ef database update --project F1CompanionApi
@@ -88,3 +93,25 @@ instance.
 
 **Production connection string** is in the `ConnectionStrings__DefaultConnection` Fly secret
 (not in source). Check `ServiceExtensions.cs:AddDbContext` for how it's consumed.
+
+## Common Tasks
+
+### Adding a New Endpoint
+
+1. Create `{Feature}Endpoints.cs` in `Api/Endpoints/` with a static `Map{Feature}Endpoints` extension method
+2. Define private static async methods returning `IResult`, chain `.RequireAuthorization()`, `.WithName()`, `.WithOpenApi()`, `.WithDescription()`
+3. Register in `Endpoints.MapEndpoints()` by chaining `.Map{Feature}Endpoints()`
+4. Add request/response DTOs in `Api/Models/`
+5. Add mapper extension method in `Api/Mappers/`
+
+### Adding a New Entity
+
+1. Create entity class in `Data/Entities/` inheriting from `BaseEntity` (or `UserOwnedEntity` if user-owned)
+2. Add `DbSet<Entity>` to `ApplicationDbContext`
+3. Run `dotnet ef migrations add MigrationName --project F1CompanionApi`
+4. Run `dotnet ef database update --project F1CompanionApi`
+
+### Adding a New Service
+
+1. Create interface `I{Feature}Service` and implementation in `Domain/Services/`
+2. Register as scoped in `ServiceExtensions.cs:AddServices`: `services.AddScoped<IFeatureService, FeatureService>()`
