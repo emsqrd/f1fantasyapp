@@ -115,3 +115,8 @@ instance.
 
 1. Create interface `I{Feature}Service` and implementation in `Domain/Services/`
 2. Register as scoped in `ServiceExtensions.cs:AddServices`: `services.AddScoped<IFeatureService, FeatureService>()`
+
+### Adding a New Exception
+
+- Use standard HTTP status codes only — avoid WebDAV-specific codes (e.g. use 409 Conflict, not 423 Locked)
+- The class `<summary>` should explain both what triggers the exception and why it's considered exceptional (what it implies about the caller). See `SlotOccupiedException` as the reference example.

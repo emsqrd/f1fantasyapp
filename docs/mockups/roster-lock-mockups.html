@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Commit 3: Frontend Lock Status + Disabled Pickers — Mockups</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --background: #ffffff;
+      --foreground: #09090b;
+      --card: #ffffff;
+      --card-foreground: #09090b;
+      --primary: #1447e6;
+      --primary-foreground: #eff6ff;
+      --secondary: #f4f4f5;
+      --secondary-foreground: #18181b;
+      --muted: #f4f4f5;
+      --muted-foreground: #71717b;
+      --destructive: #e7000b;
+      --border: #e4e4e7;
+      --radius: 0.65rem;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --lock-bg: #fef2f2;
+      --lock-border: #fecaca;
+      --lock-text: #dc2626;
+      --countdown-bg: #fffbeb;
+      --countdown-border: #fde68a;
+      --countdown-text: #b45309;
+    }
+
+    .dark {
+      --background: #09090b;
+      --foreground: #fafafa;
+      --card: #18181b;
+      --card-foreground: #fafafa;
+      --primary: #1447e6;
+      --primary-foreground: #eff6ff;
+      --secondary: #27272a;
+      --secondary-foreground: #fafafa;
+      --muted: #27272a;
+      --muted-foreground: #a1a1aa;
+      --border: rgba(255,255,255,0.1);
+      --lock-bg: #2d1515;
+      --lock-border: #7f1d1d;
+      --lock-text: #f87171;
+      --countdown-bg: #292105;
+      --countdown-border: #78350f;
+      --countdown-text: #fbbf24;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--background);
+      color: var(--foreground);
+      line-height: 1.5;
+      padding: 2rem 1rem;
+    }
+
+    .container { max-width: 960px; margin: 0 auto; }
+
+    h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .subtitle { color: var(--muted-foreground); font-size: 0.875rem; margin-bottom: 2rem; }
+
+    .theme-toggle {
+      position: fixed; top: 1rem; right: 1rem;
+      background: var(--secondary); color: var(--secondary-foreground);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 0.5rem 1rem; font-size: 0.8rem; cursor: pointer;
+      font-family: var(--font); z-index: 100;
+    }
+
+    .section { margin-bottom: 3rem; }
+    .section-header { display: flex; align-items: center; margin-bottom: 0.25rem; }
+    .section-title { font-size: 1.25rem; font-weight: 700; }
+    .section-desc { font-size: 0.8rem; color: var(--muted-foreground); margin-bottom: 1rem; }
+
+    .step-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--primary); color: var(--primary-foreground);
+      font-size: 0.7rem; font-weight: 700; margin-right: 0.5rem; flex-shrink: 0;
+    }
+
+    .separator { height: 1px; background: var(--border); margin: 2rem 0; }
+
+    /* ── Comparison grids ── */
+    .comparison-3 {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; align-items: start;
+    }
+    .comparison-2 {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start;
+    }
+    @media (max-width: 720px) {
+      .comparison-3, .comparison-2 { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1rem;
+    }
+    .panel-label {
+      font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--muted-foreground); margin-bottom: 0.75rem;
+    }
+
+    /* ── shadcn Card simulation ── */
+    .ui-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .ui-card-header {
+      padding: 1.25rem 1.5rem 0.5rem;
+      display: flex; flex-direction: column; align-items: center; gap: 0.125rem;
+    }
+    .ui-card-title {
+      font-size: 1.875rem; /* text-3xl */ font-weight: 700; text-align: center;
+    }
+    .ui-card-subtitle {
+      font-size: 0.875rem; color: var(--muted-foreground); text-align: center;
+    }
+    .ui-card-content {
+      padding: 0.5rem 1.5rem 1.25rem;
+    }
+
+    /* ── Budget / Trades stat row ── */
+    /* On mobile: 2-column grid. On sm+: flex row centered. We show mobile layout. */
+    .stat-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+      margin-bottom: 0;
+    }
+    .stat-item {
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .stat-label { font-size: 0.875rem; color: var(--muted-foreground); font-weight: 500; }
+    .stat-value { font-size: 1.125rem; font-weight: 700; }
+
+    /* ── Lock status row (inside CardContent, below stats) ── */
+    .lock-row {
+      display: flex; align-items: center; justify-content: center;
+      padding-top: 0.75rem; margin-top: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Lock badge variants */
+    .badge-locked {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      background: var(--lock-bg); color: var(--lock-text);
+      border: 1px solid var(--lock-border); border-radius: 9999px;
+      font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.75rem;
+    }
+    .badge-locked svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+    .badge-countdown {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      background: var(--countdown-bg); color: var(--countdown-text);
+      border: 1px solid var(--countdown-border); border-radius: 9999px;
+      font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.75rem;
+    }
+    .badge-countdown svg { width: 13px; height: 13px; flex-shrink: 0; }
+    .badge-countdown .mono {
+      font-variant-numeric: tabular-nums;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+    }
+
+    /* ── Race selector mockup ── */
+    .race-select {
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1rem 1rem; background: var(--card);
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0.75rem; min-height: 60px;
+    }
+    .race-select-inner { display: flex; flex-direction: column; gap: 0.125rem; }
+    .race-round { font-size: 0.75rem; color: var(--muted-foreground); font-weight: 500; }
+    .race-name { font-size: 1.5rem; font-weight: 700; }
+    .chevron-icon { color: var(--muted-foreground); flex-shrink: 0; }
+    .chevron-icon svg { width: 16px; height: 16px; }
+
+    /* ── Round Results card ── */
+    .results-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 0.75rem 1rem;
+    }
+    .results-title {
+      font-size: 1.25rem; font-weight: 700; text-align: center;
+      margin-bottom: 0.625rem;
+    }
+    .results-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
+    }
+    .results-item { text-align: center; }
+    .results-label { font-size: 0.875rem; color: var(--muted-foreground); font-weight: 500; }
+    .results-value { font-size: 1.125rem; font-weight: 700; }
+
+    /* ── Tabs ── */
+    .tabs-list {
+      display: flex; background: var(--muted);
+      border-radius: 0.5rem; padding: 3px; gap: 2px;
+      margin-bottom: 0.75rem; width: 100%;
+    }
+    .tab-btn {
+      flex: 1; padding: 0.3rem 1rem; font-size: 0.875rem;
+      border-radius: 0.4rem; border: none;
+      background: transparent; color: var(--muted-foreground);
+      cursor: pointer; font-family: var(--font); font-weight: 500; text-align: center;
+    }
+    .tab-btn.active {
+      background: var(--card); color: var(--foreground);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+
+    /* ── Picker outer card ── */
+    .picker-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1rem;
+    }
+
+    /* ── Driver / Constructor slot cards (grid-cols-1 mobile, grid-cols-2 sm+) ── */
+    /* We show the MOBILE layout (single column) as the primary mockup */
+    .slot-grid-mobile {
+      display: flex; flex-direction: column; gap: 1rem;
+    }
+    .slot-grid-sm {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+    }
+
+    /* Individual slot card — bg-secondary */
+    .slot-card {
+      background: var(--secondary); border-radius: var(--radius);
+      padding: 1rem 0.75rem; position: relative;
+    }
+    .slot-card-inner { display: flex; align-items: center; gap: 0.75rem; }
+
+    /* Abbreviation circle */
+    .abbr-circle {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--muted); border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; color: var(--secondary-foreground);
+      flex-shrink: 0; letter-spacing: 0.03em;
+    }
+    /* Empty slot: plain dashed circle, no icon */
+    .empty-circle {
+      width: 56px; height: 56px; border-radius: 50%;
+      border: 2px dashed #4b5563; flex-shrink: 0;
+    }
+    /* Editable add slot: dashed circle + CirclePlus icon */
+    .add-circle {
+      width: 56px; height: 56px; border-radius: 50%;
+      border: 2px dashed #4b5563;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .add-circle svg { width: 24px; height: 24px; color: var(--primary); }
+
+    .slot-info { flex: 1; min-width: 0; }
+    .slot-name {
+      font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      padding-right: 1.5rem; line-height: 1.3;
+    }
+    .slot-name.no-pad { padding-right: 0; }
+    .slot-country { font-size: 0.75rem; color: var(--muted-foreground); }
+
+    .slot-divider { height: 1px; background: var(--border); margin: 0.625rem 0; }
+    .slot-footer {
+      display: flex; justify-content: space-between;
+      font-size: 0.75rem; color: var(--muted-foreground); padding: 0 0.25rem;
+    }
+
+    /* Remove (×) button */
+    .remove-btn {
+      position: absolute; top: 8px; right: 8px;
+      width: 24px; height: 24px;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--muted-foreground); cursor: pointer; background: none; border: none;
+      border-radius: 0.25rem;
+    }
+    .remove-btn svg { width: 16px; height: 16px; }
+
+    /* Editable add button (ghost button wrapping the whole row) */
+    .add-btn-ghost {
+      background: none; border: none; cursor: pointer;
+      display: flex; align-items: center; gap: 0.75rem;
+      width: 100%; text-align: left; padding: 0; font-family: var(--font);
+      border-radius: 0.375rem;
+    }
+    .add-label { font-size: 0.875rem; color: var(--muted-foreground); }
+
+    /* Empty slot label (readOnly — no button, no icon) */
+    .empty-label { font-size: 0.875rem; color: var(--muted-foreground); }
+
+    /* ── Annotation chips ── */
+    .chip {
+      display: inline-block; font-size: 0.65rem; font-weight: 600;
+      background: var(--secondary); color: var(--muted-foreground);
+      border: 1px solid var(--border); border-radius: 9999px;
+      padding: 0.15rem 0.5rem; margin-top: 0.5rem;
+    }
+    .chip.new { background: #dbeafe; color: var(--primary); border-color: #bfdbfe; }
+    .chip.absent { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" onclick="document.body.classList.toggle('dark')">Toggle Dark Mode</button>
+
+  <div class="container">
+    <h1>Commit 3: Frontend Lock Status + Disabled Pickers</h1>
+    <p class="subtitle">Reflects the actual Team.tsx, DriverCard, and ConstructorCard implementation.</p>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SECTION 1: Lock Status in the Real Team Info Card       -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <div class="section">
+      <div class="section-header">
+        <span class="step-num">1</span>
+        <span class="section-title">Lock Badge in Team Info Card — Three States</span>
+      </div>
+      <p class="section-desc">
+        Added inside <code>CardContent</code> below the Budget / Trades stat row, centered.
+        The card uses a 2-column stat grid on mobile (matching the actual <code>grid-cols-2 sm:flex sm:flex-row</code> layout).
+      </p>
+
+      <div class="comparison-3">
+
+        <!-- State A: No deadline -->
+        <div class="panel">
+          <div class="panel-label">No Deadline Set</div>
+          <div class="ui-card">
+            <div class="ui-card-header">
+              <div class="ui-card-title">My Team</div>
+            </div>
+            <div class="ui-card-content">
+              <div class="stat-grid">
+                <div class="stat-item">
+                  <span class="stat-label">Remaining</span>
+                  <span class="stat-value">$12.4M</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Trades</span>
+                  <span class="stat-value">3/3</span>
+                </div>
+              </div>
+              <!-- No lock row rendered -->
+            </div>
+          </div>
+          <span class="chip">lockDeadline === null → nothing rendered</span>
+        </div>
+
+        <!-- State B: Countdown -->
+        <div class="panel">
+          <div class="panel-label">Countdown (not yet locked)</div>
+          <div class="ui-card">
+            <div class="ui-card-header">
+              <div class="ui-card-title">My Team</div>
+            </div>
+            <div class="ui-card-content">
+              <div class="stat-grid">
+                <div class="stat-item">
+                  <span class="stat-label">Remaining</span>
+                  <span class="stat-value">$12.4M</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Trades</span>
+                  <span class="stat-value">3/3</span>
+                </div>
+              </div>
+              <div class="lock-row">
+                <span class="badge-countdown">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Lineup locks in <span class="mono">02:14:37</span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <span class="chip new">now &lt; lockDeadline → live countdown via setInterval</span>
+        </div>
+
+        <!-- State C: Locked -->
+        <div class="panel">
+          <div class="panel-label">Locked</div>
+          <div class="ui-card">
+            <div class="ui-card-header">
+              <div class="ui-card-title">My Team</div>
+            </div>
+            <div class="ui-card-content">
+              <div class="stat-grid">
+                <div class="stat-item">
+                  <span class="stat-label">Remaining</span>
+                  <span class="stat-value">$12.4M</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Trades</span>
+                  <span class="stat-value">3/3</span>
+                </div>
+              </div>
+              <div class="lock-row">
+                <span class="badge-locked">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  Lineup locked
+                </span>
+              </div>
+            </div>
+          </div>
+          <span class="chip new">now &ge; lockDeadline → roster changes blocked</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SECTION 2: Picker Cards — Editable vs. Locked          -->
+    <!-- (Mobile layout: single column, grid-cols-1)            -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <div class="section">
+      <div class="section-header">
+        <span class="step-num">2</span>
+        <span class="section-title">Picker Cards — Editable vs. Locked (Mobile Layout)</span>
+      </div>
+      <p class="section-desc">
+        Cards render in a single column on mobile (<code>grid-cols-1</code>), 2-column on <code>sm+</code>.
+        In locked state: the X button is absent on filled cards, and empty slots show "Empty Slot"
+        (a plain dashed circle with no icon or button) — matching the existing <code>readOnly</code> behaviour in DriverCard/ConstructorCard.
+        The picker Sheet is not rendered at all when <code>readOnly</code>.
+      </p>
+
+      <div class="comparison-2">
+
+        <!-- Editable -->
+        <div class="panel">
+          <div class="panel-label">Editable — readOnly={false}</div>
+
+          <!-- Tabs -->
+          <div class="tabs-list">
+            <button class="tab-btn active">Drivers</button>
+            <button class="tab-btn">Constructors</button>
+          </div>
+
+          <div class="picker-card">
+            <div class="slot-grid-mobile">
+
+              <!-- Filled slot 1 — with × -->
+              <div class="slot-card">
+                <div class="slot-card-inner">
+                  <div class="abbr-circle">VER</div>
+                  <div class="slot-info">
+                    <div class="slot-name">Max Verstappen</div>
+                    <div class="slot-country">NED</div>
+                  </div>
+                </div>
+                <div class="slot-divider"></div>
+                <div class="slot-footer"><span>$32.4M</span><span>-- pts</span></div>
+                <button class="remove-btn" aria-label="Remove driver">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              </div>
+
+              <!-- Filled slot 2 — with × -->
+              <div class="slot-card">
+                <div class="slot-card-inner">
+                  <div class="abbr-circle">NOR</div>
+                  <div class="slot-info">
+                    <div class="slot-name">Lando Norris</div>
+                    <div class="slot-country">GBR</div>
+                  </div>
+                </div>
+                <div class="slot-divider"></div>
+                <div class="slot-footer"><span>$28.7M</span><span>-- pts</span></div>
+                <button class="remove-btn" aria-label="Remove driver">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              </div>
+
+              <!-- Filled slot 3 — with × -->
+              <div class="slot-card">
+                <div class="slot-card-inner">
+                  <div class="abbr-circle">LEC</div>
+                  <div class="slot-info">
+                    <div class="slot-name">Charles Leclerc</div>
+                    <div class="slot-country">MON</div>
+                  </div>
+                </div>
+                <div class="slot-divider"></div>
+                <div class="slot-footer"><span>$24.1M</span><span>-- pts</span></div>
+                <button class="remove-btn" aria-label="Remove driver">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              </div>
+
+              <!-- Empty slot — ghost button with CirclePlus + "Add Driver" -->
+              <div class="slot-card">
+                <button class="add-btn-ghost">
+                  <div class="add-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+                  </div>
+                  <span class="add-label">Add Driver</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+          <!-- Sheet exists in DOM (controlled by selectedPosition state) -->
+          <span class="chip" style="margin-top:0.5rem">Sheet rendered (opens on slot tap)</span>
+        </div>
+
+        <!-- Locked -->
+        <div class="panel">
+          <div class="panel-label">Locked — readOnly={true} (via isLocked)</div>
+
+          <!-- Tabs -->
+          <div class="tabs-list">
+            <button class="tab-btn active">Drivers</button>
+            <button class="tab-btn">Constructors</button>
+          </div>
+
+          <div class="picker-card">
+            <div class="slot-grid-mobile">
+
+              <!-- Filled slot 1 — no × -->
+              <div class="slot-card">
+                <div class="slot-card-inner">
+                  <div class="abbr-circle">VER</div>
+                  <div class="slot-info">
+                    <div class="slot-name no-pad">Max Verstappen</div>
+                    <div class="slot-country">NED</div>
+                  </div>
+                </div>
+                <div class="slot-divider"></div>
+                <div class="slot-footer"><span>$32.4M</span><span>-- pts</span></div>
+                <!-- No remove button -->
+              </div>
+
+              <!-- Filled slot 2 — no × -->
+              <div class="slot-card">
+                <div class="slot-card-inner">
+                  <div class="abbr-circle">NOR</div>
+                  <div class="slot-info">
+                    <div class="slot-name no-pad">Lando Norris</div>
+                    <div class="slot-country">GBR</div>
+                  </div>
+                </div>
+                <div class="slot-divider"></div>
+                <div class="slot-footer"><span>$28.7M</span><span>-- pts</span></div>
+              </div>
+
+              <!-- Filled slot 3 — no × -->
+              <div class="slot-card">
+                <div class="slot-card-inner">
+                  <div class="abbr-circle">LEC</div>
+                  <div class="slot-info">
+                    <div class="slot-name no-pad">Charles Leclerc</div>
+                    <div class="slot-country">MON</div>
+                  </div>
+                </div>
+                <div class="slot-divider"></div>
+                <div class="slot-footer"><span>$24.1M</span><span>-- pts</span></div>
+              </div>
+
+              <!-- Empty slot — readOnly: plain dashed circle + "Empty Slot", no button/icon -->
+              <div class="slot-card">
+                <div class="slot-card-inner">
+                  <div class="empty-circle"></div>
+                  <span class="empty-label">Empty Slot</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          <!-- Sheet NOT in DOM when readOnly -->
+          <span class="chip absent" style="margin-top:0.5rem">Sheet not rendered (readOnly guard in picker)</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- SECTION 3: Full Team Page — Assembled (Mobile, Locked)  -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <div class="separator"></div>
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">Full Team Page — Mobile View, Locked State</span>
+      </div>
+      <p class="section-desc">
+        Vertical stack as it appears on a phone. Top section: Team Info Card (with locked badge) stacks above
+        the Race selector + Round Results card. Picker tabs and single-column driver cards are below.
+      </p>
+
+      <div style="max-width: 390px;">
+
+        <!-- Team Info Card -->
+        <div class="ui-card" style="margin-bottom: 1rem;">
+          <div class="ui-card-header">
+            <div class="ui-card-title">My Team</div>
+          </div>
+          <div class="ui-card-content">
+            <div class="stat-grid">
+              <div class="stat-item">
+                <span class="stat-label">Budget</span>
+                <span class="stat-value">$12.4M</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Trades</span>
+                <span class="stat-value">3/3</span>
+              </div>
+            </div>
+            <div class="lock-row">
+              <span class="badge-locked">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Lineup locked
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Race selector -->
+        <div style="margin-bottom: 0.75rem;">
+          <div class="race-select">
+            <div class="race-select-inner">
+              <span class="race-round">Round 1</span>
+              <span class="race-name">Melbourne</span>
+            </div>
+            <span class="chevron-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </span>
+          </div>
+
+          <div class="results-card">
+            <div class="results-title">Round Results</div>
+            <div class="results-grid">
+              <div class="results-item">
+                <div class="results-label">Finished</div>
+                <div class="results-value">1st</div>
+              </div>
+              <div class="results-item">
+                <div class="results-label">Points</div>
+                <div class="results-value">679</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs + Picker -->
+        <div class="tabs-list">
+          <button class="tab-btn active">Drivers</button>
+          <button class="tab-btn">Constructors</button>
+        </div>
+
+        <div class="picker-card">
+          <div class="slot-grid-mobile">
+
+            <div class="slot-card">
+              <div class="slot-card-inner">
+                <div class="abbr-circle">VER</div>
+                <div class="slot-info">
+                  <div class="slot-name no-pad">Max Verstappen</div>
+                  <div class="slot-country">NED</div>
+                </div>
+              </div>
+              <div class="slot-divider"></div>
+              <div class="slot-footer"><span>$32.4M</span><span>-- pts</span></div>
+            </div>
+
+            <div class="slot-card">
+              <div class="slot-card-inner">
+                <div class="abbr-circle">NOR</div>
+                <div class="slot-info">
+                  <div class="slot-name no-pad">Lando Norris</div>
+                  <div class="slot-country">GBR</div>
+                </div>
+              </div>
+              <div class="slot-divider"></div>
+              <div class="slot-footer"><span>$28.7M</span><span>-- pts</span></div>
+            </div>
+
+            <div class="slot-card">
+              <div class="slot-card-inner">
+                <div class="abbr-circle">LEC</div>
+                <div class="slot-info">
+                  <div class="slot-name no-pad">Charles Leclerc</div>
+                  <div class="slot-country">MON</div>
+                </div>
+              </div>
+              <div class="slot-divider"></div>
+              <div class="slot-footer"><span>$24.1M</span><span>-- pts</span></div>
+            </div>
+
+            <div class="slot-card">
+              <div class="slot-card-inner">
+                <div class="empty-circle"></div>
+                <span class="empty-label">Empty Slot</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
