@@ -189,6 +189,7 @@ Our codebase uses **separation of concerns** in testing - each layer tests its o
    - **DO NOT** re-test child component behavior or hook logic
 
 **When evaluating test value:**
+
 - Before criticizing missing tests, check if the behavior is tested at a different layer
 - Parent components with mocked hooks are testing integration, not duplicating hook tests
 - If a component delegates all logic to hooks and presentational children, its tests should be lean and focused on wiring

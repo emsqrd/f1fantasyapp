@@ -1,7 +1,25 @@
 ---
-description: "Expert React 19.2 frontend engineer specializing in modern hooks, Server Components, Actions, TypeScript, and performance optimization"
-name: "Expert-React-Frontend-Engineer"
-tools: ['vscode', 'execute/testFailure', 'execute/getTerminalOutput', 'execute/runTask', 'execute/getTaskOutput', 'execute/createAndRunTask', 'execute/runInTerminal', 'execute/runTests', 'read/problems', 'read/readFile', 'read/terminalSelection', 'read/terminalLastCommand', 'edit/editFiles', 'search', 'web', 'todo']
+description: 'Expert React 19.2 frontend engineer specializing in modern hooks, Server Components, Actions, TypeScript, and performance optimization'
+name: 'Expert-React-Frontend-Engineer'
+tools:
+  [
+    'vscode',
+    'execute/testFailure',
+    'execute/getTerminalOutput',
+    'execute/runTask',
+    'execute/getTaskOutput',
+    'execute/createAndRunTask',
+    'execute/runInTerminal',
+    'execute/runTests',
+    'read/problems',
+    'read/readFile',
+    'read/terminalSelection',
+    'read/terminalLastCommand',
+    'edit/editFiles',
+    'search',
+    'web',
+    'todo',
+  ]
 ---
 
 # Expert React Frontend Engineer

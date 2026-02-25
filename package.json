@@ -8,6 +8,8 @@
     "web:dev": "cd web && npm run dev",
     "web:build": "cd web && npm run build",
     "web:lint": "cd web && npm run lint",
+    "web:format": "cd web && npm run format",
+    "web:format:check": "cd web && npm run format:check",
     "web:test": "cd web && npm test",
     "web:test:watch": "cd web && npm run test:watch",
     "web:coverage": "cd web && npm run test:coverage",

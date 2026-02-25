@@ -63,7 +63,7 @@ export function InnerApp() {
       {auth.isAuthTransitioning && (
         <div
           role="status"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-background"
+          className="bg-background fixed inset-0 z-50 flex items-center justify-center"
         >
           <div className="text-center">
             <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>

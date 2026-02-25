@@ -183,7 +183,11 @@ describe('DriverCard', () => {
     it('allows keyboard interaction with remove button in edit mode', async () => {
       const user = userEvent.setup();
       const onRemove = vi.fn();
-      const driver = createMockDriver({ firstName: 'Max', lastName: 'Verstappen', abbreviation: 'VER' });
+      const driver = createMockDriver({
+        firstName: 'Max',
+        lastName: 'Verstappen',
+        abbreviation: 'VER',
+      });
 
       render(
         <DriverCard driver={driver} onOpenPicker={vi.fn()} onRemove={onRemove} readOnly={false} />,

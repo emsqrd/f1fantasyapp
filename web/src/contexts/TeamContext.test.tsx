@@ -98,22 +98,14 @@ describe('TeamProvider', () => {
       );
 
       // Initially no team
-      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent(
-        'null',
-      );
-      expect(screen.getByRole('status', { name: /has team/i })).toHaveTextContent(
-        'false',
-      );
+      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent('null');
+      expect(screen.getByRole('status', { name: /has team/i })).toHaveTextContent('false');
 
       // Manually trigger refresh
       await user.click(screen.getByRole('button', { name: /refresh team/i }));
 
-      expect(
-        await screen.findByRole('status', { name: /team id/i }),
-      ).toHaveTextContent('1');
-      expect(screen.getByRole('status', { name: /has team/i })).toHaveTextContent(
-        'true',
-      );
+      expect(await screen.findByRole('status', { name: /team id/i })).toHaveTextContent('1');
+      expect(screen.getByRole('status', { name: /has team/i })).toHaveTextContent('true');
     });
 
     it('handles no team when user has no team', async () => {
@@ -126,22 +118,14 @@ describe('TeamProvider', () => {
         </TeamProvider>,
       );
 
-      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent(
-        'null',
-      );
-      expect(screen.getByRole('status', { name: /has team/i })).toHaveTextContent(
-        'false',
-      );
+      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent('null');
+      expect(screen.getByRole('status', { name: /has team/i })).toHaveTextContent('false');
 
       // Trigger refresh - should still be null
       await user.click(screen.getByRole('button', { name: /refresh team/i }));
 
-      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent(
-        'null',
-      );
-      expect(screen.getByRole('status', { name: /has team/i })).toHaveTextContent(
-        'false',
-      );
+      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent('null');
+      expect(screen.getByRole('status', { name: /has team/i })).toHaveTextContent('false');
     });
 
     it('does not fetch team when user is not authenticated', () => {
@@ -164,12 +148,8 @@ describe('TeamProvider', () => {
       );
 
       expect(getMyTeam).not.toHaveBeenCalled();
-      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent(
-        'null',
-      );
-      expect(screen.getByRole('status', { name: /has team/i })).toHaveTextContent(
-        'false',
-      );
+      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent('null');
+      expect(screen.getByRole('status', { name: /has team/i })).toHaveTextContent('false');
     });
   });
 
@@ -185,15 +165,11 @@ describe('TeamProvider', () => {
       );
 
       // Initially no team
-      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent(
-        'null',
-      );
+      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent('null');
 
       // First refresh
       await user.click(screen.getByRole('button', { name: /refresh team/i }));
-      expect(
-        await screen.findByRole('status', { name: /team id/i }),
-      ).toHaveTextContent('1');
+      expect(await screen.findByRole('status', { name: /team id/i })).toHaveTextContent('1');
 
       // Update mock and refresh again
       const updatedTeam = createMockTeam({ id: 3, name: 'Refreshed Team' });
@@ -201,9 +177,7 @@ describe('TeamProvider', () => {
 
       await user.click(screen.getByRole('button', { name: /refresh team/i }));
 
-      expect(
-        await screen.findByRole('status', { name: /team id/i }),
-      ).toHaveTextContent('3');
+      expect(await screen.findByRole('status', { name: /team id/i })).toHaveTextContent('3');
 
       expect(getMyTeam).toHaveBeenCalledTimes(2);
     });
@@ -220,23 +194,15 @@ describe('TeamProvider', () => {
       );
 
       // Initially null
-      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent(
-        'null',
-      );
-      expect(screen.getByRole('status', { name: /has team/i })).toHaveTextContent(
-        'false',
-      );
+      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent('null');
+      expect(screen.getByRole('status', { name: /has team/i })).toHaveTextContent('false');
 
       // Try to refresh - should handle error silently
       await user.click(screen.getByRole('button', { name: /refresh team/i }));
 
       // Error is handled silently, team ID remains null
-      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent(
-        'null',
-      );
-      expect(screen.getByRole('status', { name: /has team/i })).toHaveTextContent(
-        'false',
-      );
+      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent('null');
+      expect(screen.getByRole('status', { name: /has team/i })).toHaveTextContent('false');
     });
   });
 
@@ -264,9 +230,7 @@ describe('TeamProvider', () => {
       );
 
       expect(getMyTeam).not.toHaveBeenCalled();
-      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent(
-        'null',
-      );
+      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent('null');
 
       // User logs in
       vi.mocked(useAuth).mockReturnValue({
@@ -290,19 +254,13 @@ describe('TeamProvider', () => {
       );
 
       // Team is still null until manually refreshed
-      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent(
-        'null',
-      );
+      expect(screen.getByRole('status', { name: /team id/i })).toHaveTextContent('null');
 
       // Manually trigger refresh
       await user.click(screen.getByRole('button', { name: /refresh team/i }));
 
-      expect(
-        await screen.findByRole('status', { name: /team id/i }),
-      ).toHaveTextContent('1');
-      expect(screen.getByRole('status', { name: /has team/i })).toHaveTextContent(
-        'true',
-      );
+      expect(await screen.findByRole('status', { name: /team id/i })).toHaveTextContent('1');
+      expect(screen.getByRole('status', { name: /has team/i })).toHaveTextContent('true');
     });
   });
 });

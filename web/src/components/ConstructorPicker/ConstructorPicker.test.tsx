@@ -1,9 +1,9 @@
 import type { Constructor } from '@/contracts/Role';
 import type { TeamConstructor } from '@/contracts/Team';
+import { createMockConstructor, createMockConstructorList } from '@/test-utils/mockFactories';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createMockConstructor, createMockConstructorList } from '@/test-utils/mockFactories';
 import { ConstructorPicker } from './ConstructorPicker';
 
 // Mock useLineupPicker hook
@@ -21,10 +21,30 @@ let mockError: string | null;
 
 const mockConstructors: Constructor[] = createMockConstructorList([
   { name: 'McLaren', fullName: 'McLaren F1 Team', abbreviation: 'MCL', countryAbbreviation: 'GBR' },
-  { name: 'Ferrari', fullName: 'Scuderia Ferrari', abbreviation: 'FER', countryAbbreviation: 'ITA' },
-  { name: 'Red Bull Racing', fullName: 'Oracle Red Bull Racing', abbreviation: 'RBR', countryAbbreviation: 'AUT' },
-  { name: 'Mercedes', fullName: 'Mercedes-AMG Petronas', abbreviation: 'MER', countryAbbreviation: 'GER' },
-  { name: 'Aston Martin', fullName: 'Aston Martin Aramco', abbreviation: 'AMR', countryAbbreviation: 'GBR' },
+  {
+    name: 'Ferrari',
+    fullName: 'Scuderia Ferrari',
+    abbreviation: 'FER',
+    countryAbbreviation: 'ITA',
+  },
+  {
+    name: 'Red Bull Racing',
+    fullName: 'Oracle Red Bull Racing',
+    abbreviation: 'RBR',
+    countryAbbreviation: 'AUT',
+  },
+  {
+    name: 'Mercedes',
+    fullName: 'Mercedes-AMG Petronas',
+    abbreviation: 'MER',
+    countryAbbreviation: 'GER',
+  },
+  {
+    name: 'Aston Martin',
+    fullName: 'Aston Martin Aramco',
+    abbreviation: 'AMR',
+    countryAbbreviation: 'GBR',
+  },
 ]);
 
 // Helper to convert Constructor to TeamConstructor
@@ -59,7 +79,13 @@ describe('ConstructorPicker', () => {
 
   describe('Lineup Rendering', () => {
     it('renders 4 empty constructor slots by default', () => {
-      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={false} remainingBudget={100_000_000} />);
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={false}
+          remainingBudget={100_000_000}
+        />,
+      );
 
       const addButtons = screen.getAllByRole('button', { name: /add constructor/i });
       expect(addButtons).toHaveLength(4);
@@ -132,7 +158,13 @@ describe('ConstructorPicker', () => {
     it('displays all available constructors from pool', () => {
       mockPool = mockConstructors; // All constructors available
 
-      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={false} remainingBudget={100_000_000} />);
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={false}
+          remainingBudget={100_000_000}
+        />,
+      );
 
       expect(screen.getByText('McLaren')).toBeInTheDocument();
       expect(screen.getByText('Ferrari')).toBeInTheDocument();
@@ -175,7 +207,13 @@ describe('ConstructorPicker', () => {
     it('does not display sheet when picker is closed', () => {
       mockSelectedPosition = null;
 
-      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={false} remainingBudget={100_000_000} />);
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={false}
+          remainingBudget={100_000_000}
+        />,
+      );
 
       expect(screen.queryByText('Select Constructor')).not.toBeInTheDocument();
     });
@@ -184,7 +222,13 @@ describe('ConstructorPicker', () => {
       mockSelectedPosition = 0;
       mockIsPending = true;
 
-      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={false} remainingBudget={100_000_000} />);
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={false}
+          remainingBudget={100_000_000}
+        />,
+      );
 
       // Sheet should remain open during pending operations
       expect(screen.getByText('Select Constructor')).toBeInTheDocument();
@@ -195,7 +239,13 @@ describe('ConstructorPicker', () => {
     it('displays error message above grid when error occurs', () => {
       mockError = 'Failed to add constructor. Please try again.';
 
-      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={false} remainingBudget={100_000_000} />);
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={false}
+          remainingBudget={100_000_000}
+        />,
+      );
 
       const errorElement = screen.getByRole('alert');
       expect(errorElement).toHaveTextContent('Failed to add constructor. Please try again.');
@@ -205,7 +255,13 @@ describe('ConstructorPicker', () => {
       mockError = 'Failed to add constructor. Please try again.';
       mockSelectedPosition = null; // Picker closed
 
-      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={false} remainingBudget={100_000_000} />);
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={false}
+          remainingBudget={100_000_000}
+        />,
+      );
 
       // Error should still be visible even when picker is closed
       const errorElement = screen.getByRole('alert');
@@ -215,7 +271,13 @@ describe('ConstructorPicker', () => {
     it('does not display error when no error exists', () => {
       mockError = null;
 
-      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={false} remainingBudget={100_000_000} />);
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={false}
+          remainingBudget={100_000_000}
+        />,
+      );
 
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
@@ -225,7 +287,13 @@ describe('ConstructorPicker', () => {
     it('uses semantic HTML with proper roles', () => {
       mockSelectedPosition = 0;
 
-      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={false} remainingBudget={100_000_000} />);
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={false}
+          remainingBudget={100_000_000}
+        />,
+      );
 
       // Sheet should have dialog role
       expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -236,7 +304,13 @@ describe('ConstructorPicker', () => {
     });
 
     it('provides descriptive button labels', async () => {
-      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={false} remainingBudget={100_000_000} />);
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={false}
+          remainingBudget={100_000_000}
+        />,
+      );
 
       // Empty slot buttons should be clear
       const addButtons = screen.getAllByRole('button', { name: /add constructor/i });
@@ -262,7 +336,13 @@ describe('ConstructorPicker', () => {
 
   describe('Duplicate Constructors', () => {
     it('passes maxDuplicates: 2 to useLineupPicker', () => {
-      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={false} remainingBudget={100_000_000} />);
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={false}
+          remainingBudget={100_000_000}
+        />,
+      );
 
       expect(mockUseLineupPicker).toHaveBeenCalledWith(
         expect.objectContaining({ maxDuplicates: 2 }),
@@ -274,7 +354,13 @@ describe('ConstructorPicker', () => {
     it('does not render picker sheet when readOnly is true', () => {
       mockSelectedPosition = 0; // Even if picker would be "open"
 
-      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={true} remainingBudget={100_000_000} />);
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={true}
+          remainingBudget={100_000_000}
+        />,
+      );
 
       // Sheet should not be rendered
       expect(screen.queryByText('Select Constructor')).not.toBeInTheDocument();
@@ -306,7 +392,13 @@ describe('ConstructorPicker', () => {
     it('displays errors in read-only mode', () => {
       mockError = 'Failed to load team data.';
 
-      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={true} remainingBudget={100_000_000} />);
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={true}
+          remainingBudget={100_000_000}
+        />,
+      );
 
       const errorElement = screen.getByRole('alert');
       expect(errorElement).toHaveTextContent('Failed to load team data.');
@@ -315,7 +407,13 @@ describe('ConstructorPicker', () => {
     it('does not render picker sheet when readOnly is false and picker is closed', () => {
       mockSelectedPosition = null;
 
-      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={false} remainingBudget={100_000_000} />);
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={false}
+          remainingBudget={100_000_000}
+        />,
+      );
 
       // Sheet should not be rendered when picker is closed
       expect(screen.queryByText('Select Constructor')).not.toBeInTheDocument();
@@ -330,7 +428,13 @@ describe('ConstructorPicker', () => {
     it('disables constructors that exceed remaining budget', () => {
       mockPool = [createMockConstructor({ id: 99, price: 28_000_000 })];
 
-      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={false} remainingBudget={10_000_000} />);
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={false}
+          remainingBudget={10_000_000}
+        />,
+      );
 
       expect(screen.getByRole('button', { name: /add constructor/i })).toBeDisabled();
     });
@@ -338,7 +442,13 @@ describe('ConstructorPicker', () => {
     it('does not disable constructors within remaining budget', () => {
       mockPool = [createMockConstructor({ id: 98, price: 5_000_000 })];
 
-      render(<ConstructorPicker activeConstructors={mockConstructors} readOnly={false} remainingBudget={10_000_000} />);
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={false}
+          remainingBudget={10_000_000}
+        />,
+      );
 
       expect(screen.getByRole('button', { name: /add constructor/i })).not.toBeDisabled();
     });

@@ -8,4 +8,9 @@
  * import { createMockTeam, createMockDriver } from '@/test-utils';
  */
 
-export { createMockConstructor, createMockDriver, createMockTeam, createMockTeamDriver } from './mockFactories';
+export {
+  createMockConstructor,
+  createMockDriver,
+  createMockTeam,
+  createMockTeamDriver,
+} from './mockFactories';

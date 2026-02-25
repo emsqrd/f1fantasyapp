@@ -1,7 +1,6 @@
+import { useAuth } from '@/hooks/useAuth';
 import { Outlet, useMatches, useNavigate } from '@tanstack/react-router';
 import { Trophy } from 'lucide-react';
-
-import { useAuth } from '@/hooks/useAuth';
 
 import { AppSidebar } from '../AppSidebar/AppSidebar';
 import { Button } from '../ui/button';
@@ -60,7 +59,7 @@ export function Layout() {
           <SidebarTrigger className="-ml-1" />
           {pageTitle && (
             <>
-              <div className="h-4 w-px bg-border" />
+              <div className="bg-border h-4 w-px" />
               <h1 className="text-lg font-semibold">{pageTitle}</h1>
             </>
           )}

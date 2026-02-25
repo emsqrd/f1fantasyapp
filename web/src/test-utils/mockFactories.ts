@@ -33,9 +33,7 @@ export function createMockDriver(overrides: Partial<Driver> = {}): Driver {
  *   { firstName: 'Lewis', lastName: 'Hamilton' },
  * ]);
  */
-export function createMockDriverList(
-  countOrOverrides: number | Partial<Driver>[],
-): Driver[] {
+export function createMockDriverList(countOrOverrides: number | Partial<Driver>[]): Driver[] {
   const items = Array.isArray(countOrOverrides)
     ? countOrOverrides
     : Array.from({ length: countOrOverrides }, () => ({}));

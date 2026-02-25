@@ -30,7 +30,7 @@ const mockRouterInvalidate = vi.mocked(router.invalidate);
 const createMockAuthContext = (
   user: { id: string } | null,
   loading = false,
-  isAuthTransitioning = false
+  isAuthTransitioning = false,
 ): AuthContextType => ({
   user: user as AuthContextType['user'],
   session: null,

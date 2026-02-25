@@ -1,11 +1,10 @@
 import type { Race } from '@/contracts/Race';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team } from '@/contracts/Team';
+import { formatBudget } from '@/lib/utils';
 import { useLoaderData } from '@tanstack/react-router';
 import { Lock } from 'lucide-react';
 import { useEffect, useState } from 'react';
-
-import { formatBudget } from '@/lib/utils';
 
 import { AppContainer } from '../AppContainer/AppContainer';
 import { ConstructorPicker } from '../ConstructorPicker/ConstructorPicker';
@@ -133,40 +132,40 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-2">
-                    <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+                    <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                       Lineup Locks In
                     </p>
                     {lockingImminently ? (
                       <p className="text-sm font-medium">Less than 1 minute</p>
                     ) : (
-                    <div className="flex items-start justify-center gap-2">
-                      <div className="flex flex-col items-center">
-                        <span className="text-2xl font-bold tabular-nums leading-none">
-                          {String(lockDays).padStart(2, '0')}
-                        </span>
-                        <span className="text-muted-foreground mt-1 text-xs uppercase tracking-wider">
-                          Days
-                        </span>
+                      <div className="flex items-start justify-center gap-2">
+                        <div className="flex flex-col items-center">
+                          <span className="text-2xl leading-none font-bold tabular-nums">
+                            {String(lockDays).padStart(2, '0')}
+                          </span>
+                          <span className="text-muted-foreground mt-1 text-xs tracking-wider uppercase">
+                            Days
+                          </span>
+                        </div>
+                        <span className="text-muted-foreground text-xl font-bold">:</span>
+                        <div className="flex flex-col items-center">
+                          <span className="text-2xl leading-none font-bold tabular-nums">
+                            {String(lockHours).padStart(2, '0')}
+                          </span>
+                          <span className="text-muted-foreground mt-1 text-xs tracking-wider uppercase">
+                            Hrs
+                          </span>
+                        </div>
+                        <span className="text-muted-foreground text-xl font-bold">:</span>
+                        <div className="flex flex-col items-center">
+                          <span className="text-2xl leading-none font-bold tabular-nums">
+                            {String(lockMins).padStart(2, '0')}
+                          </span>
+                          <span className="text-muted-foreground mt-1 text-xs tracking-wider uppercase">
+                            Mins
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-muted-foreground text-xl font-bold">:</span>
-                      <div className="flex flex-col items-center">
-                        <span className="text-2xl font-bold tabular-nums leading-none">
-                          {String(lockHours).padStart(2, '0')}
-                        </span>
-                        <span className="text-muted-foreground mt-1 text-xs uppercase tracking-wider">
-                          Hrs
-                        </span>
-                      </div>
-                      <span className="text-muted-foreground text-xl font-bold">:</span>
-                      <div className="flex flex-col items-center">
-                        <span className="text-2xl font-bold tabular-nums leading-none">
-                          {String(lockMins).padStart(2, '0')}
-                        </span>
-                        <span className="text-muted-foreground mt-1 text-xs uppercase tracking-wider">
-                          Mins
-                        </span>
-                      </div>
-                    </div>
                     )}
                   </div>
                 )}

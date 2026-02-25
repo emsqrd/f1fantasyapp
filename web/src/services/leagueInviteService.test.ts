@@ -1,9 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getOrCreateLeagueInvite, previewInvite, joinViaInvite } from './leagueInviteService';
-import { apiClient } from '@/lib/api';
-import { createMockLeague } from '@/test-utils/mockFactories';
 import type { LeagueInvite } from '@/contracts/LeagueInvite';
 import type { LeagueInvitePreviewResponse } from '@/contracts/LeagueInvitePreviewResponse';
+import { apiClient } from '@/lib/api';
+import { createMockLeague } from '@/test-utils/mockFactories';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { getOrCreateLeagueInvite, joinViaInvite, previewInvite } from './leagueInviteService';
 
 vi.mock('@/lib/api', () => ({
   apiClient: {
