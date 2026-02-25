@@ -51,7 +51,11 @@ export function AppSidebar() {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const routerState = useRouterState();
-  const { isMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const closeOnMobile = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
   // Get profile from route context
   const matches = useMatches();
@@ -68,22 +72,27 @@ export function AppSidebar() {
   const currentPath = routerState.location.pathname;
 
   const handleBrowseLeagues = () => {
+    closeOnMobile();
     navigate({ to: '/browse-leagues' });
   };
 
   const handleMyLeagues = () => {
+    closeOnMobile();
     navigate({ to: '/leagues' });
   };
 
   const handleMyTeam = () => {
+    closeOnMobile();
     navigate({ to: '/my-team' });
   };
 
   const handleCreateTeam = () => {
+    closeOnMobile();
     navigate({ to: '/create-team' });
   };
 
   const handleAccountClick = () => {
+    closeOnMobile();
     navigate({ to: '/account' });
   };
 
@@ -118,6 +127,7 @@ export function AppSidebar() {
   };
 
   const handleLogoClick = () => {
+    closeOnMobile();
     navigate({ to: '/' });
   };
 
