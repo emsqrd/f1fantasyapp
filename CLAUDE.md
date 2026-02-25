@@ -21,6 +21,16 @@ React SPA (Vite) → .NET 9 Minimal API → PostgreSQL
 - **Database:** PostgreSQL
 - **Services:** Supabase (authentication), Sentry (monitoring)
 
+## Domain & Features
+
+### Core Concepts
+
+- **Team** — Each user creates one team per season. A team consists of **4 driver slots** and **4 constructor slots**. Teams are subject to a **100M budget cap**; each driver/constructor has a price and the projected spend cannot exceed the cap. Max 2 of the same constructor per team.
+- **Roster Lock** — Each race has a `LockDeadline`. Once `now >= lockDeadline`, the team can no longer be modified (drivers/constructors cannot be added or removed). The UI shows a live countdown and disables pickers when locked.
+- **League** — Users create or join leagues to compete against others. Public leagues are browsable; private leagues use invite tokens. Max 15 teams per league. A team can belong to multiple leagues.
+- **Scoring** — Teams earn points based on real F1 race results. **Not yet implemented** — the leaderboard UI exists with placeholder/demo data but the scoring calculation engine is unbuilt.
+- **Season / Race** — Seasons map to F1 calendar years and contain ordered races (with round numbers and lock deadlines). Driver and constructor pricing is dynamic per season.
+
 ## Project Context
 
 - **Team Size**: Solo developer

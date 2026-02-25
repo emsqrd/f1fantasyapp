@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'CLAUDE.md CHECK: If this change introduces or modifies a domain concept, business rule, constraint, or architectural pattern, remind the user to update the relevant CLAUDE.md.'"
+          }
+        ]
+      }
+    ]
+  }
+}
