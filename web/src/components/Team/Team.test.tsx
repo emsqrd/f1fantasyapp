@@ -528,6 +528,7 @@ describe('Team Component', () => {
     const PAST_DEADLINE = '2026-02-01T12:00:00Z';
     const FUTURE_DEADLINE_DAYS = '2026-03-08T12:00:00Z'; // 12d away from 2026-02-24T12:00:00Z
     const FUTURE_DEADLINE_HOURS = '2026-02-24T15:30:00Z'; // 3h 30m away from 2026-02-24T12:00:00Z
+    const FUTURE_DEADLINE_IMMINENT = '2026-02-24T12:00:30Z'; // 30s away from 2026-02-24T12:00:00Z
 
     const lockedRaces: Race[] = mockRaces.map((race) => ({
       ...race,
@@ -542,6 +543,11 @@ describe('Team Component', () => {
     const countdownRacesHours: Race[] = mockRaces.map((race) => ({
       ...race,
       lockDeadline: race.isCurrent ? FUTURE_DEADLINE_HOURS : race.lockDeadline,
+    }));
+
+    const countdownRacesImminent: Race[] = mockRaces.map((race) => ({
+      ...race,
+      lockDeadline: race.isCurrent ? FUTURE_DEADLINE_IMMINENT : race.lockDeadline,
     }));
 
     beforeEach(() => {
@@ -601,6 +607,23 @@ describe('Team Component', () => {
       expect(screen.getByText('03')).toBeInTheDocument();
     });
 
+    it('shows "Less than 1 minute" when lock is imminent', () => {
+      vi.setSystemTime(new Date('2026-02-24T12:00:00Z'));
+      render(
+        <Team
+          team={mockTeam}
+          activeDrivers={mockActiveDrivers}
+          activeConstructors={mockActiveConstructors}
+          races={countdownRacesImminent}
+          readOnly={false}
+        />,
+      );
+
+      expect(screen.getByText('Lineup Locks In')).toBeInTheDocument();
+      expect(screen.getByText('Less than 1 minute')).toBeInTheDocument();
+      expect(screen.queryByText('Days')).not.toBeInTheDocument();
+    });
+
     it('shows no lock status when lock deadline is null', () => {
       render(
         <Team
@@ -628,9 +651,7 @@ describe('Team Component', () => {
         />,
       );
 
-      expect(mockDriverPicker).toHaveBeenCalledWith(
-        expect.objectContaining({ readOnly: true }),
-      );
+      expect(mockDriverPicker).toHaveBeenCalledWith(expect.objectContaining({ readOnly: true }));
       expect(mockConstructorPicker).toHaveBeenCalledWith(
         expect.objectContaining({ readOnly: true }),
       );
