@@ -2,7 +2,8 @@ import type { Race } from '@/contracts/Race';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team } from '@/contracts/Team';
 import { useLoaderData } from '@tanstack/react-router';
-import { useState } from 'react';
+import { Lock } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { formatBudget } from '@/lib/utils';
 
@@ -64,6 +65,44 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
   const currentRace = races.find((r) => r.isCurrent) ?? races.at(-1);
   const [selectedRaceId, setSelectedRaceId] = useState<number | undefined>(currentRace?.id);
 
+  const lockDeadlineStr = currentRace?.lockDeadline ?? null;
+  const lockDeadline = lockDeadlineStr ? new Date(lockDeadlineStr) : null;
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    if (!lockDeadlineStr) return;
+    const deadline = new Date(lockDeadlineStr);
+
+    const tick = () => {
+      const n = new Date();
+      setNow(n);
+      if (n >= deadline) clearInterval(intervalId);
+    };
+
+    const intervalId = setInterval(tick, 1000);
+
+    // Immediately refresh when returning from a background tab so the lock
+    // state is accurate even if the browser throttled setInterval.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') tick();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [lockDeadlineStr]);
+
+  const isLocked = lockDeadline != null && now >= lockDeadline;
+
+  const msRemaining = lockDeadline && !isLocked ? lockDeadline.getTime() - now.getTime() : 0;
+  const totalMins = Math.floor(msRemaining / 60000);
+  const lockDays = Math.floor(totalMins / 1440);
+  const lockHours = Math.floor((totalMins % 1440) / 60);
+  const lockMins = totalMins % 60;
+  const lockingImminently = msRemaining > 0 && msRemaining < 60000;
+
   return (
     <AppContainer maxWidth="md">
       <div className="mb-4 gap-4 sm:grid sm:grid-cols-2">
@@ -85,6 +124,54 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
                 <h1 className="text-lg font-bold">3/3</h1>
               </div>
             </div>
+            {lockDeadline && (
+              <div className="mt-4 border-t pt-4">
+                {isLocked ? (
+                  <div className="text-muted-foreground flex items-center justify-center gap-1.5">
+                    <Lock className="h-4 w-4" />
+                    <span className="text-sm font-medium">Lineup Locked</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+                      Lineup Locks In
+                    </p>
+                    {lockingImminently ? (
+                      <p className="text-sm font-medium">Less than 1 minute</p>
+                    ) : (
+                    <div className="flex items-start justify-center gap-2">
+                      <div className="flex flex-col items-center">
+                        <span className="text-2xl font-bold tabular-nums leading-none">
+                          {String(lockDays).padStart(2, '0')}
+                        </span>
+                        <span className="text-muted-foreground mt-1 text-xs uppercase tracking-wider">
+                          Days
+                        </span>
+                      </div>
+                      <span className="text-muted-foreground text-xl font-bold">:</span>
+                      <div className="flex flex-col items-center">
+                        <span className="text-2xl font-bold tabular-nums leading-none">
+                          {String(lockHours).padStart(2, '0')}
+                        </span>
+                        <span className="text-muted-foreground mt-1 text-xs uppercase tracking-wider">
+                          Hrs
+                        </span>
+                      </div>
+                      <span className="text-muted-foreground text-xl font-bold">:</span>
+                      <div className="flex flex-col items-center">
+                        <span className="text-2xl font-bold tabular-nums leading-none">
+                          {String(lockMins).padStart(2, '0')}
+                        </span>
+                        <span className="text-muted-foreground mt-1 text-xs uppercase tracking-wider">
+                          Mins
+                        </span>
+                      </div>
+                    </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -108,7 +195,7 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
             </SelectContent>
           </Select>
 
-          <Card className="gap-2 py-2">
+          <Card className="flex flex-1 flex-col justify-center gap-2 py-2">
             <CardHeader>
               <CardTitle className="pb-2 text-center text-2xl font-bold">Round Results</CardTitle>
             </CardHeader>
@@ -142,7 +229,7 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
               <DriverPicker
                 activeDrivers={activeDrivers}
                 teamDrivers={team.drivers}
-                readOnly={readOnly}
+                readOnly={readOnly || isLocked}
                 remainingBudget={team.remainingBudget}
               />
             </CardContent>
@@ -158,7 +245,7 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
               <ConstructorPicker
                 activeConstructors={activeConstructors}
                 teamConstructors={team.constructors}
-                readOnly={readOnly}
+                readOnly={readOnly || isLocked}
                 remainingBudget={team.remainingBudget}
               />
             </CardContent>

@@ -4,7 +4,7 @@ import type { Team as TeamType } from '@/contracts/Team';
 import { createMockConstructor, createMockDriver, createMockTeam } from '@/test-utils';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Team } from './Team';
 
@@ -131,7 +131,7 @@ describe('Team Component', () => {
       circuit: 'Jeddah Corniche Circuit',
       country: 'Saudi Arabia',
       raceDate: '2024-03-09',
-      lockDeadline: '2024-03-08T12:00:00Z',
+      lockDeadline: null,
       isCurrent: true,
     },
     {
@@ -521,6 +521,140 @@ describe('Team Component', () => {
 
       const constructorPicker = screen.getByTestId('constructor-picker');
       expect(constructorPicker).toHaveAttribute('data-read-only', 'false');
+    });
+  });
+
+  describe('Roster Lock', () => {
+    const PAST_DEADLINE = '2026-02-01T12:00:00Z';
+    const FUTURE_DEADLINE_DAYS = '2026-03-08T12:00:00Z'; // 12d away from 2026-02-24T12:00:00Z
+    const FUTURE_DEADLINE_HOURS = '2026-02-24T15:30:00Z'; // 3h 30m away from 2026-02-24T12:00:00Z
+    const FUTURE_DEADLINE_IMMINENT = '2026-02-24T12:00:30Z'; // 30s away from 2026-02-24T12:00:00Z
+
+    const lockedRaces: Race[] = mockRaces.map((race) => ({
+      ...race,
+      lockDeadline: race.isCurrent ? PAST_DEADLINE : race.lockDeadline,
+    }));
+
+    const countdownRacesDays: Race[] = mockRaces.map((race) => ({
+      ...race,
+      lockDeadline: race.isCurrent ? FUTURE_DEADLINE_DAYS : race.lockDeadline,
+    }));
+
+    const countdownRacesHours: Race[] = mockRaces.map((race) => ({
+      ...race,
+      lockDeadline: race.isCurrent ? FUTURE_DEADLINE_HOURS : race.lockDeadline,
+    }));
+
+    const countdownRacesImminent: Race[] = mockRaces.map((race) => ({
+      ...race,
+      lockDeadline: race.isCurrent ? FUTURE_DEADLINE_IMMINENT : race.lockDeadline,
+    }));
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('shows "Lineup Locked" status when roster is locked', () => {
+      vi.setSystemTime(new Date('2026-02-24T12:00:00Z'));
+      render(
+        <Team
+          team={mockTeam}
+          activeDrivers={mockActiveDrivers}
+          activeConstructors={mockActiveConstructors}
+          races={lockedRaces}
+          readOnly={false}
+        />,
+      );
+
+      expect(screen.getByText('Lineup Locked')).toBeInTheDocument();
+    });
+
+    it('shows D/H/M countdown when more than 24h remain', () => {
+      vi.setSystemTime(new Date('2026-02-24T12:00:00Z'));
+      render(
+        <Team
+          team={mockTeam}
+          activeDrivers={mockActiveDrivers}
+          activeConstructors={mockActiveConstructors}
+          races={countdownRacesDays}
+          readOnly={false}
+        />,
+      );
+
+      expect(screen.getByText('Lineup Locks In')).toBeInTheDocument();
+      expect(screen.getByText('Days')).toBeInTheDocument();
+      expect(screen.getByText('12')).toBeInTheDocument();
+    });
+
+    it('shows D/H/M countdown when less than 24h remain', () => {
+      vi.setSystemTime(new Date('2026-02-24T12:00:00Z'));
+      render(
+        <Team
+          team={mockTeam}
+          activeDrivers={mockActiveDrivers}
+          activeConstructors={mockActiveConstructors}
+          races={countdownRacesHours}
+          readOnly={false}
+        />,
+      );
+
+      expect(screen.getByText('Lineup Locks In')).toBeInTheDocument();
+      expect(screen.getByText('Hrs')).toBeInTheDocument();
+      expect(screen.getByText('03')).toBeInTheDocument();
+    });
+
+    it('shows "Less than 1 minute" when lock is imminent', () => {
+      vi.setSystemTime(new Date('2026-02-24T12:00:00Z'));
+      render(
+        <Team
+          team={mockTeam}
+          activeDrivers={mockActiveDrivers}
+          activeConstructors={mockActiveConstructors}
+          races={countdownRacesImminent}
+          readOnly={false}
+        />,
+      );
+
+      expect(screen.getByText('Lineup Locks In')).toBeInTheDocument();
+      expect(screen.getByText('Less than 1 minute')).toBeInTheDocument();
+      expect(screen.queryByText('Days')).not.toBeInTheDocument();
+    });
+
+    it('shows no lock status when lock deadline is null', () => {
+      render(
+        <Team
+          team={mockTeam}
+          activeDrivers={mockActiveDrivers}
+          activeConstructors={mockActiveConstructors}
+          races={mockRaces}
+          readOnly={false}
+        />,
+      );
+
+      expect(screen.queryByText('Lineup Locked')).not.toBeInTheDocument();
+      expect(screen.queryByText('Lineup Locks In')).not.toBeInTheDocument();
+    });
+
+    it('passes readOnly=true to pickers when roster is locked', () => {
+      vi.setSystemTime(new Date('2026-02-24T12:00:00Z'));
+      render(
+        <Team
+          team={mockTeam}
+          activeDrivers={mockActiveDrivers}
+          activeConstructors={mockActiveConstructors}
+          races={lockedRaces}
+          readOnly={false}
+        />,
+      );
+
+      expect(mockDriverPicker).toHaveBeenCalledWith(expect.objectContaining({ readOnly: true }));
+      expect(mockConstructorPicker).toHaveBeenCalledWith(
+        expect.objectContaining({ readOnly: true }),
+      );
     });
   });
 
