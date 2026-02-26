@@ -16,6 +16,7 @@ public class LineupEntry
     public int EntityId { get; set; }
     public LineupEntityType EntityType { get; set; }
     public int SlotPosition { get; set; }
+    public bool IsCaptain { get; set; }
     public DateTime CreatedAt { get; set; }
 
     public Team Team { get; set; } = null!;
