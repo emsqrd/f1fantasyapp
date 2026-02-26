@@ -22,6 +22,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<TeamDriver> TeamDrivers => Set<TeamDriver>();
     public DbSet<TeamConstructor> TeamConstructors => Set<TeamConstructor>();
+    public DbSet<LineupEntry> LineupEntries => Set<LineupEntry>();
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -178,6 +179,21 @@ public class ApplicationDbContext : DbContext
                 .WithOne(e => e.Profile)
                 .HasForeignKey<UserProfile>(e => e.AccountId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<LineupEntry>(entity =>
+        {
+            entity
+                .HasOne(le => le.Team)
+                .WithMany()
+                .HasForeignKey(le => le.TeamId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity
+                .HasOne(le => le.Race)
+                .WithMany()
+                .HasForeignKey(le => le.RaceId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Configure audit trail FK for user-owned entities only

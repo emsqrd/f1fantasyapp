@@ -1100,6 +1100,267 @@ public class TeamServiceTests
 
     #endregion
 
+    #region Lineup Snapshot Tests
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_WithUpcomingRace_CreatesLineupEntry()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+        var race = CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(1)
+        );
+
+        // Act
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+
+        // Assert
+        var entry = await context.LineupEntries.FirstOrDefaultAsync();
+        Assert.NotNull(entry);
+        Assert.Equal(team.Id, entry.TeamId);
+        Assert.Equal(race.Id, entry.RaceId);
+        Assert.Equal(driver.Id, entry.EntityId);
+        Assert.Equal(LineupEntityType.Driver, entry.EntityType);
+        Assert.Equal(0, entry.SlotPosition);
+    }
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_WithNoUpcomingRace_DoesNotCreateLineupEntry()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+
+        // Act
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+
+        // Assert
+        Assert.NotNull(await context.TeamDrivers.FirstOrDefaultAsync());
+        Assert.Equal(0, await context.LineupEntries.CountAsync());
+    }
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_RaceHasNoLockDeadline_CreatesLineupEntry()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+        var race = CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: null
+        );
+
+        // Act
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+
+        // Assert
+        var entry = await context.LineupEntries.FirstOrDefaultAsync();
+        Assert.NotNull(entry);
+        Assert.Equal(race.Id, entry.RaceId);
+        Assert.Equal(LineupEntityType.Driver, entry.EntityType);
+    }
+
+    [Fact]
+    public async Task RemoveDriverFromTeamAsync_WithUpcomingRace_DeletesLineupEntry()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+        CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(1)
+        );
+
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+
+        // Act
+        await service.RemoveDriverFromTeamAsync(team.Id, 0, user.Id);
+
+        // Assert
+        Assert.Null(await context.LineupEntries.FirstOrDefaultAsync());
+    }
+
+    [Fact]
+    public async Task RemoveDriverFromTeamAsync_NoSnapshotExists_StillRemovesDriver()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+        CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(1)
+        );
+
+        // Add driver directly — no snapshot written
+        context.TeamDrivers.Add(
+            new TeamDriver
+            {
+                TeamId = team.Id,
+                DriverId = driver.Id,
+                SlotPosition = 0,
+                CreatedBy = user.Id,
+                CreatedAt = DateTime.UtcNow,
+            }
+        );
+        await context.SaveChangesAsync();
+
+        // Act — should not throw even though no lineup entry exists
+        await service.RemoveDriverFromTeamAsync(team.Id, 0, user.Id);
+
+        // Assert
+        Assert.Null(await context.TeamDrivers.FirstOrDefaultAsync());
+        Assert.Equal(0, await context.LineupEntries.CountAsync());
+    }
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_WithUpcomingRace_CreatesLineupEntry()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var constructor = CreateTestConstructor(context, "Red Bull Racing");
+        var race = CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(1)
+        );
+
+        // Act
+        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id);
+
+        // Assert
+        var entry = await context.LineupEntries.FirstOrDefaultAsync();
+        Assert.NotNull(entry);
+        Assert.Equal(team.Id, entry.TeamId);
+        Assert.Equal(race.Id, entry.RaceId);
+        Assert.Equal(constructor.Id, entry.EntityId);
+        Assert.Equal(LineupEntityType.Constructor, entry.EntityType);
+        Assert.Equal(0, entry.SlotPosition);
+    }
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_WithNoUpcomingRace_DoesNotCreateLineupEntry()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var constructor = CreateTestConstructor(context, "Red Bull Racing");
+
+        // Act
+        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id);
+
+        // Assert
+        Assert.NotNull(await context.TeamConstructors.FirstOrDefaultAsync());
+        Assert.Equal(0, await context.LineupEntries.CountAsync());
+    }
+
+    [Fact]
+    public async Task RemoveConstructorFromTeamAsync_WithUpcomingRace_DeletesLineupEntry()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var constructor = CreateTestConstructor(context, "Red Bull Racing");
+        CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(1)
+        );
+
+        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id);
+
+        // Act
+        await service.RemoveConstructorFromTeamAsync(team.Id, 0, user.Id);
+
+        // Assert
+        Assert.Null(await context.LineupEntries.FirstOrDefaultAsync());
+    }
+
+    [Fact]
+    public async Task AddConstructorToTeamAsync_SameConstructorTwice_CreatesTwoLineupEntries()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var constructor = CreateTestConstructor(context, "Red Bull Racing");
+        CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(1)
+        );
+
+        // Act
+        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id);
+        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 1, user.Id);
+
+        // Assert
+        Assert.Equal(2, await context.LineupEntries.CountAsync());
+    }
+
+    [Fact]
+    public async Task AddDriverToTeamAsync_AtomicSave_TeamDriverAndLineupEntryBothPersist()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+        CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(1)
+        );
+
+        // Act
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+
+        // Assert
+        Assert.Equal(1, await context.TeamDrivers.CountAsync());
+        Assert.Equal(1, await context.LineupEntries.CountAsync());
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private UserProfile CreateTestUser(ApplicationDbContext context, string email = "user@test.com")

@@ -115,7 +115,7 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
           <CardContent>
             <div className="grid grid-cols-2 gap-4 sm:flex sm:flex-row sm:justify-center">
               <div className="flex flex-col items-center">
-                <p className="text-muted-foreground font-medium">Budget</p>
+                <p className="text-muted-foreground font-medium">Remaining</p>
                 <h1 className="text-lg font-bold">{formatBudget(team.remainingBudget)}</h1>
               </div>
               <div className="flex flex-col items-center">

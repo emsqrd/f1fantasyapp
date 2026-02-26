@@ -105,7 +105,7 @@ public class TeamService : ITeamService
             slotPosition
         );
 
-        await ThrowIfRosterLockedAsync();
+        var currentRace = await GetCurrentRaceOrThrowIfLockedAsync();
 
         // Validate team ownership
         var team = await _dbContext
@@ -195,6 +195,22 @@ public class TeamService : ITeamService
         };
 
         _dbContext.TeamDrivers.Add(teamDriver);
+
+        if (currentRace is not null)
+        {
+            _dbContext.LineupEntries.Add(
+                new LineupEntry
+                {
+                    TeamId = teamId,
+                    RaceId = currentRace.Id,
+                    EntityId = driverId,
+                    EntityType = LineupEntityType.Driver,
+                    SlotPosition = slotPosition,
+                    CreatedAt = DateTime.UtcNow,
+                }
+            );
+        }
+
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation(
@@ -213,7 +229,7 @@ public class TeamService : ITeamService
             slotPosition
         );
 
-        await ThrowIfRosterLockedAsync();
+        var currentRace = await GetCurrentRaceOrThrowIfLockedAsync();
 
         // Validate team ownership
         var team = await _dbContext.Teams.FirstOrDefaultAsync(t => t.Id == teamId);
@@ -250,6 +266,20 @@ public class TeamService : ITeamService
         }
 
         _dbContext.TeamDrivers.Remove(teamDriver);
+
+        if (currentRace is not null)
+        {
+            var entry = await _dbContext.LineupEntries.FirstOrDefaultAsync(le =>
+                le.TeamId == teamId
+                && le.RaceId == currentRace.Id
+                && le.EntityId == teamDriver.DriverId
+                && le.EntityType == LineupEntityType.Driver
+            );
+
+            if (entry is not null)
+                _dbContext.LineupEntries.Remove(entry);
+        }
+
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation(
@@ -273,7 +303,7 @@ public class TeamService : ITeamService
             slotPosition
         );
 
-        await ThrowIfRosterLockedAsync();
+        var currentRace = await GetCurrentRaceOrThrowIfLockedAsync();
 
         // Validate team ownership
         var team = await _dbContext
@@ -371,6 +401,22 @@ public class TeamService : ITeamService
         };
 
         _dbContext.TeamConstructors.Add(teamConstructor);
+
+        if (currentRace is not null)
+        {
+            _dbContext.LineupEntries.Add(
+                new LineupEntry
+                {
+                    TeamId = teamId,
+                    RaceId = currentRace.Id,
+                    EntityId = constructorId,
+                    EntityType = LineupEntityType.Constructor,
+                    SlotPosition = slotPosition,
+                    CreatedAt = DateTime.UtcNow,
+                }
+            );
+        }
+
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation(
@@ -389,7 +435,7 @@ public class TeamService : ITeamService
             slotPosition
         );
 
-        await ThrowIfRosterLockedAsync();
+        var currentRace = await GetCurrentRaceOrThrowIfLockedAsync();
 
         // Validate team ownership
         var team = await _dbContext.Teams.FirstOrDefaultAsync(t => t.Id == teamId);
@@ -428,6 +474,20 @@ public class TeamService : ITeamService
         }
 
         _dbContext.TeamConstructors.Remove(teamConstructor);
+
+        if (currentRace is not null)
+        {
+            var entry = await _dbContext.LineupEntries.FirstOrDefaultAsync(le =>
+                le.TeamId == teamId
+                && le.RaceId == currentRace.Id
+                && le.EntityId == teamConstructor.ConstructorId
+                && le.EntityType == LineupEntityType.Constructor
+            );
+
+            if (entry is not null)
+                _dbContext.LineupEntries.Remove(entry);
+        }
+
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation(
@@ -437,7 +497,7 @@ public class TeamService : ITeamService
         );
     }
 
-    private async Task ThrowIfRosterLockedAsync()
+    private async Task<Race?> GetCurrentRaceOrThrowIfLockedAsync()
     {
         var now = DateTime.UtcNow;
         var currentRace = await _dbContext
@@ -447,5 +507,7 @@ public class TeamService : ITeamService
 
         if (currentRace?.LockDeadline is not null && now >= currentRace.LockDeadline)
             throw new RosterLockedException(currentRace.Name, currentRace.LockDeadline.Value);
+
+        return currentRace;
     }
 }
