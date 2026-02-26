@@ -869,6 +869,77 @@ public class MeEndpointsTests
         Assert.Equal("Constructor slot is empty", badRequestResult.Value);
     }
 
+    [Fact]
+    public async Task SetCaptainAsync_Success_ReturnsNoContent()
+    {
+        // Arrange
+        var user = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            CreatedAt = DateTime.UtcNow,
+        };
+        var team = new TeamDetailsResponse
+        {
+            Id = 10,
+            Name = "Team",
+            OwnerId = 1,
+            OwnerName = "User",
+            Drivers = new List<TeamDriverResponse>(),
+            Constructors = new List<TeamConstructorResponse>(),
+        };
+        var request = new SetCaptainRequest { DriverId = 5 };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService.Setup(x => x.GetUserTeamAsync(user.Id)).ReturnsAsync(team);
+
+        _mockTeamService
+            .Setup(x => x.SetCaptainAsync(team.Id, request.DriverId, user.Id))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await InvokeSetCaptainAsync(request);
+
+        // Assert
+        Assert.IsType<NoContent>(result);
+        _mockTeamService.Verify(
+            x => x.SetCaptainAsync(team.Id, request.DriverId, user.Id),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task SetCaptainAsync_UserHasNoTeam_ReturnsNotFound()
+    {
+        // Arrange
+        var user = new UserProfileResponse
+        {
+            Id = 1,
+            Email = "test@test.com",
+            CreatedAt = DateTime.UtcNow,
+        };
+        var request = new SetCaptainRequest { DriverId = 5 };
+
+        _mockUserProfileService
+            .Setup(x => x.GetRequiredCurrentUserProfileAsync())
+            .ReturnsAsync(user);
+
+        _mockTeamService
+            .Setup(x => x.GetUserTeamAsync(user.Id))
+            .ReturnsAsync((TeamDetailsResponse?)null);
+
+        // Act
+        var result = await InvokeSetCaptainAsync(request);
+
+        // Assert
+        Assert.IsType<ProblemHttpResult>(result);
+        var problemResult = (ProblemHttpResult)result;
+        Assert.Equal(StatusCodes.Status404NotFound, problemResult.StatusCode);
+    }
+
     // Helper methods to invoke private endpoint methods via reflection
     private async Task<IResult> InvokeRegisterUserAsync(MeEndpoints.RegisterUserRequest request)
     {
@@ -1062,6 +1133,29 @@ public class MeEndpointsTests
                     new object[]
                     {
                         slotPosition,
+                        _mockTeamService.Object,
+                        _mockUserProfileService.Object,
+                        _mockLogger.Object,
+                    }
+                )!;
+
+        return await task;
+    }
+
+    private async Task<IResult> InvokeSetCaptainAsync(SetCaptainRequest request)
+    {
+        var method = typeof(MeEndpoints).GetMethod(
+            "SetCaptainAsync",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+        );
+
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[]
+                    {
+                        request,
                         _mockTeamService.Object,
                         _mockUserProfileService.Object,
                         _mockLogger.Object,

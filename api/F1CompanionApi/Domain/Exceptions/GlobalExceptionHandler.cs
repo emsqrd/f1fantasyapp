@@ -122,6 +122,12 @@ public class GlobalExceptionHandler : IExceptionHandler
                 ex.Message
             ),
 
+            NoUpcomingRaceException ex => (
+                StatusCodes.Status409Conflict,
+                "No Upcoming Race",
+                ex.Message
+            ),
+
             // Standard .NET Exceptions (order matters: most specific first)
             ArgumentNullException ex => (
                 StatusCodes.Status400BadRequest,

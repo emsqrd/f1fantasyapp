@@ -5,7 +5,10 @@ namespace F1CompanionApi.Api.Mappers;
 
 public static class TeamDriverResponseMapper
 {
-    public static TeamDriverResponse ToResponseModel(this TeamDriver teamDriver)
+    public static TeamDriverResponse ToResponseModel(
+        this TeamDriver teamDriver,
+        int? captainDriverId = null
+    )
     {
         return new TeamDriverResponse
         {
@@ -16,6 +19,7 @@ public static class TeamDriverResponseMapper
             Abbreviation = teamDriver.Driver.Abbreviation,
             CountryAbbreviation = teamDriver.Driver.CountryAbbreviation,
             Price = teamDriver.Driver.Price,
+            IsCaptain = teamDriver.Driver.Id == captainDriverId,
         };
     }
 }

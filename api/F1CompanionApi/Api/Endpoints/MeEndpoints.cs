@@ -75,6 +75,14 @@ public static class MeEndpoints
                 "Remove a constructor from the current user's team at a specific slot position"
             );
 
+        teamGroup
+            .MapPut("/captain", SetCaptainAsync)
+            .WithName("Set Team Captain")
+            .WithOpenApi()
+            .WithDescription(
+                "Set or clear the captain driver for the current race. Pass null driverId to deselect."
+            );
+
         return app;
     }
 
@@ -422,5 +430,34 @@ public static class MeEndpoints
             );
             return Results.BadRequest(ex.Message);
         }
+    }
+
+    private static async Task<IResult> SetCaptainAsync(
+        SetCaptainRequest request,
+        ITeamService teamService,
+        IUserProfileService userProfileService,
+        ILogger logger
+    )
+    {
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+
+        logger.LogInformation(
+            "User {UserId} setting captain to driver {DriverId}",
+            user.Id,
+            request.DriverId
+        );
+
+        var team = await teamService.GetUserTeamAsync(user.Id);
+        if (team is null)
+        {
+            logger.LogWarning("User {UserId} has no team", user.Id);
+            return Results.Problem(
+                detail: "User has no team",
+                statusCode: StatusCodes.Status404NotFound
+            );
+        }
+
+        await teamService.SetCaptainAsync(team.Id, request.DriverId, user.Id);
+        return Results.NoContent();
     }
 }
