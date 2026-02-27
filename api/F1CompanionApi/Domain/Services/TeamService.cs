@@ -15,6 +15,7 @@ public interface ITeamService
     Task RemoveDriverFromTeamAsync(int teamId, int slotPosition, int userId);
     Task AddConstructorToTeamAsync(int teamId, int constructorId, int slotPosition, int userId);
     Task RemoveConstructorFromTeamAsync(int teamId, int slotPosition, int userId);
+    Task SetCaptainAsync(int teamId, int? driverId, int userId);
 }
 
 public class TeamService : ITeamService
@@ -93,7 +94,21 @@ public class TeamService : ITeamService
             return null;
         }
 
-        return team.ToDetailsResponseModel();
+        var currentRace = await GetCurrentRaceAsync();
+
+        int? captainDriverId = currentRace is null
+            ? null
+            : await _dbContext
+                .LineupEntries.Where(le =>
+                    le.TeamId == team.Id
+                    && le.RaceId == currentRace.Id
+                    && le.EntityType == LineupEntityType.Driver
+                    && le.IsCaptain
+                )
+                .Select(le => (int?)le.EntityId)
+                .FirstOrDefaultAsync();
+
+        return team.ToDetailsResponseModel(captainDriverId);
     }
 
     public async Task AddDriverToTeamAsync(int teamId, int driverId, int slotPosition, int userId)
@@ -497,14 +512,101 @@ public class TeamService : ITeamService
         );
     }
 
-    private async Task<Race?> GetCurrentRaceOrThrowIfLockedAsync()
+    public async Task SetCaptainAsync(int teamId, int? driverId, int userId)
+    {
+        _logger.LogInformation(
+            "User {UserId} setting captain to driver {DriverId} on team {TeamId}",
+            userId,
+            driverId,
+            teamId
+        );
+
+        var currentRace = await GetCurrentRaceOrThrowIfLockedAsync();
+
+        var team = await _dbContext.Teams.FirstOrDefaultAsync(t => t.Id == teamId);
+
+        if (team is null)
+        {
+            _logger.LogWarning("Team {TeamId} not found", teamId);
+            throw new InvalidOperationException("Team not found");
+        }
+
+        if (team.UserId != userId)
+        {
+            _logger.LogWarning(
+                "User {UserId} attempted to modify team {TeamId} owned by {OwnerId}",
+                userId,
+                teamId,
+                team.UserId
+            );
+            throw new TeamOwnershipException(teamId, team.UserId, userId);
+        }
+
+        if (currentRace is null)
+        {
+            _logger.LogWarning("No upcoming race — cannot set captain for team {TeamId}", teamId);
+            throw new NoUpcomingRaceException();
+        }
+
+        LineupEntry? newCaptainEntry = null;
+
+        if (driverId is not null)
+        {
+            newCaptainEntry = await _dbContext.LineupEntries.FirstOrDefaultAsync(le =>
+                le.TeamId == teamId
+                && le.RaceId == currentRace.Id
+                && le.EntityId == driverId
+                && le.EntityType == LineupEntityType.Driver
+            );
+
+            if (newCaptainEntry is null)
+            {
+                _logger.LogWarning(
+                    "Driver {DriverId} is not in the lineup for team {TeamId} race {RaceId}",
+                    driverId,
+                    teamId,
+                    currentRace.Id
+                );
+                throw new InvalidOperationException(
+                    $"Driver {driverId} is not in the current lineup"
+                );
+            }
+        }
+
+        var existingCaptain = await _dbContext.LineupEntries.FirstOrDefaultAsync(le =>
+            le.TeamId == teamId && le.RaceId == currentRace.Id && le.IsCaptain
+        );
+
+        if (existingCaptain is not null)
+            existingCaptain.IsCaptain = false;
+
+        if (newCaptainEntry is not null)
+            newCaptainEntry.IsCaptain = true;
+
+        await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Captain set to driver {DriverId} for team {TeamId} race {RaceId}",
+            driverId,
+            teamId,
+            currentRace.Id
+        );
+    }
+
+    private async Task<Race?> GetCurrentRaceAsync()
     {
         var now = DateTime.UtcNow;
-        var currentRace = await _dbContext
+        return await _dbContext
             .Races.Where(r => r.RaceDate >= now)
             .OrderBy(r => r.RaceDate)
             .FirstOrDefaultAsync();
+    }
 
+    private async Task<Race?> GetCurrentRaceOrThrowIfLockedAsync()
+    {
+        var currentRace = await GetCurrentRaceAsync();
+
+        var now = DateTime.UtcNow;
         if (currentRace?.LockDeadline is not null && now >= currentRace.LockDeadline)
             throw new RosterLockedException(currentRace.Name, currentRace.LockDeadline.Value);
 

@@ -92,3 +92,7 @@ export async function removeConstructorFromTeam(slotPosition: number): Promise<v
     slotPosition,
   });
 }
+
+export async function setCaptain(driverId: number | null): Promise<void> {
+  await apiClient.put('/me/team/captain', { driverId }, 'set team captain');
+}

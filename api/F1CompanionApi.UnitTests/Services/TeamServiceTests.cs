@@ -1361,6 +1361,216 @@ public class TeamServiceTests
 
     #endregion
 
+    #region SetCaptainAsync Tests
+
+    [Fact]
+    public async Task SetCaptainAsync_ValidDriver_SetsCaptainFlag()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+        var race = CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(1)
+        );
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+
+        // Act
+        await service.SetCaptainAsync(team.Id, driver.Id, user.Id);
+
+        // Assert
+        var entry = await context.LineupEntries.FirstOrDefaultAsync(le =>
+            le.TeamId == team.Id && le.RaceId == race.Id && le.EntityId == driver.Id
+        );
+        Assert.NotNull(entry);
+        Assert.True(entry.IsCaptain);
+    }
+
+    [Fact]
+    public async Task SetCaptainAsync_ExistingCaptain_ClearsExistingAndSetsNew()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver1 = CreateTestDriver(context, "VER", "Max", "Verstappen");
+        var driver2 = CreateTestDriver(context, "NOR", "Lando", "Norris");
+        var race = CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(1)
+        );
+        await service.AddDriverToTeamAsync(team.Id, driver1.Id, 0, user.Id);
+        await service.AddDriverToTeamAsync(team.Id, driver2.Id, 1, user.Id);
+        await service.SetCaptainAsync(team.Id, driver1.Id, user.Id);
+
+        // Act
+        await service.SetCaptainAsync(team.Id, driver2.Id, user.Id);
+
+        // Assert
+        var entry1 = await context.LineupEntries.FirstOrDefaultAsync(le =>
+            le.TeamId == team.Id && le.RaceId == race.Id && le.EntityId == driver1.Id
+        );
+        var entry2 = await context.LineupEntries.FirstOrDefaultAsync(le =>
+            le.TeamId == team.Id && le.RaceId == race.Id && le.EntityId == driver2.Id
+        );
+        Assert.NotNull(entry1);
+        Assert.False(entry1.IsCaptain);
+        Assert.NotNull(entry2);
+        Assert.True(entry2.IsCaptain);
+    }
+
+    [Fact]
+    public async Task SetCaptainAsync_NullDriverId_ClearsExistingCaptain()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+        var race = CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(1)
+        );
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+        await service.SetCaptainAsync(team.Id, driver.Id, user.Id);
+
+        // Act
+        await service.SetCaptainAsync(team.Id, null, user.Id);
+
+        // Assert
+        var entry = await context.LineupEntries.FirstOrDefaultAsync(le =>
+            le.TeamId == team.Id && le.RaceId == race.Id && le.EntityId == driver.Id
+        );
+        Assert.NotNull(entry);
+        Assert.False(entry.IsCaptain);
+    }
+
+    [Fact]
+    public async Task SetCaptainAsync_ThrowsIfRosterLocked()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(-1)
+        );
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<RosterLockedException>(() =>
+            service.SetCaptainAsync(team.Id, 1, user.Id)
+        );
+        Assert.Equal("Test Grand Prix", exception.RaceName);
+    }
+
+    [Fact]
+    public async Task SetCaptainAsync_NoUpcomingRace_ThrowsNoUpcomingRaceException()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        // No race seeded
+
+        // Act & Assert
+        await Assert.ThrowsAsync<NoUpcomingRaceException>(() =>
+            service.SetCaptainAsync(team.Id, 1, user.Id)
+        );
+    }
+
+    [Fact]
+    public async Task SetCaptainAsync_ThrowsIfDriverNotInLineup()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(1)
+        );
+
+        // Act & Assert — driver 999 doesn't exist in the lineup
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.SetCaptainAsync(team.Id, 999, user.Id)
+        );
+        Assert.Contains("999", exception.Message);
+        Assert.Contains("lineup", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetUserTeamAsync_WithCaptainSet_DriverIsCaptainIsTrue()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+        CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(1)
+        );
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+        await service.SetCaptainAsync(team.Id, driver.Id, user.Id);
+
+        // Act
+        var result = await service.GetUserTeamAsync(user.Id);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.Drivers.Single(d => d.Id == driver.Id).IsCaptain);
+    }
+
+    [Fact]
+    public async Task GetUserTeamAsync_NoCaptainSet_AllDriversIsCaptainIsFalse()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new TeamService(context, _mockLogger.Object);
+
+        var user = CreateTestUser(context);
+        var team = CreateTestTeam(context, user.Id);
+        var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
+        CreateTestRace(
+            context,
+            raceDate: DateTime.UtcNow.AddDays(2),
+            lockDeadline: DateTime.UtcNow.AddHours(1)
+        );
+        await service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id);
+
+        // Act
+        var result = await service.GetUserTeamAsync(user.Id);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.All(result.Drivers, d => Assert.False(d.IsCaptain));
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private UserProfile CreateTestUser(ApplicationDbContext context, string email = "user@test.com")

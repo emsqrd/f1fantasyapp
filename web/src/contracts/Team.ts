@@ -6,6 +6,7 @@ export interface TeamDriver {
   abbreviation: string;
   countryAbbreviation: string;
   price: number;
+  isCaptain: boolean;
 }
 
 export interface TeamConstructor {

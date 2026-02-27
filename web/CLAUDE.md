@@ -21,6 +21,8 @@ npm run test:coverage    # Generate coverage reports
 
 # Code Quality
 npm run lint             # Run ESLint
+npm run format:check     # Check Prettier formatting (enforced by pre-commit)
+npx prettier --write .   # Auto-fix formatting issues
 ```
 
 ## Core Technologies

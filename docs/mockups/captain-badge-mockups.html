@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Captain Badge - Mockups</title>
+  <style>
+    :root {
+      --background: #09090b;
+      --foreground: #fafafa;
+      --card: #18181b;
+      --card-foreground: #fafafa;
+      --secondary: #27272a;
+      --secondary-foreground: #fafafa;
+      --muted: #27272a;
+      --muted-foreground: #a1a1aa;
+      --primary: #1447e6;
+      --primary-foreground: #eff6ff;
+      --border: #3f3f46;
+      --radius: 0.65rem;
+      --gold: #f59e0b;
+      --gold-light: #fde68a;
+      --gold-bg: #451a03;
+      --gold-border: #78350f;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--background);
+      color: var(--foreground);
+      padding: 2rem;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      margin-bottom: 0.375rem;
+    }
+
+    .page-desc {
+      font-size: 0.8rem;
+      color: var(--muted-foreground);
+      margin-bottom: 2rem;
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted-foreground);
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .section {
+      margin-bottom: 2.5rem;
+    }
+
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--foreground);
+      margin-bottom: 0.25rem;
+    }
+
+    .section-desc {
+      font-size: 0.75rem;
+      color: var(--muted-foreground);
+      margin-bottom: 0.875rem;
+      line-height: 1.4;
+    }
+
+    /* Two-card grid — captain + regular */
+    .card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .card-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted-foreground);
+      margin-bottom: 0.375rem;
+    }
+
+    /* Base driver card */
+    .driver-card {
+      background: var(--secondary);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 0.75rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-inner {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+    }
+
+    .avatar {
+      width: 3.5rem;
+      height: 3.5rem;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      color: var(--secondary-foreground);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .driver-name {
+      font-size: 0.875rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 1.25rem; /* space for X button */
+    }
+
+    .driver-meta {
+      font-size: 0.7rem;
+      color: var(--muted-foreground);
+      margin-top: 0.1rem;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0.625rem 0;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--muted-foreground);
+      padding: 0 0.125rem;
+    }
+
+    .remove-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      width: 1.25rem;
+      height: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted-foreground);
+      cursor: pointer;
+    }
+
+    .remove-btn svg {
+      width: 0.875rem;
+      height: 0.875rem;
+    }
+
+    /* ================================================
+       OPTION A: Gold "C" circle overlay on avatar top-left
+       ================================================ */
+    .opt-a .avatar {
+      border-color: var(--border);
+    }
+
+    .opt-a.captain-card .avatar {
+      border-color: var(--gold);
+    }
+
+    .captain-overlay {
+      position: absolute;
+      top: -3px;
+      left: -3px;
+      width: 1.1rem;
+      height: 1.1rem;
+      background: var(--gold);
+      border-radius: 50%;
+      border: 2px solid var(--secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.5rem;
+      font-weight: 900;
+      color: #000;
+      line-height: 1;
+    }
+
+    /* ================================================
+       OPTION B: Crown icon top-right corner of card
+       ================================================ */
+    .crown-btn {
+      position: absolute;
+      top: 0.375rem;
+      right: 0.375rem;
+      width: 1.5rem;
+      height: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+
+    .crown-btn svg {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    .crown-inactive { color: var(--muted-foreground); }
+    .crown-inactive:hover { color: var(--gold); }
+    .crown-active { color: var(--gold); }
+
+    /* X button shifts left when crown present */
+    .opt-b .remove-btn {
+      right: 2.1rem;
+    }
+
+    /* ================================================
+       OPTION C: Gold card border + "CAPTAIN" top strip
+       ================================================ */
+    .opt-c.captain-card {
+      border-color: var(--gold);
+    }
+
+    .captain-strip {
+      background: var(--gold);
+      color: #000;
+      font-size: 0.55rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: center;
+      padding: 0.2rem 0;
+      margin: -0.75rem -0.75rem 0.625rem -0.75rem;
+    }
+
+    /* ================================================
+       OPTION D: Avatar turns gold with "C" superscript
+       ================================================ */
+    .opt-d.captain-card .avatar {
+      background: var(--gold-bg);
+      border-color: var(--gold);
+      color: var(--gold-light);
+    }
+
+    .captain-sup {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 1rem;
+      height: 1rem;
+      background: var(--gold);
+      border-radius: 50%;
+      border: 2px solid var(--secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.5rem;
+      font-weight: 900;
+      color: #000;
+      line-height: 1;
+    }
+
+    /* ================================================
+       OPTION E: Thin gold top-strip banner "Captain ×2"
+       ================================================ */
+    .opt-e.captain-card {
+      border-top-color: var(--gold);
+      border-top-width: 3px;
+      padding-top: calc(0.75rem - 2px); /* compensate for thicker border */
+    }
+
+    .captain-label {
+      position: absolute;
+      top: 0.25rem;
+      right: 0.5rem;
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* ================================================
+       OPTION F: Crown/star icon overlay on avatar (top-left)
+       ================================================ */
+    .opt-f.captain-card .avatar {
+      border-color: var(--gold);
+    }
+
+    .crown-overlay {
+      position: absolute;
+      top: -4px;
+      left: -4px;
+      width: 1.2rem;
+      height: 1.2rem;
+      background: var(--gold);
+      border-radius: 50%;
+      border: 2px solid var(--secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .crown-overlay svg {
+      width: 0.6rem;
+      height: 0.6rem;
+      color: #000;
+    }
+
+    /* ================================================
+       OPTION G: Gold "×2" pill badge inline below driver name
+       ================================================ */
+    .captain-pill {
+      display: inline-block;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: var(--gold-bg);
+      color: var(--gold);
+      border: 1px solid var(--gold-border);
+      padding: 0.1rem 0.4rem;
+      border-radius: 9999px;
+      margin-top: 0.25rem;
+      line-height: 1.4;
+    }
+
+    /* set-captain tap hint on inactive card */
+    .set-captain-hint {
+      font-size: 0.6rem;
+      color: var(--muted-foreground);
+      text-align: center;
+      margin-top: 0.5rem;
+      font-style: italic;
+    }
+
+    .divider-section {
+      height: 1px;
+      background: var(--border);
+      margin: 2rem 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Captain Badge Mockups</h1>
+  <p class="page-desc">
+    Each option shows a captain driver card (left) alongside a regular driver card (right),
+    as they'd appear side-by-side in the team lineup grid. Tap target for set/deselect is noted per option.
+  </p>
+
+  <!-- OPTION A: Gold "C" overlay on avatar top-left -->
+  <div class="section">
+    <div class="section-title">A. Gold "C" Circle on Avatar</div>
+    <div class="section-desc">
+      Small gold "C" badge overlays the top-left of the abbreviation circle. Avatar border turns gold on the captain card.
+      Tap the avatar area to set/deselect captain.
+    </div>
+    <div class="card-grid">
+      <div>
+        <div class="card-label">Captain</div>
+        <div class="driver-card opt-a captain-card">
+          <div class="card-inner">
+            <div class="avatar">
+              VER
+              <div class="captain-overlay">C</div>
+            </div>
+            <div class="info">
+              <div class="driver-name">M. Verstappen</div>
+              <div class="driver-meta">NED</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="card-footer">
+            <span>$32.5M</span>
+            <span>-- pts</span>
+          </div>
+          <div class="remove-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card-label">Regular</div>
+        <div class="driver-card opt-a">
+          <div class="card-inner">
+            <div class="avatar">NOR</div>
+            <div class="info">
+              <div class="driver-name">L. Norris</div>
+              <div class="driver-meta">GBR</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="card-footer">
+            <span>$28.0M</span>
+            <span>-- pts</span>
+          </div>
+          <div class="remove-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </div>
+        </div>
+        <div class="set-captain-hint">tap avatar → set captain</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION B: Crown icon top-right corner -->
+  <div class="section">
+    <div class="section-title">B. Crown Icon (top-right)</div>
+    <div class="section-desc">
+      A crown SVG icon sits in the top-right corner of the card. Gold when captain is active, muted grey when not.
+      The X remove button shifts left to make room. Tap the crown to toggle.
+    </div>
+    <div class="card-grid">
+      <div>
+        <div class="card-label">Captain</div>
+        <div class="driver-card opt-b">
+          <div class="card-inner">
+            <div class="avatar">VER</div>
+            <div class="info">
+              <div class="driver-name">M. Verstappen</div>
+              <div class="driver-meta">NED</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="card-footer">
+            <span>$32.5M</span>
+            <span>-- pts</span>
+          </div>
+          <div class="remove-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </div>
+          <!-- Crown: active (gold) -->
+          <div class="crown-btn crown-active" title="Captain (tap to deselect)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M2 19h20v2H2v-2zm2-5 4-8 4 5 4-3 4 6H4z"/></svg>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card-label">Regular</div>
+        <div class="driver-card opt-b">
+          <div class="card-inner">
+            <div class="avatar">NOR</div>
+            <div class="info">
+              <div class="driver-name">L. Norris</div>
+              <div class="driver-meta">GBR</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="card-footer">
+            <span>$28.0M</span>
+            <span>-- pts</span>
+          </div>
+          <div class="remove-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </div>
+          <!-- Crown: inactive (muted) -->
+          <div class="crown-btn crown-inactive" title="Set as captain">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M2 19h20v2H2v-2zm2-5 4-8 4 5 4-3 4 6H4z"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION C: Gold border + CAPTAIN strip -->
+  <div class="section">
+    <div class="section-title">C. Gold Border + "CAPTAIN" Strip</div>
+    <div class="section-desc">
+      The card gets a full gold border, and a narrow gold banner at the top reads "CAPTAIN".
+      High visual weight — very obvious who the captain is. Tap anywhere on the captain card to deselect; tap a regular card to set.
+    </div>
+    <div class="card-grid">
+      <div>
+        <div class="card-label">Captain</div>
+        <div class="driver-card opt-c captain-card">
+          <div class="captain-strip">Captain ×2</div>
+          <div class="card-inner">
+            <div class="avatar">VER</div>
+            <div class="info">
+              <div class="driver-name">M. Verstappen</div>
+              <div class="driver-meta">NED</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="card-footer">
+            <span>$32.5M</span>
+            <span>-- pts</span>
+          </div>
+          <div class="remove-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card-label">Regular</div>
+        <div class="driver-card opt-c">
+          <div class="card-inner">
+            <div class="avatar">NOR</div>
+            <div class="info">
+              <div class="driver-name">L. Norris</div>
+              <div class="driver-meta">GBR</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="card-footer">
+            <span>$28.0M</span>
+            <span>-- pts</span>
+          </div>
+          <div class="remove-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </div>
+        </div>
+        <div class="set-captain-hint">tap card → set captain</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION D: Avatar circle turns gold + "C" superscript -->
+  <div class="section">
+    <div class="section-title">D. Gold Avatar + "C" Superscript</div>
+    <div class="section-desc">
+      The abbreviation circle turns amber/gold with a subtle dark background tint. A small "C" badge appears at top-right of the avatar.
+      Clean — the distinction is contained within the avatar area. Tap the avatar to toggle.
+    </div>
+    <div class="card-grid">
+      <div>
+        <div class="card-label">Captain</div>
+        <div class="driver-card opt-d captain-card">
+          <div class="card-inner">
+            <div class="avatar">
+              VER
+              <div class="captain-sup">C</div>
+            </div>
+            <div class="info">
+              <div class="driver-name">M. Verstappen</div>
+              <div class="driver-meta">NED</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="card-footer">
+            <span>$32.5M</span>
+            <span>-- pts</span>
+          </div>
+          <div class="remove-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card-label">Regular</div>
+        <div class="driver-card opt-d">
+          <div class="card-inner">
+            <div class="avatar">NOR</div>
+            <div class="info">
+              <div class="driver-name">L. Norris</div>
+              <div class="driver-meta">GBR</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="card-footer">
+            <span>$28.0M</span>
+            <span>-- pts</span>
+          </div>
+          <div class="remove-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </div>
+        </div>
+        <div class="set-captain-hint">tap avatar → set captain</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION E: Thin gold top-border + "Captain" label -->
+  <div class="section">
+    <div class="section-title">E. Gold Top-Border + Label</div>
+    <div class="section-desc">
+      Thick gold top border on the card with a small gold "Captain" text label in the top-right.
+      Minimal disruption to the card layout — the body stays identical. Tap anywhere on the card to toggle.
+    </div>
+    <div class="card-grid">
+      <div>
+        <div class="card-label">Captain</div>
+        <div class="driver-card opt-e captain-card">
+          <div class="captain-label">Captain</div>
+          <div class="card-inner">
+            <div class="avatar">VER</div>
+            <div class="info">
+              <div class="driver-name">M. Verstappen</div>
+              <div class="driver-meta">NED</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="card-footer">
+            <span>$32.5M</span>
+            <span>-- pts</span>
+          </div>
+          <div class="remove-btn" style="top: 1.375rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card-label">Regular</div>
+        <div class="driver-card opt-e">
+          <div class="card-inner">
+            <div class="avatar">NOR</div>
+            <div class="info">
+              <div class="driver-name">L. Norris</div>
+              <div class="driver-meta">GBR</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="card-footer">
+            <span>$28.0M</span>
+            <span>-- pts</span>
+          </div>
+          <div class="remove-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </div>
+        </div>
+        <div class="set-captain-hint">tap card → set captain</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION F: Crown icon overlay on avatar -->
+  <div class="section">
+    <div class="section-title">F. Crown Icon on Avatar</div>
+    <div class="section-desc">
+      A tiny crown icon (filled) in a gold circle overlays the top-left of the avatar — same position as A's "C", but uses a recognisable symbol instead of a letter. Avatar border turns gold. Tap the avatar to toggle.
+    </div>
+    <div class="card-grid">
+      <div>
+        <div class="card-label">Captain</div>
+        <div class="driver-card opt-f captain-card">
+          <div class="card-inner">
+            <div class="avatar">
+              VER
+              <div class="crown-overlay">
+                <!-- crown icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M2 19h20v2H2v-2zm2-5 4-8 4 5 4-3 4 6H4z"/></svg>
+              </div>
+            </div>
+            <div class="info">
+              <div class="driver-name">M. Verstappen</div>
+              <div class="driver-meta">NED</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="card-footer">
+            <span>$32.5M</span>
+            <span>-- pts</span>
+          </div>
+          <div class="remove-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card-label">Regular</div>
+        <div class="driver-card opt-f">
+          <div class="card-inner">
+            <div class="avatar">NOR</div>
+            <div class="info">
+              <div class="driver-name">L. Norris</div>
+              <div class="driver-meta">GBR</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="card-footer">
+            <span>$28.0M</span>
+            <span>-- pts</span>
+          </div>
+          <div class="remove-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </div>
+        </div>
+        <div class="set-captain-hint">tap avatar → set captain</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION G: Gold "×2" pill inline below driver name -->
+  <div class="section">
+    <div class="section-title">G. Gold "×2" Pill Under Driver Name</div>
+    <div class="section-desc">
+      A small amber pill badge reading "×2 pts" appears directly below the driver name in the info column. No avatar decoration, no card border change — the distinction lives in the text area. Tap the pill to deselect; tap anywhere on a regular card to set captain.
+    </div>
+    <div class="card-grid">
+      <div>
+        <div class="card-label">Captain</div>
+        <div class="driver-card opt-g">
+          <div class="card-inner">
+            <div class="avatar">VER</div>
+            <div class="info">
+              <div class="driver-name">M. Verstappen</div>
+              <div class="driver-meta">NED</div>
+              <div class="captain-pill">×2 pts</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="card-footer">
+            <span>$32.5M</span>
+            <span>-- pts</span>
+          </div>
+          <div class="remove-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card-label">Regular</div>
+        <div class="driver-card opt-g">
+          <div class="card-inner">
+            <div class="avatar">NOR</div>
+            <div class="info">
+              <div class="driver-name">L. Norris</div>
+              <div class="driver-meta">GBR</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="card-footer">
+            <span>$28.0M</span>
+            <span>-- pts</span>
+          </div>
+          <div class="remove-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </div>
+        </div>
+        <div class="set-captain-hint">tap card → set captain</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider-section"></div>
+  <p style="font-size: 0.7rem; color: var(--muted-foreground); line-height: 1.5;">
+    <strong style="color: var(--foreground);">Interaction note:</strong>
+    In all options the toggle is non-interactive when the roster is locked (readOnly mode).
+    The badge/indicator remains visible in read-only mode but cannot be tapped.
+  </p>
+
+</body>
+</html>

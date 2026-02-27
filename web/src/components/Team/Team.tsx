@@ -2,6 +2,7 @@ import type { Race } from '@/contracts/Race';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team } from '@/contracts/Team';
 import { formatBudget } from '@/lib/utils';
+import { setCaptain } from '@/services/teamService';
 import { useLoaderData } from '@tanstack/react-router';
 import { Lock } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -9,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { AppContainer } from '../AppContainer/AppContainer';
 import { ConstructorPicker } from '../ConstructorPicker/ConstructorPicker';
 import { DriverPicker } from '../DriverPicker/DriverPicker';
+import { InlineError } from '../InlineError/InlineError';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -61,6 +63,10 @@ export function TeamRoute() {
 export function Team({ team, activeDrivers, activeConstructors, races, readOnly }: TeamProps) {
   // Track active tab to control visibility while keeping both tabs mounted
   const [activeTab, setActiveTab] = useState('drivers');
+  const [captainDriverId, setCaptainDriverId] = useState<number | null>(
+    team.drivers.find((d) => d.isCaptain)?.id ?? null,
+  );
+  const [captainError, setCaptainError] = useState<string | null>(null);
   const currentRace = races.find((r) => r.isCurrent) ?? races.at(-1);
   const [selectedRaceId, setSelectedRaceId] = useState<number | undefined>(currentRace?.id);
 
@@ -94,6 +100,18 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
   }, [lockDeadlineStr]);
 
   const isLocked = lockDeadline != null && now >= lockDeadline;
+
+  const handleSetCaptain = async (driverId: number | null) => {
+    const previous = captainDriverId;
+    setCaptainDriverId(driverId);
+    setCaptainError(null);
+    try {
+      await setCaptain(driverId);
+    } catch (error) {
+      setCaptainDriverId(previous);
+      setCaptainError(error instanceof Error ? error.message : 'Failed to update captain');
+    }
+  };
 
   const msRemaining = lockDeadline && !isLocked ? lockDeadline.getTime() - now.getTime() : 0;
   const totalMins = Math.floor(msRemaining / 60000);
@@ -225,11 +243,18 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
         >
           <Card className="py-4">
             <CardContent className="px-4">
+              {captainError && (
+                <div className="pb-4">
+                  <InlineError message={captainError} />
+                </div>
+              )}
               <DriverPicker
                 activeDrivers={activeDrivers}
                 teamDrivers={team.drivers}
                 readOnly={readOnly || isLocked}
                 remainingBudget={team.remainingBudget}
+                captainDriverId={captainDriverId}
+                onSetCaptain={readOnly || isLocked ? undefined : handleSetCaptain}
               />
             </CardContent>
           </Card>

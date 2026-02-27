@@ -117,6 +117,7 @@ export function createMockTeamDriver(overrides: Partial<TeamDriver> = {}): TeamD
     abbreviation: 'TDR',
     countryAbbreviation: 'TST',
     price: 1_000_000,
+    isCaptain: false,
     ...overrides,
   };
 }

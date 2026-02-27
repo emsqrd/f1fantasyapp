@@ -18,7 +18,10 @@ public static class TeamResponseMapper
         };
     }
 
-    public static TeamDetailsResponse ToDetailsResponseModel(this Team team)
+    public static TeamDetailsResponse ToDetailsResponseModel(
+        this Team team,
+        int? captainDriverId = null
+    )
     {
         return new TeamDetailsResponse
         {
@@ -32,7 +35,7 @@ public static class TeamResponseMapper
                 - team.TeamConstructors.Sum(tc => tc.Constructor.Price),
             Drivers = team
                 .TeamDrivers.OrderBy(teamDriver => teamDriver.SlotPosition)
-                .Select(teamDriver => teamDriver.ToResponseModel())
+                .Select(teamDriver => teamDriver.ToResponseModel(captainDriverId))
                 .ToList(),
             Constructors = team
                 .TeamConstructors.OrderBy(teamConstructor => teamConstructor.SlotPosition)
