@@ -194,6 +194,14 @@ class ApiClient {
     return this.makeRequest<T, D>(endpoint, { method: 'PATCH', data, errorContext });
   }
 
+  async put<T, D = Record<string, unknown>>(
+    endpoint: string,
+    data: D,
+    errorContext?: string,
+  ): Promise<T> {
+    return this.makeRequest<T, D>(endpoint, { method: 'PUT', data, errorContext });
+  }
+
   async delete<T>(endpoint: string, errorContext?: string): Promise<T> {
     return this.makeRequest<T>(endpoint, { method: 'DELETE', errorContext });
   }

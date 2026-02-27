@@ -159,6 +159,89 @@ describe('DriverCard', () => {
     });
   });
 
+  describe('Captain Badge', () => {
+    const driver = createMockDriver({ firstName: 'Max', lastName: 'Verstappen' });
+
+    it('renders captain badge in active state when isCaptain is true', () => {
+      render(
+        <DriverCard
+          driver={driver}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={false}
+          isCaptain={true}
+          onSetCaptain={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByRole('button', { name: /remove captain/i })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+    });
+
+    it('renders captain badge in inactive state when isCaptain is false', () => {
+      render(
+        <DriverCard
+          driver={driver}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={false}
+          isCaptain={false}
+          onSetCaptain={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByRole('button', { name: /set as captain/i })).toHaveAttribute(
+        'aria-pressed',
+        'false',
+      );
+    });
+
+    it('calls onSetCaptain when captain toggle button is clicked', async () => {
+      const user = userEvent.setup();
+      const onSetCaptain = vi.fn();
+
+      render(
+        <DriverCard
+          driver={driver}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={false}
+          isCaptain={false}
+          onSetCaptain={onSetCaptain}
+        />,
+      );
+
+      await user.click(screen.getByRole('button', { name: /set as captain/i }));
+
+      expect(onSetCaptain).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not render captain toggle when readOnly', () => {
+      render(
+        <DriverCard
+          driver={driver}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={true}
+          isCaptain={false}
+          onSetCaptain={vi.fn()}
+        />,
+      );
+
+      expect(screen.queryByRole('button', { name: /captain/i })).not.toBeInTheDocument();
+    });
+
+    it('does not render captain toggle when onSetCaptain is not provided', () => {
+      render(
+        <DriverCard driver={driver} onOpenPicker={vi.fn()} onRemove={vi.fn()} readOnly={false} />,
+      );
+
+      expect(screen.queryByRole('button', { name: /captain/i })).not.toBeInTheDocument();
+    });
+  });
+
   describe('Keyboard Interactions', () => {
     it('allows keyboard interaction with "Add Driver" button in edit mode', async () => {
       const user = userEvent.setup();

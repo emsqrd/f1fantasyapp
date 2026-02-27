@@ -16,12 +16,14 @@ import {
   getTeams,
   removeConstructorFromTeam,
   removeDriverFromTeam,
+  setCaptain,
 } from './teamService';
 
 vi.mock('@/lib/api', () => ({
   apiClient: {
     get: vi.fn(),
     post: vi.fn(),
+    put: vi.fn(),
     delete: vi.fn(),
   },
 }));
@@ -277,6 +279,38 @@ describe('teamService', () => {
       await expect(removeConstructorFromTeam(slotPosition)).rejects.toThrow(
         'Failed to remove constructor',
       );
+    });
+  });
+
+  describe('setCaptain', () => {
+    it('calls apiClient.put with correct endpoint and driver id', async () => {
+      vi.mocked(apiClient.put).mockResolvedValue(undefined);
+
+      await setCaptain(42);
+
+      expect(apiClient.put).toHaveBeenCalledWith(
+        '/me/team/captain',
+        { driverId: 42 },
+        'set team captain',
+      );
+    });
+
+    it('calls apiClient.put with null to deselect captain', async () => {
+      vi.mocked(apiClient.put).mockResolvedValue(undefined);
+
+      await setCaptain(null);
+
+      expect(apiClient.put).toHaveBeenCalledWith(
+        '/me/team/captain',
+        { driverId: null },
+        'set team captain',
+      );
+    });
+
+    it('propagates API errors when setting captain fails', async () => {
+      vi.mocked(apiClient.put).mockRejectedValue(new Error('Failed to set captain'));
+
+      await expect(setCaptain(1)).rejects.toThrow('Failed to set captain');
     });
   });
 });
