@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Page — Option E: Race Card</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --radius: 0.65rem;
+      --background: #ffffff; --foreground: #09090b;
+      --card: #ffffff; --card-foreground: #09090b;
+      --primary: #1447e6;
+      --secondary: #f4f4f5; --secondary-foreground: #18181b;
+      --muted-foreground: #6b6b6b;
+      --border: #e4e4e7;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --gold: #d97706; --gold-bg: #fef3c7; --gold-border: #fde68a;
+      --trend-up: #16a34a; --trend-down: #dc2626;
+      --countdown-bg: #fffbeb; --countdown-border: #fde68a; --countdown-text: #92400e;
+      --lock-bg: #fef2f2; --lock-border: #fecaca; --lock-text: #dc2626;
+    }
+    .dark {
+      --background: #09090b; --foreground: #fafafa;
+      --card: #18181b; --card-foreground: #fafafa;
+      --secondary: #27272a; --secondary-foreground: #fafafa;
+      --muted-foreground: #9f9fa9; --border: rgba(255,255,255,0.1);
+      --gold: #f59e0b; --gold-bg: #2d1f05; --gold-border: #78350f;
+      --trend-up: #22c55e; --trend-down: #f87171;
+      --countdown-bg: #1c1600; --countdown-border: #78350f; --countdown-text: #fbbf24;
+      --lock-bg: #1a0505; --lock-border: #7f1d1d; --lock-text: #f87171;
+    }
+
+    body { font-family: var(--font); background: var(--background); color: var(--foreground); line-height: 1.5; }
+    .page { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .page-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .page-subtitle { font-size: 0.8rem; color: var(--muted-foreground); margin-bottom: 0.75rem; }
+    .design-notes { font-size: 0.8rem; color: var(--muted-foreground); background: var(--secondary); border-left: 3px solid var(--primary); padding: 0.5rem 0.875rem; border-radius: 0 var(--radius) var(--radius) 0; margin-bottom: 2rem; }
+    .design-notes strong { color: var(--foreground); }
+    .impl-note { display: inline; background: color-mix(in srgb, #f59e0b 15%, transparent); border-radius: 0.2rem; padding: 0 0.2rem; }
+    .theme-toggle { position: fixed; top: 1rem; right: 1rem; background: var(--secondary); color: var(--foreground); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.4rem 0.875rem; font-size: 0.8rem; font-family: var(--font); cursor: pointer; z-index: 100; }
+
+    .state-block { margin-bottom: 3rem; }
+    .state-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-foreground); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem; }
+    .state-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .frames-row { display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap; }
+    .frame-col { flex-shrink: 0; }
+    .frame-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted-foreground); margin-bottom: 0.375rem; }
+    .phone-frame { width: 375px; background: var(--background); border: 1.5px solid var(--border); border-radius: 1.25rem; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+    .phone-inner { padding: 1rem; }
+    .desktop-frame { width: 660px; background: var(--background); border: 1.5px solid var(--border); border-radius: 0.75rem; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+    .desktop-titlebar { background: var(--secondary); padding: 0.5rem 0.875rem; display: flex; align-items: center; gap: 0.375rem; border-bottom: 1px solid var(--border); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .desktop-inner { padding: 1.25rem; }
+    .app-topbar { height: 44px; display: flex; align-items: center; padding: 0 1rem; font-weight: 600; font-size: 0.9rem; border-bottom: 1px solid var(--border); background: var(--card); color: var(--foreground); margin: -1rem -1rem 1rem; }
+    .app-topbar-desk { height: 44px; display: flex; align-items: center; padding: 0 1rem; font-weight: 600; font-size: 0.9rem; border-bottom: 1px solid var(--border); background: var(--card); color: var(--foreground); margin: -1.25rem -1.25rem 1.25rem; }
+
+    .team-header { margin-bottom: 1.25rem; }
+    .team-name { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .header-chips { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-bottom: 0.375rem; }
+    .chip { display: inline-flex; align-items: center; gap: 0.25rem; background: var(--secondary); border: 1px solid var(--border); border-radius: 0.4rem; padding: 0.2rem 0.5rem; font-size: 0.72rem; font-weight: 600; color: var(--foreground); }
+    .chip-label { color: var(--muted-foreground); font-weight: 400; }
+    .chip-countdown { background: var(--countdown-bg); border-color: var(--countdown-border); color: var(--countdown-text); }
+    .chip-locked { background: var(--lock-bg); border-color: var(--lock-border); color: var(--lock-text); }
+    .next-race { font-size: 0.72rem; color: var(--muted-foreground); }
+
+    .section-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; margin-top: 1rem; }
+    .section-hdr:first-of-type { margin-top: 0; }
+    .section-title { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-foreground); }
+    .section-count { font-size: 0.65rem; color: var(--muted-foreground); }
+    .captain-prompt { background: var(--gold-bg); border: 1px solid var(--gold-border); border-radius: var(--radius); padding: 0.5rem 0.75rem; margin-bottom: 0.625rem; font-size: 0.78rem; color: var(--gold); display: flex; align-items: center; gap: 0.4rem; }
+    .trend-up { font-size: 0.68rem; font-weight: 600; color: var(--trend-up); }
+    .trend-down { font-size: 0.68rem; font-weight: 600; color: var(--trend-down); }
+
+    /* ── Race Card ──
+       ⚠ Implementation note: constructor color mapping must be maintained in a frontend
+       lookup table (not yet in data model). No licensing required — official racing colors.
+    */
+    .rc-grid { display: grid; grid-template-columns: 1fr; gap: 0.5rem; }
+    .rc-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+
+    .rc-card {
+      display: flex; align-items: stretch;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      overflow: hidden; min-height: 80px;
+    }
+    /* Star icon: fills gold + scale 1.15 on activation (150ms ease-out). prefers-reduced-motion: instant. */
+    @media (prefers-reduced-motion: reduce) { .rc-card-panel { transition: none; } }
+
+    /* Left color band — ~27% of card width */
+    .rc-band {
+      width: 56px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      /* border-radius left corners only; right side joins the panel */
+    }
+    .rc-band-abbr {
+      font-size: 0.75rem; font-weight: 800; letter-spacing: 0.06em;
+      writing-mode: horizontal-tb; /* abbreviation horizontal within band */
+      text-align: center;
+    }
+
+    /* Right content panel */
+    .rc-panel {
+      flex: 1; background: var(--secondary); padding: 0.5rem 0.625rem;
+      display: flex; flex-direction: column; gap: 0.2rem; min-width: 0;
+    }
+    .rc-panel-top { display: flex; align-items: flex-start; justify-content: space-between; }
+    .rc-name { font-size: 0.82rem; font-weight: 600; }
+    .rc-team { font-size: 0.68rem; color: var(--muted-foreground); }
+    .rc-panel-actions { display: flex; align-items: center; gap: 0.25rem; flex-shrink: 0; margin-left: 0.375rem; }
+
+    .rc-btn {
+      width: 28px; height: 28px; border-radius: 0.35rem; border: 1px solid var(--border);
+      background: var(--card); color: var(--muted-foreground);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 0.82rem; font-family: var(--font);
+      transition: background 0.15s, color 0.15s, transform 0.15s;
+    }
+    .rc-btn.captain-active { background: var(--gold-bg); border-color: var(--gold-border); color: var(--gold); transform: scale(1.1); }
+    .rc-btn.captain-ring { border-color: var(--gold); color: var(--gold); }
+    @media (prefers-reduced-motion: reduce) { .rc-btn { transform: none !important; transition: none; } }
+
+    .rc-panel-stats { display: flex; align-items: center; gap: 0.4rem; }
+    .rc-price { font-size: 0.88rem; font-weight: 800; }
+    .rc-pts { font-size: 0.7rem; color: var(--muted-foreground); }
+
+    /* Static captain badge */
+    .captain-badge-static { font-size: 0.62rem; font-weight: 700; color: var(--gold); background: var(--gold-bg); border: 1px solid var(--gold-border); border-radius: 0.25rem; padding: 0.1rem 0.3rem; user-select: none; }
+
+    /* Empty card */
+    .rc-empty {
+      display: flex; align-items: stretch; border: 1.5px dashed var(--border);
+      border-radius: var(--radius); overflow: hidden; min-height: 80px;
+      cursor: pointer; background: transparent; font-family: var(--font);
+      width: 100%; text-align: left;
+    }
+    .rc-empty-band { width: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-right: 1.5px dashed var(--border); }
+    .rc-empty-icon { width: 24px; height: 24px; border-radius: 50%; border: 1.5px dashed var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--primary); }
+    .rc-empty-label { flex: 1; display: flex; align-items: center; padding: 0 0.75rem; font-size: 0.8rem; font-weight: 500; color: var(--primary); }
+  </style>
+</head>
+<body class="dark">
+
+<button class="theme-toggle" onclick="toggleTheme()">☀ Light</button>
+
+<div class="page">
+  <h1 class="page-title">Option E — Race Card</h1>
+  <p class="page-subtitle">Team Page Redesign Mockup · 3 states · Mobile + Desktop</p>
+  <div class="design-notes">
+    <strong>Design:</strong> Constructor brand color fills a bold left band (~56px) · abbreviation in white/dark text inside the band ·
+    right panel shows name, price, points, trend, and actions · most visually distinctive option.
+    <strong class="impl-note">⚠ Implementation note:</strong> constructor color mapping requires a frontend lookup table keyed by constructor ID/abbreviation — not yet in the data model. No licensing required; these are official racing colors.
+    <strong>Future-proof:</strong> the right panel stacks additional stat rows naturally below the existing content.
+  </div>
+
+  <!-- ════ STATE 1: Incomplete, pre-lock, captain = VER ════ -->
+  <div class="state-block">
+    <div class="state-label">State 1 — Incomplete Roster · Pre-Lock · Captain Selected</div>
+    <div class="frames-row">
+
+      <div class="frame-col">
+        <div class="frame-label">Mobile · 375px</div>
+        <div class="phone-frame"><div class="phone-inner">
+          <div class="app-topbar">My Team</div>
+          <div class="team-header">
+            <div class="team-name">Scuderia Fantastico</div>
+            <div class="header-chips"><span class="chip"><span class="chip-label">Budget</span> $13.5M</span><span class="chip"><span class="chip-label">Trades</span> 2/3</span><span class="chip chip-countdown">⏱ 2d 14h 22m</span></div>
+            <div class="next-race">Round 4 · Bahrain Grand Prix</div>
+          </div>
+
+          <div class="section-hdr"><span class="section-title">Drivers</span><span class="section-count">3 / 4</span></div>
+          <div class="rc-grid">
+            <!-- VER — captain active -->
+            <div class="rc-card" style="box-shadow:0 0 0 1.5px var(--gold)">
+              <div class="rc-band" style="background:#3671C6">
+                <span class="rc-band-abbr" style="color:#fff">VER</span>
+              </div>
+              <div class="rc-panel">
+                <div class="rc-panel-top">
+                  <div>
+                    <div class="rc-name">Max Verstappen</div>
+                    <div class="rc-team">Red Bull Racing</div>
+                  </div>
+                  <div class="rc-panel-actions">
+                    <!-- Star captain: fills gold + scale(1.15) on activation (150ms ease-out). prefers-reduced-motion: instant. -->
+                    <button class="rc-btn captain-active" aria-label="Captain active — 2× points" title="Captain (2×)">★</button>
+                    <button class="rc-btn" aria-label="Remove Verstappen" title="Remove">✕</button>
+                  </div>
+                </div>
+                <div class="rc-panel-stats">
+                  <span class="rc-price">$11.5M</span>
+                  <span class="rc-pts">185 pts</span>
+                  <span class="trend-up">↑$0.3M</span>
+                </div>
+              </div>
+            </div>
+            <!-- NOR -->
+            <div class="rc-card">
+              <div class="rc-band" style="background:#FF8000"><span class="rc-band-abbr" style="color:#111">NOR</span></div>
+              <div class="rc-panel">
+                <div class="rc-panel-top">
+                  <div><div class="rc-name">Lando Norris</div><div class="rc-team">McLaren</div></div>
+                  <div class="rc-panel-actions"><button class="rc-btn" aria-label="Set Norris as captain" title="Set as captain">☆</button><button class="rc-btn" aria-label="Remove Norris">✕</button></div>
+                </div>
+                <div class="rc-panel-stats"><span class="rc-price">$10.0M</span><span class="rc-pts">162 pts</span><span class="trend-up">↑$0.5M</span></div>
+              </div>
+            </div>
+            <!-- LEC -->
+            <div class="rc-card">
+              <div class="rc-band" style="background:#E8002D"><span class="rc-band-abbr" style="color:#fff">LEC</span></div>
+              <div class="rc-panel">
+                <div class="rc-panel-top">
+                  <div><div class="rc-name">Charles Leclerc</div><div class="rc-team">Ferrari</div></div>
+                  <div class="rc-panel-actions"><button class="rc-btn" aria-label="Set Leclerc as captain">☆</button><button class="rc-btn" aria-label="Remove Leclerc">✕</button></div>
+                </div>
+                <div class="rc-panel-stats"><span class="rc-price">$9.5M</span><span class="rc-pts">143 pts</span><span class="trend-up">↑$0.1M</span></div>
+              </div>
+            </div>
+            <!-- Empty slot 4 -->
+            <button class="rc-empty" aria-label="Add driver to slot 4">
+              <div class="rc-empty-band"><div class="rc-empty-icon">+</div></div>
+              <div class="rc-empty-label">Add Driver</div>
+            </button>
+          </div>
+
+          <div class="section-hdr"><span class="section-title">Constructors</span><span class="section-count">4 / 4</span></div>
+          <div class="rc-grid">
+            <div class="rc-card"><div class="rc-band" style="background:#3671C6"><span class="rc-band-abbr" style="color:#fff">RBR</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Red Bull Racing</div><div class="rc-team">Constructor</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Remove Red Bull">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$15.5M</span><span class="rc-pts">289 pts</span><span class="trend-down">↓$0.4M</span></div></div></div>
+            <div class="rc-card"><div class="rc-band" style="background:#FF8000"><span class="rc-band-abbr" style="color:#111">MCL</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">McLaren</div><div class="rc-team">Constructor</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Remove McLaren">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$14.5M</span><span class="rc-pts">278 pts</span><span class="trend-up">↑$0.8M</span></div></div></div>
+            <div class="rc-card"><div class="rc-band" style="background:#E8002D"><span class="rc-band-abbr" style="color:#fff">FER</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Ferrari</div><div class="rc-team">Constructor</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Remove Ferrari">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$13.5M</span><span class="rc-pts">245 pts</span><span class="trend-up">↑$0.2M</span></div></div></div>
+            <div class="rc-card"><div class="rc-band" style="background:#27F4D2"><span class="rc-band-abbr" style="color:#111">MER</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Mercedes</div><div class="rc-team">Constructor</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Remove Mercedes">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$12.0M</span><span class="rc-pts">167 pts</span><span class="trend-down">↓$0.3M</span></div></div></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="frame-col">
+        <div class="frame-label">Desktop · 660px</div>
+        <div class="desktop-frame">
+          <div class="desktop-titlebar"><div class="dot" style="background:#ff5f57"></div><div class="dot" style="background:#febc2e"></div><div class="dot" style="background:#28c840"></div></div>
+          <div class="desktop-inner">
+            <div class="app-topbar-desk">My Team</div>
+            <div class="team-header"><div class="team-name">Scuderia Fantastico</div><div class="header-chips"><span class="chip"><span class="chip-label">Budget</span> $13.5M</span><span class="chip"><span class="chip-label">Trades</span> 2/3</span><span class="chip chip-countdown">⏱ 2d 14h 22m</span></div><div class="next-race">Round 4 · Bahrain Grand Prix</div></div>
+            <div class="section-hdr"><span class="section-title">Drivers</span><span class="section-count">3 / 4</span></div>
+            <div class="rc-grid-2col">
+              <div class="rc-card" style="box-shadow:0 0 0 1.5px var(--gold)"><div class="rc-band" style="background:#3671C6"><span class="rc-band-abbr" style="color:#fff">VER</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Max Verstappen</div><div class="rc-team">Red Bull Racing</div></div><div class="rc-panel-actions"><button class="rc-btn captain-active" aria-label="Captain active">★</button><button class="rc-btn" aria-label="Remove Verstappen">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$11.5M</span><span class="rc-pts">185 pts</span><span class="trend-up">↑$0.3M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#FF8000"><span class="rc-band-abbr" style="color:#111">NOR</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Lando Norris</div><div class="rc-team">McLaren</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Set Norris as captain">☆</button><button class="rc-btn" aria-label="Remove Norris">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$10.0M</span><span class="rc-pts">162 pts</span><span class="trend-up">↑$0.5M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#E8002D"><span class="rc-band-abbr" style="color:#fff">LEC</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Charles Leclerc</div><div class="rc-team">Ferrari</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Set Leclerc as captain">☆</button><button class="rc-btn" aria-label="Remove Leclerc">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$9.5M</span><span class="rc-pts">143 pts</span><span class="trend-up">↑$0.1M</span></div></div></div>
+              <button class="rc-empty" aria-label="Add driver"><div class="rc-empty-band"><div class="rc-empty-icon">+</div></div><div class="rc-empty-label">Add Driver</div></button>
+            </div>
+            <div class="section-hdr"><span class="section-title">Constructors</span><span class="section-count">4 / 4</span></div>
+            <div class="rc-grid-2col">
+              <div class="rc-card"><div class="rc-band" style="background:#3671C6"><span class="rc-band-abbr" style="color:#fff">RBR</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Red Bull Racing</div><div class="rc-team">Constructor</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Remove Red Bull">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$15.5M</span><span class="rc-pts">289 pts</span><span class="trend-down">↓$0.4M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#FF8000"><span class="rc-band-abbr" style="color:#111">MCL</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">McLaren</div><div class="rc-team">Constructor</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Remove McLaren">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$14.5M</span><span class="rc-pts">278 pts</span><span class="trend-up">↑$0.8M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#E8002D"><span class="rc-band-abbr" style="color:#fff">FER</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Ferrari</div><div class="rc-team">Constructor</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Remove Ferrari">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$13.5M</span><span class="rc-pts">245 pts</span><span class="trend-up">↑$0.2M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#27F4D2"><span class="rc-band-abbr" style="color:#111">MER</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Mercedes</div><div class="rc-team">Constructor</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Remove Mercedes">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$12.0M</span><span class="rc-pts">167 pts</span><span class="trend-down">↓$0.3M</span></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ STATE 2: Full roster, pre-lock, NO captain ════ -->
+  <div class="state-block">
+    <div class="state-label">State 2 — Full Roster · Pre-Lock · No Captain Selected</div>
+    <div class="frames-row">
+      <div class="frame-col">
+        <div class="frame-label">Mobile · 375px</div>
+        <div class="phone-frame"><div class="phone-inner">
+          <div class="app-topbar">My Team</div>
+          <div class="team-header"><div class="team-name">Scuderia Fantastico</div><div class="header-chips"><span class="chip"><span class="chip-label">Budget</span> $6.0M</span><span class="chip"><span class="chip-label">Trades</span> 2/3</span><span class="chip chip-countdown">⏱ 2d 14h 22m</span></div><div class="next-race">Round 4 · Bahrain Grand Prix</div></div>
+          <div class="section-hdr"><span class="section-title">Drivers</span><span class="section-count">4 / 4</span></div>
+          <!-- Discovery mechanism: captain prompt banner -->
+          <div class="captain-prompt" role="status">★ Select your captain — they score 2× points this race</div>
+          <div class="rc-grid">
+            <div class="rc-card"><div class="rc-band" style="background:#3671C6"><span class="rc-band-abbr" style="color:#fff">VER</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Max Verstappen</div><div class="rc-team">Red Bull Racing</div></div><!-- Selection control: outlined star, clearly interactive --><div class="rc-panel-actions"><button class="rc-btn captain-ring" aria-label="Set Verstappen as captain">☆</button><button class="rc-btn" aria-label="Remove Verstappen">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$11.5M</span><span class="rc-pts">185 pts</span><span class="trend-up">↑$0.3M</span></div></div></div>
+            <div class="rc-card"><div class="rc-band" style="background:#FF8000"><span class="rc-band-abbr" style="color:#111">NOR</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Lando Norris</div><div class="rc-team">McLaren</div></div><div class="rc-panel-actions"><button class="rc-btn captain-ring" aria-label="Set Norris as captain">☆</button><button class="rc-btn" aria-label="Remove Norris">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$10.0M</span><span class="rc-pts">162 pts</span><span class="trend-up">↑$0.5M</span></div></div></div>
+            <div class="rc-card"><div class="rc-band" style="background:#E8002D"><span class="rc-band-abbr" style="color:#fff">LEC</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Charles Leclerc</div><div class="rc-team">Ferrari</div></div><div class="rc-panel-actions"><button class="rc-btn captain-ring" aria-label="Set Leclerc as captain">☆</button><button class="rc-btn" aria-label="Remove Leclerc">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$9.5M</span><span class="rc-pts">143 pts</span><span class="trend-up">↑$0.1M</span></div></div></div>
+            <div class="rc-card"><div class="rc-band" style="background:#27F4D2"><span class="rc-band-abbr" style="color:#111">RUS</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">George Russell</div><div class="rc-team">Mercedes</div></div><div class="rc-panel-actions"><button class="rc-btn captain-ring" aria-label="Set Russell as captain">☆</button><button class="rc-btn" aria-label="Remove Russell">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$7.5M</span><span class="rc-pts">98 pts</span><span class="trend-down">↓$0.2M</span></div></div></div>
+          </div>
+          <div class="section-hdr"><span class="section-title">Constructors</span><span class="section-count">4 / 4</span></div>
+          <div class="rc-grid">
+            <div class="rc-card"><div class="rc-band" style="background:#3671C6"><span class="rc-band-abbr" style="color:#fff">RBR</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Red Bull Racing</div><div class="rc-team">Constructor</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Remove Red Bull">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$15.5M</span><span class="rc-pts">289 pts</span><span class="trend-down">↓$0.4M</span></div></div></div>
+            <div class="rc-card"><div class="rc-band" style="background:#FF8000"><span class="rc-band-abbr" style="color:#111">MCL</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">McLaren</div><div class="rc-team">Constructor</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Remove McLaren">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$14.5M</span><span class="rc-pts">278 pts</span><span class="trend-up">↑$0.8M</span></div></div></div>
+            <div class="rc-card"><div class="rc-band" style="background:#E8002D"><span class="rc-band-abbr" style="color:#fff">FER</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Ferrari</div><div class="rc-team">Constructor</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Remove Ferrari">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$13.5M</span><span class="rc-pts">245 pts</span><span class="trend-up">↑$0.2M</span></div></div></div>
+            <div class="rc-card"><div class="rc-band" style="background:#27F4D2"><span class="rc-band-abbr" style="color:#111">MER</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Mercedes</div><div class="rc-team">Constructor</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Remove Mercedes">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$12.0M</span><span class="rc-pts">167 pts</span><span class="trend-down">↓$0.3M</span></div></div></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="frame-col">
+        <div class="frame-label">Desktop · 660px</div>
+        <div class="desktop-frame">
+          <div class="desktop-titlebar"><div class="dot" style="background:#ff5f57"></div><div class="dot" style="background:#febc2e"></div><div class="dot" style="background:#28c840"></div></div>
+          <div class="desktop-inner">
+            <div class="app-topbar-desk">My Team</div>
+            <div class="team-header"><div class="team-name">Scuderia Fantastico</div><div class="header-chips"><span class="chip"><span class="chip-label">Budget</span> $6.0M</span><span class="chip"><span class="chip-label">Trades</span> 2/3</span><span class="chip chip-countdown">⏱ 2d 14h 22m</span></div><div class="next-race">Round 4 · Bahrain Grand Prix</div></div>
+            <div class="section-hdr"><span class="section-title">Drivers</span><span class="section-count">4 / 4</span></div>
+            <div class="captain-prompt" role="status">★ Select your captain — they score 2× points this race</div>
+            <div class="rc-grid-2col">
+              <div class="rc-card"><div class="rc-band" style="background:#3671C6"><span class="rc-band-abbr" style="color:#fff">VER</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Max Verstappen</div><div class="rc-team">Red Bull Racing</div></div><div class="rc-panel-actions"><button class="rc-btn captain-ring" aria-label="Set Verstappen as captain">☆</button><button class="rc-btn" aria-label="Remove Verstappen">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$11.5M</span><span class="rc-pts">185 pts</span><span class="trend-up">↑$0.3M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#FF8000"><span class="rc-band-abbr" style="color:#111">NOR</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Lando Norris</div><div class="rc-team">McLaren</div></div><div class="rc-panel-actions"><button class="rc-btn captain-ring" aria-label="Set Norris as captain">☆</button><button class="rc-btn" aria-label="Remove Norris">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$10.0M</span><span class="rc-pts">162 pts</span><span class="trend-up">↑$0.5M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#E8002D"><span class="rc-band-abbr" style="color:#fff">LEC</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Charles Leclerc</div><div class="rc-team">Ferrari</div></div><div class="rc-panel-actions"><button class="rc-btn captain-ring" aria-label="Set Leclerc as captain">☆</button><button class="rc-btn" aria-label="Remove Leclerc">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$9.5M</span><span class="rc-pts">143 pts</span><span class="trend-up">↑$0.1M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#27F4D2"><span class="rc-band-abbr" style="color:#111">RUS</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">George Russell</div><div class="rc-team">Mercedes</div></div><div class="rc-panel-actions"><button class="rc-btn captain-ring" aria-label="Set Russell as captain">☆</button><button class="rc-btn" aria-label="Remove Russell">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$7.5M</span><span class="rc-pts">98 pts</span><span class="trend-down">↓$0.2M</span></div></div></div>
+            </div>
+            <div class="section-hdr"><span class="section-title">Constructors</span><span class="section-count">4 / 4</span></div>
+            <div class="rc-grid-2col">
+              <div class="rc-card"><div class="rc-band" style="background:#3671C6"><span class="rc-band-abbr" style="color:#fff">RBR</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Red Bull Racing</div><div class="rc-team">Constructor</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Remove Red Bull">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$15.5M</span><span class="rc-pts">289 pts</span><span class="trend-down">↓$0.4M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#FF8000"><span class="rc-band-abbr" style="color:#111">MCL</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">McLaren</div><div class="rc-team">Constructor</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Remove McLaren">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$14.5M</span><span class="rc-pts">278 pts</span><span class="trend-up">↑$0.8M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#E8002D"><span class="rc-band-abbr" style="color:#fff">FER</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Ferrari</div><div class="rc-team">Constructor</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Remove Ferrari">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$13.5M</span><span class="rc-pts">245 pts</span><span class="trend-up">↑$0.2M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#27F4D2"><span class="rc-band-abbr" style="color:#111">MER</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Mercedes</div><div class="rc-team">Constructor</div></div><div class="rc-panel-actions"><button class="rc-btn" aria-label="Remove Mercedes">✕</button></div></div><div class="rc-panel-stats"><span class="rc-price">$12.0M</span><span class="rc-pts">167 pts</span><span class="trend-down">↓$0.3M</span></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ STATE 3: Locked ════ -->
+  <div class="state-block">
+    <div class="state-label">State 3 — Locked Roster</div>
+    <div class="frames-row">
+      <div class="frame-col">
+        <div class="frame-label">Mobile · 375px</div>
+        <div class="phone-frame"><div class="phone-inner">
+          <div class="app-topbar">My Team</div>
+          <div class="team-header"><div class="team-name">Scuderia Fantastico</div><div class="header-chips"><span class="chip"><span class="chip-label">Budget</span> $6.0M</span><span class="chip"><span class="chip-label">Trades</span> 2/3</span><span class="chip chip-locked">🔒 Lineup Locked</span></div><div class="next-race">Round 4 · Bahrain Grand Prix</div></div>
+          <div class="section-hdr"><span class="section-title">Drivers</span><span class="section-count">4 / 4</span></div>
+          <div class="rc-grid">
+            <!-- VER — captain static badge, no buttons -->
+            <div class="rc-card" style="box-shadow:0 0 0 1.5px var(--gold)">
+              <div class="rc-band" style="background:#3671C6"><span class="rc-band-abbr" style="color:#fff">VER</span></div>
+              <div class="rc-panel">
+                <div class="rc-panel-top">
+                  <div><div class="rc-name">Max Verstappen</div><div class="rc-team">Red Bull Racing</div></div>
+                  <!-- Static badge — NOT a button, no hover, no cursor:pointer -->
+                  <div class="rc-panel-actions"><span class="captain-badge-static" aria-label="Captain — 2× points">C×2</span></div>
+                </div>
+                <div class="rc-panel-stats"><span class="rc-price">$11.5M</span><span class="rc-pts">185 pts</span><span class="trend-up">↑$0.3M</span></div>
+              </div>
+            </div>
+            <div class="rc-card"><div class="rc-band" style="background:#FF8000"><span class="rc-band-abbr" style="color:#111">NOR</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Lando Norris</div><div class="rc-team">McLaren</div></div></div><div class="rc-panel-stats"><span class="rc-price">$10.0M</span><span class="rc-pts">162 pts</span><span class="trend-up">↑$0.5M</span></div></div></div>
+            <div class="rc-card"><div class="rc-band" style="background:#E8002D"><span class="rc-band-abbr" style="color:#fff">LEC</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Charles Leclerc</div><div class="rc-team">Ferrari</div></div></div><div class="rc-panel-stats"><span class="rc-price">$9.5M</span><span class="rc-pts">143 pts</span><span class="trend-up">↑$0.1M</span></div></div></div>
+            <div class="rc-card"><div class="rc-band" style="background:#27F4D2"><span class="rc-band-abbr" style="color:#111">RUS</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">George Russell</div><div class="rc-team">Mercedes</div></div></div><div class="rc-panel-stats"><span class="rc-price">$7.5M</span><span class="rc-pts">98 pts</span><span class="trend-down">↓$0.2M</span></div></div></div>
+          </div>
+          <div class="section-hdr"><span class="section-title">Constructors</span><span class="section-count">4 / 4</span></div>
+          <div class="rc-grid">
+            <div class="rc-card"><div class="rc-band" style="background:#3671C6"><span class="rc-band-abbr" style="color:#fff">RBR</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Red Bull Racing</div><div class="rc-team">Constructor</div></div></div><div class="rc-panel-stats"><span class="rc-price">$15.5M</span><span class="rc-pts">289 pts</span><span class="trend-down">↓$0.4M</span></div></div></div>
+            <div class="rc-card"><div class="rc-band" style="background:#FF8000"><span class="rc-band-abbr" style="color:#111">MCL</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">McLaren</div><div class="rc-team">Constructor</div></div></div><div class="rc-panel-stats"><span class="rc-price">$14.5M</span><span class="rc-pts">278 pts</span><span class="trend-up">↑$0.8M</span></div></div></div>
+            <div class="rc-card"><div class="rc-band" style="background:#E8002D"><span class="rc-band-abbr" style="color:#fff">FER</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Ferrari</div><div class="rc-team">Constructor</div></div></div><div class="rc-panel-stats"><span class="rc-price">$13.5M</span><span class="rc-pts">245 pts</span><span class="trend-up">↑$0.2M</span></div></div></div>
+            <div class="rc-card"><div class="rc-band" style="background:#27F4D2"><span class="rc-band-abbr" style="color:#111">MER</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Mercedes</div><div class="rc-team">Constructor</div></div></div><div class="rc-panel-stats"><span class="rc-price">$12.0M</span><span class="rc-pts">167 pts</span><span class="trend-down">↓$0.3M</span></div></div></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="frame-col">
+        <div class="frame-label">Desktop · 660px</div>
+        <div class="desktop-frame">
+          <div class="desktop-titlebar"><div class="dot" style="background:#ff5f57"></div><div class="dot" style="background:#febc2e"></div><div class="dot" style="background:#28c840"></div></div>
+          <div class="desktop-inner">
+            <div class="app-topbar-desk">My Team</div>
+            <div class="team-header"><div class="team-name">Scuderia Fantastico</div><div class="header-chips"><span class="chip"><span class="chip-label">Budget</span> $6.0M</span><span class="chip"><span class="chip-label">Trades</span> 2/3</span><span class="chip chip-locked">🔒 Lineup Locked</span></div><div class="next-race">Round 4 · Bahrain Grand Prix</div></div>
+            <div class="section-hdr"><span class="section-title">Drivers</span><span class="section-count">4 / 4</span></div>
+            <div class="rc-grid-2col">
+              <div class="rc-card" style="box-shadow:0 0 0 1.5px var(--gold)"><div class="rc-band" style="background:#3671C6"><span class="rc-band-abbr" style="color:#fff">VER</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Max Verstappen</div><div class="rc-team">Red Bull Racing</div></div><div class="rc-panel-actions"><span class="captain-badge-static">C×2</span></div></div><div class="rc-panel-stats"><span class="rc-price">$11.5M</span><span class="rc-pts">185 pts</span><span class="trend-up">↑$0.3M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#FF8000"><span class="rc-band-abbr" style="color:#111">NOR</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Lando Norris</div><div class="rc-team">McLaren</div></div></div><div class="rc-panel-stats"><span class="rc-price">$10.0M</span><span class="rc-pts">162 pts</span><span class="trend-up">↑$0.5M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#E8002D"><span class="rc-band-abbr" style="color:#fff">LEC</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Charles Leclerc</div><div class="rc-team">Ferrari</div></div></div><div class="rc-panel-stats"><span class="rc-price">$9.5M</span><span class="rc-pts">143 pts</span><span class="trend-up">↑$0.1M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#27F4D2"><span class="rc-band-abbr" style="color:#111">RUS</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">George Russell</div><div class="rc-team">Mercedes</div></div></div><div class="rc-panel-stats"><span class="rc-price">$7.5M</span><span class="rc-pts">98 pts</span><span class="trend-down">↓$0.2M</span></div></div></div>
+            </div>
+            <div class="section-hdr"><span class="section-title">Constructors</span><span class="section-count">4 / 4</span></div>
+            <div class="rc-grid-2col">
+              <div class="rc-card"><div class="rc-band" style="background:#3671C6"><span class="rc-band-abbr" style="color:#fff">RBR</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Red Bull Racing</div><div class="rc-team">Constructor</div></div></div><div class="rc-panel-stats"><span class="rc-price">$15.5M</span><span class="rc-pts">289 pts</span><span class="trend-down">↓$0.4M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#FF8000"><span class="rc-band-abbr" style="color:#111">MCL</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">McLaren</div><div class="rc-team">Constructor</div></div></div><div class="rc-panel-stats"><span class="rc-price">$14.5M</span><span class="rc-pts">278 pts</span><span class="trend-up">↑$0.8M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#E8002D"><span class="rc-band-abbr" style="color:#fff">FER</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Ferrari</div><div class="rc-team">Constructor</div></div></div><div class="rc-panel-stats"><span class="rc-price">$13.5M</span><span class="rc-pts">245 pts</span><span class="trend-up">↑$0.2M</span></div></div></div>
+              <div class="rc-card"><div class="rc-band" style="background:#27F4D2"><span class="rc-band-abbr" style="color:#111">MER</span></div><div class="rc-panel"><div class="rc-panel-top"><div><div class="rc-name">Mercedes</div><div class="rc-team">Constructor</div></div></div><div class="rc-panel-stats"><span class="rc-price">$12.0M</span><span class="rc-pts">167 pts</span><span class="trend-down">↓$0.3M</span></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function toggleTheme() {
+    document.body.classList.toggle('dark');
+    const btn = document.querySelector('.theme-toggle');
+    btn.textContent = document.body.classList.contains('dark') ? '☀ Light' : '🌙 Dark';
+  }
+</script>
+</body>
+</html>
