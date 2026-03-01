@@ -73,19 +73,6 @@ export function DriverPicker({
           <InlineError message={error} />
         </div>
       )}
-      {onSetCaptain && (
-        <div
-          aria-hidden={!!captainDriverId}
-          className={`grid transition-[grid-template-rows] duration-300 ${captainDriverId ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'}`}
-        >
-          <div className="overflow-hidden">
-            <p className="text-muted-foreground pb-3 text-center text-xs">
-              Pick a captain — tap <strong className="text-foreground">C</strong> on any driver for
-              2× points
-            </p>
-          </div>
-        </div>
-      )}
       <div className="relative grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-2">
         {displayLineup.map((driver, idx) => (
           <DriverCard
