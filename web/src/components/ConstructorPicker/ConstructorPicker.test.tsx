@@ -420,6 +420,34 @@ describe('ConstructorPicker', () => {
     });
   });
 
+  describe('Section Header', () => {
+    it('renders "Constructors" section header', () => {
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={false}
+          remainingBudget={100_000_000}
+        />,
+      );
+
+      expect(screen.getByText('Constructors')).toBeInTheDocument();
+    });
+
+    it('shows filled count in section header', () => {
+      mockDisplayLineup = [mockConstructors[0], mockConstructors[1], null, null];
+
+      render(
+        <ConstructorPicker
+          activeConstructors={mockConstructors}
+          readOnly={false}
+          remainingBudget={100_000_000}
+        />,
+      );
+
+      expect(screen.getByText('2 / 4')).toBeInTheDocument();
+    });
+  });
+
   describe('Budget Filtering', () => {
     beforeEach(() => {
       mockSelectedPosition = 0; // picker open

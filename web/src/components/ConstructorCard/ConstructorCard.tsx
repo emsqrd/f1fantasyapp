@@ -49,7 +49,7 @@ export function ConstructorCard({
         </span>
       </div>
       {!readOnly && (
-        <div className="flex flex-col items-center justify-center px-2">
+        <div className="flex flex-col items-center justify-start px-2 py-2">
           <Button
             size="icon"
             variant="ghost"

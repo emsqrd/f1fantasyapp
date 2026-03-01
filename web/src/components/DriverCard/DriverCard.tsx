@@ -40,15 +40,13 @@ export function DriverCard({
   const stripeColor = getDriverColor(driver.abbreviation);
 
   return (
-    <div
-      className={cn(
-        'flex min-h-[72px] items-stretch overflow-hidden rounded-md border',
-        isCaptain && 'border-yellow-500',
-      )}
-    >
+    <div className="flex min-h-[72px] items-stretch overflow-hidden rounded-md border">
       <div
-        className={cn('w-2 shrink-0', !stripeColor && 'bg-border')}
-        style={stripeColor ? { backgroundColor: stripeColor } : undefined}
+        className={cn(
+          'w-2 shrink-0',
+          isCaptain ? 'bg-yellow-700 dark:bg-yellow-400' : !stripeColor && 'bg-border',
+        )}
+        style={!isCaptain && stripeColor ? { backgroundColor: stripeColor } : undefined}
         aria-hidden
       />
       <div className="flex min-w-0 flex-1 flex-col justify-center px-3 py-3">
@@ -60,7 +58,7 @@ export function DriverCard({
         </span>
       </div>
       {!readOnly && (
-        <div className="flex flex-col items-center justify-center gap-1 px-2">
+        <div className="flex flex-col items-center justify-between px-2 py-2">
           <Button
             size="icon"
             variant="ghost"
