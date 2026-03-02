@@ -281,7 +281,7 @@ describe('Team Component', () => {
         />,
       );
 
-      expect(screen.getByText('Owner: Test Owner')).toBeInTheDocument();
+      expect(screen.getByText('Test Owner')).toBeInTheDocument();
     });
 
     it('does not display owner name when readOnly is false', () => {
@@ -295,7 +295,7 @@ describe('Team Component', () => {
         />,
       );
 
-      expect(screen.queryByText('Owner: Test Owner')).not.toBeInTheDocument();
+      expect(screen.queryByText('Test Owner')).not.toBeInTheDocument();
     });
 
     it('passes readOnly=true to DriverPicker when in read-only mode', () => {

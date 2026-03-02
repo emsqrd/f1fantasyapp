@@ -114,22 +114,24 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
   return (
     <AppContainer maxWidth="md">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">{team.name}</h1>
+        <div className="flex items-baseline gap-2">
+          <h1 className="text-2xl font-bold">{team.name}</h1>
+          {readOnly && <span className="text-muted-foreground text-sm">{team.ownerName}</span>}
+        </div>
         {currentRace && (
           <p className="text-muted-foreground text-sm">
             Round {currentRace.round} · {currentRace.name}
           </p>
         )}
-        {readOnly && <p className="text-muted-foreground text-sm">Owner: {team.ownerName}</p>}
-        <div className="mt-3 flex items-start justify-between">
+        <div className="mt-3 flex flex-wrap items-start justify-between gap-y-3 sm:flex-nowrap">
           <div className="flex gap-4">
-            <div className="text-center">
+            <div>
               <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                 Remaining
               </p>
               <p className="text-sm font-bold">{formatBudget(team.remainingBudget)}</p>
             </div>
-            <div className="text-center">
+            <div>
               <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                 Transfers
               </p>
@@ -137,7 +139,7 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
             </div>
           </div>
           {lockDeadline && (
-            <div className="shrink-0 text-center">
+            <div className="w-full sm:w-auto sm:shrink-0 sm:text-right">
               {isLocked ? (
                 <>
                   <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">

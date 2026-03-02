@@ -107,20 +107,6 @@ export function DriverPicker({
         )}
       </div>
 
-      {!readOnly && filledCount === DRIVER_SLOTS && captainDriverId == null && (
-        <div
-          role="status"
-          className="mt-4 flex items-center gap-2 rounded-md border border-amber-400 bg-amber-50 px-3 py-2 text-sm dark:border-amber-600 dark:bg-amber-950"
-        >
-          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-amber-600 text-xs font-black text-amber-600 dark:border-amber-400 dark:text-amber-400">
-            C
-          </span>
-          <span className="text-amber-800 dark:text-amber-200">
-            Select your captain — they score 2× points this race
-          </span>
-        </div>
-      )}
-
       {!readOnly && (
         <Sheet open={selectedPosition !== null} onOpenChange={(open) => !open && closePicker()}>
           <SheetTrigger asChild>
