@@ -135,3 +135,6 @@ Hosted on Fly.io + Supabase (free tier).
 
 - `web/CLAUDE.md` - Frontend architecture, patterns, and conventions
 - `api/CLAUDE.md` - Backend architecture, patterns, and conventions
+- `docs/research/` - Research findings and design specs (numbered, e.g. `50-team-page-findings.md`)
+- `docs/mockups/` - Static HTML mockups (self-contained, design tokens from `web/src/index.css`)
+- `docs/plans/` - Feature implementation plans (written during plan mode)

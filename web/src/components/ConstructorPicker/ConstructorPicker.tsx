@@ -63,6 +63,8 @@ export function ConstructorPicker({
     maxDuplicates: 2,
   });
 
+  const filledCount = displayLineup.filter(Boolean).length;
+
   return (
     <>
       {error && (
@@ -70,6 +72,14 @@ export function ConstructorPicker({
           <InlineError message={error} />
         </div>
       )}
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+          Constructors
+        </span>
+        <span className="text-muted-foreground text-xs">
+          {filledCount} / {CONSTRUCTOR_SLOTS}
+        </span>
+      </div>
       <div className="relative grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-2">
         {displayLineup.map((constructor, idx) => (
           <ConstructorCard

@@ -1,6 +1,7 @@
 import type { Race } from '@/contracts/Race';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team as TeamType } from '@/contracts/Team';
+import { setCaptain } from '@/services/teamService';
 import { createMockConstructor, createMockDriver, createMockTeam } from '@/test-utils';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -11,6 +12,11 @@ import { Team } from './Team';
 // Mock Sentry
 vi.mock('@sentry/react', () => ({
   captureException: vi.fn(),
+}));
+
+// Mock teamService
+vi.mock('@/services/teamService', () => ({
+  setCaptain: vi.fn(),
 }));
 
 // Mock ResizeObserver for Radix UI components
@@ -30,6 +36,8 @@ vi.mock('../DriverPicker/DriverPicker', () => ({
     teamDrivers?: unknown[];
     readOnly: boolean;
     remainingBudget: number;
+    captainDriverId?: number | null;
+    onSetCaptain?: (driverId: number | null) => void;
   }) => {
     mockDriverPicker(props);
     return (
@@ -39,6 +47,9 @@ vi.mock('../DriverPicker/DriverPicker', () => ({
         data-active-drivers={props.activeDrivers.length}
       >
         Mocked DriverPicker (readOnly: {props.readOnly.toString()})
+        {props.onSetCaptain && (
+          <button onClick={() => props.onSetCaptain!(1)}>Trigger Captain</button>
+        )}
       </div>
     );
   },
@@ -196,64 +207,10 @@ describe('Team Component', () => {
 
       expect(screen.getByText('$900k')).toBeInTheDocument();
     });
-
-    it('renders with drivers tab selected by default', () => {
-      render(
-        <Team
-          team={mockTeam}
-          activeDrivers={mockActiveDrivers}
-          activeConstructors={mockActiveConstructors}
-          races={mockRaces}
-          readOnly={false}
-        />,
-      );
-
-      const driversTab = screen.getByRole('tab', { name: /drivers/i });
-      expect(driversTab).toHaveAttribute('aria-selected', 'true');
-
-      const constructorsTab = screen.getByRole('tab', { name: /constructors/i });
-      expect(constructorsTab).toHaveAttribute('aria-selected', 'false');
-    });
-
-    it('displays drivers content by default', () => {
-      render(
-        <Team
-          team={mockTeam}
-          activeDrivers={mockActiveDrivers}
-          activeConstructors={mockActiveConstructors}
-          races={mockRaces}
-          readOnly={false}
-        />,
-      );
-
-      // Both pickers are mounted (for state preservation)
-      expect(screen.getByTestId('driver-picker')).toBeInTheDocument();
-      expect(screen.getByTestId('constructor-picker')).toBeInTheDocument();
-
-      // But only drivers tab content should be visible to the user
-      expect(screen.getByTestId('driver-picker')).toBeVisible();
-      expect(screen.getByTestId('constructor-picker')).not.toBeVisible();
-    });
-
-    it('renders both tab options', () => {
-      render(
-        <Team
-          team={mockTeam}
-          activeDrivers={mockActiveDrivers}
-          activeConstructors={mockActiveConstructors}
-          races={mockRaces}
-          readOnly={false}
-        />,
-      );
-
-      expect(screen.getByRole('tab', { name: /drivers/i })).toBeInTheDocument();
-      expect(screen.getByRole('tab', { name: /constructors/i })).toBeInTheDocument();
-    });
   });
 
-  describe('Tab Navigation', () => {
-    it('switches to constructors tab when clicked', async () => {
-      const user = userEvent.setup();
+  describe('Unified Layout', () => {
+    it('renders both driver and constructor pickers simultaneously', () => {
       render(
         <Team
           team={mockTeam}
@@ -264,41 +221,13 @@ describe('Team Component', () => {
         />,
       );
 
-      const constructorsTab = screen.getByRole('tab', { name: /constructors/i });
-      await user.click(constructorsTab);
-
-      expect(constructorsTab).toHaveAttribute('aria-selected', 'true');
-
-      const driversTab = screen.getByRole('tab', { name: /drivers/i });
-      expect(driversTab).toHaveAttribute('aria-selected', 'false');
-    });
-
-    it('displays constructors content when constructors tab is selected', async () => {
-      const user = userEvent.setup();
-      render(
-        <Team
-          team={mockTeam}
-          activeDrivers={mockActiveDrivers}
-          activeConstructors={mockActiveConstructors}
-          races={mockRaces}
-          readOnly={false}
-        />,
-      );
-
-      const constructorsTab = screen.getByRole('tab', { name: /constructors/i });
-      await user.click(constructorsTab);
-
-      // Both pickers remain mounted
       expect(screen.getByTestId('driver-picker')).toBeInTheDocument();
       expect(screen.getByTestId('constructor-picker')).toBeInTheDocument();
-
-      // But visibility is controlled to show only constructors
-      expect(screen.getByTestId('driver-picker')).not.toBeVisible();
+      expect(screen.getByTestId('driver-picker')).toBeVisible();
       expect(screen.getByTestId('constructor-picker')).toBeVisible();
     });
 
-    it('switches back to drivers tab when clicked', async () => {
-      const user = userEvent.setup();
+    it('shows race subtitle with round and race name', () => {
       render(
         <Team
           team={mockTeam}
@@ -309,88 +238,14 @@ describe('Team Component', () => {
         />,
       );
 
-      // First switch to constructors
-      const constructorsTab = screen.getByRole('tab', { name: /constructors/i });
-      await user.click(constructorsTab);
-
-      // Then switch back to drivers
-      const driversTab = screen.getByRole('tab', { name: /drivers/i });
-      await user.click(driversTab);
-
-      expect(driversTab).toHaveAttribute('aria-selected', 'true');
-      expect(constructorsTab).toHaveAttribute('aria-selected', 'false');
-
-      // Verify drivers content is visible again
-      expect(screen.getByTestId('driver-picker')).toBeVisible();
-      expect(screen.getByTestId('constructor-picker')).not.toBeVisible();
-    });
-  });
-
-  describe('Content Delivery', () => {
-    it('ensures only one tab content is visible at a time', async () => {
-      const user = userEvent.setup();
-      render(
-        <Team
-          team={mockTeam}
-          activeDrivers={mockActiveDrivers}
-          activeConstructors={mockActiveConstructors}
-          races={mockRaces}
-          readOnly={false}
-        />,
-      );
-
-      // Initially only drivers content should be visible
-      expect(screen.getByTestId('driver-picker')).toBeVisible();
-      expect(screen.getByTestId('constructor-picker')).not.toBeVisible();
-
-      // Switch to constructors
-      const constructorsTab = screen.getByRole('tab', { name: /constructors/i });
-      await user.click(constructorsTab);
-
-      // Now only constructors content should be visible
-      expect(screen.getByTestId('driver-picker')).not.toBeVisible();
-      expect(screen.getByTestId('constructor-picker')).toBeVisible();
-
-      // Switch back to drivers
-      const driversTab = screen.getByRole('tab', { name: /drivers/i });
-      await user.click(driversTab);
-
-      // Back to drivers content only
-      expect(screen.getByTestId('driver-picker')).toBeVisible();
-      expect(screen.getByTestId('constructor-picker')).not.toBeVisible();
-    });
-  });
-
-  describe('User Experience', () => {
-    it('maintains state consistency throughout interaction', async () => {
-      const user = userEvent.setup();
-      render(
-        <Team
-          team={mockTeam}
-          activeDrivers={mockActiveDrivers}
-          activeConstructors={mockActiveConstructors}
-          races={mockRaces}
-          readOnly={false}
-        />,
-      );
-
-      const driversTab = screen.getByRole('tab', { name: /drivers/i });
-      const constructorsTab = screen.getByRole('tab', { name: /constructors/i });
-
-      // Perform multiple tab switches
-      await user.click(constructorsTab);
-      await user.click(driversTab);
-      await user.click(constructorsTab);
-      await user.click(driversTab);
-
-      // Final state should be consistent
-      expect(driversTab).toHaveAttribute('aria-selected', 'true');
-      expect(constructorsTab).toHaveAttribute('aria-selected', 'false');
-      expect(screen.getByTestId('driver-picker')).toBeVisible();
-      expect(screen.getByTestId('constructor-picker')).not.toBeVisible();
+      // Current race is Round 2 - Saudi Arabian Grand Prix
+      expect(screen.getByText('Round 2 · Saudi Arabian Grand Prix')).toBeInTheDocument();
     });
 
-    it('provides clear indication of current tab selection', () => {
+    it('renders captain error above driver picker when captain update fails', async () => {
+      const user = userEvent.setup();
+      vi.mocked(setCaptain).mockRejectedValueOnce(new Error('Captain update failed'));
+
       render(
         <Team
           team={mockTeam}
@@ -401,12 +256,16 @@ describe('Team Component', () => {
         />,
       );
 
-      const driversTab = screen.getByRole('tab', { name: /drivers/i });
-      const constructorsTab = screen.getByRole('tab', { name: /constructors/i });
+      await user.click(screen.getByRole('button', { name: 'Trigger Captain' }));
 
-      // One tab should be selected, one should not
-      expect(driversTab).toHaveAttribute('aria-selected', 'true');
-      expect(constructorsTab).toHaveAttribute('aria-selected', 'false');
+      const errorElement = await screen.findByRole('alert');
+      expect(errorElement).toHaveTextContent('Captain update failed');
+
+      // Error should appear before the driver picker in the DOM
+      const errorPosition = errorElement.compareDocumentPosition(
+        screen.getByTestId('driver-picker'),
+      );
+      expect(errorPosition & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
   });
 
@@ -422,7 +281,7 @@ describe('Team Component', () => {
         />,
       );
 
-      expect(screen.getByText('Owner: Test Owner')).toBeInTheDocument();
+      expect(screen.getByText('Test Owner')).toBeInTheDocument();
     });
 
     it('does not display owner name when readOnly is false', () => {
@@ -436,7 +295,7 @@ describe('Team Component', () => {
         />,
       );
 
-      expect(screen.queryByText('Owner: Test Owner')).not.toBeInTheDocument();
+      expect(screen.queryByText('Test Owner')).not.toBeInTheDocument();
     });
 
     it('passes readOnly=true to DriverPicker when in read-only mode', () => {
@@ -573,7 +432,7 @@ describe('Team Component', () => {
       expect(screen.getByText('Lineup Locked')).toBeInTheDocument();
     });
 
-    it('shows D/H/M countdown when more than 24h remain', () => {
+    it('shows compact countdown when more than 24h remain', () => {
       vi.setSystemTime(new Date('2026-02-24T12:00:00Z'));
       render(
         <Team
@@ -586,11 +445,10 @@ describe('Team Component', () => {
       );
 
       expect(screen.getByText('Lineup Locks In')).toBeInTheDocument();
-      expect(screen.getByText('Days')).toBeInTheDocument();
-      expect(screen.getByText('12')).toBeInTheDocument();
+      expect(screen.getByText('12d 00h 00m')).toBeInTheDocument();
     });
 
-    it('shows D/H/M countdown when less than 24h remain', () => {
+    it('shows compact countdown when less than 24h remain', () => {
       vi.setSystemTime(new Date('2026-02-24T12:00:00Z'));
       render(
         <Team
@@ -603,8 +461,7 @@ describe('Team Component', () => {
       );
 
       expect(screen.getByText('Lineup Locks In')).toBeInTheDocument();
-      expect(screen.getByText('Hrs')).toBeInTheDocument();
-      expect(screen.getByText('03')).toBeInTheDocument();
+      expect(screen.getByText('03h 30m')).toBeInTheDocument();
     });
 
     it('shows "Less than 1 minute" when lock is imminent', () => {
@@ -621,7 +478,6 @@ describe('Team Component', () => {
 
       expect(screen.getByText('Lineup Locks In')).toBeInTheDocument();
       expect(screen.getByText('Less than 1 minute')).toBeInTheDocument();
-      expect(screen.queryByText('Days')).not.toBeInTheDocument();
     });
 
     it('shows no lock status when lock deadline is null', () => {
@@ -655,64 +511,6 @@ describe('Team Component', () => {
       expect(mockConstructorPicker).toHaveBeenCalledWith(
         expect.objectContaining({ readOnly: true }),
       );
-    });
-  });
-
-  describe('Race Selection', () => {
-    it('renders race selector with current race as default', () => {
-      render(
-        <Team
-          team={mockTeam}
-          activeDrivers={mockActiveDrivers}
-          activeConstructors={mockActiveConstructors}
-          races={mockRaces}
-          readOnly={false}
-        />,
-      );
-
-      const raceSelector = screen.getByRole('combobox');
-      expect(raceSelector).toBeInTheDocument();
-
-      // Should display the current race (Round 2 - Jeddah)
-      expect(screen.getByText('Jeddah')).toBeInTheDocument();
-      expect(screen.getByText('Round 2')).toBeInTheDocument();
-    });
-
-    it('defaults to last race when no current race exists', () => {
-      const racesWithNoCurrent = mockRaces.map((race) => ({
-        ...race,
-        isCurrent: false,
-      }));
-
-      render(
-        <Team
-          team={mockTeam}
-          activeDrivers={mockActiveDrivers}
-          activeConstructors={mockActiveConstructors}
-          races={racesWithNoCurrent}
-          readOnly={false}
-        />,
-      );
-
-      // Should display the last race (Round 3 - Melbourne)
-      expect(screen.getByText('Melbourne')).toBeInTheDocument();
-      expect(screen.getByText('Round 3')).toBeInTheDocument();
-    });
-
-    it('renders race selector as interactive element', () => {
-      render(
-        <Team
-          team={mockTeam}
-          activeDrivers={mockActiveDrivers}
-          activeConstructors={mockActiveConstructors}
-          races={mockRaces}
-          readOnly={false}
-        />,
-      );
-
-      const raceSelector = screen.getByRole('combobox');
-      expect(raceSelector).toBeEnabled();
-      expect(raceSelector).toHaveAttribute('aria-controls');
     });
   });
 });

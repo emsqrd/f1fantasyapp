@@ -1,9 +1,9 @@
 import type { Constructor } from '@/contracts/Role';
-import { formatMillions } from '@/lib/utils';
-import { CirclePlus, X } from 'lucide-react';
+import { getConstructorColor } from '@/lib/teamColors';
+import { cn, formatMillions } from '@/lib/utils';
+import { X } from 'lucide-react';
 
 import { Button } from '../ui/button';
-import { Card, CardContent } from '../ui/card';
 
 interface ConstructorCardProps {
   constructor: Constructor | null;
@@ -18,61 +18,49 @@ export function ConstructorCard({
   onRemove,
   readOnly,
 }: ConstructorCardProps) {
+  if (!constructor) {
+    if (readOnly) return null;
+    return (
+      <button
+        onClick={onOpenPicker}
+        className="border-border flex min-h-[72px] w-full items-center gap-3 rounded-md border-2 border-dashed px-3 hover:opacity-80"
+      >
+        <span className="border-border flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-dashed">
+          <span className="text-primary text-lg leading-none">+</span>
+        </span>
+        <span className="text-muted-foreground text-sm">Add Constructor</span>
+      </button>
+    );
+  }
+
+  const stripeColor = getConstructorColor(constructor.abbreviation);
+
   return (
-    <Card className="bg-secondary relative p-0">
-      <CardContent className="px-3 py-4">
-        {constructor ? (
-          <>
-            <div className="flex items-center gap-3">
-              <div className="border-border text-secondary-foreground flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold tracking-wide">
-                {constructor.abbreviation}
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="overflow-hidden pr-6 leading-tight font-bold text-ellipsis whitespace-nowrap">
-                  {constructor.name}
-                </h3>
-                <div className="text-muted-foreground text-xs">
-                  {constructor.countryAbbreviation}
-                </div>
-              </div>
-            </div>
-            <div className="bg-border my-2.5 h-px" />
-            <div className="text-muted-foreground flex justify-between px-1 text-xs">
-              <span>${formatMillions(constructor.price)}M</span>
-              <span>-- pts</span>
-            </div>
-          </>
-        ) : readOnly ? (
-          // Read-only mode: Show placeholder matching filled card layout
-          <div className="flex items-center gap-3">
-            <span className="h-14 w-14 shrink-0 rounded-full border-2 border-dashed border-gray-600" />
-            <span className="text-muted-foreground text-sm">Empty Slot</span>
-          </div>
-        ) : (
-          // Edit mode: Show add button matching filled card layout
+    <div className="flex min-h-[72px] items-stretch overflow-hidden rounded-md border">
+      <div
+        className={cn('w-2 shrink-0', !stripeColor && 'bg-border')}
+        style={stripeColor ? { backgroundColor: stripeColor } : undefined}
+        aria-hidden
+      />
+      <div className="flex min-w-0 flex-1 flex-col justify-center px-3 py-3">
+        <span className="text-sm leading-tight font-bold">{constructor.name}</span>
+        <span className="text-muted-foreground text-sm font-medium">
+          ${formatMillions(constructor.price)}M
+        </span>
+      </div>
+      {!readOnly && (
+        <div className="flex flex-col items-center justify-start px-2 py-2">
           <Button
-            onClick={onOpenPicker}
+            size="icon"
             variant="ghost"
-            className="h-auto w-full justify-start gap-3 p-0 hover:opacity-80"
+            className="h-7 w-7 rounded-full"
+            aria-label="Remove constructor"
+            onClick={onRemove}
           >
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-gray-600">
-              <CirclePlus className="text-primary h-6 w-6" />
-            </span>
-            <span className="text-muted-foreground text-sm">Add Constructor</span>
+            <X className="h-4 w-4" />
           </Button>
-        )}
-      </CardContent>
-      {constructor && !readOnly && (
-        <Button
-          size="icon"
-          variant="ghost"
-          className="text-muted-foreground absolute top-2 right-2 h-6 w-6"
-          aria-label="Remove constructor"
-          onClick={onRemove}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        </div>
       )}
-    </Card>
+    </div>
   );
 }

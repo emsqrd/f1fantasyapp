@@ -53,8 +53,8 @@ describe('ConstructorCard', () => {
   });
 
   describe('No Constructor Selected - Read-Only Mode', () => {
-    it('displays "Empty Slot" text when no constructor is selected in read-only mode', () => {
-      render(
+    it('renders nothing when no constructor is selected in read-only mode', () => {
+      const { container } = render(
         <ConstructorCard
           constructor={null}
           onOpenPicker={vi.fn()}
@@ -63,7 +63,7 @@ describe('ConstructorCard', () => {
         />,
       );
 
-      expect(screen.getByText('Empty Slot')).toBeInTheDocument();
+      expect(container).toBeEmptyDOMElement();
     });
 
     it('does not display "Add Constructor" button in read-only mode', () => {
@@ -77,19 +77,6 @@ describe('ConstructorCard', () => {
       );
 
       expect(screen.queryByRole('button', { name: /add constructor/i })).not.toBeInTheDocument();
-    });
-
-    it('does not display remove button in read-only mode', () => {
-      render(
-        <ConstructorCard
-          constructor={null}
-          onOpenPicker={vi.fn()}
-          onRemove={vi.fn()}
-          readOnly={true}
-        />,
-      );
-
-      expect(screen.queryByRole('button', { name: /remove constructor/i })).not.toBeInTheDocument();
     });
   });
 

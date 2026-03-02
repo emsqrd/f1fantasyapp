@@ -43,12 +43,12 @@ describe('DriverCard', () => {
   });
 
   describe('No Driver Selected - Read-Only Mode', () => {
-    it('displays "Empty Slot" text when no driver is selected in read-only mode', () => {
-      render(
+    it('renders nothing when no driver is selected in read-only mode', () => {
+      const { container } = render(
         <DriverCard driver={null} onOpenPicker={vi.fn()} onRemove={vi.fn()} readOnly={true} />,
       );
 
-      expect(screen.getByText('Empty Slot')).toBeInTheDocument();
+      expect(container).toBeEmptyDOMElement();
     });
 
     it('does not display "Add Driver" button in read-only mode', () => {
@@ -57,14 +57,6 @@ describe('DriverCard', () => {
       );
 
       expect(screen.queryByRole('button', { name: /add driver/i })).not.toBeInTheDocument();
-    });
-
-    it('does not display remove button in read-only mode', () => {
-      render(
-        <DriverCard driver={null} onOpenPicker={vi.fn()} onRemove={vi.fn()} readOnly={true} />,
-      );
-
-      expect(screen.queryByRole('button', { name: /remove driver/i })).not.toBeInTheDocument();
     });
   });
 
@@ -150,12 +142,18 @@ describe('DriverCard', () => {
       expect(screen.queryByRole('button', { name: /remove driver/i })).not.toBeInTheDocument();
     });
 
-    it('does not display "Add Driver" button in read-only mode', () => {
+    it('does not display captain button in read-only mode', () => {
       render(
-        <DriverCard driver={driver} onOpenPicker={vi.fn()} onRemove={vi.fn()} readOnly={true} />,
+        <DriverCard
+          driver={driver}
+          onOpenPicker={vi.fn()}
+          onRemove={vi.fn()}
+          readOnly={true}
+          onSetCaptain={vi.fn()}
+        />,
       );
 
-      expect(screen.queryByRole('button', { name: /add driver/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /captain/i })).not.toBeInTheDocument();
     });
   });
 
@@ -174,7 +172,7 @@ describe('DriverCard', () => {
         />,
       );
 
-      expect(screen.getByRole('button', { name: /remove captain/i })).toHaveAttribute(
+      expect(screen.getByRole('button', { name: /captain.*active/i })).toHaveAttribute(
         'aria-pressed',
         'true',
       );
@@ -192,7 +190,7 @@ describe('DriverCard', () => {
         />,
       );
 
-      expect(screen.getByRole('button', { name: /set as captain/i })).toHaveAttribute(
+      expect(screen.getByRole('button', { name: /set.*captain/i })).toHaveAttribute(
         'aria-pressed',
         'false',
       );
@@ -213,7 +211,7 @@ describe('DriverCard', () => {
         />,
       );
 
-      await user.click(screen.getByRole('button', { name: /set as captain/i }));
+      await user.click(screen.getByRole('button', { name: /set.*captain/i }));
 
       expect(onSetCaptain).toHaveBeenCalledTimes(1);
     });

@@ -325,51 +325,8 @@ describe('DriverPicker', () => {
     });
   });
 
-  describe('Captain Hint', () => {
-    it('shows hint when onSetCaptain is provided and no captain is selected', () => {
-      render(
-        <DriverPicker
-          activeDrivers={mockDrivers}
-          readOnly={false}
-          remainingBudget={100_000_000}
-          captainDriverId={null}
-          onSetCaptain={vi.fn()}
-        />,
-      );
-
-      expect(screen.getByText(/pick a captain/i)).toBeInTheDocument();
-    });
-
-    it('hides hint when a captain is already selected', () => {
-      mockDisplayLineup = [mockDrivers[0], null, null, null];
-
-      render(
-        <DriverPicker
-          activeDrivers={mockDrivers}
-          teamDrivers={[toTeamDriver(mockDrivers[0], 0)]}
-          readOnly={false}
-          remainingBudget={100_000_000}
-          captainDriverId={mockDrivers[0].id}
-          onSetCaptain={vi.fn()}
-        />,
-      );
-
-      // Element stays in DOM (animates to 0 height) but is hidden from assistive tech
-      const hint = screen.getByText(/pick a captain/i);
-      expect(hint.closest('[aria-hidden]')).toHaveAttribute('aria-hidden', 'true');
-    });
-
-    it('hides hint when onSetCaptain is not provided', () => {
-      render(
-        <DriverPicker activeDrivers={mockDrivers} readOnly={false} remainingBudget={100_000_000} />,
-      );
-
-      expect(screen.queryByText(/pick a captain/i)).not.toBeInTheDocument();
-    });
-  });
-
   describe('Captain', () => {
-    it('shows Remove captain button for the driver matching captainDriverId', () => {
+    it('shows active captain button for the driver matching captainDriverId', () => {
       mockDisplayLineup = [mockDrivers[0], null, null, null];
 
       render(
@@ -383,7 +340,7 @@ describe('DriverPicker', () => {
         />,
       );
 
-      expect(screen.getByRole('button', { name: /remove captain/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /captain.*active/i })).toBeInTheDocument();
     });
 
     it('calls onSetCaptain with driver id when Set as captain is clicked', async () => {
@@ -402,12 +359,12 @@ describe('DriverPicker', () => {
         />,
       );
 
-      await user.click(screen.getByRole('button', { name: /set as captain/i }));
+      await user.click(screen.getByRole('button', { name: /set.*captain/i }));
 
       expect(onSetCaptain).toHaveBeenCalledWith(mockDrivers[0].id);
     });
 
-    it('calls onSetCaptain with null when Remove captain is clicked', async () => {
+    it('calls onSetCaptain with null when active captain button is clicked', async () => {
       const user = userEvent.setup();
       const onSetCaptain = vi.fn();
       mockDisplayLineup = [mockDrivers[0], null, null, null];
@@ -423,7 +380,7 @@ describe('DriverPicker', () => {
         />,
       );
 
-      await user.click(screen.getByRole('button', { name: /remove captain/i }));
+      await user.click(screen.getByRole('button', { name: /captain.*active/i }));
 
       expect(onSetCaptain).toHaveBeenCalledWith(null);
     });
