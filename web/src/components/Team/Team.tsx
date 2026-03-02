@@ -113,7 +113,7 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
 
   return (
     <AppContainer maxWidth="md">
-      <div className="mb-6">
+      <div className="mb-2">
         <div className="flex items-baseline gap-2">
           <h1 className="text-2xl font-bold">{team.name}</h1>
           {readOnly && <span className="text-muted-foreground text-sm">{team.ownerName}</span>}
@@ -123,48 +123,49 @@ export function Team({ team, activeDrivers, activeConstructors, races, readOnly 
             Round {currentRace.round} · {currentRace.name}
           </p>
         )}
-        <div className="mt-3 flex flex-wrap items-start justify-between gap-y-3 sm:flex-nowrap">
-          <div className="flex gap-4">
-            <div>
-              <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                Remaining
-              </p>
-              <p className="text-sm font-bold">{formatBudget(team.remainingBudget)}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                Transfers
-              </p>
-              <p className="text-sm font-bold">3/3</p>
-            </div>
+      </div>
+
+      <div className="bg-background sticky top-0 z-10 mb-6 flex flex-wrap items-start justify-between gap-y-3 border-b py-3 sm:flex-nowrap">
+        <div className="flex gap-4">
+          <div>
+            <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+              Remaining
+            </p>
+            <p className="text-sm font-bold">{formatBudget(team.remainingBudget)}</p>
           </div>
-          {lockDeadline && (
-            <div className="w-full sm:w-auto sm:shrink-0 sm:text-right">
-              {isLocked ? (
-                <>
-                  <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                    Lineup
-                  </p>
-                  <div className="text-muted-foreground flex items-center justify-center gap-1.5">
-                    <Lock className="h-4 w-4" />
-                    <span className="text-sm font-medium">Lineup Locked</span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                    Lineup Locks In
-                  </p>
-                  {lockingImminently ? (
-                    <p className="text-sm font-medium">Less than 1 minute</p>
-                  ) : (
-                    <p className="text-sm font-bold">{lockDisplay}</p>
-                  )}
-                </>
-              )}
-            </div>
-          )}
+          <div>
+            <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+              Transfers
+            </p>
+            <p className="text-sm font-bold">3/3</p>
+          </div>
         </div>
+        {lockDeadline && (
+          <div className="w-full sm:w-auto sm:shrink-0 sm:text-right">
+            {isLocked ? (
+              <>
+                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                  Lineup
+                </p>
+                <div className="text-muted-foreground flex items-center justify-center gap-1.5">
+                  <Lock className="h-4 w-4" />
+                  <span className="text-sm font-medium">Lineup Locked</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                  Lineup Locks In
+                </p>
+                {lockingImminently ? (
+                  <p className="text-sm font-medium">Less than 1 minute</p>
+                ) : (
+                  <p className="text-sm font-bold">{lockDisplay}</p>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {captainError && (
