@@ -13,7 +13,7 @@ You've been spiraling on pricing for over a week. Format (5D+3C) and scoring are
 
 ## Current Status
 
-**Step 0 complete.** File restructure done — `decisions/`, `reference/`, `archive/` created; `own-rules/` deleted. Awaiting approval to proceed to Step 1.
+**Step 3 next.** Glossaries written (Step 1), F1 context doc written and reviewed (Step 2). Awaiting approval to proceed to Step 3 (lessons learned).
 
 *(Updated after each step completion so any new session can pick up where we left off.)*
 
@@ -195,6 +195,8 @@ Two options for `decisions/pricing.md`:
 - More systematic but still requires judgment overlay
 
 Key insight: preseason prices only need to be "close enough" since the in-season PPM mechanism self-corrects.
+
+**Also decide: budget uplift mechanic.** When an owned asset rises in price, does the owning team's cap increase by the same amount? The official F1 Fantasy game does this — it prevents teams from becoming over-cap through no fault of their own and creates a budget management metagame where rising assets generate spendable headroom. Decision needed before Step 10.
 
 ---
 
