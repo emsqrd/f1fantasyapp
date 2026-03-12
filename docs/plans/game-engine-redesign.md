@@ -15,7 +15,9 @@ You've been spiraling on pricing for over a week. Format (5D+3C) and scoring are
 
 ## Current Status
 
-**Step 3 in progress.**
+**Step 3 complete.** `reference/lessons-learned.md` is written with consolidated findings from the pricing exploration. Document covers why target-based pricing fails, the floor ratchet asymmetry, calibration lessons, and validated findings across 10 key insights.
+
+Ready for Step 4: Review and update foundational design goals.
 
 _(Updated after each step completion so any new session can pick up where we left off.)_
 
