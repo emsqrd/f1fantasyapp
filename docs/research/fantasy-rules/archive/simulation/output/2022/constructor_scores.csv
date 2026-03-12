@@ -1,0 +1,221 @@
+round,event,constructor,quali_sum,race_driver_sum,race_penalty,race_total,sprint_driver_sum,sprint_penalty,sprint_total,total_pts
+1,Bahrain Grand Prix,Ferrari,18,46,0,46,,,,64
+1,Bahrain Grand Prix,Mercedes,8,36,0,36,,,,44
+1,Bahrain Grand Prix,Haas F1 Team,4,15,0,15,,,,19
+1,Bahrain Grand Prix,Alfa Romeo,5,16,0,16,,,,21
+1,Bahrain Grand Prix,Alpine,3,14,0,14,,,,17
+1,Bahrain Grand Prix,AlphaTauri,1,3,-5,-2,,,,-1
+1,Bahrain Grand Prix,Aston Martin,0,8,0,8,,,,8
+1,Bahrain Grand Prix,Williams,0,6,0,6,,,,6
+1,Bahrain Grand Prix,McLaren,0,6,0,6,,,,6
+1,Bahrain Grand Prix,Red Bull Racing,16,-20,-10,-30,,,,-14
+2,Saudi Arabian Grand Prix,Red Bull Racing,17,41,0,41,,,,58
+2,Saudi Arabian Grand Prix,Ferrari,17,36,0,36,,,,53
+2,Saudi Arabian Grand Prix,Mercedes,5,19,0,19,,,,24
+2,Saudi Arabian Grand Prix,Alpine,10,-1,-5,-6,,,,4
+2,Saudi Arabian Grand Prix,McLaren,0,1,-5,-4,,,,-4
+2,Saudi Arabian Grand Prix,AlphaTauri,2,-4,-5,-9,,,,-7
+2,Saudi Arabian Grand Prix,Haas F1 Team,1,-6,-5,-11,,,,-10
+2,Saudi Arabian Grand Prix,Alfa Romeo,3,-8,-5,-13,,,,-10
+2,Saudi Arabian Grand Prix,Aston Martin,0,-4,-5,-9,,,,-9
+2,Saudi Arabian Grand Prix,Williams,0,-20,-10,-30,,,,-30
+3,Australian Grand Prix,Ferrari,12,15,-5,10,,,,22
+3,Australian Grand Prix,Red Bull Racing,17,11,-5,6,,,,23
+3,Australian Grand Prix,Mercedes,11,33,0,33,,,,44
+3,Australian Grand Prix,McLaren,11,21,0,21,,,,32
+3,Australian Grand Prix,Alpine,4,-2,-5,-7,,,,-3
+3,Australian Grand Prix,Alfa Romeo,0,13,0,13,,,,13
+3,Australian Grand Prix,AlphaTauri,0,-5,-5,-10,,,,-10
+3,Australian Grand Prix,Williams,0,2,-5,-3,,,,-3
+3,Australian Grand Prix,Aston Martin,0,-2,-5,-7,,,,-7
+3,Australian Grand Prix,Haas F1 Team,0,-20,-10,-30,,,,-30
+4,Emilia Romagna Grand Prix,Red Bull Racing,14,46,0,46,18.0,0.0,18.0,78
+4,Emilia Romagna Grand Prix,McLaren,13,8,-5,3,7.0,0.0,7.0,23
+4,Emilia Romagna Grand Prix,Mercedes,0,10,-5,5,0.0,0.0,0.0,5
+4,Emilia Romagna Grand Prix,Alfa Romeo,3,3,-5,-2,-2.0,-5.0,-7.0,-6
+4,Emilia Romagna Grand Prix,Ferrari,10,-1,-5,-6,18.0,0.0,18.0,22
+4,Emilia Romagna Grand Prix,AlphaTauri,0,2,-5,-3,4.0,0.0,4.0,1
+4,Emilia Romagna Grand Prix,Aston Martin,2,0,-5,-5,0.0,0.0,0.0,-3
+4,Emilia Romagna Grand Prix,Haas F1 Team,7,-7,-5,-12,3.0,0.0,3.0,-2
+4,Emilia Romagna Grand Prix,Williams,0,-20,-10,-30,2.0,0.0,2.0,-28
+4,Emilia Romagna Grand Prix,Alpine,6,-20,-10,-30,3.0,0.0,3.0,-21
+5,Miami Grand Prix,Red Bull Racing,15,40,0,40,,,,55
+5,Miami Grand Prix,Ferrari,19,36,0,36,,,,55
+5,Miami Grand Prix,Mercedes,5,27,0,27,,,,32
+5,Miami Grand Prix,Alfa Romeo,6,-3,-5,-8,,,,-2
+5,Miami Grand Prix,Alpine,0,18,0,18,,,,18
+5,Miami Grand Prix,Williams,0,18,0,18,,,,18
+5,Miami Grand Prix,Aston Martin,1,-8,-5,-13,,,,-12
+5,Miami Grand Prix,AlphaTauri,6,-9,-5,-14,,,,-8
+5,Miami Grand Prix,McLaren,3,-8,-5,-13,,,,-10
+5,Miami Grand Prix,Haas F1 Team,0,-9,-5,-14,,,,-14
+6,Spanish Grand Prix,Red Bull Racing,15,49,0,49,,,,64
+6,Spanish Grand Prix,Mercedes,12,29,0,29,,,,41
+6,Spanish Grand Prix,Ferrari,18,3,-5,-2,,,,16
+6,Spanish Grand Prix,Alfa Romeo,4,0,-5,-5,,,,-1
+6,Spanish Grand Prix,Alpine,0,2,-5,-3,,,,-3
+6,Spanish Grand Prix,McLaren,2,-2,-5,-7,,,,-5
+6,Spanish Grand Prix,AlphaTauri,0,-20,-10,-30,,,,-30
+6,Spanish Grand Prix,Aston Martin,0,-20,-10,-30,,,,-30
+6,Spanish Grand Prix,Haas F1 Team,4,-20,-10,-30,,,,-26
+6,Spanish Grand Prix,Williams,0,-20,-10,-30,,,,-30
+7,Monaco Grand Prix,Red Bull Racing,15,44,0,44,,,,59
+7,Monaco Grand Prix,Ferrari,19,33,0,33,,,,52
+7,Monaco Grand Prix,Mercedes,8,17,0,17,,,,25
+7,Monaco Grand Prix,McLaren,6,11,0,11,,,,17
+7,Monaco Grand Prix,Alpine,5,8,0,8,,,,13
+7,Monaco Grand Prix,Alfa Romeo,0,-4,-5,-9,,,,-9
+7,Monaco Grand Prix,Aston Martin,2,7,0,7,,,,9
+7,Monaco Grand Prix,AlphaTauri,0,-3,-5,-8,,,,-8
+7,Monaco Grand Prix,Williams,0,-20,-10,-30,,,,-30
+7,Monaco Grand Prix,Haas F1 Team,0,-20,-10,-30,,,,-30
+8,Azerbaijan Grand Prix,Red Bull Racing,17,47,0,47,,,,64
+8,Azerbaijan Grand Prix,Mercedes,10,34,0,34,,,,44
+8,Azerbaijan Grand Prix,AlphaTauri,8,2,-5,-3,,,,5
+8,Azerbaijan Grand Prix,Aston Martin,2,2,-5,-3,,,,-1
+8,Azerbaijan Grand Prix,Alpine,1,15,0,15,,,,16
+8,Azerbaijan Grand Prix,McLaren,0,14,0,14,,,,14
+8,Azerbaijan Grand Prix,Alfa Romeo,0,-20,-10,-30,,,,-30
+8,Azerbaijan Grand Prix,Williams,0,-20,-10,-30,,,,-30
+8,Azerbaijan Grand Prix,Haas F1 Team,0,-20,-10,-30,,,,-30
+8,Azerbaijan Grand Prix,Ferrari,17,-20,-10,-30,,,,-13
+9,Canadian Grand Prix,Red Bull Racing,10,15,-5,10,,,,20
+9,Canadian Grand Prix,Ferrari,8,46,0,46,,,,54
+9,Canadian Grand Prix,Mercedes,10,34,0,34,,,,44
+9,Canadian Grand Prix,Alpine,13,13,0,13,,,,26
+9,Canadian Grand Prix,Alfa Romeo,1,18,0,18,,,,19
+9,Canadian Grand Prix,Aston Martin,0,14,0,14,,,,14
+9,Canadian Grand Prix,McLaren,2,2,0,2,,,,4
+9,Canadian Grand Prix,Williams,0,3,0,3,,,,3
+9,Canadian Grand Prix,AlphaTauri,0,-8,-5,-13,,,,-13
+9,Canadian Grand Prix,Haas F1 Team,11,-10,-5,-15,,,,-4
+10,British Grand Prix,Ferrari,18,38,0,38,,,,56
+10,British Grand Prix,Red Bull Racing,16,29,0,29,,,,45
+10,British Grand Prix,Mercedes,9,8,-5,3,,,,12
+10,British Grand Prix,Alpine,4,3,-5,-2,,,,2
+10,British Grand Prix,McLaren,5,11,0,11,,,,16
+10,British Grand Prix,Haas F1 Team,0,25,0,25,,,,25
+10,British Grand Prix,Aston Martin,0,22,0,22,,,,22
+10,British Grand Prix,Williams,1,-9,-5,-14,,,,-13
+10,British Grand Prix,AlphaTauri,0,-9,-5,-14,,,,-14
+10,British Grand Prix,Alfa Romeo,2,-20,-10,-30,,,,-28
+11,Austrian Grand Prix,Ferrari,17,16,-5,11,13.0,0.0,13.0,41
+11,Austrian Grand Prix,Red Bull Racing,10,10,-5,5,20.0,0.0,20.0,35
+11,Austrian Grand Prix,Mercedes,9,34,0,34,7.0,0.0,7.0,50
+11,Austrian Grand Prix,Alpine,9,2,-5,-3,-2.0,-5.0,-7.0,-1
+11,Austrian Grand Prix,Haas F1 Team,9,-20,-10,-30,2.0,0.0,2.0,-19
+11,Austrian Grand Prix,McLaren,0,-20,-10,-30,8.0,0.0,8.0,-22
+11,Austrian Grand Prix,Alfa Romeo,0,-20,-10,-30,6.0,0.0,6.0,-24
+11,Austrian Grand Prix,Williams,0,-20,-10,-30,1.0,0.0,1.0,-29
+11,Austrian Grand Prix,Aston Martin,0,-20,-10,-30,-1.0,-5.0,-6.0,-36
+11,Austrian Grand Prix,AlphaTauri,1,-20,-10,-30,0.0,0.0,0.0,-29
+12,French Grand Prix,Red Bull Racing,17,39,0,39,,,,56
+12,French Grand Prix,Mercedes,12,41,0,41,,,,53
+12,French Grand Prix,Ferrari,12,15,-5,10,,,,22
+12,French Grand Prix,Alpine,4,17,0,17,,,,21
+12,French Grand Prix,McLaren,6,10,0,10,,,,16
+12,French Grand Prix,Aston Martin,0,9,0,9,,,,9
+12,French Grand Prix,AlphaTauri,3,-7,-5,-12,,,,-9
+12,French Grand Prix,Williams,0,-9,-5,-14,,,,-14
+12,French Grand Prix,Alfa Romeo,0,-9,-5,-14,,,,-14
+12,French Grand Prix,Haas F1 Team,1,-7,-5,-12,,,,-11
+13,Hungarian Grand Prix,Red Bull Racing,1,51,0,51,,,,52
+13,Hungarian Grand Prix,Mercedes,14,41,0,41,,,,55
+13,Hungarian Grand Prix,Ferrari,17,22,0,22,,,,39
+13,Hungarian Grand Prix,McLaren,9,-3,-5,-8,,,,1
+13,Hungarian Grand Prix,Alpine,11,-20,-10,-30,,,,-19
+13,Hungarian Grand Prix,Aston Martin,0,-20,-10,-30,,,,-30
+13,Hungarian Grand Prix,AlphaTauri,0,-20,-10,-30,,,,-30
+13,Hungarian Grand Prix,Alfa Romeo,3,-20,-10,-30,,,,-27
+13,Hungarian Grand Prix,Haas F1 Team,0,-20,-10,-30,,,,-30
+13,Hungarian Grand Prix,Williams,0,-20,-10,-30,,,,-30
+14,Belgian Grand Prix,Red Bull Racing,18,58,0,58,,,,76
+14,Belgian Grand Prix,Ferrari,16,34,0,34,,,,50
+14,Belgian Grand Prix,Mercedes,7,4,-5,-1,,,,6
+14,Belgian Grand Prix,Alpine,11,27,0,27,,,,38
+14,Belgian Grand Prix,Aston Martin,0,8,0,8,,,,8
+14,Belgian Grand Prix,AlphaTauri,0,4,0,4,,,,4
+14,Belgian Grand Prix,Williams,2,-8,-5,-13,,,,-11
+14,Belgian Grand Prix,McLaren,1,7,0,7,,,,8
+14,Belgian Grand Prix,Alfa Romeo,0,-5,-5,-10,,,,-10
+14,Belgian Grand Prix,Haas F1 Team,0,-20,-10,-30,,,,-30
+15,Dutch Grand Prix,Red Bull Racing,16,36,0,36,,,,52
+15,Dutch Grand Prix,Mercedes,12,37,0,37,,,,49
+15,Dutch Grand Prix,Ferrari,17,21,0,21,,,,38
+15,Dutch Grand Prix,Alpine,0,22,0,22,,,,22
+15,Dutch Grand Prix,McLaren,4,7,0,7,,,,11
+15,Dutch Grand Prix,Aston Martin,1,8,0,8,,,,9
+15,Dutch Grand Prix,AlphaTauri,2,-9,-5,-14,,,,-12
+15,Dutch Grand Prix,Williams,0,-6,-5,-11,,,,-11
+15,Dutch Grand Prix,Haas F1 Team,3,5,0,5,,,,8
+15,Dutch Grand Prix,Alfa Romeo,0,-10,-5,-15,,,,-15
+16,Italian Grand Prix,Red Bull Racing,16,47,0,47,,,,63
+16,Italian Grand Prix,Ferrari,18,47,0,47,,,,65
+16,Italian Grand Prix,Mercedes,11,41,0,41,,,,52
+16,Italian Grand Prix,McLaren,7,-3,-5,-8,,,,-1
+16,Italian Grand Prix,AlphaTauri,2,-5,-5,-10,,,,-8
+16,Italian Grand Prix,Williams,0,-7,-5,-12,,,,-12
+16,Italian Grand Prix,Alfa Romeo,0,-8,-5,-13,,,,-13
+16,Italian Grand Prix,Alpine,1,-6,-5,-11,,,,-10
+16,Italian Grand Prix,Haas F1 Team,0,-4,-5,-9,,,,-9
+16,Italian Grand Prix,Aston Martin,0,-20,-10,-30,,,,-30
+17,Singapore Grand Prix,Red Bull Racing,12,34,0,34,,,,46
+17,Singapore Grand Prix,Ferrari,17,37,0,37,,,,54
+17,Singapore Grand Prix,McLaren,5,37,0,37,,,,42
+17,Singapore Grand Prix,Aston Martin,0,24,0,24,,,,24
+17,Singapore Grand Prix,Mercedes,8,-7,-5,-12,,,,-4
+17,Singapore Grand Prix,AlphaTauri,5,-8,-5,-13,,,,-8
+17,Singapore Grand Prix,Alfa Romeo,0,-5,-5,-10,,,,-10
+17,Singapore Grand Prix,Haas F1 Team,2,-9,-5,-14,,,,-12
+17,Singapore Grand Prix,Alpine,6,-20,-10,-30,,,,-24
+17,Singapore Grand Prix,Williams,0,-20,-10,-30,,,,-30
+18,Japanese Grand Prix,Red Bull Racing,17,47,0,47,,,,64
+18,Japanese Grand Prix,Ferrari,17,6,-5,1,,,,18
+18,Japanese Grand Prix,Alpine,10,21,0,21,,,,31
+18,Japanese Grand Prix,Mercedes,8,17,0,17,,,,25
+18,Japanese Grand Prix,Aston Martin,2,20,0,20,,,,22
+18,Japanese Grand Prix,Williams,0,4,-5,-1,,,,-1
+18,Japanese Grand Prix,McLaren,1,3,0,3,,,,4
+18,Japanese Grand Prix,AlphaTauri,0,1,0,1,,,,1
+18,Japanese Grand Prix,Haas F1 Team,0,5,0,5,,,,5
+18,Japanese Grand Prix,Alfa Romeo,0,1,0,1,,,,1
+19,United States Grand Prix,Red Bull Racing,15,44,0,44,,,,59
+19,United States Grand Prix,Mercedes,11,32,0,32,,,,43
+19,United States Grand Prix,Ferrari,19,15,-5,10,,,,29
+19,United States Grand Prix,McLaren,3,9,0,9,,,,12
+19,United States Grand Prix,Alpine,2,15,0,15,,,,17
+19,United States Grand Prix,Aston Martin,4,-3,-5,-8,,,,-4
+19,United States Grand Prix,Haas F1 Team,0,9,0,9,,,,9
+19,United States Grand Prix,AlphaTauri,0,12,0,12,,,,12
+19,United States Grand Prix,Alfa Romeo,1,-3,-5,-8,,,,-7
+19,United States Grand Prix,Williams,0,1,0,1,,,,1
+20,Mexico City Grand Prix,Red Bull Racing,17,42,0,42,,,,59
+20,Mexico City Grand Prix,Mercedes,17,34,0,34,,,,51
+20,Mexico City Grand Prix,Ferrari,10,21,0,21,,,,31
+20,Mexico City Grand Prix,McLaren,3,-20,-10,-30,,,,-27
+20,Mexico City Grand Prix,Alpine,3,-20,-10,-30,,,,-27
+20,Mexico City Grand Prix,Alfa Romeo,5,-20,-10,-30,,,,-25
+20,Mexico City Grand Prix,AlphaTauri,0,-20,-10,-30,,,,-30
+20,Mexico City Grand Prix,Williams,0,-20,-10,-30,,,,-30
+20,Mexico City Grand Prix,Aston Martin,0,-20,-10,-30,,,,-30
+20,Mexico City Grand Prix,Haas F1 Team,0,-20,-10,-30,,,,-30
+21,São Paulo Grand Prix,Mercedes,11,45,0,45,21.0,0.0,21.0,77
+21,São Paulo Grand Prix,Ferrari,7,34,0,34,17.0,0.0,17.0,58
+21,São Paulo Grand Prix,Alpine,9,36,0,36,0.0,0.0,0.0,45
+21,São Paulo Grand Prix,Red Bull Racing,11,16,0,16,13.0,0.0,13.0,40
+21,São Paulo Grand Prix,Alfa Romeo,0,10,0,10,8.0,0.0,8.0,18
+21,São Paulo Grand Prix,Aston Martin,0,8,0,8,4.0,0.0,4.0,12
+21,São Paulo Grand Prix,Haas F1 Team,10,-9,-5,-14,9.0,0.0,9.0,5
+21,São Paulo Grand Prix,AlphaTauri,0,-9,-5,-14,6.0,0.0,6.0,-8
+21,São Paulo Grand Prix,Williams,0,7,0,7,-5.0,-5.0,-10.0,-3
+21,São Paulo Grand Prix,McLaren,7,-20,-10,-30,5.0,0.0,5.0,-18
+22,Abu Dhabi Grand Prix,Red Bull Racing,19,41,0,41,,,,60
+22,Abu Dhabi Grand Prix,Ferrari,15,34,0,34,,,,49
+22,Abu Dhabi Grand Prix,Mercedes,11,2,-5,-3,,,,8
+22,Abu Dhabi Grand Prix,McLaren,5,17,0,17,,,,22
+22,Abu Dhabi Grand Prix,Alpine,3,-2,-5,-7,,,,-4
+22,Abu Dhabi Grand Prix,Aston Martin,2,13,0,13,,,,15
+22,Abu Dhabi Grand Prix,AlphaTauri,0,-9,-5,-14,,,,-14
+22,Abu Dhabi Grand Prix,Alfa Romeo,0,-20,-10,-30,,,,-30
+22,Abu Dhabi Grand Prix,Williams,0,-20,-10,-30,,,,-30
+22,Abu Dhabi Grand Prix,Haas F1 Team,0,-20,-10,-30,,,,-30

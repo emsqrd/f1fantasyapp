@@ -1,0 +1,745 @@
+round,entity,type,price
+1,Alpine,constructor,8500000
+1,Aston Martin,constructor,9000000
+1,Ferrari,constructor,23100000
+1,Haas F1 Team,constructor,8300000
+1,Kick Sauber,constructor,7200000
+1,McLaren,constructor,25000000
+1,Mercedes,constructor,19400000
+1,Racing Bulls,constructor,7600000
+1,Red Bull Racing,constructor,21500000
+1,Williams,constructor,6000000
+1,ALB,driver,6100000
+1,ALO,driver,8900000
+1,ANT,driver,13100000
+1,BEA,driver,7200000
+1,BOR,driver,6600000
+1,COL,driver,7300000
+1,DOO,driver,7300000
+1,GAS,driver,7700000
+1,HAD,driver,6900000
+1,HAM,driver,14000000
+1,HUL,driver,7100000
+1,LAW,driver,6900000
+1,LEC,driver,16300000
+1,NOR,driver,17000000
+1,OCO,driver,7300000
+1,PIA,driver,15200000
+1,RUS,driver,13700000
+1,SAI,driver,10000000
+1,STR,driver,6900000
+1,TSU,driver,10700000
+1,VER,driver,18400000
+2,Alpine,constructor,7700000
+2,Aston Martin,constructor,8100000
+2,Ferrari,constructor,20800000
+2,Haas F1 Team,constructor,9100000
+2,Kick Sauber,constructor,7000000
+2,McLaren,constructor,25000000
+2,Mercedes,constructor,21300000
+2,Racing Bulls,constructor,6800000
+2,Red Bull Racing,constructor,19300000
+2,Williams,constructor,6000000
+2,ALB,driver,6700000
+2,ALO,driver,8000000
+2,ANT,driver,14400000
+2,BEA,driver,7900000
+2,BOR,driver,6000000
+2,COL,driver,6900000
+2,DOO,driver,6600000
+2,GAS,driver,7600000
+2,HAD,driver,6200000
+2,HAM,driver,12600000
+2,HUL,driver,7800000
+2,LAW,driver,6200000
+2,LEC,driver,14700000
+2,NOR,driver,18500000
+2,OCO,driver,7900000
+2,PIA,driver,13900000
+2,RUS,driver,14700000
+2,SAI,driver,9000000
+2,STR,driver,7600000
+2,TSU,driver,10200000
+2,VER,driver,18600000
+3,Alpine,constructor,6900000
+3,Aston Martin,constructor,7300000
+3,Ferrari,constructor,18700000
+3,Haas F1 Team,constructor,10000000
+3,Kick Sauber,constructor,7700000
+3,McLaren,constructor,25000000
+3,Mercedes,constructor,23400000
+3,Racing Bulls,constructor,7400000
+3,Red Bull Racing,constructor,18700000
+3,Williams,constructor,6600000
+3,ALB,driver,7400000
+3,ALO,driver,7200000
+3,ANT,driver,14400000
+3,BEA,driver,8700000
+3,BOR,driver,6000000
+3,COL,driver,6400000
+3,DOO,driver,6000000
+3,GAS,driver,6800000
+3,HAD,driver,6000000
+3,HAM,driver,11300000
+3,HUL,driver,8600000
+3,LAW,driver,6800000
+3,LEC,driver,13200000
+3,NOR,driver,19000000
+3,OCO,driver,8700000
+3,PIA,driver,15300000
+3,RUS,driver,16200000
+3,SAI,driver,8100000
+3,STR,driver,8400000
+3,TSU,driver,9600000
+3,VER,driver,18300000
+4,Alpine,constructor,6200000
+4,Aston Martin,constructor,6600000
+4,Ferrari,constructor,16800000
+4,Haas F1 Team,constructor,11000000
+4,Kick Sauber,constructor,7400000
+4,McLaren,constructor,25000000
+4,Mercedes,constructor,23800000
+4,Racing Bulls,constructor,8100000
+4,Red Bull Racing,constructor,18900000
+4,Williams,constructor,7300000
+4,ALB,driver,8100000
+4,ALO,driver,6500000
+4,ANT,driver,14100000
+4,BEA,driver,9600000
+4,BOR,driver,6000000
+4,COL,driver,6000000
+4,DOO,driver,6100000
+4,GAS,driver,6100000
+4,HAD,driver,6600000
+4,HAM,driver,10200000
+4,HUL,driver,8800000
+4,LAW,driver,6600000
+4,LEC,driver,11900000
+4,NOR,driver,19000000
+4,OCO,driver,9600000
+4,PIA,driver,16800000
+4,RUS,driver,16700000
+4,SAI,driver,7300000
+4,STR,driver,9200000
+4,TSU,driver,8600000
+4,VER,driver,19000000
+5,Alpine,constructor,6800000
+5,Aston Martin,constructor,6000000
+5,Ferrari,constructor,15100000
+5,Haas F1 Team,constructor,12100000
+5,Kick Sauber,constructor,6700000
+5,McLaren,constructor,25000000
+5,Mercedes,constructor,22200000
+5,Racing Bulls,constructor,8900000
+5,Red Bull Racing,constructor,19600000
+5,Williams,constructor,8000000
+5,ALB,driver,8900000
+5,ALO,driver,6000000
+5,ANT,driver,12700000
+5,BEA,driver,10300000
+5,BOR,driver,6600000
+5,COL,driver,6000000
+5,DOO,driver,6700000
+5,GAS,driver,6700000
+5,HAD,driver,7300000
+5,HAM,driver,10700000
+5,HUL,driver,7900000
+5,LAW,driver,7300000
+5,LEC,driver,11900000
+5,NOR,driver,18300000
+5,OCO,driver,10400000
+5,PIA,driver,18500000
+5,RUS,driver,17500000
+5,SAI,driver,6600000
+5,STR,driver,8300000
+5,TSU,driver,8200000
+5,VER,driver,17100000
+6,Alpine,constructor,7000000
+6,Aston Martin,constructor,6600000
+6,Ferrari,constructor,16600000
+6,Haas F1 Team,constructor,10900000
+6,Kick Sauber,constructor,6000000
+6,McLaren,constructor,25000000
+6,Mercedes,constructor,20400000
+6,Racing Bulls,constructor,8500000
+6,Red Bull Racing,constructor,17600000
+6,Williams,constructor,8000000
+6,ALB,driver,8100000
+6,ALO,driver,6600000
+6,ANT,driver,11500000
+6,BEA,driver,9300000
+6,BOR,driver,6300000
+6,COL,driver,6000000
+6,DOO,driver,6900000
+6,GAS,driver,6900000
+6,HAD,driver,8000000
+6,HAM,driver,11800000
+6,HUL,driver,7100000
+6,LAW,driver,6600000
+6,LEC,driver,13100000
+6,NOR,driver,16800000
+6,OCO,driver,9400000
+6,PIA,driver,19000000
+6,RUS,driver,15800000
+6,SAI,driver,6700000
+6,STR,driver,7500000
+6,TSU,driver,7400000
+6,VER,driver,17700000
+7,Alpine,constructor,6300000
+7,Aston Martin,constructor,7300000
+7,Ferrari,constructor,18300000
+7,Haas F1 Team,constructor,9800000
+7,Kick Sauber,constructor,6000000
+7,McLaren,constructor,25000000
+7,Mercedes,constructor,22400000
+7,Racing Bulls,constructor,7700000
+7,Red Bull Racing,constructor,17200000
+7,Williams,constructor,8800000
+7,ALB,driver,8900000
+7,ALO,driver,6300000
+7,ANT,driver,12200000
+7,BEA,driver,8400000
+7,BOR,driver,6000000
+7,COL,driver,6000000
+7,DOO,driver,6200000
+7,GAS,driver,7600000
+7,HAD,driver,7200000
+7,HAM,driver,13000000
+7,HUL,driver,6400000
+7,LAW,driver,6000000
+7,LEC,driver,13500000
+7,NOR,driver,18300000
+7,OCO,driver,9000000
+7,PIA,driver,19000000
+7,RUS,driver,17400000
+7,SAI,driver,6900000
+7,STR,driver,8300000
+7,TSU,driver,8100000
+7,VER,driver,15900000
+8,Alpine,constructor,6000000
+8,Aston Martin,constructor,8000000
+8,Ferrari,constructor,18600000
+8,Haas F1 Team,constructor,8800000
+8,Kick Sauber,constructor,6600000
+8,McLaren,constructor,25000000
+8,Mercedes,constructor,20200000
+8,Racing Bulls,constructor,6900000
+8,Red Bull Racing,constructor,18900000
+8,Williams,constructor,9700000
+8,ALB,driver,9800000
+8,ALO,driver,6900000
+8,ANT,driver,11000000
+8,BEA,driver,7600000
+8,BOR,driver,6000000
+8,COL,driver,6000000
+8,DOO,driver,6000000
+8,GAS,driver,7200000
+8,HAD,driver,7800000
+8,HAM,driver,13500000
+8,HUL,driver,7000000
+8,LAW,driver,6000000
+8,LEC,driver,12500000
+8,NOR,driver,19000000
+8,OCO,driver,8100000
+8,PIA,driver,19000000
+8,RUS,driver,15700000
+8,SAI,driver,7600000
+8,STR,driver,9100000
+8,TSU,driver,8900000
+8,VER,driver,17500000
+9,Alpine,constructor,6000000
+9,Aston Martin,constructor,8100000
+9,Ferrari,constructor,20500000
+9,Haas F1 Team,constructor,7900000
+9,Kick Sauber,constructor,6300000
+9,McLaren,constructor,25000000
+9,Mercedes,constructor,18200000
+9,Racing Bulls,constructor,7600000
+9,Red Bull Racing,constructor,20800000
+9,Williams,constructor,10700000
+9,ALB,driver,10800000
+9,ALO,driver,6200000
+9,ANT,driver,9900000
+9,BEA,driver,6900000
+9,BOR,driver,6000000
+9,COL,driver,6600000
+9,DOO,driver,6000000
+9,GAS,driver,6900000
+9,HAD,driver,8600000
+9,HAM,driver,14900000
+9,HUL,driver,7600000
+9,LAW,driver,6100000
+9,LEC,driver,13200000
+9,NOR,driver,19000000
+9,OCO,driver,7300000
+9,PIA,driver,19000000
+9,RUS,driver,14100000
+9,SAI,driver,8400000
+9,STR,driver,9800000
+9,TSU,driver,9800000
+9,VER,driver,17400000
+10,Alpine,constructor,6600000
+10,Aston Martin,constructor,7300000
+10,Ferrari,constructor,22500000
+10,Haas F1 Team,constructor,7100000
+10,Kick Sauber,constructor,6900000
+10,McLaren,constructor,25000000
+10,Mercedes,constructor,16400000
+10,Racing Bulls,constructor,8400000
+10,Red Bull Racing,constructor,18700000
+10,Williams,constructor,9600000
+10,ALB,driver,9700000
+10,ALO,driver,6800000
+10,ANT,driver,8900000
+10,BEA,driver,7600000
+10,BOR,driver,6600000
+10,COL,driver,7300000
+10,DOO,driver,6000000
+10,GAS,driver,6200000
+10,HAD,driver,9500000
+10,HAM,driver,14300000
+10,HUL,driver,8400000
+10,LAW,driver,6700000
+10,LEC,driver,14500000
+10,NOR,driver,19000000
+10,OCO,driver,6600000
+10,PIA,driver,18600000
+10,RUS,driver,12700000
+10,SAI,driver,8500000
+10,STR,driver,8800000
+10,TSU,driver,8800000
+10,VER,driver,15700000
+11,Alpine,constructor,7300000
+11,Aston Martin,constructor,6800000
+11,Ferrari,constructor,22800000
+11,Haas F1 Team,constructor,7800000
+11,Kick Sauber,constructor,7600000
+11,McLaren,constructor,24600000
+11,Mercedes,constructor,16200000
+11,Racing Bulls,constructor,9200000
+11,Red Bull Racing,constructor,16800000
+11,Williams,constructor,8600000
+11,ALB,driver,8700000
+11,ALO,driver,7500000
+11,ANT,driver,8800000
+11,BEA,driver,7800000
+11,BOR,driver,6900000
+11,COL,driver,7600000
+11,DOO,driver,6000000
+11,GAS,driver,6600000
+11,HAD,driver,10000000
+11,HAM,driver,13400000
+11,HUL,driver,9200000
+11,LAW,driver,6100000
+11,LEC,driver,15900000
+11,NOR,driver,17100000
+11,OCO,driver,7300000
+11,PIA,driver,17800000
+11,RUS,driver,14000000
+11,SAI,driver,8200000
+11,STR,driver,7900000
+11,TSU,driver,8100000
+11,VER,driver,14600000
+12,Alpine,constructor,8000000
+12,Aston Martin,constructor,7500000
+12,Ferrari,constructor,22200000
+12,Haas F1 Team,constructor,8600000
+12,Kick Sauber,constructor,8400000
+12,McLaren,constructor,25000000
+12,Mercedes,constructor,16200000
+12,Racing Bulls,constructor,8400000
+12,Red Bull Racing,constructor,15100000
+12,Williams,constructor,7700000
+12,ALB,driver,7800000
+12,ALO,driver,8300000
+12,ANT,driver,7900000
+12,BEA,driver,7200000
+12,BOR,driver,7600000
+12,COL,driver,6900000
+12,DOO,driver,6000000
+12,GAS,driver,7300000
+12,HAD,driver,9000000
+12,HAM,driver,13400000
+12,HUL,driver,10100000
+12,LAW,driver,6700000
+12,LEC,driver,15800000
+12,NOR,driver,15400000
+12,OCO,driver,8000000
+12,PIA,driver,18600000
+12,RUS,driver,15400000
+12,SAI,driver,7400000
+12,STR,driver,7100000
+12,TSU,driver,8400000
+12,VER,driver,13100000
+13,Alpine,constructor,7200000
+13,Aston Martin,constructor,8300000
+13,Ferrari,constructor,20400000
+13,Haas F1 Team,constructor,9500000
+13,Kick Sauber,constructor,9200000
+13,McLaren,constructor,25000000
+13,Mercedes,constructor,14600000
+13,Racing Bulls,constructor,7600000
+13,Red Bull Racing,constructor,13600000
+13,Williams,constructor,6900000
+13,ALB,driver,7000000
+13,ALO,driver,9100000
+13,ANT,driver,7500000
+13,BEA,driver,7900000
+13,BOR,driver,6800000
+13,COL,driver,6200000
+13,DOO,driver,6000000
+13,GAS,driver,8000000
+13,HAD,driver,8100000
+13,HAM,driver,14100000
+13,HUL,driver,11100000
+13,LAW,driver,6000000
+13,LEC,driver,14200000
+13,NOR,driver,15500000
+13,OCO,driver,8800000
+13,PIA,driver,17700000
+13,RUS,driver,15000000
+13,SAI,driver,6700000
+13,STR,driver,7800000
+13,TSU,driver,7600000
+13,VER,driver,12500000
+14,Alpine,constructor,6500000
+14,Aston Martin,constructor,9100000
+14,Ferrari,constructor,22400000
+14,Haas F1 Team,constructor,10500000
+14,Kick Sauber,constructor,10100000
+14,McLaren,constructor,25000000
+14,Mercedes,constructor,13100000
+14,Racing Bulls,constructor,6800000
+14,Red Bull Racing,constructor,12700000
+14,Williams,constructor,6200000
+14,ALB,driver,7700000
+14,ALO,driver,8800000
+14,ANT,driver,6700000
+14,BEA,driver,8700000
+14,BOR,driver,6600000
+14,COL,driver,6000000
+14,DOO,driver,6000000
+14,GAS,driver,8100000
+14,HAD,driver,7300000
+14,HAM,driver,15000000
+14,HUL,driver,12200000
+14,LAW,driver,6600000
+14,LEC,driver,14900000
+14,NOR,driver,17100000
+14,OCO,driver,8400000
+14,PIA,driver,19000000
+14,RUS,driver,13500000
+14,SAI,driver,6000000
+14,STR,driver,8600000
+14,TSU,driver,7300000
+14,VER,driver,12500000
+15,Alpine,constructor,6000000
+15,Aston Martin,constructor,10000000
+15,Ferrari,constructor,20200000
+15,Haas F1 Team,constructor,9500000
+15,Kick Sauber,constructor,11100000
+15,McLaren,constructor,25000000
+15,Mercedes,constructor,13300000
+15,Racing Bulls,constructor,6100000
+15,Red Bull Racing,constructor,14000000
+15,Williams,constructor,6800000
+15,ALB,driver,8500000
+15,ALO,driver,9700000
+15,ANT,driver,6900000
+15,BEA,driver,7800000
+15,BOR,driver,7300000
+15,COL,driver,6000000
+15,DOO,driver,6000000
+15,GAS,driver,7800000
+15,HAD,driver,6600000
+15,HAM,driver,13500000
+15,HUL,driver,12100000
+15,LAW,driver,7000000
+15,LEC,driver,14600000
+15,NOR,driver,18800000
+15,OCO,driver,7600000
+15,PIA,driver,19000000
+15,RUS,driver,13500000
+15,SAI,driver,6600000
+15,STR,driver,9500000
+15,TSU,driver,7500000
+15,VER,driver,13700000
+16,Alpine,constructor,6300000
+16,Aston Martin,constructor,11000000
+16,Ferrari,constructor,18200000
+16,Haas F1 Team,constructor,9900000
+16,Kick Sauber,constructor,10800000
+16,McLaren,constructor,25000000
+16,Mercedes,constructor,14600000
+16,Racing Bulls,constructor,6700000
+16,Red Bull Racing,constructor,15400000
+16,Williams,constructor,7500000
+16,ALB,driver,9300000
+16,ALO,driver,10100000
+16,ANT,driver,7600000
+16,BEA,driver,8500000
+16,BOR,driver,8000000
+16,COL,driver,6600000
+16,DOO,driver,6000000
+16,GAS,driver,7000000
+16,HAD,driver,7300000
+16,HAM,driver,12100000
+16,HUL,driver,10900000
+16,LAW,driver,7700000
+16,LEC,driver,13100000
+16,NOR,driver,16900000
+16,OCO,driver,8400000
+16,PIA,driver,19000000
+16,RUS,driver,14900000
+16,SAI,driver,7000000
+16,STR,driver,10500000
+16,TSU,driver,8200000
+16,VER,driver,15100000
+17,Alpine,constructor,6900000
+17,Aston Martin,constructor,12000000
+17,Ferrari,constructor,16400000
+17,Haas F1 Team,constructor,8900000
+17,Kick Sauber,constructor,9700000
+17,McLaren,constructor,25000000
+17,Mercedes,constructor,16100000
+17,Racing Bulls,constructor,7400000
+17,Red Bull Racing,constructor,16900000
+17,Williams,constructor,8300000
+17,ALB,driver,10200000
+17,ALO,driver,9100000
+17,ANT,driver,8100000
+17,BEA,driver,8100000
+17,BOR,driver,8800000
+17,COL,driver,6900000
+17,DOO,driver,6000000
+17,GAS,driver,6600000
+17,HAD,driver,8000000
+17,HAM,driver,10900000
+17,HUL,driver,9800000
+17,LAW,driver,8500000
+17,LEC,driver,11800000
+17,NOR,driver,15300000
+17,OCO,driver,7800000
+17,PIA,driver,19000000
+17,RUS,driver,14900000
+17,SAI,driver,7000000
+17,STR,driver,10600000
+17,TSU,driver,7600000
+17,VER,driver,16400000
+18,Alpine,constructor,7400000
+18,Aston Martin,constructor,10800000
+18,Ferrari,constructor,14800000
+18,Haas F1 Team,constructor,9800000
+18,Kick Sauber,constructor,8700000
+18,McLaren,constructor,22500000
+18,Mercedes,constructor,17700000
+18,Racing Bulls,constructor,8100000
+18,Red Bull Racing,constructor,18600000
+18,Williams,constructor,9100000
+18,ALB,driver,11200000
+18,ALO,driver,8200000
+18,ANT,driver,8900000
+18,BEA,driver,8900000
+18,BOR,driver,7900000
+18,COL,driver,6900000
+18,DOO,driver,6000000
+18,GAS,driver,6600000
+18,HAD,driver,8800000
+18,HAM,driver,9800000
+18,HUL,driver,8800000
+18,LAW,driver,9300000
+18,LEC,driver,10600000
+18,NOR,driver,13800000
+18,OCO,driver,8600000
+18,PIA,driver,17100000
+18,RUS,driver,15600000
+18,SAI,driver,7700000
+18,STR,driver,9500000
+18,TSU,driver,8400000
+18,VER,driver,18000000
+19,Alpine,constructor,6700000
+19,Aston Martin,constructor,9700000
+19,Ferrari,constructor,16300000
+19,Haas F1 Team,constructor,8800000
+19,Kick Sauber,constructor,7800000
+19,McLaren,constructor,20300000
+19,Mercedes,constructor,19500000
+19,Racing Bulls,constructor,8900000
+19,Red Bull Racing,constructor,20500000
+19,Williams,constructor,10000000
+19,ALB,driver,10100000
+19,ALO,driver,7400000
+19,ANT,driver,9800000
+19,BEA,driver,8000000
+19,BOR,driver,7600000
+19,COL,driver,6200000
+19,DOO,driver,6000000
+19,GAS,driver,6600000
+19,HAD,driver,9000000
+19,HAM,driver,10800000
+19,HUL,driver,7900000
+19,LAW,driver,9700000
+19,LEC,driver,11700000
+19,NOR,driver,15200000
+19,OCO,driver,7700000
+19,PIA,driver,15400000
+19,RUS,driver,17200000
+19,SAI,driver,8500000
+19,STR,driver,8500000
+19,TSU,driver,8700000
+19,VER,driver,19000000
+20,Alpine,constructor,6800000
+20,Aston Martin,constructor,8700000
+20,Ferrari,constructor,17900000
+20,Haas F1 Team,constructor,8200000
+20,Kick Sauber,constructor,8600000
+20,McLaren,constructor,18300000
+20,Mercedes,constructor,21500000
+20,Racing Bulls,constructor,9800000
+20,Red Bull Racing,constructor,22500000
+20,Williams,constructor,11000000
+20,ALB,driver,9700000
+20,ALO,driver,7500000
+20,ANT,driver,10800000
+20,BEA,driver,8400000
+20,BOR,driver,7800000
+20,COL,driver,6400000
+20,DOO,driver,6000000
+20,GAS,driver,6400000
+20,HAD,driver,8100000
+20,HAM,driver,11900000
+20,HUL,driver,7300000
+20,LAW,driver,10100000
+20,LEC,driver,12900000
+20,NOR,driver,14700000
+20,OCO,driver,6900000
+20,PIA,driver,13900000
+20,RUS,driver,18900000
+20,SAI,driver,9300000
+20,STR,driver,7700000
+20,TSU,driver,9600000
+20,VER,driver,19000000
+21,Alpine,constructor,7500000
+21,Aston Martin,constructor,7800000
+21,Ferrari,constructor,19700000
+21,Haas F1 Team,constructor,9000000
+21,Kick Sauber,constructor,7700000
+21,McLaren,constructor,20100000
+21,Mercedes,constructor,22200000
+21,Racing Bulls,constructor,8800000
+21,Red Bull Racing,constructor,23500000
+21,Williams,constructor,9900000
+21,ALB,driver,9600000
+21,ALO,driver,6700000
+21,ANT,driver,11900000
+21,BEA,driver,9200000
+21,BOR,driver,8500000
+21,COL,driver,7000000
+21,DOO,driver,6000000
+21,GAS,driver,7000000
+21,HAD,driver,7600000
+21,HAM,driver,13100000
+21,HUL,driver,6600000
+21,LAW,driver,9100000
+21,LEC,driver,14200000
+21,NOR,driver,16200000
+21,OCO,driver,6400000
+21,PIA,driver,13200000
+21,RUS,driver,17100000
+21,SAI,driver,8400000
+21,STR,driver,7800000
+21,TSU,driver,10300000
+21,VER,driver,19000000
+22,Alpine,constructor,8200000
+22,Aston Martin,constructor,7000000
+22,Ferrari,constructor,19300000
+22,Haas F1 Team,constructor,9900000
+22,Kick Sauber,constructor,6900000
+22,McLaren,constructor,22100000
+22,Mercedes,constructor,23600000
+22,Racing Bulls,constructor,9200000
+22,Red Bull Racing,constructor,25000000
+22,Williams,constructor,8900000
+22,ALB,driver,8800000
+22,ALO,driver,6000000
+22,ANT,driver,13100000
+22,BEA,driver,10100000
+22,BOR,driver,7700000
+22,COL,driver,6600000
+22,DOO,driver,6000000
+22,GAS,driver,7700000
+22,HAD,driver,8400000
+22,HAM,driver,11800000
+22,HUL,driver,6400000
+22,LAW,driver,8200000
+22,LEC,driver,15600000
+22,NOR,driver,17800000
+22,OCO,driver,7000000
+22,PIA,driver,12100000
+22,RUS,driver,15900000
+22,SAI,driver,7600000
+22,STR,driver,7300000
+22,TSU,driver,10900000
+22,VER,driver,19000000
+23,Alpine,constructor,7800000
+23,Aston Martin,constructor,6300000
+23,Ferrari,constructor,17400000
+23,Haas F1 Team,constructor,10900000
+23,Kick Sauber,constructor,6200000
+23,McLaren,constructor,19900000
+23,Mercedes,constructor,25000000
+23,Racing Bulls,constructor,10100000
+23,Red Bull Racing,constructor,22500000
+23,Williams,constructor,8000000
+23,ALB,driver,7900000
+23,ALO,driver,6000000
+23,ANT,driver,14400000
+23,BEA,driver,11100000
+23,BOR,driver,6900000
+23,COL,driver,6300000
+23,DOO,driver,6000000
+23,GAS,driver,8400000
+23,HAD,driver,9200000
+23,HAM,driver,10600000
+23,HUL,driver,6900000
+23,LAW,driver,7400000
+23,LEC,driver,14000000
+23,NOR,driver,17500000
+23,OCO,driver,7700000
+23,PIA,driver,10900000
+23,RUS,driver,16400000
+23,SAI,driver,8400000
+23,STR,driver,6600000
+23,TSU,driver,9800000
+23,VER,driver,19000000
+24,Alpine,constructor,8100000
+24,Aston Martin,constructor,6000000
+24,Ferrari,constructor,15700000
+24,Haas F1 Team,constructor,10600000
+24,Kick Sauber,constructor,6000000
+24,McLaren,constructor,20400000
+24,Mercedes,constructor,25000000
+24,Racing Bulls,constructor,11100000
+24,Red Bull Racing,constructor,24700000
+24,Williams,constructor,8800000
+24,ALB,driver,7100000
+24,ALO,driver,6600000
+24,ANT,driver,15800000
+24,BEA,driver,10000000
+24,BOR,driver,6200000
+24,COL,driver,6700000
+24,DOO,driver,6000000
+24,GAS,driver,8200000
+24,HAD,driver,9300000
+24,HAM,driver,9500000
+24,HUL,driver,6900000
+24,LAW,driver,8100000
+24,LEC,driver,12600000
+24,NOR,driver,16500000
+24,OCO,driver,8500000
+24,PIA,driver,12000000
+24,RUS,driver,17700000
+24,SAI,driver,9200000
+24,STR,driver,6000000
+24,TSU,driver,9800000
+24,VER,driver,19000000

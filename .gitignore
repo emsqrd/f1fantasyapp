@@ -34,4 +34,6 @@ api/**/CodeCoverage/
 *.sw?
 
 # MISC
-docs/research/
+docs/research/fantasy-rules/archive/simulation/.ff1_cache/
+docs/research/fantasy-rules/archive/simulation/__pycache__/
+docs/research/fantasy-rules/archive/simulation/**/*.pyc
