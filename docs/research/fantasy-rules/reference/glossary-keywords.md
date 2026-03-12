@@ -4,6 +4,8 @@ Precise technical terms used in game engine design and analysis. When these word
 
 ---
 
+**α (alpha / blend weight)** — a parameter between 0 and 1 that controls the weighting between two inputs in a linear blend. Formula: `result = α × A + (1 - α) × B`. At α=1.0, the result is entirely A. At α=0.0, it is entirely B. At α=0.5, both contribute equally. In our model, α is used in constructor-context preseason pricing to blend a driver's individual prior-season average with their new team's per-driver average; α=0.5 was found optimal against 2025 data.
+
 **band width** — the range around the neutral point within which no price movement occurs. An asset with PPM inside the band is considered fairly priced. Wider band = fewer, less frequent changes.
 
 **budget cap** — the maximum total price of a team's roster. The hard constraint all team-building decisions operate within. Currently $100M.
