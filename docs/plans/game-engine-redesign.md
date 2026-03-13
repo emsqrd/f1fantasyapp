@@ -15,9 +15,9 @@ You've been spiraling on pricing for over a week. Format (5D+3C) and scoring are
 
 ## Current Status
 
-**Step 3 complete.** `reference/lessons-learned.md` is written with consolidated findings from the pricing exploration. Document covers why target-based pricing fails, the floor ratchet asymmetry, calibration lessons, and validated findings across 10 key insights.
+**Step 4 complete.** `decisions/design-goals.md` reviewed and updated. Removed implementation specs (DNF penalty number, mechanic details, Constructor Weight section). Added Emotional Experience and Fairness Principles sections. Folded anti-goals into relevant sections. Clarified two valid engagement modes (predictive vs. reactive). Added season arc competitive balance goal to Volatility.
 
-Ready for Step 4: Review and update foundational design goals.
+Ready for Step 5: Re-verify format.
 
 _(Updated after each step completion so any new session can pick up where we left off.)_
 
@@ -343,7 +343,7 @@ After completing all steps:
 - [x] `decisions/` has exactly 4 files: design-goals, format, scoring, pricing
 - [x] `reference/` has design-framework; glossary, F1 context, lessons learned to be added in Steps 1-3
 - [x] `archive/` has all pricing research files, old simulation scripts, and rules-redesign.md
-- [ ] Foundational design goals reviewed and updated (Step 4)
+- [x] Foundational design goals reviewed and updated (Step 4)
 - [ ] Format re-verified; composition intent decided (Step 5)
 - [ ] Scoring re-verified; any new events evaluated for data availability (Step 6)
 - [ ] `decisions/design-goals.md` contains pricing-specific goals (Step 7)
