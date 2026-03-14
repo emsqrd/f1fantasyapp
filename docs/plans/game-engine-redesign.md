@@ -15,9 +15,9 @@ You've been spiraling on pricing for over a week. Format (5D+3C) and scoring are
 
 ## Current Status
 
-**Step 4 complete.** `decisions/design-goals.md` reviewed and updated. Removed implementation specs (DNF penalty number, mechanic details, Constructor Weight section). Added Emotional Experience and Fairness Principles sections. Folded anti-goals into relevant sections. Clarified two valid engagement modes (predictive vs. reactive). Added season arc competitive balance goal to Volatility.
+**Step 5 complete.** `decisions/format.md` reviewed and cleaned up. Removed out-of-scope content (constructor role, format comparison, options considered, decisions checklist). Split game rules into a new `decisions/rules.md` (captain, mid-season joining, setup window). Added teams per user, budget cap, and composition intent (no more than 3 elite assets across drivers and constructors combined). Verified 5D+3C format and no-roster-constraints decision still stand.
 
-Ready for Step 5: Re-verify format.
+Ready for Step 6: Re-verify scoring.
 
 _(Updated after each step completion so any new session can pick up where we left off.)_
 
@@ -52,7 +52,8 @@ fantasy-rules/
 │
 ├── decisions/                    ← THE source of truth. If it's here, it's decided.
 │   ├── design-goals.md
-│   ├── format.md
+│   ├── format.md                 ← team shape: slot count, constructor role, constraints
+│   ├── rules.md                  ← how play operates: captain, replacements, transfers, etc.
 │   ├── scoring.md
 │   └── pricing.md
 │
@@ -142,7 +143,7 @@ Review `decisions/format.md` against design goals and competitor analysis. The 5
 
 Questions to confirm:
 
-- Is 5D+3C still the right balance? (Review against design goals for constructor weight)
+- Is 5D+3C still the right balance?
 - Are driver replacement rules and setup window rules still right?
 - Any format elements to add or remove?
 - **What does the intended optimal team composition look like?** Specifically: how many of the top-tier drivers should a valid team be able to hold? This is the anchor that budget cap and floor values will be derived from in Step 9 — it must be decided here as a design intent statement, not a number.
@@ -201,7 +202,7 @@ These are design philosophy questions, not simulation questions. Must be answere
 
 ## Step 8: Decide the budget management mechanics
 
-Update `decisions/format.md` with the transfer mechanic and budget uplift decision.
+Update `decisions/rules.md` with the transfer mechanic and budget uplift decision.
 
 **Why this comes before pricing:** These two rules together define the budget management metagame. PPM calibration (Step 10) needs both as fixed inputs.
 
@@ -319,7 +320,7 @@ Fill in `decisions/pricing.md` with:
 
 - Preseason pricing approach and rationale
 - In-season PPM mechanism with all parameters
-- Transfer mechanic summary (cross-reference to `format.md`)
+- Transfer mechanic summary (cross-reference to `rules.md`)
 - Budget cap and floor values with rationale (derived in Step 9)
 - Known limitations and accepted trade-offs
 
@@ -340,11 +341,11 @@ Fill in `decisions/pricing.md` with:
 After completing all steps:
 
 - [x] `own-rules/` is gone; files are in `decisions/`, `reference/`, `archive/`
-- [x] `decisions/` has exactly 4 files: design-goals, format, scoring, pricing
+- [x] `decisions/` has exactly 5 files: design-goals, format, rules, scoring, pricing
 - [x] `reference/` has design-framework; glossary, F1 context, lessons learned to be added in Steps 1-3
 - [x] `archive/` has all pricing research files, old simulation scripts, and rules-redesign.md
 - [x] Foundational design goals reviewed and updated (Step 4)
-- [ ] Format re-verified; composition intent decided (Step 5)
+- [x] Format re-verified; composition intent decided (Step 5)
 - [ ] Scoring re-verified; any new events evaluated for data availability (Step 6)
 - [ ] `decisions/design-goals.md` contains pricing-specific goals (Step 7)
 - [ ] `decisions/format.md` contains budget management mechanics decision (Step 8)
