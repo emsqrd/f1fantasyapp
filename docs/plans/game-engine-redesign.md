@@ -15,11 +15,23 @@ You've been spiraling on pricing for over a week. Format (5D+3C) and scoring are
 
 ## Current Status
 
-**Step 5 complete.** `decisions/format.md` reviewed and cleaned up. Removed out-of-scope content (constructor role, format comparison, options considered, decisions checklist). Split game rules into a new `decisions/rules.md` (captain, mid-season joining, setup window). Added teams per user, budget cap, and composition intent (no more than 3 elite assets across drivers and constructors combined). Verified 5D+3C format and no-roster-constraints decision still stand.
+**Step 6 complete. Ready for Step 7.**
 
-Ready for Step 6: Re-verify scoring.
+Steps 0–6 are done. Scoring revised and re-verified. Reference docs added: `f1-official-scoring.md`, `scoring-ratios-equilibria.md`. Three-layer constructor model archived with rejection rationale. New events evaluated (overtakes, constructor qualifying advancement bonuses, pit stop times) and not adopted.
 
-_(Updated after each step completion so any new session can pick up where we left off.)_
+**Key scoring changes from Step 6:**
+- Race finish table aligned to official F1 scale (P2=18, P3=15, etc.); P11–P15 = 1pt rule removed
+- Captain multiplier now applies to all points including DNF penalties (previously positive only)
+- Position changes now symmetric — position losses count (−1/pos lost); previously gains-only
+- Fastest lap reduced: race +10→+3, sprint +5→+2
+- Constructor DNF penalty removed — driver penalty flows through the sum
+
+**Committed decisions entering Step 7:**
+- Format: 5D+3C, captain mechanic — confirmed
+- Scoring: race finish, qualifying, sprint, position gains/losses, fastest lap, DNF penalties + constructor = sum of drivers — revised and confirmed
+- In-season pricing approach: PPM direction-based — confirmed; parameters open
+
+**Next:** Step 7 — Write pricing-specific design goals. Extend `decisions/design-goals.md` with explicit pricing behavior statements. Inputs required: composition intent from Step 5 and confirmed scoring model from Step 6 (both available).
 
 ---
 
@@ -161,8 +173,13 @@ Review `decisions/scoring.md` against design goals. Scoring is likely staying as
 **Current scoring events:** Race finish, qualifying, sprint, position gains, fastest lap, DNF penalties (9 events total). Constructor = sum of both drivers.
 
 **Potential additions to evaluate:**
+Investigate data availability first. Key question: is overtake data reliably and freely available per-race from official FIA sources or FastF1? If the data is hard to get or inconsistent, it's not viable regardless of whether it would improve gameplay.
 
-- **Overtakes** — Investigate data availability first. Key question: is overtake data reliably and freely available per-race from official FIA sources or FastF1? If the data is hard to get or inconsistent, it's not viable regardless of whether it would improve gameplay.
+- **Drivers**
+  - Overtakes
+- **Constructors**
+  - Bonus points for drivers finsihing in Q1, Q2 or Q3
+  - Pit stop times
 - Any other scoring events that came up during the first attempt
 
 **Evaluation criteria for new scoring events:**
@@ -346,7 +363,7 @@ After completing all steps:
 - [x] `archive/` has all pricing research files, old simulation scripts, and rules-redesign.md
 - [x] Foundational design goals reviewed and updated (Step 4)
 - [x] Format re-verified; composition intent decided (Step 5)
-- [ ] Scoring re-verified; any new events evaluated for data availability (Step 6)
+- [x] Scoring re-verified; any new events evaluated for data availability (Step 6)
 - [ ] `decisions/design-goals.md` contains pricing-specific goals (Step 7)
 - [ ] `decisions/format.md` contains budget management mechanics decision (Step 8)
 - [ ] Preseason pricing approach decided; budget cap and floor values derived (Step 9)

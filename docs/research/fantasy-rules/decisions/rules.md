@@ -6,7 +6,7 @@ How play operates: what you can do with your team, when you can do it, and what 
 
 **2x multiplier on one rostered driver per race.**
 
-Before each race's lock deadline, designate one of your 5 drivers as captain. That driver's total points for the race weekend (qualifying, race, and any bonuses) are doubled. Captain selection can change each race. Applied to all points so qualifying performance matters for captain selection too.
+Before each race's lock deadline, designate one of your 5 drivers as captain. That driver's total points for the race weekend are doubled. Captain selection can change each race.
 
 ## Setup Window
 
