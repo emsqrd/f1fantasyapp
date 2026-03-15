@@ -15,23 +15,17 @@ You've been spiraling on pricing for over a week. Format (5D+3C) and scoring are
 
 ## Current Status
 
-**Step 6 complete. Ready for Step 7.**
+**Step 7 complete. Ready for Step 8.**
 
-Steps 0–6 are done. Scoring revised and re-verified. Reference docs added: `f1-official-scoring.md`, `scoring-ratios-equilibria.md`. Three-layer constructor model archived with rejection rationale. New events evaluated (overtakes, constructor qualifying advancement bonuses, pit stop times) and not adopted.
+Steps 0–7 are done. Pricing-specific design goals added to `decisions/design-goals.md`: Pricing Behavior, Team Evolution, Active Management, Price Movement Uniformity, Floor Compression.
 
-**Key scoring changes from Step 6:**
-- Race finish table aligned to official F1 scale (P2=18, P3=15, etc.); P11–P15 = 1pt rule removed
-- Captain multiplier now applies to all points including DNF penalties (previously positive only)
-- Position changes now symmetric — position losses count (−1/pos lost); previously gains-only
-- Fastest lap reduced: race +10→+3, sprint +5→+2
-- Constructor DNF penalty removed — driver penalty flows through the sum
-
-**Committed decisions entering Step 7:**
+**Committed decisions entering Step 8:**
 - Format: 5D+3C, captain mechanic — confirmed
 - Scoring: race finish, qualifying, sprint, position gains/losses, fastest lap, DNF penalties + constructor = sum of drivers — revised and confirmed
 - In-season pricing approach: PPM direction-based — confirmed; parameters open
+- Pricing design goals: prices are predictable/deterministic; optimal team evolves but doesn't punish race-by-race inattention; active management earns bounded advantage; uniform dollar steps across price tiers; floor compression accepted
 
-**Next:** Step 7 — Write pricing-specific design goals. Extend `decisions/design-goals.md` with explicit pricing behavior statements. Inputs required: composition intent from Step 5 and confirmed scoring model from Step 6 (both available).
+**Next:** Step 8 — Decide the budget management mechanics. Update `decisions/rules.md` with the transfer mechanic and budget uplift decision. These define the budget management metagame and must be fixed inputs before PPM calibration (Step 10).
 
 ---
 
@@ -364,7 +358,7 @@ After completing all steps:
 - [x] Foundational design goals reviewed and updated (Step 4)
 - [x] Format re-verified; composition intent decided (Step 5)
 - [x] Scoring re-verified; any new events evaluated for data availability (Step 6)
-- [ ] `decisions/design-goals.md` contains pricing-specific goals (Step 7)
+- [x] `decisions/design-goals.md` contains pricing-specific goals (Step 7)
 - [ ] `decisions/format.md` contains budget management mechanics decision (Step 8)
 - [ ] Preseason pricing approach decided; budget cap and floor values derived (Step 9)
 - [ ] PPM parameters decided: neutral points, band width, step type, step sizes, window (Step 10)
