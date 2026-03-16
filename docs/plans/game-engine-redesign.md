@@ -15,17 +15,19 @@ You've been spiraling on pricing for over a week. Format (5D+3C) and scoring are
 
 ## Current Status
 
-**Step 7 complete. Ready for Step 8.**
+**Step 8 complete. Ready for Step 9.**
 
-Steps 0–7 are done. Pricing-specific design goals added to `decisions/design-goals.md`: Pricing Behavior, Team Evolution, Active Management, Price Movement Uniformity, Floor Compression.
+Steps 0–8 are done. Transfer mechanic and budget uplift added to `decisions/rules.md`.
 
-**Committed decisions entering Step 8:**
+**Committed decisions entering Step 9:**
 - Format: 5D+3C, captain mechanic — confirmed
 - Scoring: race finish, qualifying, sprint, position gains/losses, fastest lap, DNF penalties + constructor = sum of drivers — revised and confirmed
 - In-season pricing approach: PPM direction-based — confirmed; parameters open
 - Pricing design goals: prices are predictable/deterministic; optimal team evolves but doesn't punish race-by-race inattention; active management earns bounded advantage; uniform dollar steps across price tiers; floor compression accepted
+- Transfers: 2 free per race, bank up to 3, -10 per extra, net-change counting, deadline matches lineup lock
+- Budget uplift: yes — continuous cap, rises/falls with owned asset prices
 
-**Next:** Step 8 — Decide the budget management mechanics. Update `decisions/rules.md` with the transfer mechanic and budget uplift decision. These define the budget management metagame and must be fixed inputs before PPM calibration (Step 10).
+**Next:** Step 9 — Decide preseason pricing approach and derive budget cap + floor values. The composition intent (max 3 elites), scoring model, and budget management mechanics are now all fixed inputs.
 
 ---
 
@@ -359,7 +361,7 @@ After completing all steps:
 - [x] Format re-verified; composition intent decided (Step 5)
 - [x] Scoring re-verified; any new events evaluated for data availability (Step 6)
 - [x] `decisions/design-goals.md` contains pricing-specific goals (Step 7)
-- [ ] `decisions/format.md` contains budget management mechanics decision (Step 8)
+- [x] `decisions/rules.md` contains budget management mechanics decision (Step 8)
 - [ ] Preseason pricing approach decided; budget cap and floor values derived (Step 9)
 - [ ] PPM parameters decided: neutral points, band width, step type, step sizes, window (Step 10)
 - [ ] Final validation simulation passes against stated criteria (Step 11)
