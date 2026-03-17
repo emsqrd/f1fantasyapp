@@ -1,25 +1,19 @@
 # Pricing
 
-## Context
+How entity prices are set before the season and how they change during it.
 
-Initial pricing and budget cap need to be set before launch. Price changes over the season can come later. Pricing depends on the format and scoring decisions.
+## Budget Cap
 
-## Decisions Needed
+**$100M.** Every team operates under the same budget cap.
 
-1. Budget cap
-2. Initial driver prices
-3. Initial constructor prices
-4. Price change mechanism (post-launch, not needed for launch)
+## Price Floor
 
-## Reference
+**$5M.** The minimum price any entity can hold. The floor is a safety net, not a tier — only 2–3 entities should land there in a typical season. Floor compression among those entities is accepted by design.
 
-See `../competitors/` for how each platform handles pricing. Key findings from competitor analysis:
+## Preseason Pricing
 
-- $100M budget cap is the de facto standard (F1 Fantasy, GridRival)
-- GridRival's published pricing formula is a confirmed trust differentiator — players praise the transparency
-- SportsDeck's formula: `starting_price = round_100K(262,000 × previous_average)` with a $3M floor; see `../sportsdeck-pricing-formula.md` for full details
-- Pricing should correlate with expected scoring so obvious picks are expensive enough to force trade-offs
+**Prices are set before each season using a formula baseline with editorial adjustments.** The process is not published to players. See `../reference/preseason-pricing-process.md` for the internal process.
 
-## Our Pricing
+## In-Season Pricing
 
-TBD — pending format and scoring decisions; pricing is calibrated last against simulated scoring data
+**PPM direction-based model.** Published and deterministic — any player can verify any price change against the formula and official FIA results.

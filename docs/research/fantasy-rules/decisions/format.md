@@ -8,7 +8,7 @@ The shape of a team: how many slots, what types, and what constraints apply at s
 
 ## Budget Cap
 
-**Every team operates under the same budget cap.** The cap value is derived from composition intent, scoring output, and pricing parameters — not chosen independently.
+**Every team operates under the same budget cap.** The cap value is derived from composition intent, scoring output, and the price floor — see `pricing.md` for specific values.
 
 ## Composition Intent
 

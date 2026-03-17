@@ -15,19 +15,21 @@ You've been spiraling on pricing for over a week. Format (5D+3C) and scoring are
 
 ## Current Status
 
-**Step 8 complete. Ready for Step 9.**
+**Step 9 complete. Ready for Step 10.**
 
-Steps 0–8 are done. Transfer mechanic and budget uplift added to `decisions/rules.md`.
+Steps 0–9 are done. Preseason pricing approach and budget cap/floor written to `decisions/pricing.md`. Budget cap value added to `decisions/format.md`. Editorial review process written to `reference/preseason-pricing-process.md`.
 
-**Committed decisions entering Step 9:**
+**Committed decisions entering Step 10:**
 - Format: 5D+3C, captain mechanic — confirmed
 - Scoring: race finish, qualifying, sprint, position gains/losses, fastest lap, DNF penalties + constructor = sum of drivers — revised and confirmed
 - In-season pricing approach: PPM direction-based — confirmed; parameters open
 - Pricing design goals: prices are predictable/deterministic; optimal team evolves but doesn't punish race-by-race inattention; active management earns bounded advantage; uniform dollar steps across price tiers; floor compression accepted
 - Transfers: 2 free per race, bank up to 3, -10 per extra, net-change counting, deadline matches lineup lock
 - Budget uplift: yes — continuous cap, rises/falls with owned asset prices
+- Budget cap: $100M; price floor: $5M — derived from composition intent + scoring distribution
+- Preseason pricing: formula baseline (prior-season scoring) + editorial review as sanity check; process in `reference/preseason-pricing-process.md`
 
-**Next:** Step 9 — Decide preseason pricing approach and derive budget cap + floor values. The composition intent (max 3 elites), scoring model, and budget management mechanics are now all fixed inputs.
+**Next:** Step 10 — Decide preseason formula parameters (blend weight, formula shape, rounding increment, new team seeding).
 
 ---
 
@@ -43,7 +45,7 @@ Steps 0–8 are done. Transfer mechanic and budget uplift added to `decisions/ru
 
 - **This plan file** (at `docs/plans/game-engine-redesign.md`) is the primary progress tracker.
 - **`decisions/`** is the ground truth for what has been approved and committed. If a decision is in there, it is done. If it is not in there, it is not decided.
-- **Current Status** is updated whenever a gate is approved — not just at step completion. For multi-gate steps (Step 10), it records which parameters have been committed so far, e.g. "Step 10 in progress — neutral points and band width committed, working on step type."
+- **Current Status** is updated whenever a gate is approved — not just at step completion. For multi-gate steps (Step 10, Step 11), it records which parameters have been committed so far, e.g. "Step 11 in progress — neutral points and band width committed, working on step type."
 - **Starting a new session:** Read this plan file. Check Current Status. Read the relevant `decisions/` files to load committed decisions. Continue from where Current Status says.
 - **Do not write anything about this plan to MEMORY.md.**
 
@@ -141,7 +143,7 @@ Key questions:
 - Did the first attempt reveal any goals to be wrong, incomplete, or in conflict with each other?
 - Do the goals adequately cover pricing behavior, budget mechanics, and team composition?
 
-Update `decisions/design-goals.md` with any changes. This document is the foundation that Steps 5–11 build on — decisions in format, scoring, and pricing must all trace back to goals written here.
+Update `decisions/design-goals.md` with any changes. This document is the foundation that Steps 5–13 build on — decisions in format, scoring, and pricing must all trace back to goals written here.
 
 ---
 
@@ -185,7 +187,7 @@ Investigate data availability first. Key question: is overtake data reliably and
 - Does it change the driver/constructor balance in a way that aligns with design goals?
 - Can a casual fan understand it in one sentence?
 
-If changes are made, update `decisions/scoring.md`. If scoring changes materially, pricing calibration (Step 10) must account for the new point distribution.
+If changes are made, update `decisions/scoring.md`. If scoring changes materially, pricing calibration (Step 11) must account for the new point distribution.
 
 ---
 
@@ -217,7 +219,7 @@ These are design philosophy questions, not simulation questions. Must be answere
 
 Update `decisions/rules.md` with the transfer mechanic and budget uplift decision.
 
-**Why this comes before pricing:** These two rules together define the budget management metagame. PPM calibration (Step 10) needs both as fixed inputs.
+**Why this comes before pricing:** These two rules together define the budget management metagame. PPM calibration (Step 11) needs both as fixed inputs.
 
 **Transfer mechanic:**
 
@@ -278,9 +280,39 @@ Key insight: preseason prices only need to be "close enough" since the in-season
 
 ---
 
-## Step 10: Calibrate PPM parameters
+## Step 10: Decide preseason formula parameters
 
-PPM as the in-season pricing approach is decided. The specific parameters are NOT — they need to be worked through from scratch. Previous research (now in `archive/`) can inform direction but conclusions are not pre-accepted.
+The preseason pricing approach (formula baseline + editorial review) is decided. The specific formula parameters are NOT. These must be decided before PPM calibration because PPM simulation needs generated starting prices as input.
+
+**Each parameter is its own gate.** Decide, present, get approval, write to `reference/preseason-pricing-process.md`, update Current Status — then move to the next.
+
+**Parameters:**
+
+1. **Formula shape** — How does prior-season scoring map to prices?
+   - Linear, power curve, or other mapping
+   - Must produce a distribution that enforces composition intent within $100M cap and $5M floor
+   - Previous research used a power curve — evaluate whether that's the right shape
+
+2. **Blend weight (α)** — For team changers, how much weight goes to individual history vs. new team average?
+   - `adjusted_avg = α × individual_prior_avg + (1 - α) × new_team_per_driver_avg`
+   - Previous research found α=0.5 minimised grid mispricing variance (Lesson 8) — validate fresh
+   - At α=1.0, only individual history (ignores team move). At α=0.0, only new team average (ignores individual record).
+
+3. **New team seeding rule** — Currently TBD. How to price a constructor (and its drivers) with no prior-season data?
+
+**Process:** Work through each parameter using the scoring model's output against historical data. Validate that the resulting 33 prices enforce composition intent before presenting for approval.
+
+**Tooling:** Create Python scripts in `fantasy-rules/scripts/` for formula calibration and price generation. Scripts should read 2025 scoring data, apply the formula with decided parameters, and output the resulting 2026 preseason prices. These scripts will also be reused in Step 11 for PPM simulation.
+
+**Output:**
+- `reference/preseason-pricing-process.md` updated with all decided parameter values (replacing current TBDs and vague descriptions)
+- Generated 2026 preseason prices written to `reference/2026-preseason-prices.csv` — these serve as starting input for Step 11's PPM simulation
+
+---
+
+## Step 11: Calibrate PPM parameters
+
+PPM as the in-season pricing approach is decided. The specific parameters are NOT — they need to be worked through from scratch. Previous research (now in `archive/`) can inform direction but conclusions are not pre-accepted. PPM simulation uses preseason prices generated from Step 10 as starting input.
 
 **Each parameter is its own gate.** Decide, present, get approval, write to `decisions/pricing.md`, update Current Status — then move to the next. Do not batch parameters.
 
@@ -316,18 +348,18 @@ PPM as the in-season pricing approach is decided. The specific parameters are NO
 
 ---
 
-## Step 11: Validate the complete model
+## Step 12: Validate the complete model
 
-Once all parameters are decided, write a clean end-to-end simulation of the 2025 season using the full model (preseason approach from Step 9 + PPM in-season with decided parameters). Old scripts in `archive/simulation/` can be referenced for logic patterns, but the validation script should be written from scratch.
+Once all parameters are decided, write a clean end-to-end simulation of the 2025 season using the full model (preseason formula from Step 10 + PPM in-season from Step 11). Old scripts in `archive/simulation/` can be referenced for logic patterns, but the validation script should be written from scratch.
 
 Evaluate against pricing design goals from Step 7.
 
-- **Pass**: Move to Step 12
+- **Pass**: Move to Step 13
 - **Fail on specific criteria**: Targeted parameter adjustment to the specific failing parameter
 
 ---
 
-## Step 12: Write source-of-truth pricing document
+## Step 13: Write source-of-truth pricing document
 
 Fill in `decisions/pricing.md` with:
 
@@ -362,7 +394,8 @@ After completing all steps:
 - [x] Scoring re-verified; any new events evaluated for data availability (Step 6)
 - [x] `decisions/design-goals.md` contains pricing-specific goals (Step 7)
 - [x] `decisions/rules.md` contains budget management mechanics decision (Step 8)
-- [ ] Preseason pricing approach decided; budget cap and floor values derived (Step 9)
-- [ ] PPM parameters decided: neutral points, band width, step type, step sizes, window (Step 10)
-- [ ] Final validation simulation passes against stated criteria (Step 11)
-- [ ] `decisions/pricing.md` contains complete preseason + in-season model (Step 12)
+- [x] Preseason pricing approach decided; budget cap and floor values derived (Step 9)
+- [ ] Preseason formula parameters decided: formula shape, blend weight, new team seeding (Step 10)
+- [ ] PPM parameters decided: neutral points, band width, step type, step sizes, window (Step 11)
+- [ ] Final validation simulation passes against stated criteria (Step 12)
+- [ ] `decisions/pricing.md` contains complete preseason + in-season model (Step 13)

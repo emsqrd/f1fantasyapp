@@ -120,8 +120,8 @@ The advantage must be bounded: a passive player with a well-chosen initial team 
 
 All entities move by the same dollar amount per price adjustment, regardless of current price. This avoids two validated failure modes:
 
-- **Compounding** — Percentage-based or price-proportional movement compounds over consecutive rounds, producing catastrophic drops that mislead players making decisions at the time of the drop (Lesson 2).
-- **Ceiling pinning** — Any designed-in stickiness at the top reduces the price signal for the most important entities in the game. The first model's most expensive entity showed zero price movement for two-thirds of the season (Lesson 3).
+- **Compounding** — Percentage-based or price-proportional movement compounds over consecutive rounds, producing catastrophic drops that mislead players making decisions at the time of the drop.
+- **Ceiling pinning** — Any designed-in stickiness at the top reduces the price signal for the most important entities in the game. The first model's most expensive entity showed zero price movement for two-thirds of the season.
 
 Uniform dollar steps create emergent proportional stickiness — a fixed move is a smaller percentage of an expensive entity's price than a cheap one's. This is the right amount: enough that elite assets are somewhat stable, not so much that their prices stop responding to performance changes.
 
@@ -132,5 +132,3 @@ Uniform dollar steps create emergent proportional stickiness — a fixed move is
 **Floor compression within the bottom tier is accepted by design.**
 
 Backmarker entities may converge to the price floor and remain there regardless of scoring differences between them. This is structurally inherent to any floor-bounded pricing system and is accepted: bottom-tier entities are considered interchangeable for team-building purposes.
-
-The floor value — which determines how much compression occurs and how many entities are affected — is a budget mechanics decision derived from composition intent (Step 9), not a pricing calibration parameter.
