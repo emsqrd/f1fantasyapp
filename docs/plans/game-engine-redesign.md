@@ -15,21 +15,23 @@ You've been spiraling on pricing for over a week. Format (5D+3C) and scoring are
 
 ## Current Status
 
-**Step 9 complete. Ready for Step 10.**
+**Step 10 complete. Ready for Step 11.**
 
-Steps 0–9 are done. Preseason pricing approach and budget cap/floor written to `decisions/pricing.md`. Budget cap value added to `decisions/format.md`. Editorial review process written to `reference/preseason-pricing-process.md`.
+Steps 0–10 are done. Format updated to 5D+2C. Preseason pricing simplified to sourcing official F1 Fantasy prices directly. 2026 prices written to `reference/2026-preseason-prices.csv`. Process updated in `reference/preseason-pricing-process.md`.
 
-**Committed decisions entering Step 10:**
-- Format: 5D+3C, captain mechanic — confirmed
+**Committed decisions entering Step 11:**
+- Format: 5D+2C, captain mechanic — revised from 5D+3C to match official F1 Fantasy format
 - Scoring: race finish, qualifying, sprint, position gains/losses, fastest lap, DNF penalties + constructor = sum of drivers — revised and confirmed
 - In-season pricing approach: PPM direction-based — confirmed; parameters open
 - Pricing design goals: prices are predictable/deterministic; optimal team evolves but doesn't punish race-by-race inattention; active management earns bounded advantage; uniform dollar steps across price tiers; floor compression accepted
 - Transfers: 2 free per race, bank up to 3, -10 per extra, net-change counting, deadline matches lineup lock
 - Budget uplift: yes — continuous cap, rises/falls with owned asset prices
 - Budget cap: $100M; price floor: $5M — derived from composition intent + scoring distribution
-- Preseason pricing: formula baseline (prior-season scoring) + editorial review as sanity check; process in `reference/preseason-pricing-process.md`
+- Preseason pricing: sourced from official F1 Fantasy game's opening-day prices; formula parameters (shape, blend weight, new team seeding) are moot
+- Price tiers: Elite ($22M+), Midfield ($8–15M), Backmarker ($5–8M) — based on natural gaps in official 2026 prices
+- Composition intent validated: 3 elites fits within $100M for most combinations; 4 elites never fits
 
-**Next:** Step 10 — Decide preseason formula parameters (blend weight, formula shape, rounding increment, new team seeding).
+**Next:** Step 11 — Calibrate PPM parameters (neutral points, band width, step type, step sizes, window).
 
 ---
 
@@ -395,7 +397,7 @@ After completing all steps:
 - [x] `decisions/design-goals.md` contains pricing-specific goals (Step 7)
 - [x] `decisions/rules.md` contains budget management mechanics decision (Step 8)
 - [x] Preseason pricing approach decided; budget cap and floor values derived (Step 9)
-- [ ] Preseason formula parameters decided: formula shape, blend weight, new team seeding (Step 10)
+- [x] Preseason pricing decided: official F1 Fantasy prices adopted; formula parameters moot (Step 10)
 - [ ] PPM parameters decided: neutral points, band width, step type, step sizes, window (Step 11)
 - [ ] Final validation simulation passes against stated criteria (Step 12)
 - [ ] `decisions/pricing.md` contains complete preseason + in-season model (Step 13)
