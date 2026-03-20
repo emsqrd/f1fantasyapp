@@ -33,7 +33,9 @@ api/**/CodeCoverage/
 *.njsproj
 *.sw?
 
-# MISC
-docs/research/fantasy-rules/archive/simulation/.ff1_cache/
-docs/research/fantasy-rules/archive/simulation/__pycache__/
-docs/research/fantasy-rules/archive/simulation/**/*.pyc
+# Python
+__pycache__/
+*.pyc
+.ff1_cache/
+.venv/
+.pytest_cache/
