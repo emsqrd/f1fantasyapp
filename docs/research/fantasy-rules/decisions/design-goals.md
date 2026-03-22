@@ -114,16 +114,13 @@ The advantage must be bounded: a passive player with a well-chosen initial team 
 
 ---
 
-## Price Movement Uniformity
+## Price Movement
 
-**Price movement rate is uniform across price tiers.**
+**Fixed-dollar steps, not percentages.**
 
-All entities move by the same dollar amount per price adjustment, regardless of current price. This avoids two validated failure modes:
+Price adjustments use fixed dollar amounts, not percentages of current price. This avoids compounding — percentage-based movement compounds over consecutive rounds, producing catastrophic drops that mislead players making decisions at the time of the drop.
 
-- **Compounding** — Percentage-based or price-proportional movement compounds over consecutive rounds, producing catastrophic drops that mislead players making decisions at the time of the drop.
-- **Ceiling pinning** — Any designed-in stickiness at the top reduces the price signal for the most important entities in the game. The first model's most expensive entity showed zero price movement for two-thirds of the season.
-
-Uniform dollar steps create emergent proportional stickiness — a fixed move is a smaller percentage of an expensive entity's price than a cheap one's. This is the right amount: enough that elite assets are somewhat stable, not so much that their prices stop responding to performance changes.
+Whether the step size is the same for all entities (uniform) or varies by price tier (tiered) is a calibration decision, not a design goal. Both approaches use fixed dollars and avoid compounding.
 
 ---
 

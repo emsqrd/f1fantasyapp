@@ -15,23 +15,24 @@ You've been spiraling on pricing for over a week. Format (5D+3C) and scoring are
 
 ## Current Status
 
-**Step 10 complete. Ready for Step 11.**
+**Step 11 complete. Ready for Step 12.**
 
-Steps 0–10 are done. Format updated to 5D+2C. Preseason pricing simplified to sourcing official F1 Fantasy prices directly. 2026 prices written to `reference/2026-preseason-prices.csv`. Process updated in `reference/preseason-pricing-process.md`.
+Steps 0–11 are done. All PPM parameters calibrated and written to `decisions/pricing.md`.
 
-**Committed decisions entering Step 11:**
+**Committed decisions entering Step 12:**
 - Format: 5D+2C, captain mechanic — revised from 5D+3C to match official F1 Fantasy format
 - Scoring: race finish, qualifying, sprint, position gains/losses, fastest lap, DNF penalties + constructor = sum of drivers — revised and confirmed
-- In-season pricing approach: PPM direction-based — confirmed; parameters open
-- Pricing design goals: prices are predictable/deterministic; optimal team evolves but doesn't punish race-by-race inattention; active management earns bounded advantage; uniform dollar steps across price tiers; floor compression accepted
+- In-season pricing approach: PPM direction-based — confirmed; all parameters decided
+- Pricing design goals: prices are predictable/deterministic; optimal team evolves but doesn't punish race-by-race inattention; active management earns bounded advantage; fixed-dollar steps (uniform vs tiered is calibration, not a goal); floor compression accepted
 - Transfers: 2 free per race, bank up to 3, -10 per extra, net-change counting, deadline matches lineup lock
-- Budget uplift: yes — continuous cap, rises/falls with owned asset prices
-- Budget cap: $100M; price floor: $5M — derived from composition intent + scoring distribution
+- Budget cap: fixed $100M; assets bought/sold at current market prices; team value can exceed cap
+- Price floor: $4.5M
 - Preseason pricing: sourced from official F1 Fantasy game's opening-day prices; formula parameters (shape, blend weight, new team seeding) are moot
-- Price tiers: Elite ($22M+), Midfield ($8–15M), Backmarker ($5–8M) — based on natural gaps in official 2026 prices
+- Price tiers: Elite ($22M+), Midfield ($8–15M), Backmarker ($4.5–8M) — based on natural gaps in official 2026 prices
 - Composition intent validated: 3 elites fits within $100M for most combinations; 4 elites never fits
+- PPM parameters: neutral=1.0 (both types), bands ±0.80 (4 bands), tiered steps (A≥$22M / B<$22M), A-tier $0.1/$0.3, B-tier $0.2/$0.6, 3-race equal-weight window with 2 dummy races
 
-**Next:** Step 11 — Calibrate PPM parameters (neutral points, band width, step type, step sizes, window).
+**Next:** Step 12 — Validate the complete model.
 
 ---
 
@@ -318,35 +319,22 @@ PPM as the in-season pricing approach is decided. The specific parameters are NO
 
 **Each parameter is its own gate.** Decide, present, get approval, write to `decisions/pricing.md`, update Current Status — then move to the next. Do not batch parameters.
 
-**Parameters, in dependency order:**
+**Parameters decided:**
 
-1. **Neutral points** — What PPM value represents "fair price" for drivers vs. constructors?
-   - These set the boundary between "price should rise" and "price should fall"
-   - Drivers and constructors need separate neutral points (constructors score higher per dollar because two drivers contribute to one price)
-   - The neutral point cannot be a fixed constant — it must be calibrated each preseason against the actual PPM distribution of the new grid's expected prices
-   - Previous research found D=1.00, C=1.50 across 2023-2025 data — use as a starting point only, validate fresh against the current grid
+1. **Neutral point** — 1.0 PPM for both drivers and constructors. Single neutral rather than separate per-type values. Constructors structurally score higher PPM (~2x) due to aggregating two drivers' points, but with a fixed budget cap (no uplift) the resulting constructor inflation doesn't create systemic problems — relative price signal is preserved, matching observed F1 Fantasy behavior.
 
-2. **Band width** — How far from neutral before price movement triggers?
-   - Narrow band = more frequent price changes, more responsive but potentially noisy
-   - Wide band = fewer changes, more stable but slower to correct mispricing
-   - This interacts with the transfer mechanic (Step 8): if players can transfer often, faster correction may be acceptable
+2. **Band width** — ±0.80 around neutral (boundaries at 0.20 and 1.80). Four performance bands (Great/Good/Poor/Terrible). Wider than F1's ±0.30 to reduce binary outcomes — validated via band width sweep against matched 2025 data.
 
-3. **Step type** — Per-type uniform steps vs. price-based tiered steps?
-   - **Uniform:** All drivers move by the same dollar amount regardless of current price. Simpler.
-   - **Tiered:** Expensive entities move by larger amounts than cheap ones. More complex but may produce better proportional signals.
-   - This is a design philosophy question informed by Step 7 (should expensive entities be harder to dislodge?)
+3. **Step type** — Tiered by price. A-Tier (≥$22M) moves at half the rate of B-Tier (<$22M). Elite assets serve as stable roster foundations; cheaper assets provide volatile price action for active management. Tier boundary aligns with the natural price gap between Elite and Midfield tiers.
 
-4. **Step sizes** — How many dollars per movement, inner vs. outer?
-   - Inner step = movement when PPM is within the band (small or zero)
-   - Outer step = movement when PPM is outside the band (the main correction force)
-   - Sizes depend on all of the above (neutral point, band width, step type)
+4. **Step sizes** — Matched to F1 Fantasy's proven values. A-Tier: inner ±$0.1M, outer ±$0.3M. B-Tier: inner ±$0.2M, outer ±$0.6M. Inner steps are 1/3 of outer steps.
 
-5. **Window** — How many races feed into the rolling average, and how are they weighted?
-   - Shorter window = more reactive to recent performance
-   - Longer window = smoother, less volatile
-   - Equal weighting vs. recency weighting
+5. **Window** — 3-race equally-weighted rolling average. 2 dummy races at neutral PPM (1.0) seed the window before R1, preventing single opening-race outliers from triggering outsized price movement. Dummies rotate out by R3.
 
-**Process:** Work through each parameter sequentially using fresh simulation scripts against historical data. Evaluate each against pricing design goals from Step 7 before presenting for approval.
+**Additional decisions made during parameter evaluation:**
+- Budget uplift replaced with fixed $100M cap and market-value transactions (revised Step 8 decision)
+- Price floor lowered from $5M to $4.5M for more backmarker runway
+- Price Movement design goal revised: fixed-dollar steps required, but uniform vs tiered left as calibration decision
 
 ---
 
@@ -398,6 +386,6 @@ After completing all steps:
 - [x] `decisions/rules.md` contains budget management mechanics decision (Step 8)
 - [x] Preseason pricing approach decided; budget cap and floor values derived (Step 9)
 - [x] Preseason pricing decided: official F1 Fantasy prices adopted; formula parameters moot (Step 10)
-- [ ] PPM parameters decided: neutral points, band width, step type, step sizes, window (Step 11)
+- [x] PPM parameters decided: neutral points, band width, step type, step sizes, window (Step 11)
 - [ ] Final validation simulation passes against stated criteria (Step 12)
 - [ ] `decisions/pricing.md` contains complete preseason + in-season model (Step 13)

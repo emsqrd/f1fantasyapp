@@ -16,8 +16,8 @@ Based on natural gaps in the official 2026 price distribution:
 
 - **Elite ($22M+):** Top drivers and constructors expected to compete at the front
 - **Midfield ($8–15M):** Regular points scorers
-- **Backmarker ($5–8M):** Outside the points; interchangeable within this tier
+- **Backmarker ($4.5–8M):** Outside the points; interchangeable within this tier
 
 ## Floor Enforcement
 
-Any price that falls below the $5M price floor is set to the floor.
+Any price that falls below the $4.5M price floor is set to the floor.

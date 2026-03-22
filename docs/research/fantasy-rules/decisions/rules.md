@@ -24,13 +24,9 @@ Only the net change at lock counts — intermediate swaps made before the deadli
 
 Transfer deadline matches the lineup lock: before the sprint race on sprint weekends, during qualifying on normal weekends.
 
-## Budget Uplift
+## Budget Cap
 
-**Your budget cap rises and falls with the prices of the assets you own.**
-
-When an owned asset's price increases, your budget cap increases by the same amount. When it decreases, your cap decreases. Your available headroom at any point is cap minus team value.
-
-This creates the active management metagame: buying a rising asset before it peaks generates spendable headroom. Selling it later frees the original purchase price plus the gain. The advantage is bounded by uniform dollar steps — no asset can skyrocket fast enough to create outsized headroom.
+**Fixed $100M budget cap. Assets are bought and sold at current market prices.** Remaining balance is what's left after purchases. Selling an asset returns its current market price to your balance. A team's total market value can exceed $100M as prices appreciate, but the remaining balance only changes through transactions.
 
 ## Mid-Season Joining
 
