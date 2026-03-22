@@ -52,10 +52,13 @@ _Applies on sprint weekends only._
 | --------------- | ---------------------- |
 | Position gain   | +1 per position gained |
 | Position loss   | −1 per position lost   |
+| Overtake        | +1 per on-track position gained |
 | Fastest lap     | +2                     |
 | DNF / DSQ / DNS | −5                     |
 
 **Position change** is measured from sprint grid position (set by sprint qualifying results, after any grid penalties) to finish position. Unclassified drivers (DNF/NC) do not have position losses calculated — they receive the −5 penalty instead.
+
+**Overtakes** are counted from lap-by-lap position data. A position gain counts when a driver moves up in the running order between consecutive laps, excluding laps where the driver entered or exited the pits. First-lap position changes (grid to end of lap 1) are not counted — they are already captured by the grid-to-finish position change scoring. DNF drivers can still accumulate overtake points from laps completed before retirement.
 
 **Fastest lap bonus applies even if the driver DNFs**, provided the lap time stands in the final classification (+2 − 5 = −3 net).
 
@@ -87,10 +90,13 @@ A constructor's sprint score is the **sum of both drivers' sprint points**. No a
 | --------------- | ---------------------- |
 | Position gain   | +1 per position gained |
 | Position loss   | −1 per position lost   |
+| Overtake        | +1 per on-track position gained |
 | Fastest lap     | +3                     |
 | DNF / DSQ / DNS | −10                    |
 
 **Position change** is measured from grid position (after any penalties) to finish position. Unclassified drivers (DNF/NC) do not have position losses calculated — they receive the −10 penalty instead.
+
+**Overtakes** are counted from lap-by-lap position data. A position gain counts when a driver moves up in the running order between consecutive laps, excluding laps where the driver entered or exited the pits. First-lap position changes (grid to end of lap 1) are not counted — they are already captured by the grid-to-finish position change scoring. DNF drivers can still accumulate overtake points from laps completed before retirement.
 
 **Fastest lap bonus applies even if the driver DNFs**, provided the lap time stands in the final classification (+3 − 10 = −7 net).
 

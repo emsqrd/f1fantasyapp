@@ -1,481 +1,481 @@
-round,event,driver,team,quali_pts,quali_position,race_grid,race_finish,race_finish_pts,race_pos_change,race_fl_pts,race_penalty,race_total,sprint_grid,sprint_finish,sprint_finish_pts,sprint_pos_change,sprint_fl_pts,sprint_penalty,sprint_total,is_dnf,total_pts
-1,Australian Grand Prix,HAD,Racing Bulls,0,11.0,11.0,20.0,0,0,0,-10,-10,,,,,,,,True,-10
-1,Australian Grand Prix,HAM,Ferrari,3,8.0,8.0,10.0,1,-2,0,0,-1,,,,,,,,False,2
-1,Australian Grand Prix,GAS,Alpine,2,9.0,9.0,11.0,0,-2,0,0,-2,,,,,,,,False,0
-1,Australian Grand Prix,ALO,Aston Martin,0,12.0,12.0,17.0,0,0,0,-10,-10,,,,,,,,True,-10
-1,Australian Grand Prix,SAI,Williams,1,10.0,10.0,18.0,0,0,0,-10,-10,,,,,,,,True,-9
-1,Australian Grand Prix,BOR,Kick Sauber,0,15.0,15.0,16.0,0,0,0,-10,-10,,,,,,,,True,-10
-1,Australian Grand Prix,VER,Red Bull Racing,8,3.0,3.0,2.0,18,1,0,0,19,,,,,,,,False,27
-1,Australian Grand Prix,OCO,Haas F1 Team,0,19.0,19.0,13.0,0,6,0,0,6,,,,,,,,False,6
-1,Australian Grand Prix,DOO,Alpine,0,14.0,14.0,19.0,0,0,0,-10,-10,,,,,,,,True,-10
-1,Australian Grand Prix,HUL,Kick Sauber,0,17.0,17.0,7.0,6,10,0,0,16,,,,,,,,False,16
-1,Australian Grand Prix,ANT,Mercedes,0,16.0,16.0,4.0,12,12,0,0,24,,,,,,,,False,24
-1,Australian Grand Prix,ALB,Williams,5,6.0,6.0,5.0,10,1,0,0,11,,,,,,,,False,16
-1,Australian Grand Prix,TSU,Racing Bulls,6,5.0,5.0,12.0,0,-7,0,0,-7,,,,,,,,False,-1
-1,Australian Grand Prix,PIA,McLaren,9,2.0,2.0,9.0,2,-7,0,0,-5,,,,,,,,False,4
-1,Australian Grand Prix,LEC,Ferrari,4,7.0,7.0,8.0,4,-1,0,0,3,,,,,,,,False,7
-1,Australian Grand Prix,BEA,Haas F1 Team,0,20.0,20.0,14.0,0,6,0,0,6,,,,,,,,False,6
-1,Australian Grand Prix,STR,Aston Martin,0,13.0,13.0,6.0,8,7,0,0,15,,,,,,,,False,15
-1,Australian Grand Prix,LAW,Red Bull Racing,0,18.0,18.0,15.0,0,0,0,-10,-10,,,,,,,,True,-10
-1,Australian Grand Prix,RUS,Mercedes,7,4.0,4.0,3.0,15,1,0,0,16,,,,,,,,False,23
-1,Australian Grand Prix,NOR,McLaren,10,1.0,1.0,1.0,25,0,0,0,25,,,,,,,,False,35
-2,Chinese Grand Prix,HAD,Racing Bulls,4,7.0,7.0,11.0,0,-4,0,0,-4,15.0,13.0,0.0,2.0,0.0,0.0,2.0,False,2
-2,Chinese Grand Prix,HAM,Ferrari,6,5.0,5.0,19.0,0,0,0,-10,-10,1.0,1.0,8.0,0.0,0.0,0.0,8.0,True,4
-2,Chinese Grand Prix,GAS,Alpine,0,16.0,16.0,20.0,0,0,0,-10,-10,17.0,12.0,0.0,5.0,0.0,0.0,5.0,True,-5
-2,Chinese Grand Prix,ALO,Aston Martin,0,13.0,13.0,17.0,0,0,0,-10,-10,11.0,10.0,0.0,1.0,0.0,0.0,1.0,True,-9
-2,Chinese Grand Prix,SAI,Williams,0,15.0,15.0,10.0,1,5,0,0,6,13.0,17.0,0.0,-4.0,0.0,0.0,-4.0,False,2
-2,Chinese Grand Prix,BOR,Kick Sauber,0,19.0,19.0,14.0,0,5,0,0,5,14.0,18.0,0.0,-4.0,0.0,0.0,-4.0,False,1
-2,Chinese Grand Prix,VER,Red Bull Racing,7,4.0,4.0,4.0,12,0,0,0,12,2.0,3.0,6.0,-1.0,0.0,0.0,5.0,False,24
-2,Chinese Grand Prix,OCO,Haas F1 Team,0,11.0,11.0,5.0,10,6,0,0,16,18.0,16.0,0.0,2.0,0.0,0.0,2.0,False,18
-2,Chinese Grand Prix,DOO,Alpine,0,18.0,18.0,13.0,0,5,0,0,5,16.0,20.0,0.0,-4.0,0.0,0.0,-4.0,False,1
-2,Chinese Grand Prix,HUL,Kick Sauber,0,12.0,12.0,15.0,0,-3,0,0,-3,20.0,19.0,0.0,1.0,0.0,0.0,1.0,False,-2
-2,Chinese Grand Prix,ANT,Mercedes,3,8.0,8.0,6.0,8,2,0,0,10,7.0,7.0,2.0,0.0,0.0,0.0,2.0,False,15
-2,Chinese Grand Prix,ALB,Williams,1,10.0,10.0,7.0,6,3,0,0,9,9.0,11.0,0.0,-2.0,0.0,0.0,-2.0,False,8
-2,Chinese Grand Prix,TSU,Racing Bulls,2,9.0,9.0,16.0,0,-7,0,0,-7,8.0,6.0,3.0,2.0,0.0,0.0,5.0,False,0
-2,Chinese Grand Prix,PIA,McLaren,10,1.0,1.0,1.0,25,0,0,0,25,3.0,2.0,7.0,1.0,0.0,0.0,8.0,False,43
-2,Chinese Grand Prix,LEC,Ferrari,5,6.0,6.0,18.0,0,0,0,-10,-10,4.0,5.0,4.0,-1.0,0.0,0.0,3.0,True,-2
-2,Chinese Grand Prix,BEA,Haas F1 Team,0,17.0,17.0,8.0,4,9,0,0,13,12.0,15.0,0.0,-3.0,0.0,0.0,-3.0,False,10
-2,Chinese Grand Prix,STR,Aston Martin,0,14.0,14.0,9.0,2,5,0,0,7,10.0,9.0,0.0,1.0,0.0,0.0,1.0,False,8
-2,Chinese Grand Prix,LAW,Red Bull Racing,0,20.0,20.0,12.0,0,8,0,0,8,19.0,14.0,0.0,5.0,0.0,0.0,5.0,False,13
-2,Chinese Grand Prix,RUS,Mercedes,9,2.0,2.0,3.0,15,-1,0,0,14,5.0,4.0,5.0,1.0,0.0,0.0,6.0,False,29
-2,Chinese Grand Prix,NOR,McLaren,8,3.0,3.0,2.0,18,1,0,0,19,6.0,8.0,1.0,-2.0,0.0,0.0,-1.0,False,26
-3,Japanese Grand Prix,HAD,Racing Bulls,4,7.0,7.0,8.0,4,-1,0,0,3,,,,,,,,False,7
-3,Japanese Grand Prix,HAM,Ferrari,3,8.0,8.0,7.0,6,1,0,0,7,,,,,,,,False,10
-3,Japanese Grand Prix,GAS,Alpine,0,11.0,11.0,13.0,0,-2,0,0,-2,,,,,,,,False,-2
-3,Japanese Grand Prix,ALO,Aston Martin,0,13.0,12.0,11.0,0,1,0,0,1,,,,,,,,False,1
-3,Japanese Grand Prix,SAI,Williams,0,12.0,15.0,14.0,0,1,0,0,1,,,,,,,,False,1
-3,Japanese Grand Prix,BOR,Kick Sauber,0,17.0,17.0,19.0,0,-2,0,0,-2,,,,,,,,False,-2
-3,Japanese Grand Prix,VER,Red Bull Racing,10,1.0,1.0,1.0,25,0,0,0,25,,,,,,,,False,35
-3,Japanese Grand Prix,OCO,Haas F1 Team,0,18.0,18.0,18.0,0,0,0,0,0,,,,,,,,False,0
-3,Japanese Grand Prix,DOO,Alpine,0,19.0,19.0,15.0,0,4,0,0,4,,,,,,,,False,4
-3,Japanese Grand Prix,HUL,Kick Sauber,0,16.0,16.0,16.0,0,0,0,0,0,,,,,,,,False,0
-3,Japanese Grand Prix,ANT,Mercedes,5,6.0,6.0,6.0,8,0,0,0,8,,,,,,,,False,13
-3,Japanese Grand Prix,ALB,Williams,2,9.0,9.0,9.0,2,0,0,0,2,,,,,,,,False,4
-3,Japanese Grand Prix,TSU,Red Bull Racing,0,15.0,14.0,12.0,0,2,0,0,2,,,,,,,,False,2
-3,Japanese Grand Prix,PIA,McLaren,8,3.0,3.0,3.0,15,0,0,0,15,,,,,,,,False,23
-3,Japanese Grand Prix,LEC,Ferrari,7,4.0,4.0,4.0,12,0,0,0,12,,,,,,,,False,19
-3,Japanese Grand Prix,BEA,Haas F1 Team,1,10.0,10.0,10.0,1,0,0,0,1,,,,,,,,False,2
-3,Japanese Grand Prix,STR,Aston Martin,0,20.0,20.0,20.0,0,0,0,0,0,,,,,,,,False,0
-3,Japanese Grand Prix,LAW,Racing Bulls,0,14.0,13.0,17.0,0,-4,0,0,-4,,,,,,,,False,-4
-3,Japanese Grand Prix,RUS,Mercedes,6,5.0,5.0,5.0,10,0,0,0,10,,,,,,,,False,16
-3,Japanese Grand Prix,NOR,McLaren,9,2.0,2.0,2.0,18,0,0,0,18,,,,,,,,False,27
-4,Bahrain Grand Prix,HAD,Racing Bulls,0,12.0,12.0,13.0,0,-1,0,0,-1,,,,,,,,False,-1
-4,Bahrain Grand Prix,HAM,Ferrari,2,9.0,9.0,5.0,10,4,0,0,14,,,,,,,,False,16
-4,Bahrain Grand Prix,GAS,Alpine,6,5.0,4.0,7.0,6,-3,0,0,3,,,,,,,,False,9
-4,Bahrain Grand Prix,ALO,Aston Martin,0,13.0,13.0,15.0,0,-2,0,0,-2,,,,,,,,False,-2
-4,Bahrain Grand Prix,SAI,Williams,3,8.0,8.0,19.0,0,0,0,-10,-10,,,,,,,,True,-7
-4,Bahrain Grand Prix,BOR,Kick Sauber,0,18.0,18.0,18.0,0,0,0,0,0,,,,,,,,False,0
-4,Bahrain Grand Prix,VER,Red Bull Racing,4,7.0,7.0,6.0,8,1,0,0,9,,,,,,,,False,13
-4,Bahrain Grand Prix,OCO,Haas F1 Team,0,14.0,14.0,8.0,4,6,0,0,10,,,,,,,,False,10
-4,Bahrain Grand Prix,DOO,Alpine,0,11.0,11.0,14.0,0,-3,0,0,-3,,,,,,,,False,-3
-4,Bahrain Grand Prix,HUL,Kick Sauber,0,16.0,16.0,20.0,0,0,0,-10,-10,,,,,,,,True,-10
-4,Bahrain Grand Prix,ANT,Mercedes,7,4.0,5.0,11.0,0,-6,0,0,-6,,,,,,,,False,1
-4,Bahrain Grand Prix,ALB,Williams,0,15.0,15.0,12.0,0,3,0,0,3,,,,,,,,False,3
-4,Bahrain Grand Prix,TSU,Red Bull Racing,1,10.0,10.0,9.0,2,1,0,0,3,,,,,,,,False,4
-4,Bahrain Grand Prix,PIA,McLaren,10,1.0,1.0,1.0,25,0,0,0,25,,,,,,,,False,35
-4,Bahrain Grand Prix,LEC,Ferrari,8,3.0,2.0,4.0,12,-2,0,0,10,,,,,,,,False,18
-4,Bahrain Grand Prix,BEA,Haas F1 Team,0,20.0,20.0,10.0,1,10,0,0,11,,,,,,,,False,11
-4,Bahrain Grand Prix,STR,Aston Martin,0,19.0,19.0,17.0,0,2,0,0,2,,,,,,,,False,2
-4,Bahrain Grand Prix,LAW,Racing Bulls,0,17.0,17.0,16.0,0,1,0,0,1,,,,,,,,False,1
-4,Bahrain Grand Prix,RUS,Mercedes,9,2.0,3.0,2.0,18,1,0,0,19,,,,,,,,False,28
-4,Bahrain Grand Prix,NOR,McLaren,5,6.0,6.0,3.0,15,3,0,0,18,,,,,,,,False,23
-5,Saudi Arabian Grand Prix,HAD,Racing Bulls,0,14.0,14.0,10.0,1,4,0,0,5,,,,,,,,False,5
-5,Saudi Arabian Grand Prix,HAM,Ferrari,4,7.0,7.0,7.0,6,0,0,0,6,,,,,,,,False,10
-5,Saudi Arabian Grand Prix,GAS,Alpine,2,9.0,9.0,20.0,0,0,0,-10,-10,,,,,,,,True,-8
-5,Saudi Arabian Grand Prix,ALO,Aston Martin,0,13.0,13.0,11.0,0,2,0,0,2,,,,,,,,False,2
-5,Saudi Arabian Grand Prix,SAI,Williams,5,6.0,6.0,8.0,4,-2,0,0,2,,,,,,,,False,7
-5,Saudi Arabian Grand Prix,BOR,Kick Sauber,0,20.0,20.0,18.0,0,2,0,0,2,,,,,,,,False,2
-5,Saudi Arabian Grand Prix,VER,Red Bull Racing,10,1.0,1.0,2.0,18,-1,0,0,17,,,,,,,,False,27
-5,Saudi Arabian Grand Prix,OCO,Haas F1 Team,0,19.0,19.0,14.0,0,5,0,0,5,,,,,,,,False,5
-5,Saudi Arabian Grand Prix,DOO,Alpine,0,17.0,17.0,17.0,0,0,0,0,0,,,,,,,,False,0
-5,Saudi Arabian Grand Prix,HUL,Kick Sauber,0,18.0,18.0,15.0,0,3,0,0,3,,,,,,,,False,3
-5,Saudi Arabian Grand Prix,ANT,Mercedes,6,5.0,5.0,6.0,8,-1,0,0,7,,,,,,,,False,13
-5,Saudi Arabian Grand Prix,ALB,Williams,0,11.0,11.0,9.0,2,2,0,0,4,,,,,,,,False,4
-5,Saudi Arabian Grand Prix,TSU,Red Bull Racing,3,8.0,8.0,19.0,0,0,0,-10,-10,,,,,,,,True,-7
-5,Saudi Arabian Grand Prix,PIA,McLaren,9,2.0,2.0,1.0,25,1,0,0,26,,,,,,,,False,35
-5,Saudi Arabian Grand Prix,LEC,Ferrari,7,4.0,4.0,3.0,15,1,0,0,16,,,,,,,,False,23
-5,Saudi Arabian Grand Prix,BEA,Haas F1 Team,0,15.0,15.0,13.0,0,2,0,0,2,,,,,,,,False,2
-5,Saudi Arabian Grand Prix,STR,Aston Martin,0,16.0,16.0,16.0,0,0,0,0,0,,,,,,,,False,0
-5,Saudi Arabian Grand Prix,LAW,Racing Bulls,0,12.0,12.0,12.0,0,0,0,0,0,,,,,,,,False,0
-5,Saudi Arabian Grand Prix,RUS,Mercedes,8,3.0,3.0,5.0,10,-2,0,0,8,,,,,,,,False,16
-5,Saudi Arabian Grand Prix,NOR,McLaren,1,10.0,10.0,4.0,12,6,0,0,18,,,,,,,,False,19
-6,Miami Grand Prix,HAD,Racing Bulls,0,11.0,11.0,11.0,0,0,0,0,0,9.0,10.0,0.0,-1.0,0.0,0.0,-1.0,False,-1
-6,Miami Grand Prix,HAM,Ferrari,0,12.0,12.0,8.0,4,4,0,0,8,7.0,3.0,6.0,4.0,0.0,0.0,10.0,False,18
-6,Miami Grand Prix,GAS,Alpine,0,18.0,20.0,13.0,0,7,0,0,7,13.0,8.0,1.0,5.0,0.0,0.0,6.0,False,13
-6,Miami Grand Prix,ALO,Aston Martin,0,17.0,17.0,15.0,0,2,0,0,2,10.0,18.0,0.0,0.0,0.0,-5.0,-5.0,False,-3
-6,Miami Grand Prix,SAI,Williams,5,6.0,6.0,9.0,2,-3,0,0,-1,15.0,19.0,0.0,0.0,0.0,-5.0,-5.0,False,-1
-6,Miami Grand Prix,BOR,Kick Sauber,0,13.0,13.0,18.0,0,0,0,-10,-10,18.0,15.0,0.0,3.0,0.0,0.0,3.0,True,-7
-6,Miami Grand Prix,VER,Red Bull Racing,10,1.0,1.0,4.0,12,-3,0,0,9,4.0,17.0,0.0,-13.0,0.0,0.0,-13.0,False,6
-6,Miami Grand Prix,OCO,Haas F1 Team,2,9.0,9.0,12.0,0,-3,0,0,-3,12.0,12.0,0.0,0.0,0.0,0.0,0.0,False,-1
-6,Miami Grand Prix,DOO,Alpine,0,14.0,14.0,20.0,0,0,0,-10,-10,17.0,16.0,0.0,1.0,0.0,0.0,1.0,True,-9
-6,Miami Grand Prix,HUL,Kick Sauber,0,16.0,16.0,14.0,0,2,0,0,2,11.0,9.0,0.0,2.0,0.0,0.0,2.0,False,4
-6,Miami Grand Prix,ANT,Mercedes,8,3.0,3.0,6.0,8,-3,0,0,5,1.0,7.0,2.0,-6.0,0.0,0.0,-4.0,False,9
-6,Miami Grand Prix,ALB,Williams,4,7.0,7.0,5.0,10,2,0,0,12,8.0,11.0,0.0,-3.0,0.0,0.0,-3.0,False,13
-6,Miami Grand Prix,TSU,Red Bull Racing,1,10.0,10.0,10.0,1,0,0,0,1,20.0,6.0,3.0,14.0,0.0,0.0,17.0,False,19
-6,Miami Grand Prix,PIA,McLaren,7,4.0,4.0,1.0,25,3,0,0,28,2.0,2.0,7.0,0.0,0.0,0.0,7.0,False,42
-6,Miami Grand Prix,LEC,Ferrari,3,8.0,8.0,7.0,6,1,0,0,7,6.0,20.0,0.0,0.0,0.0,-5.0,-5.0,False,5
-6,Miami Grand Prix,BEA,Haas F1 Team,0,20.0,19.0,19.0,0,0,0,-10,-10,19.0,14.0,0.0,5.0,0.0,0.0,5.0,True,-5
-6,Miami Grand Prix,STR,Aston Martin,0,19.0,18.0,16.0,0,2,0,0,2,16.0,5.0,4.0,11.0,0.0,0.0,15.0,False,17
-6,Miami Grand Prix,LAW,Racing Bulls,0,15.0,15.0,17.0,0,0,0,-10,-10,14.0,13.0,0.0,1.0,0.0,0.0,1.0,True,-9
-6,Miami Grand Prix,RUS,Mercedes,6,5.0,5.0,3.0,15,2,0,0,17,5.0,4.0,5.0,1.0,0.0,0.0,6.0,False,29
-6,Miami Grand Prix,NOR,McLaren,9,2.0,2.0,2.0,18,0,0,0,18,3.0,1.0,8.0,2.0,0.0,0.0,10.0,False,37
-7,Emilia Romagna Grand Prix,COL,Alpine,0,15.0,16.0,16.0,0,0,0,0,0,,,,,,,,False,0
-7,Emilia Romagna Grand Prix,HAD,Racing Bulls,2,9.0,9.0,9.0,2,0,0,0,2,,,,,,,,False,4
-7,Emilia Romagna Grand Prix,HAM,Ferrari,0,12.0,12.0,4.0,12,8,0,0,20,,,,,,,,False,20
-7,Emilia Romagna Grand Prix,GAS,Alpine,1,10.0,10.0,13.0,0,-3,0,0,-3,,,,,,,,False,-2
-7,Emilia Romagna Grand Prix,ALO,Aston Martin,6,5.0,5.0,11.0,0,-6,0,0,-6,,,,,,,,False,0
-7,Emilia Romagna Grand Prix,SAI,Williams,5,6.0,6.0,8.0,4,-2,0,0,2,,,,,,,,False,7
-7,Emilia Romagna Grand Prix,BOR,Kick Sauber,0,14.0,14.0,18.0,0,-4,0,0,-4,,,,,,,,False,-4
-7,Emilia Romagna Grand Prix,VER,Red Bull Racing,9,2.0,2.0,1.0,25,1,0,0,26,,,,,,,,False,35
-7,Emilia Romagna Grand Prix,OCO,Haas F1 Team,0,18.0,18.0,20.0,0,0,0,-10,-10,,,,,,,,True,-10
-7,Emilia Romagna Grand Prix,HUL,Kick Sauber,0,17.0,17.0,12.0,0,5,0,0,5,,,,,,,,False,5
-7,Emilia Romagna Grand Prix,ANT,Mercedes,0,13.0,13.0,19.0,0,0,0,-10,-10,,,,,,,,True,-10
-7,Emilia Romagna Grand Prix,ALB,Williams,4,7.0,7.0,5.0,10,2,0,0,12,,,,,,,,False,16
-7,Emilia Romagna Grand Prix,TSU,Red Bull Racing,0,20.0,20.0,10.0,1,10,0,0,11,,,,,,,,False,11
-7,Emilia Romagna Grand Prix,PIA,McLaren,10,1.0,1.0,3.0,15,-2,0,0,13,,,,,,,,False,23
-7,Emilia Romagna Grand Prix,LEC,Ferrari,0,11.0,11.0,6.0,8,5,0,0,13,,,,,,,,False,13
-7,Emilia Romagna Grand Prix,BEA,Haas F1 Team,0,19.0,19.0,17.0,0,2,0,0,2,,,,,,,,False,2
-7,Emilia Romagna Grand Prix,STR,Aston Martin,3,8.0,8.0,15.0,0,-7,0,0,-7,,,,,,,,False,-4
-7,Emilia Romagna Grand Prix,LAW,Racing Bulls,0,16.0,15.0,14.0,0,1,0,0,1,,,,,,,,False,1
-7,Emilia Romagna Grand Prix,RUS,Mercedes,8,3.0,3.0,7.0,6,-4,0,0,2,,,,,,,,False,10
-7,Emilia Romagna Grand Prix,NOR,McLaren,7,4.0,4.0,2.0,18,2,0,0,20,,,,,,,,False,27
-8,Monaco Grand Prix,COL,Alpine,0,20.0,18.0,13.0,0,5,0,0,5,,,,,,,,False,5
-8,Monaco Grand Prix,HAD,Racing Bulls,5,6.0,5.0,6.0,8,-1,0,0,7,,,,,,,,False,12
-8,Monaco Grand Prix,HAM,Ferrari,7,4.0,7.0,5.0,10,2,0,0,12,,,,,,,,False,19
-8,Monaco Grand Prix,GAS,Alpine,0,18.0,17.0,20.0,0,0,0,-10,-10,,,,,,,,True,-10
-8,Monaco Grand Prix,ALO,Aston Martin,4,7.0,6.0,19.0,0,0,0,-10,-10,,,,,,,,True,-6
-8,Monaco Grand Prix,SAI,Williams,0,11.0,11.0,10.0,1,1,0,0,2,,,,,,,,False,2
-8,Monaco Grand Prix,BOR,Kick Sauber,0,16.0,16.0,14.0,0,2,0,0,2,,,,,,,,False,2
-8,Monaco Grand Prix,VER,Red Bull Racing,6,5.0,4.0,4.0,12,0,0,0,12,,,,,,,,False,18
-8,Monaco Grand Prix,OCO,Haas F1 Team,3,8.0,8.0,7.0,6,1,0,0,7,,,,,,,,False,10
-8,Monaco Grand Prix,HUL,Kick Sauber,0,13.0,13.0,16.0,0,-3,0,0,-3,,,,,,,,False,-3
-8,Monaco Grand Prix,ANT,Mercedes,0,15.0,15.0,18.0,0,-3,0,0,-3,,,,,,,,False,-3
-8,Monaco Grand Prix,ALB,Williams,1,10.0,10.0,9.0,2,1,0,0,3,,,,,,,,False,4
-8,Monaco Grand Prix,TSU,Red Bull Racing,0,12.0,12.0,17.0,0,-5,0,0,-5,,,,,,,,False,-5
-8,Monaco Grand Prix,PIA,McLaren,8,3.0,3.0,3.0,15,0,0,0,15,,,,,,,,False,23
-8,Monaco Grand Prix,LEC,Ferrari,9,2.0,2.0,2.0,18,0,0,0,18,,,,,,,,False,27
-8,Monaco Grand Prix,BEA,Haas F1 Team,0,17.0,20.0,12.0,0,8,0,0,8,,,,,,,,False,8
-8,Monaco Grand Prix,STR,Aston Martin,0,19.0,19.0,15.0,0,4,0,0,4,,,,,,,,False,4
-8,Monaco Grand Prix,LAW,Racing Bulls,2,9.0,9.0,8.0,4,1,0,0,5,,,,,,,,False,7
-8,Monaco Grand Prix,RUS,Mercedes,0,14.0,14.0,11.0,0,3,0,0,3,,,,,,,,False,3
-8,Monaco Grand Prix,NOR,McLaren,10,1.0,1.0,1.0,25,0,0,0,25,,,,,,,,False,35
-9,Spanish Grand Prix,COL,Alpine,0,19.0,18.0,15.0,0,3,0,0,3,,,,,,,,False,3
-9,Spanish Grand Prix,HAD,Racing Bulls,2,9.0,9.0,7.0,6,2,0,0,8,,,,,,,,False,10
-9,Spanish Grand Prix,HAM,Ferrari,6,5.0,5.0,6.0,8,-1,0,0,7,,,,,,,,False,13
-9,Spanish Grand Prix,GAS,Alpine,3,8.0,8.0,8.0,4,0,0,0,4,,,,,,,,False,7
-9,Spanish Grand Prix,ALO,Aston Martin,1,10.0,10.0,9.0,2,1,0,0,3,,,,,,,,False,4
-9,Spanish Grand Prix,SAI,Williams,0,18.0,17.0,14.0,0,3,0,0,3,,,,,,,,False,3
-9,Spanish Grand Prix,BOR,Kick Sauber,0,12.0,12.0,12.0,0,0,0,0,0,,,,,,,,False,0
-9,Spanish Grand Prix,VER,Red Bull Racing,8,3.0,3.0,10.0,1,-7,0,0,-6,,,,,,,,False,2
-9,Spanish Grand Prix,OCO,Haas F1 Team,0,17.0,16.0,16.0,0,0,0,0,0,,,,,,,,False,0
-9,Spanish Grand Prix,HUL,Kick Sauber,0,16.0,15.0,5.0,10,10,0,0,20,,,,,,,,False,20
-9,Spanish Grand Prix,ANT,Mercedes,5,6.0,6.0,18.0,0,0,0,-10,-10,,,,,,,,True,-5
-9,Spanish Grand Prix,ALB,Williams,0,11.0,11.0,19.0,0,0,0,-10,-10,,,,,,,,True,-10
-9,Spanish Grand Prix,TSU,Red Bull Racing,0,20.0,19.0,13.0,0,6,0,0,6,,,,,,,,False,6
-9,Spanish Grand Prix,PIA,McLaren,10,1.0,1.0,1.0,25,0,0,0,25,,,,,,,,False,35
-9,Spanish Grand Prix,LEC,Ferrari,4,7.0,7.0,3.0,15,4,0,0,19,,,,,,,,False,23
-9,Spanish Grand Prix,BEA,Haas F1 Team,0,15.0,14.0,17.0,0,-3,0,0,-3,,,,,,,,False,-3
-9,Spanish Grand Prix,STR,Unknown,0,14.0,,,0,0,0,0,0,,,,,,,,False,0
-9,Spanish Grand Prix,LAW,Racing Bulls,0,13.0,13.0,11.0,0,2,0,0,2,,,,,,,,False,2
-9,Spanish Grand Prix,RUS,Mercedes,7,4.0,4.0,4.0,12,0,0,0,12,,,,,,,,False,19
-9,Spanish Grand Prix,NOR,McLaren,9,2.0,2.0,2.0,18,0,0,0,18,,,,,,,,False,27
-10,Canadian Grand Prix,COL,Alpine,0,12.0,10.0,13.0,0,-3,0,0,-3,,,,,,,,False,-3
-10,Canadian Grand Prix,HAD,Racing Bulls,2,9.0,12.0,16.0,0,-4,0,0,-4,,,,,,,,False,-2
-10,Canadian Grand Prix,HAM,Ferrari,6,5.0,5.0,6.0,8,-1,0,0,7,,,,,,,,False,13
-10,Canadian Grand Prix,GAS,Alpine,0,20.0,20.0,15.0,0,5,0,0,5,,,,,,,,False,5
-10,Canadian Grand Prix,ALO,Aston Martin,5,6.0,6.0,7.0,6,-1,0,0,5,,,,,,,,False,10
-10,Canadian Grand Prix,SAI,Williams,0,17.0,16.0,10.0,1,6,0,0,7,,,,,,,,False,7
-10,Canadian Grand Prix,BOR,Kick Sauber,0,16.0,15.0,14.0,0,1,0,0,1,,,,,,,,False,1
-10,Canadian Grand Prix,VER,Red Bull Racing,9,2.0,2.0,2.0,18,0,0,0,18,,,,,,,,False,27
-10,Canadian Grand Prix,OCO,Haas F1 Team,0,15.0,14.0,9.0,2,5,0,0,7,,,,,,,,False,7
-10,Canadian Grand Prix,HUL,Kick Sauber,0,13.0,11.0,8.0,4,3,0,0,7,,,,,,,,False,7
-10,Canadian Grand Prix,ANT,Mercedes,7,4.0,4.0,3.0,15,1,0,0,16,,,,,,,,False,23
-10,Canadian Grand Prix,ALB,Williams,1,10.0,9.0,20.0,0,0,0,-10,-10,,,,,,,,True,-9
-10,Canadian Grand Prix,TSU,Red Bull Racing,0,11.0,18.0,12.0,0,6,0,0,6,,,,,,,,False,6
-10,Canadian Grand Prix,PIA,McLaren,8,3.0,3.0,4.0,12,-1,0,0,11,,,,,,,,False,19
-10,Canadian Grand Prix,LEC,Ferrari,3,8.0,8.0,5.0,10,3,0,0,13,,,,,,,,False,16
-10,Canadian Grand Prix,BEA,Haas F1 Team,0,14.0,13.0,11.0,0,2,0,0,2,,,,,,,,False,2
-10,Canadian Grand Prix,STR,Aston Martin,0,18.0,17.0,17.0,0,0,0,0,0,,,,,,,,False,0
-10,Canadian Grand Prix,LAW,Racing Bulls,0,19.0,19.0,19.0,0,0,0,-10,-10,,,,,,,,True,-10
-10,Canadian Grand Prix,RUS,Mercedes,10,1.0,1.0,1.0,25,0,0,0,25,,,,,,,,False,35
-10,Canadian Grand Prix,NOR,McLaren,4,7.0,7.0,18.0,0,0,0,-10,-10,,,,,,,,True,-6
-11,Austrian Grand Prix,COL,Alpine,0,14.0,14.0,15.0,0,-1,0,0,-1,,,,,,,,False,-1
-11,Austrian Grand Prix,HAD,Racing Bulls,0,13.0,13.0,12.0,0,1,0,0,1,,,,,,,,False,1
-11,Austrian Grand Prix,HAM,Ferrari,7,4.0,4.0,4.0,12,0,0,0,12,,,,,,,,False,19
-11,Austrian Grand Prix,GAS,Alpine,1,10.0,10.0,13.0,0,-3,0,0,-3,,,,,,,,False,-2
-11,Austrian Grand Prix,ALO,Aston Martin,0,11.0,11.0,7.0,6,4,0,0,10,,,,,,,,False,10
-11,Austrian Grand Prix,SAI,Williams,0,19.0,19.0,20.0,0,0,0,-10,-10,,,,,,,,True,-10
-11,Austrian Grand Prix,BOR,Kick Sauber,3,8.0,8.0,8.0,4,0,0,0,4,,,,,,,,False,7
-11,Austrian Grand Prix,VER,Red Bull Racing,4,7.0,7.0,18.0,0,0,0,-10,-10,,,,,,,,True,-6
-11,Austrian Grand Prix,OCO,Haas F1 Team,0,17.0,17.0,10.0,1,7,0,0,8,,,,,,,,False,8
-11,Austrian Grand Prix,HUL,Kick Sauber,0,20.0,20.0,9.0,2,11,0,0,13,,,,,,,,False,13
-11,Austrian Grand Prix,ANT,Mercedes,2,9.0,9.0,19.0,0,0,0,-10,-10,,,,,,,,True,-8
-11,Austrian Grand Prix,ALB,Williams,0,12.0,12.0,17.0,0,0,0,-10,-10,,,,,,,,True,-10
-11,Austrian Grand Prix,TSU,Red Bull Racing,0,18.0,18.0,16.0,0,2,0,0,2,,,,,,,,False,2
-11,Austrian Grand Prix,PIA,McLaren,8,3.0,3.0,2.0,18,1,0,0,19,,,,,,,,False,27
-11,Austrian Grand Prix,LEC,Ferrari,9,2.0,2.0,3.0,15,-1,0,0,14,,,,,,,,False,23
-11,Austrian Grand Prix,BEA,Haas F1 Team,0,15.0,15.0,11.0,0,4,0,0,4,,,,,,,,False,4
-11,Austrian Grand Prix,STR,Aston Martin,0,16.0,16.0,14.0,0,2,0,0,2,,,,,,,,False,2
-11,Austrian Grand Prix,LAW,Racing Bulls,5,6.0,6.0,6.0,8,0,0,0,8,,,,,,,,False,13
-11,Austrian Grand Prix,RUS,Mercedes,6,5.0,5.0,5.0,10,0,0,0,10,,,,,,,,False,16
-11,Austrian Grand Prix,NOR,McLaren,10,1.0,1.0,1.0,25,0,0,0,25,,,,,,,,False,35
-12,British Grand Prix,COL,Alpine,0,20.0,20.0,20.0,0,0,0,-10,-10,,,,,,,,True,-10
-12,British Grand Prix,HAD,Racing Bulls,0,13.0,12.0,17.0,0,0,0,-10,-10,,,,,,,,True,-10
-12,British Grand Prix,HAM,Ferrari,6,5.0,5.0,4.0,12,1,0,0,13,,,,,,,,False,19
-12,British Grand Prix,GAS,Alpine,1,10.0,8.0,6.0,8,2,0,0,10,,,,,,,,False,11
-12,British Grand Prix,ALO,Aston Martin,2,9.0,7.0,9.0,2,-2,0,0,0,,,,,,,,False,2
-12,British Grand Prix,SAI,Williams,0,11.0,9.0,12.0,0,-3,0,0,-3,,,,,,,,False,-3
-12,British Grand Prix,BOR,Kick Sauber,0,17.0,16.0,18.0,0,0,0,-10,-10,,,,,,,,True,-10
-12,British Grand Prix,VER,Red Bull Racing,10,1.0,1.0,5.0,10,-4,0,0,6,,,,,,,,False,16
-12,British Grand Prix,OCO,Haas F1 Team,0,15.0,14.0,13.0,0,1,0,0,1,,,,,,,,False,1
-12,British Grand Prix,HUL,Kick Sauber,0,19.0,19.0,3.0,15,16,0,0,31,,,,,,,,False,31
-12,British Grand Prix,ANT,Mercedes,4,7.0,10.0,16.0,0,0,0,-10,-10,,,,,,,,True,-6
-12,British Grand Prix,ALB,Williams,0,14.0,13.0,8.0,4,5,0,0,9,,,,,,,,False,9
-12,British Grand Prix,TSU,Red Bull Racing,0,12.0,11.0,15.0,0,-4,0,0,-4,,,,,,,,False,-4
-12,British Grand Prix,PIA,McLaren,9,2.0,2.0,2.0,18,0,0,0,18,,,,,,,,False,27
-12,British Grand Prix,LEC,Ferrari,5,6.0,6.0,14.0,0,-8,0,0,-8,,,,,,,,False,-3
-12,British Grand Prix,BEA,Haas F1 Team,3,8.0,18.0,11.0,0,7,0,0,7,,,,,,,,False,10
-12,British Grand Prix,STR,Aston Martin,0,18.0,17.0,7.0,6,10,0,0,16,,,,,,,,False,16
-12,British Grand Prix,LAW,Racing Bulls,0,16.0,15.0,19.0,0,0,0,-10,-10,,,,,,,,True,-10
-12,British Grand Prix,RUS,Mercedes,7,4.0,4.0,10.0,1,-6,0,0,-5,,,,,,,,False,2
-12,British Grand Prix,NOR,McLaren,8,3.0,3.0,1.0,25,2,0,0,27,,,,,,,,False,35
-13,Belgian Grand Prix,COL,Alpine,0,17.0,15.0,19.0,0,-4,0,0,-4,20.0,19.0,0.0,1.0,0.0,0.0,1.0,False,-3
-13,Belgian Grand Prix,HAD,Racing Bulls,3,8.0,8.0,20.0,0,-12,0,0,-12,9.0,8.0,1.0,1.0,0.0,0.0,2.0,False,-7
-13,Belgian Grand Prix,HAM,Ferrari,0,16.0,18.0,7.0,6,11,0,0,17,18.0,15.0,0.0,3.0,0.0,0.0,3.0,False,20
-13,Belgian Grand Prix,GAS,Alpine,0,13.0,13.0,10.0,1,3,0,0,4,8.0,20.0,0.0,0.0,0.0,-5.0,-5.0,False,-1
-13,Belgian Grand Prix,ALO,Aston Martin,0,19.0,20.0,17.0,0,3,0,0,3,14.0,14.0,0.0,0.0,0.0,0.0,0.0,False,3
-13,Belgian Grand Prix,SAI,Williams,0,15.0,17.0,18.0,0,-1,0,0,-1,6.0,6.0,3.0,0.0,0.0,0.0,3.0,False,2
-13,Belgian Grand Prix,BOR,Kick Sauber,1,10.0,10.0,9.0,2,1,0,0,3,10.0,9.0,0.0,1.0,0.0,0.0,1.0,False,5
-13,Belgian Grand Prix,VER,Red Bull Racing,7,4.0,4.0,4.0,12,0,0,0,12,2.0,1.0,8.0,1.0,0.0,0.0,9.0,False,28
-13,Belgian Grand Prix,OCO,Haas F1 Team,0,11.0,11.0,15.0,0,-4,0,0,-4,5.0,5.0,4.0,0.0,0.0,0.0,4.0,False,0
-13,Belgian Grand Prix,HUL,Kick Sauber,0,14.0,14.0,12.0,0,2,0,0,2,17.0,18.0,0.0,-1.0,0.0,0.0,-1.0,False,1
-13,Belgian Grand Prix,ANT,Mercedes,0,18.0,19.0,16.0,0,3,0,0,3,19.0,17.0,0.0,2.0,0.0,0.0,2.0,False,5
-13,Belgian Grand Prix,ALB,Williams,6,5.0,5.0,6.0,8,-1,0,0,7,16.0,16.0,0.0,0.0,0.0,0.0,0.0,False,13
-13,Belgian Grand Prix,TSU,Red Bull Racing,4,7.0,7.0,13.0,0,-6,0,0,-6,12.0,11.0,0.0,1.0,0.0,0.0,1.0,False,-1
-13,Belgian Grand Prix,PIA,McLaren,9,2.0,2.0,1.0,25,1,0,0,26,1.0,2.0,7.0,-1.0,0.0,0.0,6.0,False,41
-13,Belgian Grand Prix,LEC,Ferrari,8,3.0,3.0,3.0,15,0,0,0,15,4.0,4.0,5.0,0.0,0.0,0.0,5.0,False,28
-13,Belgian Grand Prix,BEA,Haas F1 Team,0,12.0,12.0,11.0,0,1,0,0,1,7.0,7.0,2.0,0.0,0.0,0.0,2.0,False,3
-13,Belgian Grand Prix,STR,Aston Martin,0,20.0,16.0,14.0,0,2,0,0,2,15.0,13.0,0.0,2.0,0.0,0.0,2.0,False,4
-13,Belgian Grand Prix,LAW,Racing Bulls,2,9.0,9.0,8.0,4,1,0,0,5,11.0,10.0,0.0,1.0,0.0,0.0,1.0,False,8
-13,Belgian Grand Prix,RUS,Mercedes,5,6.0,6.0,5.0,10,1,0,0,11,13.0,12.0,0.0,1.0,0.0,0.0,1.0,False,17
-13,Belgian Grand Prix,NOR,McLaren,10,1.0,1.0,2.0,18,-1,0,0,17,3.0,3.0,6.0,0.0,0.0,0.0,6.0,False,33
-14,Hungarian Grand Prix,COL,Alpine,0,14.0,14.0,18.0,0,-4,0,0,-4,,,,,,,,False,-4
-14,Hungarian Grand Prix,HAD,Racing Bulls,1,10.0,10.0,11.0,0,-1,0,0,-1,,,,,,,,False,0
-14,Hungarian Grand Prix,HAM,Ferrari,0,12.0,12.0,12.0,0,0,0,0,0,,,,,,,,False,0
-14,Hungarian Grand Prix,GAS,Alpine,0,17.0,16.0,19.0,0,-3,0,0,-3,,,,,,,,False,-3
-14,Hungarian Grand Prix,ALO,Aston Martin,6,5.0,5.0,5.0,10,0,0,0,10,,,,,,,,False,16
-14,Hungarian Grand Prix,SAI,Williams,0,13.0,13.0,14.0,0,-1,0,0,-1,,,,,,,,False,-1
-14,Hungarian Grand Prix,BOR,Kick Sauber,4,7.0,7.0,6.0,8,1,0,0,9,,,,,,,,False,13
-14,Hungarian Grand Prix,VER,Red Bull Racing,3,8.0,8.0,9.0,2,-1,0,0,1,,,,,,,,False,4
-14,Hungarian Grand Prix,OCO,Haas F1 Team,0,18.0,17.0,16.0,0,1,0,0,1,,,,,,,,False,1
-14,Hungarian Grand Prix,HUL,Kick Sauber,0,19.0,18.0,13.0,0,5,0,0,5,,,,,,,,False,5
-14,Hungarian Grand Prix,ANT,Mercedes,0,15.0,15.0,10.0,1,5,0,0,6,,,,,,,,False,6
-14,Hungarian Grand Prix,ALB,Williams,0,20.0,19.0,15.0,0,4,0,0,4,,,,,,,,False,4
-14,Hungarian Grand Prix,TSU,Red Bull Racing,0,16.0,20.0,17.0,0,3,0,0,3,,,,,,,,False,3
-14,Hungarian Grand Prix,PIA,McLaren,9,2.0,2.0,2.0,18,0,0,0,18,,,,,,,,False,27
-14,Hungarian Grand Prix,LEC,Ferrari,10,1.0,1.0,4.0,12,-3,0,0,9,,,,,,,,False,19
-14,Hungarian Grand Prix,BEA,Haas F1 Team,0,11.0,11.0,20.0,0,0,0,-10,-10,,,,,,,,True,-10
-14,Hungarian Grand Prix,STR,Aston Martin,5,6.0,6.0,7.0,6,-1,0,0,5,,,,,,,,False,10
-14,Hungarian Grand Prix,LAW,Racing Bulls,2,9.0,9.0,8.0,4,1,0,0,5,,,,,,,,False,7
-14,Hungarian Grand Prix,RUS,Mercedes,7,4.0,4.0,3.0,15,1,0,0,16,,,,,,,,False,23
-14,Hungarian Grand Prix,NOR,McLaren,8,3.0,3.0,1.0,25,2,0,0,27,,,,,,,,False,35
-15,Dutch Grand Prix,COL,Alpine,0,16.0,16.0,11.0,0,5,0,0,5,,,,,,,,False,5
-15,Dutch Grand Prix,HAD,Racing Bulls,7,4.0,4.0,3.0,15,1,0,0,16,,,,,,,,False,23
-15,Dutch Grand Prix,HAM,Ferrari,4,7.0,7.0,20.0,0,0,0,-10,-10,,,,,,,,True,-6
-15,Dutch Grand Prix,GAS,Alpine,0,14.0,14.0,17.0,0,-3,0,0,-3,,,,,,,,False,-3
-15,Dutch Grand Prix,ALO,Aston Martin,1,10.0,10.0,8.0,4,2,0,0,6,,,,,,,,False,7
-15,Dutch Grand Prix,SAI,Williams,2,9.0,9.0,13.0,0,-4,0,0,-4,,,,,,,,False,-2
-15,Dutch Grand Prix,BOR,Kick Sauber,0,13.0,13.0,15.0,0,-2,0,0,-2,,,,,,,,False,-2
-15,Dutch Grand Prix,VER,Red Bull Racing,8,3.0,3.0,2.0,18,1,0,0,19,,,,,,,,False,27
-15,Dutch Grand Prix,OCO,Haas F1 Team,0,18.0,18.0,10.0,1,8,0,0,9,,,,,,,,False,9
-15,Dutch Grand Prix,HUL,Kick Sauber,0,17.0,17.0,14.0,0,3,0,0,3,,,,,,,,False,3
-15,Dutch Grand Prix,ANT,Mercedes,0,11.0,11.0,16.0,0,-5,0,0,-5,,,,,,,,False,-5
-15,Dutch Grand Prix,ALB,Williams,0,15.0,15.0,5.0,10,10,0,0,20,,,,,,,,False,20
-15,Dutch Grand Prix,TSU,Red Bull Racing,0,12.0,12.0,9.0,2,3,0,0,5,,,,,,,,False,5
-15,Dutch Grand Prix,PIA,McLaren,10,1.0,1.0,1.0,25,0,0,0,25,,,,,,,,False,35
-15,Dutch Grand Prix,LEC,Ferrari,5,6.0,6.0,19.0,0,0,0,-10,-10,,,,,,,,True,-5
-15,Dutch Grand Prix,BEA,Haas F1 Team,0,19.0,20.0,6.0,8,14,0,0,22,,,,,,,,False,22
-15,Dutch Grand Prix,STR,Aston Martin,0,20.0,19.0,7.0,6,12,0,0,18,,,,,,,,False,18
-15,Dutch Grand Prix,LAW,Racing Bulls,3,8.0,8.0,12.0,0,-4,0,0,-4,,,,,,,,False,-1
-15,Dutch Grand Prix,RUS,Mercedes,6,5.0,5.0,4.0,12,1,0,0,13,,,,,,,,False,19
-15,Dutch Grand Prix,NOR,McLaren,9,2.0,2.0,18.0,0,0,0,-10,-10,,,,,,,,True,-1
-16,Italian Grand Prix,COL,Alpine,0,18.0,17.0,17.0,0,0,0,0,0,,,,,,,,False,0
-16,Italian Grand Prix,HAD,Racing Bulls,0,16.0,19.0,10.0,1,9,0,0,10,,,,,,,,False,10
-16,Italian Grand Prix,HAM,Ferrari,6,5.0,10.0,6.0,8,4,0,0,12,,,,,,,,False,18
-16,Italian Grand Prix,GAS,Alpine,0,19.0,20.0,16.0,0,4,0,0,4,,,,,,,,False,4
-16,Italian Grand Prix,ALO,Aston Martin,2,9.0,8.0,19.0,0,0,0,-10,-10,,,,,,,,True,-8
-16,Italian Grand Prix,SAI,Williams,0,13.0,13.0,11.0,0,2,0,0,2,,,,,,,,False,2
-16,Italian Grand Prix,BOR,Kick Sauber,3,8.0,7.0,8.0,4,-1,0,0,3,,,,,,,,False,6
-16,Italian Grand Prix,VER,Red Bull Racing,10,1.0,1.0,1.0,25,0,0,0,25,,,,,,,,False,35
-16,Italian Grand Prix,OCO,Haas F1 Team,0,15.0,15.0,15.0,0,0,0,0,0,,,,,,,,False,0
-16,Italian Grand Prix,HUL,Kick Sauber,0,12.0,12.0,20.0,0,0,0,-10,-10,,,,,,,,True,-10
-16,Italian Grand Prix,ANT,Mercedes,4,7.0,6.0,9.0,2,-3,0,0,-1,,,,,,,,False,3
-16,Italian Grand Prix,ALB,Williams,0,14.0,14.0,7.0,6,7,0,0,13,,,,,,,,False,13
-16,Italian Grand Prix,TSU,Red Bull Racing,1,10.0,9.0,13.0,0,-4,0,0,-4,,,,,,,,False,-3
-16,Italian Grand Prix,PIA,McLaren,8,3.0,3.0,3.0,15,0,0,0,15,,,,,,,,False,23
-16,Italian Grand Prix,LEC,Ferrari,7,4.0,4.0,4.0,12,0,0,0,12,,,,,,,,False,19
-16,Italian Grand Prix,BEA,Haas F1 Team,0,11.0,11.0,12.0,0,-1,0,0,-1,,,,,,,,False,-1
-16,Italian Grand Prix,STR,Aston Martin,0,17.0,16.0,18.0,0,-2,0,0,-2,,,,,,,,False,-2
-16,Italian Grand Prix,LAW,Racing Bulls,0,20.0,18.0,14.0,0,4,0,0,4,,,,,,,,False,4
-16,Italian Grand Prix,RUS,Mercedes,5,6.0,5.0,5.0,10,0,0,0,10,,,,,,,,False,15
-16,Italian Grand Prix,NOR,McLaren,9,2.0,2.0,2.0,18,0,0,0,18,,,,,,,,False,27
-17,Azerbaijan Grand Prix,COL,Alpine,0,16.0,16.0,19.0,0,-3,0,0,-3,,,,,,,,False,-3
-17,Azerbaijan Grand Prix,HAD,Racing Bulls,3,8.0,8.0,10.0,1,-2,0,0,-1,,,,,,,,False,2
-17,Azerbaijan Grand Prix,HAM,Ferrari,0,12.0,12.0,8.0,4,4,0,0,8,,,,,,,,False,8
-17,Azerbaijan Grand Prix,GAS,Alpine,0,18.0,18.0,18.0,0,0,0,0,0,,,,,,,,False,0
-17,Azerbaijan Grand Prix,ALO,Aston Martin,0,11.0,11.0,15.0,0,-4,0,0,-4,,,,,,,,False,-4
-17,Azerbaijan Grand Prix,SAI,Williams,9,2.0,2.0,3.0,15,-1,0,0,14,,,,,,,,False,23
-17,Azerbaijan Grand Prix,BOR,Kick Sauber,0,13.0,13.0,11.0,0,2,0,0,2,,,,,,,,False,2
-17,Azerbaijan Grand Prix,VER,Red Bull Racing,10,1.0,1.0,1.0,25,0,0,0,25,,,,,,,,False,35
-17,Azerbaijan Grand Prix,OCO,Haas F1 Team,0,20.0,20.0,14.0,0,6,0,0,6,,,,,,,,False,6
-17,Azerbaijan Grand Prix,HUL,Kick Sauber,0,17.0,17.0,16.0,0,1,0,0,1,,,,,,,,False,1
-17,Azerbaijan Grand Prix,ANT,Mercedes,7,4.0,4.0,4.0,12,0,0,0,12,,,,,,,,False,19
-17,Azerbaijan Grand Prix,ALB,Williams,0,19.0,19.0,13.0,0,6,0,0,6,,,,,,,,False,6
-17,Azerbaijan Grand Prix,TSU,Red Bull Racing,5,6.0,6.0,6.0,8,0,0,0,8,,,,,,,,False,13
-17,Azerbaijan Grand Prix,PIA,McLaren,2,9.0,9.0,20.0,0,0,0,-10,-10,,,,,,,,True,-8
-17,Azerbaijan Grand Prix,LEC,Ferrari,1,10.0,10.0,9.0,2,1,0,0,3,,,,,,,,False,4
-17,Azerbaijan Grand Prix,BEA,Haas F1 Team,0,15.0,15.0,12.0,0,3,0,0,3,,,,,,,,False,3
-17,Azerbaijan Grand Prix,STR,Aston Martin,0,14.0,14.0,17.0,0,-3,0,0,-3,,,,,,,,False,-3
-17,Azerbaijan Grand Prix,LAW,Racing Bulls,8,3.0,3.0,5.0,10,-2,0,0,8,,,,,,,,False,16
-17,Azerbaijan Grand Prix,RUS,Mercedes,6,5.0,5.0,2.0,18,3,0,0,21,,,,,,,,False,27
-17,Azerbaijan Grand Prix,NOR,McLaren,4,7.0,7.0,7.0,6,0,0,0,6,,,,,,,,False,10
-18,Singapore Grand Prix,COL,Alpine,0,16.0,16.0,16.0,0,0,0,0,0,,,,,,,,False,0
-18,Singapore Grand Prix,HAD,Racing Bulls,3,8.0,8.0,11.0,0,-3,0,0,-3,,,,,,,,False,0
-18,Singapore Grand Prix,HAM,Ferrari,5,6.0,6.0,8.0,4,-2,0,0,2,,,,,,,,False,7
-18,Singapore Grand Prix,GAS,Alpine,0,18.0,19.0,19.0,0,0,0,0,0,,,,,,,,False,0
-18,Singapore Grand Prix,ALO,Aston Martin,1,10.0,10.0,7.0,6,3,0,0,9,,,,,,,,False,10
-18,Singapore Grand Prix,SAI,Williams,0,20.0,18.0,10.0,1,8,0,0,9,,,,,,,,False,9
-18,Singapore Grand Prix,BOR,Kick Sauber,0,14.0,14.0,17.0,0,-3,0,0,-3,,,,,,,,False,-3
-18,Singapore Grand Prix,VER,Red Bull Racing,9,2.0,2.0,2.0,18,0,0,0,18,,,,,,,,False,27
-18,Singapore Grand Prix,OCO,Haas F1 Team,0,17.0,17.0,18.0,0,-1,0,0,-1,,,,,,,,False,-1
-18,Singapore Grand Prix,HUL,Kick Sauber,0,11.0,11.0,20.0,0,-9,0,0,-9,,,,,,,,False,-9
-18,Singapore Grand Prix,ANT,Mercedes,7,4.0,4.0,5.0,10,-1,0,0,9,,,,,,,,False,16
-18,Singapore Grand Prix,ALB,Williams,0,19.0,20.0,14.0,0,6,0,0,6,,,,,,,,False,6
-18,Singapore Grand Prix,TSU,Red Bull Racing,0,13.0,13.0,12.0,0,1,0,0,1,,,,,,,,False,1
-18,Singapore Grand Prix,PIA,McLaren,8,3.0,3.0,4.0,12,-1,0,0,11,,,,,,,,False,19
-18,Singapore Grand Prix,LEC,Ferrari,4,7.0,7.0,6.0,8,1,0,0,9,,,,,,,,False,13
-18,Singapore Grand Prix,BEA,Haas F1 Team,2,9.0,9.0,9.0,2,0,0,0,2,,,,,,,,False,4
-18,Singapore Grand Prix,STR,Aston Martin,0,15.0,15.0,13.0,0,2,0,0,2,,,,,,,,False,2
-18,Singapore Grand Prix,LAW,Racing Bulls,0,12.0,12.0,15.0,0,-3,0,0,-3,,,,,,,,False,-3
-18,Singapore Grand Prix,RUS,Mercedes,10,1.0,1.0,1.0,25,0,0,0,25,,,,,,,,False,35
-18,Singapore Grand Prix,NOR,McLaren,6,5.0,5.0,3.0,15,2,0,0,17,,,,,,,,False,23
-19,United States Grand Prix,COL,Alpine,0,15.0,15.0,17.0,0,-2,0,0,-2,17.0,14.0,0.0,3.0,0.0,0.0,3.0,False,1
-19,United States Grand Prix,HAD,Racing Bulls,0,20.0,20.0,16.0,0,4,0,0,4,12.0,12.0,0.0,0.0,0.0,0.0,0.0,False,4
-19,United States Grand Prix,HAM,Ferrari,6,5.0,5.0,4.0,12,1,0,0,13,8.0,4.0,5.0,4.0,0.0,0.0,9.0,False,28
-19,United States Grand Prix,GAS,Alpine,0,14.0,14.0,19.0,0,-5,0,0,-5,13.0,10.0,0.0,3.0,0.0,0.0,3.0,False,-2
-19,United States Grand Prix,ALO,Aston Martin,1,10.0,10.0,10.0,1,0,0,0,1,6.0,20.0,0.0,0.0,0.0,-5.0,-5.0,False,-3
-19,United States Grand Prix,SAI,Williams,2,9.0,9.0,20.0,0,0,0,-10,-10,7.0,3.0,6.0,4.0,0.0,0.0,10.0,True,2
-19,United States Grand Prix,BOR,Kick Sauber,0,16.0,16.0,18.0,0,-2,0,0,-2,20.0,11.0,0.0,9.0,0.0,0.0,9.0,False,7
-19,United States Grand Prix,VER,Red Bull Racing,10,1.0,1.0,1.0,25,0,0,0,25,1.0,1.0,8.0,0.0,0.0,0.0,8.0,False,43
-19,United States Grand Prix,OCO,Haas F1 Team,0,17.0,17.0,15.0,0,2,0,0,2,19.0,16.0,0.0,0.0,0.0,-5.0,-5.0,False,-3
-19,United States Grand Prix,HUL,Kick Sauber,0,11.0,11.0,8.0,4,3,0,0,7,4.0,13.0,0.0,-9.0,0.0,0.0,-9.0,False,-2
-19,United States Grand Prix,ANT,Mercedes,4,7.0,7.0,13.0,0,-6,0,0,-6,11.0,8.0,1.0,3.0,0.0,0.0,4.0,False,2
-19,United States Grand Prix,ALB,Williams,0,19.0,18.0,14.0,0,4,0,0,4,9.0,6.0,3.0,3.0,0.0,0.0,6.0,False,10
-19,United States Grand Prix,TSU,Red Bull Racing,0,13.0,13.0,7.0,6,6,0,0,12,18.0,7.0,2.0,11.0,0.0,0.0,13.0,False,25
-19,United States Grand Prix,PIA,McLaren,5,6.0,6.0,5.0,10,1,0,0,11,3.0,19.0,0.0,0.0,0.0,-5.0,-5.0,False,11
-19,United States Grand Prix,LEC,Ferrari,8,3.0,3.0,3.0,15,0,0,0,15,10.0,5.0,4.0,5.0,0.0,0.0,9.0,False,32
-19,United States Grand Prix,BEA,Haas F1 Team,3,8.0,8.0,9.0,2,-1,0,0,1,16.0,15.0,0.0,1.0,0.0,0.0,1.0,False,5
-19,United States Grand Prix,STR,Aston Martin,0,18.0,19.0,12.0,0,7,0,0,7,14.0,17.0,0.0,0.0,0.0,-5.0,-5.0,False,2
-19,United States Grand Prix,LAW,Racing Bulls,0,12.0,12.0,11.0,0,1,0,0,1,15.0,9.0,0.0,6.0,0.0,0.0,6.0,False,7
-19,United States Grand Prix,RUS,Mercedes,7,4.0,4.0,6.0,8,-2,0,0,6,5.0,2.0,7.0,3.0,0.0,0.0,10.0,False,23
-19,United States Grand Prix,NOR,McLaren,9,2.0,2.0,2.0,18,0,0,0,18,2.0,18.0,0.0,0.0,0.0,-5.0,-5.0,False,22
-20,Mexico City Grand Prix,COL,Alpine,0,20.0,20.0,16.0,0,4,0,0,4,,,,,,,,False,4
-20,Mexico City Grand Prix,HAD,Racing Bulls,2,9.0,8.0,13.0,0,-5,0,0,-5,,,,,,,,False,-3
-20,Mexico City Grand Prix,HAM,Ferrari,8,3.0,3.0,8.0,4,-5,0,0,-1,,,,,,,,False,7
-20,Mexico City Grand Prix,GAS,Alpine,0,18.0,18.0,15.0,0,3,0,0,3,,,,,,,,False,3
-20,Mexico City Grand Prix,ALO,Aston Martin,0,14.0,14.0,18.0,0,0,0,-10,-10,,,,,,,,True,-10
-20,Mexico City Grand Prix,SAI,Williams,4,7.0,12.0,17.0,0,0,0,-10,-10,,,,,,,,True,-6
-20,Mexico City Grand Prix,BOR,Kick Sauber,0,16.0,16.0,10.0,1,6,0,0,7,,,,,,,,False,7
-20,Mexico City Grand Prix,VER,Red Bull Racing,6,5.0,5.0,3.0,15,2,0,0,17,,,,,,,,False,23
-20,Mexico City Grand Prix,OCO,Haas F1 Team,0,12.0,11.0,9.0,2,2,0,0,4,,,,,,,,False,4
-20,Mexico City Grand Prix,HUL,Kick Sauber,0,13.0,13.0,19.0,0,0,0,-10,-10,,,,,,,,True,-10
-20,Mexico City Grand Prix,ANT,Mercedes,5,6.0,6.0,6.0,8,0,0,0,8,,,,,,,,False,13
-20,Mexico City Grand Prix,ALB,Williams,0,17.0,17.0,12.0,0,5,0,0,5,,,,,,,,False,5
-20,Mexico City Grand Prix,TSU,Red Bull Racing,0,11.0,10.0,11.0,0,-1,0,0,-1,,,,,,,,False,-1
-20,Mexico City Grand Prix,PIA,McLaren,3,8.0,7.0,5.0,10,2,0,0,12,,,,,,,,False,15
-20,Mexico City Grand Prix,LEC,Ferrari,9,2.0,2.0,2.0,18,0,0,0,18,,,,,,,,False,27
-20,Mexico City Grand Prix,BEA,Haas F1 Team,1,10.0,9.0,4.0,12,5,0,0,17,,,,,,,,False,18
-20,Mexico City Grand Prix,STR,Aston Martin,0,19.0,19.0,14.0,0,5,0,0,5,,,,,,,,False,5
-20,Mexico City Grand Prix,LAW,Racing Bulls,0,15.0,15.0,20.0,0,0,0,-10,-10,,,,,,,,True,-10
-20,Mexico City Grand Prix,RUS,Mercedes,7,4.0,4.0,7.0,6,-3,0,0,3,,,,,,,,False,10
-20,Mexico City Grand Prix,NOR,McLaren,10,1.0,1.0,1.0,25,0,0,0,25,,,,,,,,False,35
-21,São Paulo Grand Prix,COL,Alpine,0,18.0,16.0,15.0,0,1,0,0,1,16.0,20.0,0.0,0.0,0.0,-5.0,-5.0,False,-4
-21,São Paulo Grand Prix,HAD,Racing Bulls,6,5.0,5.0,8.0,4,-3,0,0,1,9.0,10.0,0.0,-1.0,0.0,0.0,-1.0,False,6
-21,São Paulo Grand Prix,HAM,Ferrari,0,13.0,13.0,18.0,0,0,0,-10,-10,11.0,7.0,2.0,4.0,0.0,0.0,6.0,True,-4
-21,São Paulo Grand Prix,GAS,Alpine,2,9.0,9.0,10.0,1,-1,0,0,0,13.0,8.0,1.0,5.0,0.0,0.0,6.0,False,8
-21,São Paulo Grand Prix,ALO,Aston Martin,0,11.0,11.0,14.0,0,-3,0,0,-3,5.0,6.0,3.0,-1.0,0.0,0.0,2.0,False,-1
-21,São Paulo Grand Prix,SAI,Williams,0,15.0,15.0,13.0,0,2,0,0,2,20.0,14.0,0.0,6.0,0.0,0.0,6.0,False,8
-21,São Paulo Grand Prix,BOR,Kick Sauber,0,,18.0,20.0,0,0,0,-10,-10,14.0,18.0,0.0,0.0,0.0,-5.0,-5.0,True,-15
-21,São Paulo Grand Prix,VER,Red Bull Racing,0,16.0,19.0,3.0,15,16,0,0,31,6.0,4.0,5.0,2.0,0.0,0.0,7.0,False,38
-21,São Paulo Grand Prix,OCO,Haas F1 Team,0,17.0,20.0,12.0,0,8,0,0,8,18.0,11.0,0.0,7.0,0.0,0.0,7.0,False,15
-21,São Paulo Grand Prix,HUL,Kick Sauber,1,10.0,10.0,9.0,2,1,0,0,3,10.0,15.0,0.0,-5.0,0.0,0.0,-5.0,False,-1
-21,São Paulo Grand Prix,ANT,Mercedes,9,2.0,2.0,2.0,18,0,0,0,18,2.0,2.0,7.0,0.0,0.0,0.0,7.0,False,34
-21,São Paulo Grand Prix,ALB,Williams,0,12.0,12.0,11.0,0,1,0,0,1,12.0,17.0,0.0,-5.0,0.0,0.0,-5.0,False,-4
-21,São Paulo Grand Prix,TSU,Red Bull Racing,0,19.0,17.0,17.0,0,0,0,0,0,19.0,13.0,0.0,6.0,0.0,0.0,6.0,False,6
-21,São Paulo Grand Prix,PIA,McLaren,7,4.0,4.0,5.0,10,-1,0,0,9,3.0,19.0,0.0,0.0,0.0,-5.0,-5.0,False,11
-21,São Paulo Grand Prix,LEC,Ferrari,8,3.0,3.0,19.0,0,0,0,-10,-10,8.0,5.0,4.0,3.0,0.0,0.0,7.0,True,5
-21,São Paulo Grand Prix,BEA,Haas F1 Team,3,8.0,8.0,6.0,8,2,0,0,10,15.0,12.0,0.0,3.0,0.0,0.0,3.0,False,16
-21,São Paulo Grand Prix,STR,Aston Martin,0,14.0,14.0,16.0,0,-2,0,0,-2,7.0,9.0,0.0,-2.0,0.0,0.0,-2.0,False,-4
-21,São Paulo Grand Prix,LAW,Racing Bulls,4,7.0,7.0,7.0,6,0,0,0,6,17.0,16.0,0.0,1.0,0.0,0.0,1.0,False,11
-21,São Paulo Grand Prix,RUS,Mercedes,5,6.0,6.0,4.0,12,2,0,0,14,4.0,3.0,6.0,1.0,0.0,0.0,7.0,False,26
-21,São Paulo Grand Prix,NOR,McLaren,10,1.0,1.0,1.0,25,0,0,0,25,1.0,1.0,8.0,0.0,0.0,0.0,8.0,False,43
-22,Las Vegas Grand Prix,COL,Alpine,0,15.0,15.0,15.0,0,0,0,0,0,,,,,,,,False,0
-22,Las Vegas Grand Prix,HAD,Racing Bulls,3,8.0,8.0,6.0,8,2,0,0,10,,,,,,,,False,13
-22,Las Vegas Grand Prix,HAM,Ferrari,0,20.0,19.0,8.0,4,11,0,0,15,,,,,,,,False,15
-22,Las Vegas Grand Prix,GAS,Alpine,1,10.0,10.0,13.0,0,-3,0,0,-3,,,,,,,,False,-2
-22,Las Vegas Grand Prix,ALO,Aston Martin,4,7.0,7.0,11.0,0,-4,0,0,-4,,,,,,,,False,0
-22,Las Vegas Grand Prix,SAI,Williams,8,3.0,3.0,5.0,10,-2,0,0,8,,,,,,,,False,16
-22,Las Vegas Grand Prix,BOR,Kick Sauber,0,18.0,18.0,17.0,0,0,0,-10,-10,,,,,,,,True,-10
-22,Las Vegas Grand Prix,VER,Red Bull Racing,9,2.0,2.0,1.0,25,1,0,0,26,,,,,,,,False,35
-22,Las Vegas Grand Prix,OCO,Haas F1 Team,0,13.0,13.0,9.0,2,4,0,0,6,,,,,,,,False,6
-22,Las Vegas Grand Prix,HUL,Kick Sauber,0,11.0,11.0,7.0,6,4,0,0,10,,,,,,,,False,10
-22,Las Vegas Grand Prix,ANT,Mercedes,0,17.0,17.0,3.0,15,14,0,0,29,,,,,,,,False,29
-22,Las Vegas Grand Prix,ALB,Williams,0,16.0,16.0,16.0,0,0,0,-10,-10,,,,,,,,True,-10
-22,Las Vegas Grand Prix,TSU,Red Bull Racing,0,19.0,20.0,12.0,0,8,0,0,8,,,,,,,,False,8
-22,Las Vegas Grand Prix,PIA,McLaren,6,5.0,5.0,20.0,0,0,0,-10,-10,,,,,,,,True,-4
-22,Las Vegas Grand Prix,LEC,Ferrari,2,9.0,9.0,4.0,12,5,0,0,17,,,,,,,,False,19
-22,Las Vegas Grand Prix,BEA,Haas F1 Team,0,14.0,14.0,10.0,1,4,0,0,5,,,,,,,,False,5
-22,Las Vegas Grand Prix,STR,Aston Martin,0,12.0,12.0,18.0,0,0,0,-10,-10,,,,,,,,True,-10
-22,Las Vegas Grand Prix,LAW,Racing Bulls,5,6.0,6.0,14.0,0,-8,0,0,-8,,,,,,,,False,-3
-22,Las Vegas Grand Prix,RUS,Mercedes,7,4.0,4.0,2.0,18,2,0,0,20,,,,,,,,False,27
-22,Las Vegas Grand Prix,NOR,McLaren,10,1.0,1.0,19.0,0,0,0,-10,-10,,,,,,,,True,0
-23,Qatar Grand Prix,COL,Alpine,0,20.0,20.0,14.0,0,6,0,0,6,20.0,20.0,0.0,0.0,0.0,0.0,0.0,False,6
-23,Qatar Grand Prix,HAD,Racing Bulls,5,6.0,6.0,18.0,0,0,0,-10,-10,11.0,9.0,0.0,2.0,0.0,0.0,2.0,True,-3
-23,Qatar Grand Prix,HAM,Ferrari,0,18.0,17.0,12.0,0,5,0,0,5,18.0,17.0,0.0,1.0,0.0,0.0,1.0,False,6
-23,Qatar Grand Prix,GAS,Alpine,2,9.0,9.0,16.0,0,-7,0,0,-7,19.0,18.0,0.0,1.0,0.0,0.0,1.0,False,-4
-23,Qatar Grand Prix,ALO,Aston Martin,3,8.0,8.0,7.0,6,1,0,0,7,4.0,7.0,2.0,-3.0,0.0,0.0,-1.0,False,9
-23,Qatar Grand Prix,SAI,Williams,4,7.0,7.0,3.0,15,4,0,0,19,8.0,8.0,1.0,0.0,0.0,0.0,1.0,False,24
-23,Qatar Grand Prix,BOR,Kick Sauber,0,14.0,19.0,13.0,0,6,0,0,6,13.0,11.0,0.0,2.0,0.0,0.0,2.0,False,8
-23,Qatar Grand Prix,VER,Red Bull Racing,8,3.0,3.0,1.0,25,2,0,0,27,6.0,4.0,5.0,2.0,0.0,0.0,7.0,False,42
-23,Qatar Grand Prix,OCO,Haas F1 Team,0,17.0,16.0,15.0,0,1,0,0,1,15.0,15.0,0.0,0.0,0.0,0.0,0.0,False,1
-23,Qatar Grand Prix,HUL,Kick Sauber,0,11.0,11.0,20.0,0,0,0,-10,-10,14.0,16.0,0.0,-2.0,0.0,0.0,-2.0,True,-12
-23,Qatar Grand Prix,ANT,Mercedes,6,5.0,5.0,5.0,10,0,0,0,10,7.0,6.0,3.0,1.0,0.0,0.0,4.0,False,20
-23,Qatar Grand Prix,ALB,Williams,0,15.0,14.0,11.0,0,3,0,0,3,10.0,10.0,0.0,0.0,0.0,0.0,0.0,False,3
-23,Qatar Grand Prix,TSU,Red Bull Racing,0,16.0,15.0,10.0,1,5,0,0,6,5.0,5.0,4.0,0.0,0.0,0.0,4.0,False,10
-23,Qatar Grand Prix,PIA,McLaren,10,1.0,1.0,2.0,18,-1,0,0,17,1.0,1.0,8.0,0.0,0.0,0.0,8.0,False,35
-23,Qatar Grand Prix,LEC,Ferrari,1,10.0,10.0,8.0,4,2,0,0,6,9.0,13.0,0.0,-4.0,0.0,0.0,-4.0,False,3
-23,Qatar Grand Prix,BEA,Haas F1 Team,0,13.0,13.0,19.0,0,0,0,-10,-10,12.0,12.0,0.0,0.0,0.0,0.0,0.0,True,-10
-23,Qatar Grand Prix,STR,Aston Martin,0,19.0,18.0,17.0,0,0,0,-10,-10,17.0,19.0,0.0,-2.0,0.0,0.0,-2.0,True,-12
-23,Qatar Grand Prix,LAW,Racing Bulls,0,12.0,12.0,9.0,2,3,0,0,5,16.0,14.0,0.0,2.0,0.0,0.0,2.0,False,7
-23,Qatar Grand Prix,RUS,Mercedes,7,4.0,4.0,6.0,8,-2,0,0,6,2.0,2.0,7.0,0.0,0.0,0.0,7.0,False,20
-23,Qatar Grand Prix,NOR,McLaren,9,2.0,2.0,4.0,12,-2,0,0,10,3.0,3.0,6.0,0.0,0.0,0.0,6.0,False,25
-24,Abu Dhabi Grand Prix,COL,Alpine,0,20.0,20.0,20.0,0,0,0,0,0,,,,,,,,False,0
-24,Abu Dhabi Grand Prix,HAD,Racing Bulls,2,9.0,9.0,17.0,0,-8,0,0,-8,,,,,,,,False,-6
-24,Abu Dhabi Grand Prix,HAM,Ferrari,0,16.0,16.0,8.0,4,8,0,0,12,,,,,,,,False,12
-24,Abu Dhabi Grand Prix,GAS,Alpine,0,19.0,19.0,19.0,0,0,0,0,0,,,,,,,,False,0
-24,Abu Dhabi Grand Prix,ALO,Aston Martin,5,6.0,6.0,6.0,8,0,0,0,8,,,,,,,,False,13
-24,Abu Dhabi Grand Prix,SAI,Williams,0,12.0,12.0,13.0,0,-1,0,0,-1,,,,,,,,False,-1
-24,Abu Dhabi Grand Prix,BOR,Kick Sauber,4,7.0,7.0,11.0,0,-4,0,0,-4,,,,,,,,False,0
-24,Abu Dhabi Grand Prix,VER,Red Bull Racing,10,1.0,1.0,1.0,25,0,0,0,25,,,,,,,,False,35
-24,Abu Dhabi Grand Prix,OCO,Haas F1 Team,3,8.0,8.0,7.0,6,1,0,0,7,,,,,,,,False,10
-24,Abu Dhabi Grand Prix,HUL,Kick Sauber,0,18.0,18.0,9.0,2,9,0,0,11,,,,,,,,False,11
-24,Abu Dhabi Grand Prix,ANT,Mercedes,0,14.0,14.0,15.0,0,-1,0,0,-1,,,,,,,,False,-1
-24,Abu Dhabi Grand Prix,ALB,Williams,0,17.0,17.0,16.0,0,1,0,0,1,,,,,,,,False,1
-24,Abu Dhabi Grand Prix,TSU,Red Bull Racing,1,10.0,10.0,14.0,0,-4,0,0,-4,,,,,,,,False,-3
-24,Abu Dhabi Grand Prix,PIA,McLaren,8,3.0,3.0,2.0,18,1,0,0,19,,,,,,,,False,27
-24,Abu Dhabi Grand Prix,LEC,Ferrari,6,5.0,5.0,4.0,12,1,0,0,13,,,,,,,,False,19
-24,Abu Dhabi Grand Prix,BEA,Haas F1 Team,0,11.0,11.0,12.0,0,-1,0,0,-1,,,,,,,,False,-1
-24,Abu Dhabi Grand Prix,STR,Aston Martin,0,15.0,15.0,10.0,1,5,0,0,6,,,,,,,,False,6
-24,Abu Dhabi Grand Prix,LAW,Racing Bulls,0,13.0,13.0,18.0,0,-5,0,0,-5,,,,,,,,False,-5
-24,Abu Dhabi Grand Prix,RUS,Mercedes,7,4.0,4.0,5.0,10,-1,0,0,9,,,,,,,,False,16
-24,Abu Dhabi Grand Prix,NOR,McLaren,9,2.0,2.0,3.0,15,-1,0,0,14,,,,,,,,False,23
+round,event,driver,team,quali_pts,quali_position,race_grid,race_finish,race_finish_pts,race_pos_change,race_overtakes,race_fl_pts,race_penalty,race_total,sprint_grid,sprint_finish,sprint_finish_pts,sprint_pos_change,sprint_overtakes,sprint_fl_pts,sprint_penalty,sprint_total,is_dnf,total_pts
+1,Australian Grand Prix,BOR,Kick Sauber,0,15.0,15.0,16.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+1,Australian Grand Prix,GAS,Alpine,2,9.0,9.0,11.0,0,-2,1,0,0,-1,,,,,,,,,False,1
+1,Australian Grand Prix,TSU,Racing Bulls,6,5.0,5.0,12.0,0,-7,1,0,0,-6,,,,,,,,,False,0
+1,Australian Grand Prix,RUS,Mercedes,7,4.0,4.0,3.0,15,1,0,0,0,16,,,,,,,,,False,23
+1,Australian Grand Prix,LEC,Ferrari,4,7.0,7.0,8.0,4,-1,3,0,0,6,,,,,,,,,False,10
+1,Australian Grand Prix,PIA,McLaren,9,2.0,2.0,9.0,2,-7,5,0,0,0,,,,,,,,,False,9
+1,Australian Grand Prix,ALO,Aston Martin,0,12.0,12.0,17.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+1,Australian Grand Prix,OCO,Haas F1 Team,0,19.0,19.0,13.0,0,6,0,0,0,6,,,,,,,,,False,6
+1,Australian Grand Prix,ANT,Mercedes,0,16.0,16.0,4.0,12,12,4,0,0,28,,,,,,,,,False,28
+1,Australian Grand Prix,HUL,Kick Sauber,0,17.0,17.0,7.0,6,10,1,0,0,17,,,,,,,,,False,17
+1,Australian Grand Prix,BEA,Haas F1 Team,0,20.0,20.0,14.0,0,6,0,0,0,6,,,,,,,,,False,6
+1,Australian Grand Prix,VER,Red Bull Racing,8,3.0,3.0,2.0,18,1,0,0,0,19,,,,,,,,,False,27
+1,Australian Grand Prix,LAW,Red Bull Racing,0,18.0,18.0,15.0,0,0,1,0,-10,-9,,,,,,,,,True,-9
+1,Australian Grand Prix,DOO,Alpine,0,14.0,14.0,19.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+1,Australian Grand Prix,SAI,Williams,1,10.0,10.0,18.0,0,0,0,0,-10,-10,,,,,,,,,True,-9
+1,Australian Grand Prix,HAM,Ferrari,3,8.0,8.0,10.0,1,-2,3,0,0,2,,,,,,,,,False,5
+1,Australian Grand Prix,HAD,Racing Bulls,0,11.0,11.0,20.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+1,Australian Grand Prix,ALB,Williams,5,6.0,6.0,5.0,10,1,0,0,0,11,,,,,,,,,False,16
+1,Australian Grand Prix,NOR,McLaren,10,1.0,1.0,1.0,25,0,0,0,0,25,,,,,,,,,False,35
+1,Australian Grand Prix,STR,Aston Martin,0,13.0,13.0,6.0,8,7,0,0,0,15,,,,,,,,,False,15
+2,Chinese Grand Prix,BOR,Kick Sauber,0,19.0,19.0,14.0,0,5,1,0,0,6,14.0,18.0,0.0,-4.0,0.0,0.0,0.0,-4.0,False,2
+2,Chinese Grand Prix,GAS,Alpine,0,16.0,16.0,20.0,0,0,1,0,-10,-9,17.0,12.0,0.0,5.0,3.0,0.0,0.0,8.0,True,-1
+2,Chinese Grand Prix,TSU,Racing Bulls,2,9.0,9.0,16.0,0,-7,2,0,0,-5,8.0,6.0,3.0,2.0,0.0,0.0,0.0,5.0,False,2
+2,Chinese Grand Prix,RUS,Mercedes,9,2.0,2.0,3.0,15,-1,0,0,0,14,5.0,4.0,5.0,1.0,0.0,0.0,0.0,6.0,False,29
+2,Chinese Grand Prix,LEC,Ferrari,5,6.0,6.0,18.0,0,0,2,0,-10,-8,4.0,5.0,4.0,-1.0,0.0,0.0,0.0,3.0,True,0
+2,Chinese Grand Prix,PIA,McLaren,10,1.0,1.0,1.0,25,0,1,0,0,26,3.0,2.0,7.0,1.0,1.0,0.0,0.0,9.0,False,45
+2,Chinese Grand Prix,ALO,Aston Martin,0,13.0,13.0,17.0,0,0,0,0,-10,-10,11.0,10.0,0.0,1.0,0.0,0.0,0.0,1.0,True,-9
+2,Chinese Grand Prix,OCO,Haas F1 Team,0,11.0,11.0,5.0,10,6,1,0,0,17,18.0,16.0,0.0,2.0,1.0,0.0,0.0,3.0,False,20
+2,Chinese Grand Prix,ANT,Mercedes,3,8.0,8.0,6.0,8,2,1,0,0,11,7.0,7.0,2.0,0.0,0.0,0.0,0.0,2.0,False,16
+2,Chinese Grand Prix,HUL,Kick Sauber,0,12.0,12.0,15.0,0,-3,0,0,0,-3,20.0,19.0,0.0,1.0,2.0,0.0,0.0,3.0,False,0
+2,Chinese Grand Prix,BEA,Haas F1 Team,0,17.0,17.0,8.0,4,9,3,0,0,16,12.0,15.0,0.0,-3.0,0.0,0.0,0.0,-3.0,False,13
+2,Chinese Grand Prix,VER,Red Bull Racing,7,4.0,4.0,4.0,12,0,4,0,0,16,2.0,3.0,6.0,-1.0,0.0,0.0,0.0,5.0,False,28
+2,Chinese Grand Prix,LAW,Red Bull Racing,0,20.0,20.0,12.0,0,8,0,0,0,8,19.0,14.0,0.0,5.0,4.0,0.0,0.0,9.0,False,17
+2,Chinese Grand Prix,DOO,Alpine,0,18.0,18.0,13.0,0,5,1,0,0,6,16.0,20.0,0.0,-4.0,1.0,0.0,0.0,-3.0,False,3
+2,Chinese Grand Prix,SAI,Williams,0,15.0,15.0,10.0,1,5,1,0,0,7,13.0,17.0,0.0,-4.0,3.0,0.0,0.0,-1.0,False,6
+2,Chinese Grand Prix,HAM,Ferrari,6,5.0,5.0,19.0,0,0,2,0,-10,-8,1.0,1.0,8.0,0.0,0.0,0.0,0.0,8.0,True,6
+2,Chinese Grand Prix,HAD,Racing Bulls,4,7.0,7.0,11.0,0,-4,1,0,0,-3,15.0,13.0,0.0,2.0,3.0,0.0,0.0,5.0,False,6
+2,Chinese Grand Prix,ALB,Williams,1,10.0,10.0,7.0,6,3,0,0,0,9,9.0,11.0,0.0,-2.0,0.0,0.0,0.0,-2.0,False,8
+2,Chinese Grand Prix,NOR,McLaren,8,3.0,3.0,2.0,18,1,2,0,0,21,6.0,8.0,1.0,-2.0,1.0,0.0,0.0,0.0,False,29
+2,Chinese Grand Prix,STR,Aston Martin,0,14.0,14.0,9.0,2,5,2,0,0,9,10.0,9.0,0.0,1.0,0.0,0.0,0.0,1.0,False,10
+3,Japanese Grand Prix,BOR,Kick Sauber,0,17.0,17.0,19.0,0,-2,0,0,0,-2,,,,,,,,,False,-2
+3,Japanese Grand Prix,GAS,Alpine,0,11.0,11.0,13.0,0,-2,1,0,0,-1,,,,,,,,,False,-1
+3,Japanese Grand Prix,TSU,Red Bull Racing,0,15.0,14.0,12.0,0,2,0,0,0,2,,,,,,,,,False,2
+3,Japanese Grand Prix,RUS,Mercedes,6,5.0,5.0,5.0,10,0,1,0,0,11,,,,,,,,,False,17
+3,Japanese Grand Prix,LEC,Ferrari,7,4.0,4.0,4.0,12,0,0,0,0,12,,,,,,,,,False,19
+3,Japanese Grand Prix,PIA,McLaren,8,3.0,3.0,3.0,15,0,0,0,0,15,,,,,,,,,False,23
+3,Japanese Grand Prix,ALO,Aston Martin,0,13.0,12.0,11.0,0,1,0,0,0,1,,,,,,,,,False,1
+3,Japanese Grand Prix,OCO,Haas F1 Team,0,18.0,18.0,18.0,0,0,0,0,0,0,,,,,,,,,False,0
+3,Japanese Grand Prix,ANT,Mercedes,5,6.0,6.0,6.0,8,0,0,0,0,8,,,,,,,,,False,13
+3,Japanese Grand Prix,HUL,Kick Sauber,0,16.0,16.0,16.0,0,0,0,0,0,0,,,,,,,,,False,0
+3,Japanese Grand Prix,BEA,Haas F1 Team,1,10.0,10.0,10.0,1,0,0,0,0,1,,,,,,,,,False,2
+3,Japanese Grand Prix,VER,Red Bull Racing,10,1.0,1.0,1.0,25,0,0,0,0,25,,,,,,,,,False,35
+3,Japanese Grand Prix,LAW,Racing Bulls,0,14.0,13.0,17.0,0,-4,0,0,0,-4,,,,,,,,,False,-4
+3,Japanese Grand Prix,DOO,Alpine,0,19.0,19.0,15.0,0,4,0,0,0,4,,,,,,,,,False,4
+3,Japanese Grand Prix,SAI,Williams,0,12.0,15.0,14.0,0,1,3,0,0,4,,,,,,,,,False,4
+3,Japanese Grand Prix,HAM,Ferrari,3,8.0,8.0,7.0,6,1,1,0,0,8,,,,,,,,,False,11
+3,Japanese Grand Prix,HAD,Racing Bulls,4,7.0,7.0,8.0,4,-1,2,0,0,5,,,,,,,,,False,9
+3,Japanese Grand Prix,ALB,Williams,2,9.0,9.0,9.0,2,0,4,0,0,6,,,,,,,,,False,8
+3,Japanese Grand Prix,NOR,McLaren,9,2.0,2.0,2.0,18,0,0,0,0,18,,,,,,,,,False,27
+3,Japanese Grand Prix,STR,Aston Martin,0,20.0,20.0,20.0,0,0,0,0,0,0,,,,,,,,,False,0
+4,Bahrain Grand Prix,BOR,Kick Sauber,0,18.0,18.0,18.0,0,0,0,0,0,0,,,,,,,,,False,0
+4,Bahrain Grand Prix,GAS,Alpine,6,5.0,4.0,7.0,6,-3,0,0,0,3,,,,,,,,,False,9
+4,Bahrain Grand Prix,TSU,Red Bull Racing,1,10.0,10.0,9.0,2,1,4,0,0,7,,,,,,,,,False,8
+4,Bahrain Grand Prix,RUS,Mercedes,9,2.0,3.0,2.0,18,1,0,0,0,19,,,,,,,,,False,28
+4,Bahrain Grand Prix,LEC,Ferrari,8,3.0,2.0,4.0,12,-2,1,0,0,11,,,,,,,,,False,19
+4,Bahrain Grand Prix,PIA,McLaren,10,1.0,1.0,1.0,25,0,0,0,0,25,,,,,,,,,False,35
+4,Bahrain Grand Prix,ALO,Aston Martin,0,13.0,13.0,15.0,0,-2,2,0,0,0,,,,,,,,,False,0
+4,Bahrain Grand Prix,OCO,Haas F1 Team,0,14.0,14.0,8.0,4,6,1,0,0,11,,,,,,,,,False,11
+4,Bahrain Grand Prix,ANT,Mercedes,7,4.0,5.0,11.0,0,-6,6,0,0,0,,,,,,,,,False,7
+4,Bahrain Grand Prix,HUL,Kick Sauber,0,16.0,16.0,20.0,0,0,3,0,-10,-7,,,,,,,,,True,-7
+4,Bahrain Grand Prix,BEA,Haas F1 Team,0,20.0,20.0,10.0,1,10,5,0,0,16,,,,,,,,,False,16
+4,Bahrain Grand Prix,VER,Red Bull Racing,4,7.0,7.0,6.0,8,1,4,0,0,13,,,,,,,,,False,17
+4,Bahrain Grand Prix,LAW,Racing Bulls,0,17.0,17.0,16.0,0,1,5,0,0,6,,,,,,,,,False,6
+4,Bahrain Grand Prix,DOO,Alpine,0,11.0,11.0,14.0,0,-3,0,0,0,-3,,,,,,,,,False,-3
+4,Bahrain Grand Prix,SAI,Williams,3,8.0,8.0,19.0,0,0,2,0,-10,-8,,,,,,,,,True,-5
+4,Bahrain Grand Prix,HAM,Ferrari,2,9.0,9.0,5.0,10,4,6,0,0,20,,,,,,,,,False,22
+4,Bahrain Grand Prix,HAD,Racing Bulls,0,12.0,12.0,13.0,0,-1,1,0,0,0,,,,,,,,,False,0
+4,Bahrain Grand Prix,ALB,Williams,0,15.0,15.0,12.0,0,3,6,0,0,9,,,,,,,,,False,9
+4,Bahrain Grand Prix,NOR,McLaren,5,6.0,6.0,3.0,15,3,3,0,0,21,,,,,,,,,False,26
+4,Bahrain Grand Prix,STR,Aston Martin,0,19.0,19.0,17.0,0,2,0,0,0,2,,,,,,,,,False,2
+5,Saudi Arabian Grand Prix,BOR,Kick Sauber,0,20.0,20.0,18.0,0,2,0,0,0,2,,,,,,,,,False,2
+5,Saudi Arabian Grand Prix,GAS,Alpine,2,9.0,9.0,20.0,0,0,0,0,-10,-10,,,,,,,,,True,-8
+5,Saudi Arabian Grand Prix,TSU,Red Bull Racing,3,8.0,8.0,19.0,0,0,0,0,-10,-10,,,,,,,,,True,-7
+5,Saudi Arabian Grand Prix,RUS,Mercedes,8,3.0,3.0,5.0,10,-2,1,0,0,9,,,,,,,,,False,17
+5,Saudi Arabian Grand Prix,LEC,Ferrari,7,4.0,4.0,3.0,15,1,1,0,0,17,,,,,,,,,False,24
+5,Saudi Arabian Grand Prix,PIA,McLaren,9,2.0,2.0,1.0,25,1,1,0,0,27,,,,,,,,,False,36
+5,Saudi Arabian Grand Prix,ALO,Aston Martin,0,13.0,13.0,11.0,0,2,3,0,0,5,,,,,,,,,False,5
+5,Saudi Arabian Grand Prix,OCO,Haas F1 Team,0,19.0,19.0,14.0,0,5,1,0,0,6,,,,,,,,,False,6
+5,Saudi Arabian Grand Prix,ANT,Mercedes,6,5.0,5.0,6.0,8,-1,1,0,0,8,,,,,,,,,False,14
+5,Saudi Arabian Grand Prix,HUL,Kick Sauber,0,18.0,18.0,15.0,0,3,1,0,0,4,,,,,,,,,False,4
+5,Saudi Arabian Grand Prix,BEA,Haas F1 Team,0,15.0,15.0,13.0,0,2,3,0,0,5,,,,,,,,,False,5
+5,Saudi Arabian Grand Prix,VER,Red Bull Racing,10,1.0,1.0,2.0,18,-1,0,0,0,17,,,,,,,,,False,27
+5,Saudi Arabian Grand Prix,LAW,Racing Bulls,0,12.0,12.0,12.0,0,0,5,0,0,5,,,,,,,,,False,5
+5,Saudi Arabian Grand Prix,DOO,Alpine,0,17.0,17.0,17.0,0,0,1,0,0,1,,,,,,,,,False,1
+5,Saudi Arabian Grand Prix,SAI,Williams,5,6.0,6.0,8.0,4,-2,4,0,0,6,,,,,,,,,False,11
+5,Saudi Arabian Grand Prix,HAM,Ferrari,4,7.0,7.0,7.0,6,0,1,0,0,7,,,,,,,,,False,11
+5,Saudi Arabian Grand Prix,HAD,Racing Bulls,0,14.0,14.0,10.0,1,4,1,0,0,6,,,,,,,,,False,6
+5,Saudi Arabian Grand Prix,ALB,Williams,0,11.0,11.0,9.0,2,2,4,0,0,8,,,,,,,,,False,8
+5,Saudi Arabian Grand Prix,NOR,McLaren,1,10.0,10.0,4.0,12,6,4,0,0,22,,,,,,,,,False,23
+5,Saudi Arabian Grand Prix,STR,Aston Martin,0,16.0,16.0,16.0,0,0,1,0,0,1,,,,,,,,,False,1
+6,Miami Grand Prix,BOR,Kick Sauber,0,13.0,13.0,18.0,0,0,0,0,-10,-10,18.0,15.0,0.0,3.0,0.0,0.0,0.0,3.0,True,-7
+6,Miami Grand Prix,GAS,Alpine,0,18.0,20.0,13.0,0,7,2,0,0,9,13.0,8.0,1.0,5.0,1.0,0.0,0.0,7.0,False,16
+6,Miami Grand Prix,TSU,Red Bull Racing,1,10.0,10.0,10.0,1,0,2,0,0,3,20.0,6.0,3.0,14.0,2.0,0.0,0.0,19.0,False,23
+6,Miami Grand Prix,RUS,Mercedes,6,5.0,5.0,3.0,15,2,0,0,0,17,5.0,4.0,5.0,1.0,0.0,0.0,0.0,6.0,False,29
+6,Miami Grand Prix,LEC,Ferrari,3,8.0,8.0,7.0,6,1,2,0,0,9,6.0,20.0,0.0,0.0,0.0,0.0,-5.0,-5.0,False,7
+6,Miami Grand Prix,PIA,McLaren,7,4.0,4.0,1.0,25,3,2,0,0,30,2.0,2.0,7.0,0.0,1.0,0.0,0.0,8.0,False,45
+6,Miami Grand Prix,ALO,Aston Martin,0,17.0,17.0,15.0,0,2,0,0,0,2,10.0,18.0,0.0,0.0,1.0,0.0,-5.0,-4.0,False,-2
+6,Miami Grand Prix,OCO,Haas F1 Team,2,9.0,9.0,12.0,0,-3,0,0,0,-3,12.0,12.0,0.0,0.0,1.0,0.0,0.0,1.0,False,0
+6,Miami Grand Prix,ANT,Mercedes,8,3.0,3.0,6.0,8,-3,0,0,0,5,1.0,7.0,2.0,-6.0,0.0,0.0,0.0,-4.0,False,9
+6,Miami Grand Prix,HUL,Kick Sauber,0,16.0,16.0,14.0,0,2,0,0,0,2,11.0,9.0,0.0,2.0,0.0,0.0,0.0,2.0,False,4
+6,Miami Grand Prix,BEA,Haas F1 Team,0,20.0,19.0,19.0,0,0,0,0,-10,-10,19.0,14.0,0.0,5.0,5.0,0.0,0.0,10.0,True,0
+6,Miami Grand Prix,VER,Red Bull Racing,10,1.0,1.0,4.0,12,-3,0,0,0,9,4.0,17.0,0.0,-13.0,1.0,0.0,0.0,-12.0,False,7
+6,Miami Grand Prix,LAW,Racing Bulls,0,15.0,15.0,17.0,0,0,0,0,-10,-10,14.0,13.0,0.0,1.0,4.0,0.0,0.0,5.0,True,-5
+6,Miami Grand Prix,DOO,Alpine,0,14.0,14.0,20.0,0,0,0,0,-10,-10,17.0,16.0,0.0,1.0,0.0,0.0,0.0,1.0,True,-9
+6,Miami Grand Prix,SAI,Williams,5,6.0,6.0,9.0,2,-3,1,0,0,0,15.0,19.0,0.0,0.0,3.0,0.0,-5.0,-2.0,False,3
+6,Miami Grand Prix,HAM,Ferrari,0,12.0,12.0,8.0,4,4,4,0,0,12,7.0,3.0,6.0,4.0,0.0,0.0,0.0,10.0,False,22
+6,Miami Grand Prix,HAD,Racing Bulls,0,11.0,11.0,11.0,0,0,0,0,0,0,9.0,10.0,0.0,-1.0,0.0,0.0,0.0,-1.0,False,-1
+6,Miami Grand Prix,ALB,Williams,4,7.0,7.0,5.0,10,2,2,0,0,14,8.0,11.0,0.0,-3.0,0.0,0.0,0.0,-3.0,False,15
+6,Miami Grand Prix,NOR,McLaren,9,2.0,2.0,2.0,18,0,4,0,0,22,3.0,1.0,8.0,2.0,1.0,0.0,0.0,11.0,False,42
+6,Miami Grand Prix,STR,Aston Martin,0,19.0,18.0,16.0,0,2,1,0,0,3,16.0,5.0,4.0,11.0,4.0,0.0,0.0,19.0,False,22
+7,Emilia Romagna Grand Prix,COL,Alpine,0,15.0,16.0,16.0,0,0,0,0,0,0,,,,,,,,,False,0
+7,Emilia Romagna Grand Prix,BOR,Kick Sauber,0,14.0,14.0,18.0,0,-4,2,0,0,-2,,,,,,,,,False,-2
+7,Emilia Romagna Grand Prix,GAS,Alpine,1,10.0,10.0,13.0,0,-3,2,0,0,-1,,,,,,,,,False,0
+7,Emilia Romagna Grand Prix,TSU,Red Bull Racing,0,20.0,20.0,10.0,1,10,3,0,0,14,,,,,,,,,False,14
+7,Emilia Romagna Grand Prix,RUS,Mercedes,8,3.0,3.0,7.0,6,-4,4,0,0,6,,,,,,,,,False,14
+7,Emilia Romagna Grand Prix,LEC,Ferrari,0,11.0,11.0,6.0,8,5,8,0,0,21,,,,,,,,,False,21
+7,Emilia Romagna Grand Prix,PIA,McLaren,10,1.0,1.0,3.0,15,-2,8,0,0,21,,,,,,,,,False,31
+7,Emilia Romagna Grand Prix,ALO,Aston Martin,6,5.0,5.0,11.0,0,-6,3,0,0,-3,,,,,,,,,False,3
+7,Emilia Romagna Grand Prix,OCO,Haas F1 Team,0,18.0,18.0,20.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+7,Emilia Romagna Grand Prix,ANT,Mercedes,0,13.0,13.0,19.0,0,0,1,0,-10,-9,,,,,,,,,True,-9
+7,Emilia Romagna Grand Prix,HUL,Kick Sauber,0,17.0,17.0,12.0,0,5,2,0,0,7,,,,,,,,,False,7
+7,Emilia Romagna Grand Prix,BEA,Haas F1 Team,0,19.0,19.0,17.0,0,2,1,0,0,3,,,,,,,,,False,3
+7,Emilia Romagna Grand Prix,VER,Red Bull Racing,9,2.0,2.0,1.0,25,1,0,0,0,26,,,,,,,,,False,35
+7,Emilia Romagna Grand Prix,LAW,Racing Bulls,0,16.0,15.0,14.0,0,1,1,0,0,2,,,,,,,,,False,2
+7,Emilia Romagna Grand Prix,SAI,Williams,5,6.0,6.0,8.0,4,-2,4,0,0,6,,,,,,,,,False,11
+7,Emilia Romagna Grand Prix,HAM,Ferrari,0,12.0,12.0,4.0,12,8,6,0,0,26,,,,,,,,,False,26
+7,Emilia Romagna Grand Prix,HAD,Racing Bulls,2,9.0,9.0,9.0,2,0,1,0,0,3,,,,,,,,,False,5
+7,Emilia Romagna Grand Prix,ALB,Williams,4,7.0,7.0,5.0,10,2,1,0,0,13,,,,,,,,,False,17
+7,Emilia Romagna Grand Prix,NOR,McLaren,7,4.0,4.0,2.0,18,2,1,0,0,21,,,,,,,,,False,28
+7,Emilia Romagna Grand Prix,STR,Aston Martin,3,8.0,8.0,15.0,0,-7,0,0,0,-7,,,,,,,,,False,-4
+8,Monaco Grand Prix,COL,Alpine,0,20.0,18.0,13.0,0,5,0,0,0,5,,,,,,,,,False,5
+8,Monaco Grand Prix,BOR,Kick Sauber,0,16.0,16.0,14.0,0,2,0,0,0,2,,,,,,,,,False,2
+8,Monaco Grand Prix,GAS,Alpine,0,18.0,17.0,20.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+8,Monaco Grand Prix,TSU,Red Bull Racing,0,12.0,12.0,17.0,0,-5,0,0,0,-5,,,,,,,,,False,-5
+8,Monaco Grand Prix,RUS,Mercedes,0,14.0,14.0,11.0,0,3,1,0,0,4,,,,,,,,,False,4
+8,Monaco Grand Prix,LEC,Ferrari,9,2.0,2.0,2.0,18,0,0,0,0,18,,,,,,,,,False,27
+8,Monaco Grand Prix,PIA,McLaren,8,3.0,3.0,3.0,15,0,0,0,0,15,,,,,,,,,False,23
+8,Monaco Grand Prix,ALO,Aston Martin,4,7.0,6.0,19.0,0,0,0,0,-10,-10,,,,,,,,,True,-6
+8,Monaco Grand Prix,OCO,Haas F1 Team,3,8.0,8.0,7.0,6,1,0,0,0,7,,,,,,,,,False,10
+8,Monaco Grand Prix,ANT,Mercedes,0,15.0,15.0,18.0,0,-3,0,0,0,-3,,,,,,,,,False,-3
+8,Monaco Grand Prix,HUL,Kick Sauber,0,13.0,13.0,16.0,0,-3,0,0,0,-3,,,,,,,,,False,-3
+8,Monaco Grand Prix,BEA,Haas F1 Team,0,17.0,20.0,12.0,0,8,0,0,0,8,,,,,,,,,False,8
+8,Monaco Grand Prix,VER,Red Bull Racing,6,5.0,4.0,4.0,12,0,0,0,0,12,,,,,,,,,False,18
+8,Monaco Grand Prix,LAW,Racing Bulls,2,9.0,9.0,8.0,4,1,0,0,0,5,,,,,,,,,False,7
+8,Monaco Grand Prix,SAI,Williams,0,11.0,11.0,10.0,1,1,0,0,0,2,,,,,,,,,False,2
+8,Monaco Grand Prix,HAM,Ferrari,7,4.0,7.0,5.0,10,2,0,0,0,12,,,,,,,,,False,19
+8,Monaco Grand Prix,HAD,Racing Bulls,5,6.0,5.0,6.0,8,-1,0,0,0,7,,,,,,,,,False,12
+8,Monaco Grand Prix,ALB,Williams,1,10.0,10.0,9.0,2,1,1,0,0,4,,,,,,,,,False,5
+8,Monaco Grand Prix,NOR,McLaren,10,1.0,1.0,1.0,25,0,0,0,0,25,,,,,,,,,False,35
+8,Monaco Grand Prix,STR,Aston Martin,0,19.0,19.0,15.0,0,4,1,0,0,5,,,,,,,,,False,5
+9,Spanish Grand Prix,COL,Alpine,0,19.0,18.0,15.0,0,3,1,0,0,4,,,,,,,,,False,4
+9,Spanish Grand Prix,BOR,Kick Sauber,0,12.0,12.0,12.0,0,0,3,0,0,3,,,,,,,,,False,3
+9,Spanish Grand Prix,GAS,Alpine,3,8.0,8.0,8.0,4,0,1,0,0,5,,,,,,,,,False,8
+9,Spanish Grand Prix,TSU,Red Bull Racing,0,20.0,19.0,13.0,0,6,4,0,0,10,,,,,,,,,False,10
+9,Spanish Grand Prix,RUS,Mercedes,7,4.0,4.0,4.0,12,0,2,0,0,14,,,,,,,,,False,21
+9,Spanish Grand Prix,LEC,Ferrari,4,7.0,7.0,3.0,15,4,2,0,0,21,,,,,,,,,False,25
+9,Spanish Grand Prix,PIA,McLaren,10,1.0,1.0,1.0,25,0,0,0,0,25,,,,,,,,,False,35
+9,Spanish Grand Prix,ALO,Aston Martin,1,10.0,10.0,9.0,2,1,7,0,0,10,,,,,,,,,False,11
+9,Spanish Grand Prix,OCO,Haas F1 Team,0,17.0,16.0,16.0,0,0,1,0,0,1,,,,,,,,,False,1
+9,Spanish Grand Prix,ANT,Mercedes,5,6.0,6.0,18.0,0,0,1,0,-10,-9,,,,,,,,,True,-4
+9,Spanish Grand Prix,HUL,Kick Sauber,0,16.0,15.0,5.0,10,10,3,0,0,23,,,,,,,,,False,23
+9,Spanish Grand Prix,BEA,Haas F1 Team,0,15.0,14.0,17.0,0,-3,1,0,0,-2,,,,,,,,,False,-2
+9,Spanish Grand Prix,VER,Red Bull Racing,8,3.0,3.0,10.0,1,-7,3,0,0,-3,,,,,,,,,False,5
+9,Spanish Grand Prix,LAW,Racing Bulls,0,13.0,13.0,11.0,0,2,4,0,0,6,,,,,,,,,False,6
+9,Spanish Grand Prix,SAI,Williams,0,18.0,17.0,14.0,0,3,2,0,0,5,,,,,,,,,False,5
+9,Spanish Grand Prix,HAM,Ferrari,6,5.0,5.0,6.0,8,-1,0,0,0,7,,,,,,,,,False,13
+9,Spanish Grand Prix,HAD,Racing Bulls,2,9.0,9.0,7.0,6,2,2,0,0,10,,,,,,,,,False,12
+9,Spanish Grand Prix,ALB,Williams,0,11.0,11.0,19.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+9,Spanish Grand Prix,NOR,McLaren,9,2.0,2.0,2.0,18,0,0,0,0,18,,,,,,,,,False,27
+9,Spanish Grand Prix,STR,Unknown,0,14.0,,,0,0,0,0,0,0,,,,,,,,,False,0
+10,Canadian Grand Prix,COL,Alpine,0,12.0,10.0,13.0,0,-3,2,0,0,-1,,,,,,,,,False,-1
+10,Canadian Grand Prix,BOR,Kick Sauber,0,16.0,15.0,14.0,0,1,2,0,0,3,,,,,,,,,False,3
+10,Canadian Grand Prix,GAS,Alpine,0,20.0,20.0,15.0,0,5,2,0,0,7,,,,,,,,,False,7
+10,Canadian Grand Prix,TSU,Red Bull Racing,0,11.0,18.0,12.0,0,6,4,0,0,10,,,,,,,,,False,10
+10,Canadian Grand Prix,RUS,Mercedes,10,1.0,1.0,1.0,25,0,1,0,0,26,,,,,,,,,False,36
+10,Canadian Grand Prix,LEC,Ferrari,3,8.0,8.0,5.0,10,3,1,0,0,14,,,,,,,,,False,17
+10,Canadian Grand Prix,PIA,McLaren,8,3.0,3.0,4.0,12,-1,0,0,0,11,,,,,,,,,False,19
+10,Canadian Grand Prix,ALO,Aston Martin,5,6.0,6.0,7.0,6,-1,9,0,0,14,,,,,,,,,False,19
+10,Canadian Grand Prix,OCO,Haas F1 Team,0,15.0,14.0,9.0,2,5,2,0,0,9,,,,,,,,,False,9
+10,Canadian Grand Prix,ANT,Mercedes,7,4.0,4.0,3.0,15,1,1,0,0,17,,,,,,,,,False,24
+10,Canadian Grand Prix,HUL,Kick Sauber,0,13.0,11.0,8.0,4,3,5,0,0,12,,,,,,,,,False,12
+10,Canadian Grand Prix,BEA,Haas F1 Team,0,14.0,13.0,11.0,0,2,3,0,0,5,,,,,,,,,False,5
+10,Canadian Grand Prix,VER,Red Bull Racing,9,2.0,2.0,2.0,18,0,1,0,0,19,,,,,,,,,False,28
+10,Canadian Grand Prix,LAW,Racing Bulls,0,19.0,19.0,19.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+10,Canadian Grand Prix,SAI,Williams,0,17.0,16.0,10.0,1,6,3,0,0,10,,,,,,,,,False,10
+10,Canadian Grand Prix,HAM,Ferrari,6,5.0,5.0,6.0,8,-1,2,0,0,9,,,,,,,,,False,15
+10,Canadian Grand Prix,HAD,Racing Bulls,2,9.0,12.0,16.0,0,-4,1,0,0,-3,,,,,,,,,False,-1
+10,Canadian Grand Prix,ALB,Williams,1,10.0,9.0,20.0,0,0,2,0,-10,-8,,,,,,,,,True,-7
+10,Canadian Grand Prix,NOR,McLaren,4,7.0,7.0,18.0,0,0,1,0,-10,-9,,,,,,,,,True,-5
+10,Canadian Grand Prix,STR,Aston Martin,0,18.0,17.0,17.0,0,0,1,0,0,1,,,,,,,,,False,1
+11,Austrian Grand Prix,COL,Alpine,0,14.0,14.0,15.0,0,-1,1,0,0,0,,,,,,,,,False,0
+11,Austrian Grand Prix,BOR,Kick Sauber,3,8.0,8.0,8.0,4,0,3,0,0,7,,,,,,,,,False,10
+11,Austrian Grand Prix,GAS,Alpine,1,10.0,10.0,13.0,0,-3,1,0,0,-2,,,,,,,,,False,-1
+11,Austrian Grand Prix,TSU,Red Bull Racing,0,18.0,18.0,16.0,0,2,1,0,0,3,,,,,,,,,False,3
+11,Austrian Grand Prix,RUS,Mercedes,6,5.0,5.0,5.0,10,0,4,0,0,14,,,,,,,,,False,20
+11,Austrian Grand Prix,LEC,Ferrari,9,2.0,2.0,3.0,15,-1,1,0,0,15,,,,,,,,,False,24
+11,Austrian Grand Prix,PIA,McLaren,8,3.0,3.0,2.0,18,1,0,0,0,19,,,,,,,,,False,27
+11,Austrian Grand Prix,ALO,Aston Martin,0,11.0,11.0,7.0,6,4,0,0,0,10,,,,,,,,,False,10
+11,Austrian Grand Prix,OCO,Haas F1 Team,0,17.0,17.0,10.0,1,7,5,0,0,13,,,,,,,,,False,13
+11,Austrian Grand Prix,ANT,Mercedes,2,9.0,9.0,19.0,0,0,0,0,-10,-10,,,,,,,,,True,-8
+11,Austrian Grand Prix,HUL,Kick Sauber,0,20.0,20.0,9.0,2,11,3,0,0,16,,,,,,,,,False,16
+11,Austrian Grand Prix,BEA,Haas F1 Team,0,15.0,15.0,11.0,0,4,4,0,0,8,,,,,,,,,False,8
+11,Austrian Grand Prix,VER,Red Bull Racing,4,7.0,7.0,18.0,0,0,0,0,-10,-10,,,,,,,,,True,-6
+11,Austrian Grand Prix,LAW,Racing Bulls,5,6.0,6.0,6.0,8,0,0,0,0,8,,,,,,,,,False,13
+11,Austrian Grand Prix,SAI,Williams,0,19.0,19.0,20.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+11,Austrian Grand Prix,HAM,Ferrari,7,4.0,4.0,4.0,12,0,2,0,0,14,,,,,,,,,False,21
+11,Austrian Grand Prix,HAD,Racing Bulls,0,13.0,13.0,12.0,0,1,2,0,0,3,,,,,,,,,False,3
+11,Austrian Grand Prix,ALB,Williams,0,12.0,12.0,17.0,0,0,1,0,-10,-9,,,,,,,,,True,-9
+11,Austrian Grand Prix,NOR,McLaren,10,1.0,1.0,1.0,25,0,0,0,0,25,,,,,,,,,False,35
+11,Austrian Grand Prix,STR,Aston Martin,0,16.0,16.0,14.0,0,2,1,0,0,3,,,,,,,,,False,3
+12,British Grand Prix,COL,Alpine,0,20.0,20.0,20.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+12,British Grand Prix,BOR,Kick Sauber,0,17.0,16.0,18.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+12,British Grand Prix,GAS,Alpine,1,10.0,8.0,6.0,8,2,2,0,0,12,,,,,,,,,False,13
+12,British Grand Prix,TSU,Red Bull Racing,0,12.0,11.0,15.0,0,-4,0,0,0,-4,,,,,,,,,False,-4
+12,British Grand Prix,RUS,Mercedes,7,4.0,4.0,10.0,1,-6,3,0,0,-2,,,,,,,,,False,5
+12,British Grand Prix,LEC,Ferrari,5,6.0,6.0,14.0,0,-8,3,0,0,-5,,,,,,,,,False,0
+12,British Grand Prix,PIA,McLaren,9,2.0,2.0,2.0,18,0,1,0,0,19,,,,,,,,,False,28
+12,British Grand Prix,ALO,Aston Martin,2,9.0,7.0,9.0,2,-2,2,0,0,2,,,,,,,,,False,4
+12,British Grand Prix,OCO,Haas F1 Team,0,15.0,14.0,13.0,0,1,2,0,0,3,,,,,,,,,False,3
+12,British Grand Prix,ANT,Mercedes,4,7.0,10.0,16.0,0,0,0,0,-10,-10,,,,,,,,,True,-6
+12,British Grand Prix,HUL,Kick Sauber,0,19.0,19.0,3.0,15,16,3,0,0,34,,,,,,,,,False,34
+12,British Grand Prix,BEA,Haas F1 Team,3,8.0,18.0,11.0,0,7,3,0,0,10,,,,,,,,,False,13
+12,British Grand Prix,VER,Red Bull Racing,10,1.0,1.0,5.0,10,-4,2,0,0,8,,,,,,,,,False,18
+12,British Grand Prix,LAW,Racing Bulls,0,16.0,15.0,19.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+12,British Grand Prix,SAI,Williams,0,11.0,9.0,12.0,0,-3,1,0,0,-2,,,,,,,,,False,-2
+12,British Grand Prix,HAM,Ferrari,6,5.0,5.0,4.0,12,1,4,0,0,17,,,,,,,,,False,23
+12,British Grand Prix,HAD,Racing Bulls,0,13.0,12.0,17.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+12,British Grand Prix,ALB,Williams,0,14.0,13.0,8.0,4,5,1,0,0,10,,,,,,,,,False,10
+12,British Grand Prix,NOR,McLaren,8,3.0,3.0,1.0,25,2,1,0,0,28,,,,,,,,,False,36
+12,British Grand Prix,STR,Aston Martin,0,18.0,17.0,7.0,6,10,2,0,0,18,,,,,,,,,False,18
+13,Belgian Grand Prix,COL,Alpine,0,17.0,15.0,19.0,0,-4,0,0,0,-4,20.0,19.0,0.0,1.0,0.0,0.0,0.0,1.0,False,-3
+13,Belgian Grand Prix,BOR,Kick Sauber,1,10.0,10.0,9.0,2,1,1,0,0,4,10.0,9.0,0.0,1.0,0.0,0.0,0.0,1.0,False,6
+13,Belgian Grand Prix,GAS,Alpine,0,13.0,13.0,10.0,1,3,0,0,0,4,8.0,20.0,0.0,0.0,0.0,0.0,-5.0,-5.0,False,-1
+13,Belgian Grand Prix,TSU,Red Bull Racing,4,7.0,7.0,13.0,0,-6,0,0,0,-6,12.0,11.0,0.0,1.0,0.0,0.0,0.0,1.0,False,-1
+13,Belgian Grand Prix,RUS,Mercedes,5,6.0,6.0,5.0,10,1,1,0,0,12,13.0,12.0,0.0,1.0,0.0,0.0,0.0,1.0,False,18
+13,Belgian Grand Prix,LEC,Ferrari,8,3.0,3.0,3.0,15,0,0,0,0,15,4.0,4.0,5.0,0.0,0.0,0.0,0.0,5.0,False,28
+13,Belgian Grand Prix,PIA,McLaren,9,2.0,2.0,1.0,25,1,1,0,0,27,1.0,2.0,7.0,-1.0,0.0,0.0,0.0,6.0,False,42
+13,Belgian Grand Prix,ALO,Aston Martin,0,19.0,20.0,17.0,0,3,1,0,0,4,14.0,14.0,0.0,0.0,0.0,0.0,0.0,0.0,False,4
+13,Belgian Grand Prix,OCO,Haas F1 Team,0,11.0,11.0,15.0,0,-4,0,0,0,-4,5.0,5.0,4.0,0.0,0.0,0.0,0.0,4.0,False,0
+13,Belgian Grand Prix,ANT,Mercedes,0,18.0,19.0,16.0,0,3,4,0,0,7,19.0,17.0,0.0,2.0,1.0,0.0,0.0,3.0,False,10
+13,Belgian Grand Prix,HUL,Kick Sauber,0,14.0,14.0,12.0,0,2,2,0,0,4,17.0,18.0,0.0,-1.0,0.0,0.0,0.0,-1.0,False,3
+13,Belgian Grand Prix,BEA,Haas F1 Team,0,12.0,12.0,11.0,0,1,3,0,0,4,7.0,7.0,2.0,0.0,0.0,0.0,0.0,2.0,False,6
+13,Belgian Grand Prix,VER,Red Bull Racing,7,4.0,4.0,4.0,12,0,0,0,0,12,2.0,1.0,8.0,1.0,0.0,0.0,0.0,9.0,False,28
+13,Belgian Grand Prix,LAW,Racing Bulls,2,9.0,9.0,8.0,4,1,0,0,0,5,11.0,10.0,0.0,1.0,0.0,0.0,0.0,1.0,False,8
+13,Belgian Grand Prix,SAI,Williams,0,15.0,17.0,18.0,0,-1,2,0,0,1,6.0,6.0,3.0,0.0,0.0,0.0,0.0,3.0,False,4
+13,Belgian Grand Prix,HAM,Ferrari,0,16.0,18.0,7.0,6,11,5,0,0,22,18.0,15.0,0.0,3.0,2.0,0.0,0.0,5.0,False,27
+13,Belgian Grand Prix,HAD,Racing Bulls,3,8.0,8.0,20.0,0,-12,0,0,0,-12,9.0,8.0,1.0,1.0,0.0,0.0,0.0,2.0,False,-7
+13,Belgian Grand Prix,ALB,Williams,6,5.0,5.0,6.0,8,-1,0,0,0,7,16.0,16.0,0.0,0.0,0.0,0.0,0.0,0.0,False,13
+13,Belgian Grand Prix,NOR,McLaren,10,1.0,1.0,2.0,18,-1,0,0,0,17,3.0,3.0,6.0,0.0,1.0,0.0,0.0,7.0,False,34
+13,Belgian Grand Prix,STR,Aston Martin,0,20.0,16.0,14.0,0,2,2,0,0,4,15.0,13.0,0.0,2.0,0.0,0.0,0.0,2.0,False,6
+14,Hungarian Grand Prix,COL,Alpine,0,14.0,14.0,18.0,0,-4,0,0,0,-4,,,,,,,,,False,-4
+14,Hungarian Grand Prix,BOR,Kick Sauber,4,7.0,7.0,6.0,8,1,0,0,0,9,,,,,,,,,False,13
+14,Hungarian Grand Prix,GAS,Alpine,0,17.0,16.0,19.0,0,-3,2,0,0,-1,,,,,,,,,False,-1
+14,Hungarian Grand Prix,TSU,Red Bull Racing,0,16.0,20.0,17.0,0,3,0,0,0,3,,,,,,,,,False,3
+14,Hungarian Grand Prix,RUS,Mercedes,7,4.0,4.0,3.0,15,1,2,0,0,18,,,,,,,,,False,25
+14,Hungarian Grand Prix,LEC,Ferrari,10,1.0,1.0,4.0,12,-3,0,0,0,9,,,,,,,,,False,19
+14,Hungarian Grand Prix,PIA,McLaren,9,2.0,2.0,2.0,18,0,2,0,0,20,,,,,,,,,False,29
+14,Hungarian Grand Prix,ALO,Aston Martin,6,5.0,5.0,5.0,10,0,0,0,0,10,,,,,,,,,False,16
+14,Hungarian Grand Prix,OCO,Haas F1 Team,0,18.0,17.0,16.0,0,1,0,0,0,1,,,,,,,,,False,1
+14,Hungarian Grand Prix,ANT,Mercedes,0,15.0,15.0,10.0,1,5,2,0,0,8,,,,,,,,,False,8
+14,Hungarian Grand Prix,HUL,Kick Sauber,0,19.0,18.0,13.0,0,5,5,0,0,10,,,,,,,,,False,10
+14,Hungarian Grand Prix,BEA,Haas F1 Team,0,11.0,11.0,20.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+14,Hungarian Grand Prix,VER,Red Bull Racing,3,8.0,8.0,9.0,2,-1,5,0,0,6,,,,,,,,,False,9
+14,Hungarian Grand Prix,LAW,Racing Bulls,2,9.0,9.0,8.0,4,1,1,0,0,6,,,,,,,,,False,8
+14,Hungarian Grand Prix,SAI,Williams,0,13.0,13.0,14.0,0,-1,4,0,0,3,,,,,,,,,False,3
+14,Hungarian Grand Prix,HAM,Ferrari,0,12.0,12.0,12.0,0,0,3,0,0,3,,,,,,,,,False,3
+14,Hungarian Grand Prix,HAD,Racing Bulls,1,10.0,10.0,11.0,0,-1,3,0,0,2,,,,,,,,,False,3
+14,Hungarian Grand Prix,ALB,Williams,0,20.0,19.0,15.0,0,4,2,0,0,6,,,,,,,,,False,6
+14,Hungarian Grand Prix,NOR,McLaren,8,3.0,3.0,1.0,25,2,1,0,0,28,,,,,,,,,False,36
+14,Hungarian Grand Prix,STR,Aston Martin,5,6.0,6.0,7.0,6,-1,1,0,0,6,,,,,,,,,False,11
+15,Dutch Grand Prix,COL,Alpine,0,16.0,16.0,11.0,0,5,3,0,0,8,,,,,,,,,False,8
+15,Dutch Grand Prix,BOR,Kick Sauber,0,13.0,13.0,15.0,0,-2,1,0,0,-1,,,,,,,,,False,-1
+15,Dutch Grand Prix,GAS,Alpine,0,14.0,14.0,17.0,0,-3,1,0,0,-2,,,,,,,,,False,-2
+15,Dutch Grand Prix,TSU,Red Bull Racing,0,12.0,12.0,9.0,2,3,3,0,0,8,,,,,,,,,False,8
+15,Dutch Grand Prix,RUS,Mercedes,6,5.0,5.0,4.0,12,1,0,0,0,13,,,,,,,,,False,19
+15,Dutch Grand Prix,LEC,Ferrari,5,6.0,6.0,19.0,0,0,1,0,-10,-9,,,,,,,,,True,-4
+15,Dutch Grand Prix,PIA,McLaren,10,1.0,1.0,1.0,25,0,0,0,0,25,,,,,,,,,False,35
+15,Dutch Grand Prix,ALO,Aston Martin,1,10.0,10.0,8.0,4,2,4,0,0,10,,,,,,,,,False,11
+15,Dutch Grand Prix,OCO,Haas F1 Team,0,18.0,18.0,10.0,1,8,1,0,0,10,,,,,,,,,False,10
+15,Dutch Grand Prix,ANT,Mercedes,0,11.0,11.0,16.0,0,-5,3,0,0,-2,,,,,,,,,False,-2
+15,Dutch Grand Prix,HUL,Kick Sauber,0,17.0,17.0,14.0,0,3,3,0,0,6,,,,,,,,,False,6
+15,Dutch Grand Prix,BEA,Haas F1 Team,0,19.0,20.0,6.0,8,14,3,0,0,25,,,,,,,,,False,25
+15,Dutch Grand Prix,VER,Red Bull Racing,8,3.0,3.0,2.0,18,1,0,0,0,19,,,,,,,,,False,27
+15,Dutch Grand Prix,LAW,Racing Bulls,3,8.0,8.0,12.0,0,-4,2,0,0,-2,,,,,,,,,False,1
+15,Dutch Grand Prix,SAI,Williams,2,9.0,9.0,13.0,0,-4,3,0,0,-1,,,,,,,,,False,1
+15,Dutch Grand Prix,HAM,Ferrari,4,7.0,7.0,20.0,0,0,0,0,-10,-10,,,,,,,,,True,-6
+15,Dutch Grand Prix,HAD,Racing Bulls,7,4.0,4.0,3.0,15,1,0,0,0,16,,,,,,,,,False,23
+15,Dutch Grand Prix,ALB,Williams,0,15.0,15.0,5.0,10,10,1,0,0,21,,,,,,,,,False,21
+15,Dutch Grand Prix,NOR,McLaren,9,2.0,2.0,18.0,0,0,1,0,-10,-9,,,,,,,,,True,0
+15,Dutch Grand Prix,STR,Aston Martin,0,20.0,19.0,7.0,6,12,6,0,0,24,,,,,,,,,False,24
+16,Italian Grand Prix,COL,Alpine,0,18.0,17.0,17.0,0,0,0,0,0,0,,,,,,,,,False,0
+16,Italian Grand Prix,BOR,Kick Sauber,3,8.0,7.0,8.0,4,-1,1,0,0,4,,,,,,,,,False,7
+16,Italian Grand Prix,GAS,Alpine,0,19.0,20.0,16.0,0,4,1,0,0,5,,,,,,,,,False,5
+16,Italian Grand Prix,TSU,Red Bull Racing,1,10.0,9.0,13.0,0,-4,1,0,0,-3,,,,,,,,,False,-2
+16,Italian Grand Prix,RUS,Mercedes,5,6.0,5.0,5.0,10,0,2,0,0,12,,,,,,,,,False,17
+16,Italian Grand Prix,LEC,Ferrari,7,4.0,4.0,4.0,12,0,0,0,0,12,,,,,,,,,False,19
+16,Italian Grand Prix,PIA,McLaren,8,3.0,3.0,3.0,15,0,1,0,0,16,,,,,,,,,False,24
+16,Italian Grand Prix,ALO,Aston Martin,2,9.0,8.0,19.0,0,0,0,0,-10,-10,,,,,,,,,True,-8
+16,Italian Grand Prix,OCO,Haas F1 Team,0,15.0,15.0,15.0,0,0,0,0,0,0,,,,,,,,,False,0
+16,Italian Grand Prix,ANT,Mercedes,4,7.0,6.0,9.0,2,-3,2,0,0,1,,,,,,,,,False,5
+16,Italian Grand Prix,HUL,Kick Sauber,0,12.0,12.0,20.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+16,Italian Grand Prix,BEA,Haas F1 Team,0,11.0,11.0,12.0,0,-1,1,0,0,0,,,,,,,,,False,0
+16,Italian Grand Prix,VER,Red Bull Racing,10,1.0,1.0,1.0,25,0,1,0,0,26,,,,,,,,,False,36
+16,Italian Grand Prix,LAW,Racing Bulls,0,20.0,18.0,14.0,0,4,0,0,0,4,,,,,,,,,False,4
+16,Italian Grand Prix,SAI,Williams,0,13.0,13.0,11.0,0,2,1,0,0,3,,,,,,,,,False,3
+16,Italian Grand Prix,HAM,Ferrari,6,5.0,10.0,6.0,8,4,4,0,0,16,,,,,,,,,False,22
+16,Italian Grand Prix,HAD,Racing Bulls,0,16.0,19.0,10.0,1,9,3,0,0,13,,,,,,,,,False,13
+16,Italian Grand Prix,ALB,Williams,0,14.0,14.0,7.0,6,7,2,0,0,15,,,,,,,,,False,15
+16,Italian Grand Prix,NOR,McLaren,9,2.0,2.0,2.0,18,0,1,0,0,19,,,,,,,,,False,28
+16,Italian Grand Prix,STR,Aston Martin,0,17.0,16.0,18.0,0,-2,0,0,0,-2,,,,,,,,,False,-2
+17,Azerbaijan Grand Prix,COL,Alpine,0,16.0,16.0,19.0,0,-3,1,0,0,-2,,,,,,,,,False,-2
+17,Azerbaijan Grand Prix,BOR,Kick Sauber,0,13.0,13.0,11.0,0,2,3,0,0,5,,,,,,,,,False,5
+17,Azerbaijan Grand Prix,GAS,Alpine,0,18.0,18.0,18.0,0,0,2,0,0,2,,,,,,,,,False,2
+17,Azerbaijan Grand Prix,TSU,Red Bull Racing,5,6.0,6.0,6.0,8,0,2,0,0,10,,,,,,,,,False,15
+17,Azerbaijan Grand Prix,RUS,Mercedes,6,5.0,5.0,2.0,18,3,1,0,0,22,,,,,,,,,False,28
+17,Azerbaijan Grand Prix,LEC,Ferrari,1,10.0,10.0,9.0,2,1,2,0,0,5,,,,,,,,,False,6
+17,Azerbaijan Grand Prix,PIA,McLaren,2,9.0,9.0,20.0,0,0,0,0,-10,-10,,,,,,,,,True,-8
+17,Azerbaijan Grand Prix,ALO,Aston Martin,0,11.0,11.0,15.0,0,-4,0,0,0,-4,,,,,,,,,False,-4
+17,Azerbaijan Grand Prix,OCO,Haas F1 Team,0,20.0,20.0,14.0,0,6,1,0,0,7,,,,,,,,,False,7
+17,Azerbaijan Grand Prix,ANT,Mercedes,7,4.0,4.0,4.0,12,0,1,0,0,13,,,,,,,,,False,20
+17,Azerbaijan Grand Prix,HUL,Kick Sauber,0,17.0,17.0,16.0,0,1,2,0,0,3,,,,,,,,,False,3
+17,Azerbaijan Grand Prix,BEA,Haas F1 Team,0,15.0,15.0,12.0,0,3,3,0,0,6,,,,,,,,,False,6
+17,Azerbaijan Grand Prix,VER,Red Bull Racing,10,1.0,1.0,1.0,25,0,0,0,0,25,,,,,,,,,False,35
+17,Azerbaijan Grand Prix,LAW,Racing Bulls,8,3.0,3.0,5.0,10,-2,0,0,0,8,,,,,,,,,False,16
+17,Azerbaijan Grand Prix,SAI,Williams,9,2.0,2.0,3.0,15,-1,0,0,0,14,,,,,,,,,False,23
+17,Azerbaijan Grand Prix,HAM,Ferrari,0,12.0,12.0,8.0,4,4,2,0,0,10,,,,,,,,,False,10
+17,Azerbaijan Grand Prix,HAD,Racing Bulls,3,8.0,8.0,10.0,1,-2,1,0,0,0,,,,,,,,,False,3
+17,Azerbaijan Grand Prix,ALB,Williams,0,19.0,19.0,13.0,0,6,3,0,0,9,,,,,,,,,False,9
+17,Azerbaijan Grand Prix,NOR,McLaren,4,7.0,7.0,7.0,6,0,2,0,0,8,,,,,,,,,False,12
+17,Azerbaijan Grand Prix,STR,Aston Martin,0,14.0,14.0,17.0,0,-3,0,0,0,-3,,,,,,,,,False,-3
+18,Singapore Grand Prix,COL,Alpine,0,16.0,16.0,16.0,0,0,0,0,0,0,,,,,,,,,False,0
+18,Singapore Grand Prix,BOR,Kick Sauber,0,14.0,14.0,17.0,0,-3,0,0,0,-3,,,,,,,,,False,-3
+18,Singapore Grand Prix,GAS,Alpine,0,18.0,19.0,19.0,0,0,1,0,0,1,,,,,,,,,False,1
+18,Singapore Grand Prix,TSU,Red Bull Racing,0,13.0,13.0,12.0,0,1,1,0,0,2,,,,,,,,,False,2
+18,Singapore Grand Prix,RUS,Mercedes,10,1.0,1.0,1.0,25,0,0,0,0,25,,,,,,,,,False,35
+18,Singapore Grand Prix,LEC,Ferrari,4,7.0,7.0,6.0,8,1,1,0,0,10,,,,,,,,,False,14
+18,Singapore Grand Prix,PIA,McLaren,8,3.0,3.0,4.0,12,-1,0,0,0,11,,,,,,,,,False,19
+18,Singapore Grand Prix,ALO,Aston Martin,1,10.0,10.0,7.0,6,3,5,0,0,14,,,,,,,,,False,15
+18,Singapore Grand Prix,OCO,Haas F1 Team,0,17.0,17.0,18.0,0,-1,1,0,0,0,,,,,,,,,False,0
+18,Singapore Grand Prix,ANT,Mercedes,7,4.0,4.0,5.0,10,-1,1,0,0,10,,,,,,,,,False,17
+18,Singapore Grand Prix,HUL,Kick Sauber,0,11.0,11.0,20.0,0,-9,0,0,0,-9,,,,,,,,,False,-9
+18,Singapore Grand Prix,BEA,Haas F1 Team,2,9.0,9.0,9.0,2,0,1,0,0,3,,,,,,,,,False,5
+18,Singapore Grand Prix,VER,Red Bull Racing,9,2.0,2.0,2.0,18,0,0,0,0,18,,,,,,,,,False,27
+18,Singapore Grand Prix,LAW,Racing Bulls,0,12.0,12.0,15.0,0,-3,3,0,0,0,,,,,,,,,False,0
+18,Singapore Grand Prix,SAI,Williams,0,20.0,18.0,10.0,1,8,3,0,0,12,,,,,,,,,False,12
+18,Singapore Grand Prix,HAM,Ferrari,5,6.0,6.0,8.0,4,-2,1,0,0,3,,,,,,,,,False,8
+18,Singapore Grand Prix,HAD,Racing Bulls,3,8.0,8.0,11.0,0,-3,0,0,0,-3,,,,,,,,,False,0
+18,Singapore Grand Prix,ALB,Williams,0,19.0,20.0,14.0,0,6,4,0,0,10,,,,,,,,,False,10
+18,Singapore Grand Prix,NOR,McLaren,6,5.0,5.0,3.0,15,2,0,0,0,17,,,,,,,,,False,23
+18,Singapore Grand Prix,STR,Aston Martin,0,15.0,15.0,13.0,0,2,5,0,0,7,,,,,,,,,False,7
+19,United States Grand Prix,COL,Alpine,0,15.0,15.0,17.0,0,-2,2,0,0,0,17.0,14.0,0.0,3.0,0.0,0.0,0.0,3.0,False,3
+19,United States Grand Prix,BOR,Kick Sauber,0,16.0,16.0,18.0,0,-2,2,0,0,0,20.0,11.0,0.0,9.0,0.0,0.0,0.0,9.0,False,9
+19,United States Grand Prix,GAS,Alpine,0,14.0,14.0,19.0,0,-5,1,0,0,-4,13.0,10.0,0.0,3.0,0.0,0.0,0.0,3.0,False,-1
+19,United States Grand Prix,TSU,Red Bull Racing,0,13.0,13.0,7.0,6,6,2,0,0,14,18.0,7.0,2.0,11.0,0.0,0.0,0.0,13.0,False,27
+19,United States Grand Prix,RUS,Mercedes,7,4.0,4.0,6.0,8,-2,0,0,0,6,5.0,2.0,7.0,3.0,0.0,0.0,0.0,10.0,False,23
+19,United States Grand Prix,LEC,Ferrari,8,3.0,3.0,3.0,15,0,2,0,0,17,10.0,5.0,4.0,5.0,0.0,0.0,0.0,9.0,False,34
+19,United States Grand Prix,PIA,McLaren,5,6.0,6.0,5.0,10,1,0,0,0,11,3.0,19.0,0.0,0.0,0.0,0.0,-5.0,-5.0,False,11
+19,United States Grand Prix,ALO,Aston Martin,1,10.0,10.0,10.0,1,0,2,0,0,3,6.0,20.0,0.0,0.0,0.0,0.0,-5.0,-5.0,False,-1
+19,United States Grand Prix,OCO,Haas F1 Team,0,17.0,17.0,15.0,0,2,2,0,0,4,19.0,16.0,0.0,0.0,0.0,0.0,-5.0,-5.0,False,-1
+19,United States Grand Prix,ANT,Mercedes,4,7.0,7.0,13.0,0,-6,5,0,0,-1,11.0,8.0,1.0,3.0,1.0,0.0,0.0,5.0,False,8
+19,United States Grand Prix,HUL,Kick Sauber,0,11.0,11.0,8.0,4,3,1,0,0,8,4.0,13.0,0.0,-9.0,0.0,0.0,0.0,-9.0,False,-1
+19,United States Grand Prix,BEA,Haas F1 Team,3,8.0,8.0,9.0,2,-1,1,0,0,2,16.0,15.0,0.0,1.0,0.0,0.0,0.0,1.0,False,6
+19,United States Grand Prix,VER,Red Bull Racing,10,1.0,1.0,1.0,25,0,0,0,0,25,1.0,1.0,8.0,0.0,0.0,0.0,0.0,8.0,False,43
+19,United States Grand Prix,LAW,Racing Bulls,0,12.0,12.0,11.0,0,1,2,0,0,3,15.0,9.0,0.0,6.0,1.0,0.0,0.0,7.0,False,10
+19,United States Grand Prix,SAI,Williams,2,9.0,9.0,20.0,0,0,0,0,-10,-10,7.0,3.0,6.0,4.0,0.0,0.0,0.0,10.0,True,2
+19,United States Grand Prix,HAM,Ferrari,6,5.0,5.0,4.0,12,1,0,0,0,13,8.0,4.0,5.0,4.0,1.0,0.0,0.0,10.0,False,29
+19,United States Grand Prix,HAD,Racing Bulls,0,20.0,20.0,16.0,0,4,2,0,0,6,12.0,12.0,0.0,0.0,1.0,0.0,0.0,1.0,False,7
+19,United States Grand Prix,ALB,Williams,0,19.0,18.0,14.0,0,4,5,0,0,9,9.0,6.0,3.0,3.0,0.0,0.0,0.0,6.0,False,15
+19,United States Grand Prix,NOR,McLaren,9,2.0,2.0,2.0,18,0,2,0,0,20,2.0,18.0,0.0,0.0,0.0,0.0,-5.0,-5.0,False,24
+19,United States Grand Prix,STR,Aston Martin,0,18.0,19.0,12.0,0,7,5,0,0,12,14.0,17.0,0.0,0.0,1.0,0.0,-5.0,-4.0,False,8
+20,Mexico City Grand Prix,COL,Alpine,0,20.0,20.0,16.0,0,4,0,0,0,4,,,,,,,,,False,4
+20,Mexico City Grand Prix,BOR,Kick Sauber,0,16.0,16.0,10.0,1,6,2,0,0,9,,,,,,,,,False,9
+20,Mexico City Grand Prix,GAS,Alpine,0,18.0,18.0,15.0,0,3,1,0,0,4,,,,,,,,,False,4
+20,Mexico City Grand Prix,TSU,Red Bull Racing,0,11.0,10.0,11.0,0,-1,1,0,0,0,,,,,,,,,False,0
+20,Mexico City Grand Prix,RUS,Mercedes,7,4.0,4.0,7.0,6,-3,4,0,0,7,,,,,,,,,False,14
+20,Mexico City Grand Prix,LEC,Ferrari,9,2.0,2.0,2.0,18,0,0,0,0,18,,,,,,,,,False,27
+20,Mexico City Grand Prix,PIA,McLaren,3,8.0,7.0,5.0,10,2,5,0,0,17,,,,,,,,,False,20
+20,Mexico City Grand Prix,ALO,Aston Martin,0,14.0,14.0,18.0,0,0,2,0,-10,-8,,,,,,,,,True,-8
+20,Mexico City Grand Prix,OCO,Haas F1 Team,0,12.0,11.0,9.0,2,2,1,0,0,5,,,,,,,,,False,5
+20,Mexico City Grand Prix,ANT,Mercedes,5,6.0,6.0,6.0,8,0,6,0,0,14,,,,,,,,,False,19
+20,Mexico City Grand Prix,HUL,Kick Sauber,0,13.0,13.0,19.0,0,0,2,0,-10,-8,,,,,,,,,True,-8
+20,Mexico City Grand Prix,BEA,Haas F1 Team,1,10.0,9.0,4.0,12,5,4,0,0,21,,,,,,,,,False,22
+20,Mexico City Grand Prix,VER,Red Bull Racing,6,5.0,5.0,3.0,15,2,0,0,0,17,,,,,,,,,False,23
+20,Mexico City Grand Prix,LAW,Racing Bulls,0,15.0,15.0,20.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+20,Mexico City Grand Prix,SAI,Williams,4,7.0,12.0,17.0,0,0,5,0,-10,-5,,,,,,,,,True,-1
+20,Mexico City Grand Prix,HAM,Ferrari,8,3.0,3.0,8.0,4,-5,5,0,0,4,,,,,,,,,False,12
+20,Mexico City Grand Prix,HAD,Racing Bulls,2,9.0,8.0,13.0,0,-5,0,0,0,-5,,,,,,,,,False,-3
+20,Mexico City Grand Prix,ALB,Williams,0,17.0,17.0,12.0,0,5,3,0,0,8,,,,,,,,,False,8
+20,Mexico City Grand Prix,NOR,McLaren,10,1.0,1.0,1.0,25,0,0,0,0,25,,,,,,,,,False,35
+20,Mexico City Grand Prix,STR,Aston Martin,0,19.0,19.0,14.0,0,5,5,0,0,10,,,,,,,,,False,10
+21,São Paulo Grand Prix,COL,Alpine,0,18.0,16.0,15.0,0,1,1,0,0,2,16.0,20.0,0.0,0.0,0.0,0.0,-5.0,-5.0,False,-3
+21,São Paulo Grand Prix,BOR,Kick Sauber,0,,18.0,20.0,0,0,0,0,-10,-10,14.0,18.0,0.0,0.0,0.0,0.0,-5.0,-5.0,True,-15
+21,São Paulo Grand Prix,GAS,Alpine,2,9.0,9.0,10.0,1,-1,2,0,0,2,13.0,8.0,1.0,5.0,1.0,0.0,0.0,7.0,False,11
+21,São Paulo Grand Prix,TSU,Red Bull Racing,0,19.0,17.0,17.0,0,0,3,0,0,3,19.0,13.0,0.0,6.0,0.0,0.0,0.0,6.0,False,9
+21,São Paulo Grand Prix,RUS,Mercedes,5,6.0,6.0,4.0,12,2,4,0,0,18,4.0,3.0,6.0,1.0,0.0,0.0,0.0,7.0,False,30
+21,São Paulo Grand Prix,LEC,Ferrari,8,3.0,3.0,19.0,0,0,0,0,-10,-10,8.0,5.0,4.0,3.0,1.0,0.0,0.0,8.0,True,6
+21,São Paulo Grand Prix,PIA,McLaren,7,4.0,4.0,5.0,10,-1,2,0,0,11,3.0,19.0,0.0,0.0,0.0,0.0,-5.0,-5.0,False,13
+21,São Paulo Grand Prix,ALO,Aston Martin,0,11.0,11.0,14.0,0,-3,0,0,0,-3,5.0,6.0,3.0,-1.0,0.0,0.0,0.0,2.0,False,-1
+21,São Paulo Grand Prix,OCO,Haas F1 Team,0,17.0,20.0,12.0,0,8,2,0,0,10,18.0,11.0,0.0,7.0,1.0,0.0,0.0,8.0,False,18
+21,São Paulo Grand Prix,ANT,Mercedes,9,2.0,2.0,2.0,18,0,4,0,0,22,2.0,2.0,7.0,0.0,0.0,0.0,0.0,7.0,False,38
+21,São Paulo Grand Prix,HUL,Kick Sauber,1,10.0,10.0,9.0,2,1,3,0,0,6,10.0,15.0,0.0,-5.0,0.0,0.0,0.0,-5.0,False,2
+21,São Paulo Grand Prix,BEA,Haas F1 Team,3,8.0,8.0,6.0,8,2,7,0,0,17,15.0,12.0,0.0,3.0,1.0,0.0,0.0,4.0,False,24
+21,São Paulo Grand Prix,VER,Red Bull Racing,0,16.0,19.0,3.0,15,16,10,0,0,41,6.0,4.0,5.0,2.0,0.0,0.0,0.0,7.0,False,48
+21,São Paulo Grand Prix,LAW,Racing Bulls,4,7.0,7.0,7.0,6,0,1,0,0,7,17.0,16.0,0.0,1.0,0.0,0.0,0.0,1.0,False,12
+21,São Paulo Grand Prix,SAI,Williams,0,15.0,15.0,13.0,0,2,4,0,0,6,20.0,14.0,0.0,6.0,0.0,0.0,0.0,6.0,False,12
+21,São Paulo Grand Prix,HAM,Ferrari,0,13.0,13.0,18.0,0,0,1,0,-10,-9,11.0,7.0,2.0,4.0,0.0,0.0,0.0,6.0,True,-3
+21,São Paulo Grand Prix,HAD,Racing Bulls,6,5.0,5.0,8.0,4,-3,3,0,0,4,9.0,10.0,0.0,-1.0,0.0,0.0,0.0,-1.0,False,9
+21,São Paulo Grand Prix,ALB,Williams,0,12.0,12.0,11.0,0,1,7,0,0,8,12.0,17.0,0.0,-5.0,0.0,0.0,0.0,-5.0,False,3
+21,São Paulo Grand Prix,NOR,McLaren,10,1.0,1.0,1.0,25,0,0,0,0,25,1.0,1.0,8.0,0.0,0.0,0.0,0.0,8.0,False,43
+21,São Paulo Grand Prix,STR,Aston Martin,0,14.0,14.0,16.0,0,-2,1,0,0,-1,7.0,9.0,0.0,-2.0,0.0,0.0,0.0,-2.0,False,-3
+22,Las Vegas Grand Prix,COL,Alpine,0,15.0,15.0,15.0,0,0,0,0,0,0,,,,,,,,,False,0
+22,Las Vegas Grand Prix,BOR,Kick Sauber,0,18.0,18.0,17.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+22,Las Vegas Grand Prix,GAS,Alpine,1,10.0,10.0,13.0,0,-3,0,0,0,-3,,,,,,,,,False,-2
+22,Las Vegas Grand Prix,TSU,Red Bull Racing,0,19.0,20.0,12.0,0,8,1,0,0,9,,,,,,,,,False,9
+22,Las Vegas Grand Prix,RUS,Mercedes,7,4.0,4.0,2.0,18,2,0,0,0,20,,,,,,,,,False,27
+22,Las Vegas Grand Prix,LEC,Ferrari,2,9.0,9.0,4.0,12,5,3,0,0,20,,,,,,,,,False,22
+22,Las Vegas Grand Prix,PIA,McLaren,6,5.0,5.0,20.0,0,0,1,0,-10,-9,,,,,,,,,True,-3
+22,Las Vegas Grand Prix,ALO,Aston Martin,4,7.0,7.0,11.0,0,-4,2,0,0,-2,,,,,,,,,False,2
+22,Las Vegas Grand Prix,OCO,Haas F1 Team,0,13.0,13.0,9.0,2,4,2,0,0,8,,,,,,,,,False,8
+22,Las Vegas Grand Prix,ANT,Mercedes,0,17.0,17.0,3.0,15,14,2,0,0,31,,,,,,,,,False,31
+22,Las Vegas Grand Prix,HUL,Kick Sauber,0,11.0,11.0,7.0,6,4,0,0,0,10,,,,,,,,,False,10
+22,Las Vegas Grand Prix,BEA,Haas F1 Team,0,14.0,14.0,10.0,1,4,3,0,0,8,,,,,,,,,False,8
+22,Las Vegas Grand Prix,VER,Red Bull Racing,9,2.0,2.0,1.0,25,1,0,0,0,26,,,,,,,,,False,35
+22,Las Vegas Grand Prix,LAW,Racing Bulls,5,6.0,6.0,14.0,0,-8,1,0,0,-7,,,,,,,,,False,-2
+22,Las Vegas Grand Prix,SAI,Williams,8,3.0,3.0,5.0,10,-2,0,0,0,8,,,,,,,,,False,16
+22,Las Vegas Grand Prix,HAM,Ferrari,0,20.0,19.0,8.0,4,11,1,0,0,16,,,,,,,,,False,16
+22,Las Vegas Grand Prix,HAD,Racing Bulls,3,8.0,8.0,6.0,8,2,0,0,0,10,,,,,,,,,False,13
+22,Las Vegas Grand Prix,ALB,Williams,0,16.0,16.0,16.0,0,0,1,0,-10,-9,,,,,,,,,True,-9
+22,Las Vegas Grand Prix,NOR,McLaren,10,1.0,1.0,19.0,0,0,1,0,-10,-9,,,,,,,,,True,1
+22,Las Vegas Grand Prix,STR,Aston Martin,0,12.0,12.0,18.0,0,0,0,0,-10,-10,,,,,,,,,True,-10
+23,Qatar Grand Prix,COL,Alpine,0,20.0,20.0,14.0,0,6,0,0,0,6,20.0,20.0,0.0,0.0,0.0,0.0,0.0,0.0,False,6
+23,Qatar Grand Prix,BOR,Kick Sauber,0,14.0,19.0,13.0,0,6,0,0,0,6,13.0,11.0,0.0,2.0,0.0,0.0,0.0,2.0,False,8
+23,Qatar Grand Prix,GAS,Alpine,2,9.0,9.0,16.0,0,-7,0,0,0,-7,19.0,18.0,0.0,1.0,0.0,0.0,0.0,1.0,False,-4
+23,Qatar Grand Prix,TSU,Red Bull Racing,0,16.0,15.0,10.0,1,5,0,0,0,6,5.0,5.0,4.0,0.0,0.0,0.0,0.0,4.0,False,10
+23,Qatar Grand Prix,RUS,Mercedes,7,4.0,4.0,6.0,8,-2,1,0,0,7,2.0,2.0,7.0,0.0,0.0,0.0,0.0,7.0,False,21
+23,Qatar Grand Prix,LEC,Ferrari,1,10.0,10.0,8.0,4,2,0,0,0,6,9.0,13.0,0.0,-4.0,1.0,0.0,0.0,-3.0,False,4
+23,Qatar Grand Prix,PIA,McLaren,10,1.0,1.0,2.0,18,-1,1,0,0,18,1.0,1.0,8.0,0.0,0.0,0.0,0.0,8.0,False,36
+23,Qatar Grand Prix,ALO,Aston Martin,3,8.0,8.0,7.0,6,1,0,0,0,7,4.0,7.0,2.0,-3.0,0.0,0.0,0.0,-1.0,False,9
+23,Qatar Grand Prix,OCO,Haas F1 Team,0,17.0,16.0,15.0,0,1,0,0,0,1,15.0,15.0,0.0,0.0,0.0,0.0,0.0,0.0,False,1
+23,Qatar Grand Prix,ANT,Mercedes,6,5.0,5.0,5.0,10,0,0,0,0,10,7.0,6.0,3.0,1.0,1.0,0.0,0.0,5.0,False,21
+23,Qatar Grand Prix,HUL,Kick Sauber,0,11.0,11.0,20.0,0,0,0,0,-10,-10,14.0,16.0,0.0,-2.0,0.0,0.0,0.0,-2.0,True,-12
+23,Qatar Grand Prix,BEA,Haas F1 Team,0,13.0,13.0,19.0,0,0,0,0,-10,-10,12.0,12.0,0.0,0.0,0.0,0.0,0.0,0.0,True,-10
+23,Qatar Grand Prix,VER,Red Bull Racing,8,3.0,3.0,1.0,25,2,0,0,0,27,6.0,4.0,5.0,2.0,0.0,0.0,0.0,7.0,False,42
+23,Qatar Grand Prix,LAW,Racing Bulls,0,12.0,12.0,9.0,2,3,0,0,0,5,16.0,14.0,0.0,2.0,1.0,0.0,0.0,3.0,False,8
+23,Qatar Grand Prix,SAI,Williams,4,7.0,7.0,3.0,15,4,0,0,0,19,8.0,8.0,1.0,0.0,0.0,0.0,0.0,1.0,False,24
+23,Qatar Grand Prix,HAM,Ferrari,0,18.0,17.0,12.0,0,5,0,0,0,5,18.0,17.0,0.0,1.0,0.0,0.0,0.0,1.0,False,6
+23,Qatar Grand Prix,HAD,Racing Bulls,5,6.0,6.0,18.0,0,0,1,0,-10,-9,11.0,9.0,0.0,2.0,0.0,0.0,0.0,2.0,True,-2
+23,Qatar Grand Prix,ALB,Williams,0,15.0,14.0,11.0,0,3,0,0,0,3,10.0,10.0,0.0,0.0,0.0,0.0,0.0,0.0,False,3
+23,Qatar Grand Prix,NOR,McLaren,9,2.0,2.0,4.0,12,-2,1,0,0,11,3.0,3.0,6.0,0.0,0.0,0.0,0.0,6.0,False,26
+23,Qatar Grand Prix,STR,Aston Martin,0,19.0,18.0,17.0,0,0,0,0,-10,-10,17.0,19.0,0.0,-2.0,0.0,0.0,0.0,-2.0,True,-12
+24,Abu Dhabi Grand Prix,COL,Alpine,0,20.0,20.0,20.0,0,0,0,0,0,0,,,,,,,,,False,0
+24,Abu Dhabi Grand Prix,BOR,Kick Sauber,4,7.0,7.0,11.0,0,-4,2,0,0,-2,,,,,,,,,False,2
+24,Abu Dhabi Grand Prix,GAS,Alpine,0,19.0,19.0,19.0,0,0,0,0,0,0,,,,,,,,,False,0
+24,Abu Dhabi Grand Prix,TSU,Red Bull Racing,1,10.0,10.0,14.0,0,-4,3,0,0,-1,,,,,,,,,False,0
+24,Abu Dhabi Grand Prix,RUS,Mercedes,7,4.0,4.0,5.0,10,-1,4,0,0,13,,,,,,,,,False,20
+24,Abu Dhabi Grand Prix,LEC,Ferrari,6,5.0,5.0,4.0,12,1,5,0,0,18,,,,,,,,,False,24
+24,Abu Dhabi Grand Prix,PIA,McLaren,8,3.0,3.0,2.0,18,1,0,0,0,19,,,,,,,,,False,27
+24,Abu Dhabi Grand Prix,ALO,Aston Martin,5,6.0,6.0,6.0,8,0,2,0,0,10,,,,,,,,,False,15
+24,Abu Dhabi Grand Prix,OCO,Haas F1 Team,3,8.0,8.0,7.0,6,1,5,0,0,12,,,,,,,,,False,15
+24,Abu Dhabi Grand Prix,ANT,Mercedes,0,14.0,14.0,15.0,0,-1,3,0,0,2,,,,,,,,,False,2
+24,Abu Dhabi Grand Prix,HUL,Kick Sauber,0,18.0,18.0,9.0,2,9,7,0,0,18,,,,,,,,,False,18
+24,Abu Dhabi Grand Prix,BEA,Haas F1 Team,0,11.0,11.0,12.0,0,-1,4,0,0,3,,,,,,,,,False,3
+24,Abu Dhabi Grand Prix,VER,Red Bull Racing,10,1.0,1.0,1.0,25,0,0,0,0,25,,,,,,,,,False,35
+24,Abu Dhabi Grand Prix,LAW,Racing Bulls,0,13.0,13.0,18.0,0,-5,1,0,0,-4,,,,,,,,,False,-4
+24,Abu Dhabi Grand Prix,SAI,Williams,0,12.0,12.0,13.0,0,-1,1,0,0,0,,,,,,,,,False,0
+24,Abu Dhabi Grand Prix,HAM,Ferrari,0,16.0,16.0,8.0,4,8,7,0,0,19,,,,,,,,,False,19
+24,Abu Dhabi Grand Prix,HAD,Racing Bulls,2,9.0,9.0,17.0,0,-8,0,0,0,-8,,,,,,,,,False,-6
+24,Abu Dhabi Grand Prix,ALB,Williams,0,17.0,17.0,16.0,0,1,2,0,0,3,,,,,,,,,False,3
+24,Abu Dhabi Grand Prix,NOR,McLaren,9,2.0,2.0,3.0,15,-1,3,0,0,17,,,,,,,,,False,26
+24,Abu Dhabi Grand Prix,STR,Aston Martin,0,15.0,15.0,10.0,1,5,8,0,0,14,,,,,,,,,False,14

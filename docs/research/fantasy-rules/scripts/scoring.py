@@ -6,6 +6,7 @@ Qualifying:  P1=10, P2=9, ..., P10=1
 Sprint:      P1=8, P2=7, ..., P8=1
 
 Position change: +1 per position gained, -1 per position lost (race and sprint).
+Overtakes:       +1 per on-track position gained (lap-by-lap, excl. pit laps and lap 1).
 Fastest lap:     +3 (race), +2 (sprint).
 DNF/DSQ/DNS:     -10 (race), -5 (sprint). No position loss calculated for DNFs.
 Constructor:     Sum of both drivers' points across all sessions.
@@ -37,11 +38,13 @@ def score_driver_session(
     has_fastest_lap: bool,
     is_dnf: bool,
     session: str,
+    overtakes: int = 0,
 ) -> dict:
     """
     Score a driver for a single race or sprint session.
 
     Position change = grid_position - finish_position (positive = gained).
+    Overtakes = on-track position gains from lap-by-lap data (computed by caller).
     DNF drivers get 0 finish pts + penalty, no position change.
     """
     table = DRIVER_RACE_PTS if session == "race" else DRIVER_SPRINT_PTS
@@ -60,11 +63,12 @@ def score_driver_session(
 
     fl = fl_bonus if has_fastest_lap else 0
     penalty = dnf_penalty if is_dnf else 0
-    total = finish + pos_change + fl + penalty
+    total = finish + pos_change + overtakes + fl + penalty
 
     return {
         "finish": finish,
         "pos_change": pos_change,
+        "overtakes": overtakes,
         "fl": fl,
         "penalty": penalty,
         "total": total,
