@@ -33,5 +33,9 @@ api/**/CodeCoverage/
 *.njsproj
 *.sw?
 
-# MISC
-docs/research/
+# Python
+__pycache__/
+*.pyc
+.ff1_cache/
+.venv/
+.pytest_cache/

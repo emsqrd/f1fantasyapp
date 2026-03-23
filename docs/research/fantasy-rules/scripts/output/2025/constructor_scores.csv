@@ -1,0 +1,241 @@
+round,event,constructor,total_pts
+1,Australian Grand Prix,McLaren,44
+1,Australian Grand Prix,Red Bull Racing,18
+1,Australian Grand Prix,Mercedes,51
+1,Australian Grand Prix,Williams,7
+1,Australian Grand Prix,Aston Martin,5
+1,Australian Grand Prix,Kick Sauber,7
+1,Australian Grand Prix,Ferrari,15
+1,Australian Grand Prix,Alpine,-9
+1,Australian Grand Prix,Racing Bulls,-10
+1,Australian Grand Prix,Haas F1 Team,12
+2,Chinese Grand Prix,McLaren,74
+2,Chinese Grand Prix,Mercedes,45
+2,Chinese Grand Prix,Red Bull Racing,45
+2,Chinese Grand Prix,Haas F1 Team,33
+2,Chinese Grand Prix,Williams,14
+2,Chinese Grand Prix,Aston Martin,1
+2,Chinese Grand Prix,Racing Bulls,8
+2,Chinese Grand Prix,Alpine,2
+2,Chinese Grand Prix,Kick Sauber,2
+2,Chinese Grand Prix,Ferrari,6
+3,Japanese Grand Prix,Red Bull Racing,37
+3,Japanese Grand Prix,McLaren,50
+3,Japanese Grand Prix,Ferrari,30
+3,Japanese Grand Prix,Mercedes,30
+3,Japanese Grand Prix,Racing Bulls,5
+3,Japanese Grand Prix,Williams,12
+3,Japanese Grand Prix,Haas F1 Team,2
+3,Japanese Grand Prix,Aston Martin,1
+3,Japanese Grand Prix,Alpine,3
+3,Japanese Grand Prix,Kick Sauber,-2
+4,Bahrain Grand Prix,McLaren,61
+4,Bahrain Grand Prix,Mercedes,35
+4,Bahrain Grand Prix,Ferrari,41
+4,Bahrain Grand Prix,Red Bull Racing,25
+4,Bahrain Grand Prix,Alpine,6
+4,Bahrain Grand Prix,Haas F1 Team,27
+4,Bahrain Grand Prix,Williams,4
+4,Bahrain Grand Prix,Racing Bulls,6
+4,Bahrain Grand Prix,Aston Martin,2
+4,Bahrain Grand Prix,Kick Sauber,-7
+5,Saudi Arabian Grand Prix,McLaren,59
+5,Saudi Arabian Grand Prix,Red Bull Racing,20
+5,Saudi Arabian Grand Prix,Ferrari,35
+5,Saudi Arabian Grand Prix,Mercedes,31
+5,Saudi Arabian Grand Prix,Williams,19
+5,Saudi Arabian Grand Prix,Racing Bulls,11
+5,Saudi Arabian Grand Prix,Aston Martin,6
+5,Saudi Arabian Grand Prix,Haas F1 Team,11
+5,Saudi Arabian Grand Prix,Kick Sauber,6
+5,Saudi Arabian Grand Prix,Alpine,-7
+6,Miami Grand Prix,McLaren,87
+6,Miami Grand Prix,Mercedes,38
+6,Miami Grand Prix,Red Bull Racing,30
+6,Miami Grand Prix,Williams,18
+6,Miami Grand Prix,Ferrari,29
+6,Miami Grand Prix,Racing Bulls,-6
+6,Miami Grand Prix,Haas F1 Team,0
+6,Miami Grand Prix,Alpine,7
+6,Miami Grand Prix,Kick Sauber,-3
+6,Miami Grand Prix,Aston Martin,20
+7,Emilia Romagna Grand Prix,Red Bull Racing,49
+7,Emilia Romagna Grand Prix,McLaren,59
+7,Emilia Romagna Grand Prix,Ferrari,47
+7,Emilia Romagna Grand Prix,Williams,28
+7,Emilia Romagna Grand Prix,Mercedes,5
+7,Emilia Romagna Grand Prix,Racing Bulls,7
+7,Emilia Romagna Grand Prix,Aston Martin,-1
+7,Emilia Romagna Grand Prix,Kick Sauber,5
+7,Emilia Romagna Grand Prix,Alpine,0
+7,Emilia Romagna Grand Prix,Haas F1 Team,-7
+8,Monaco Grand Prix,McLaren,58
+8,Monaco Grand Prix,Ferrari,46
+8,Monaco Grand Prix,Red Bull Racing,13
+8,Monaco Grand Prix,Racing Bulls,19
+8,Monaco Grand Prix,Haas F1 Team,18
+8,Monaco Grand Prix,Williams,7
+8,Monaco Grand Prix,Mercedes,1
+8,Monaco Grand Prix,Alpine,-5
+8,Monaco Grand Prix,Kick Sauber,-1
+8,Monaco Grand Prix,Aston Martin,-1
+9,Spanish Grand Prix,McLaren,62
+9,Spanish Grand Prix,Ferrari,38
+9,Spanish Grand Prix,Mercedes,17
+9,Spanish Grand Prix,Kick Sauber,26
+9,Spanish Grand Prix,Racing Bulls,18
+9,Spanish Grand Prix,Alpine,12
+9,Spanish Grand Prix,Aston Martin,11
+9,Spanish Grand Prix,Red Bull Racing,15
+9,Spanish Grand Prix,Williams,-5
+9,Spanish Grand Prix,Haas F1 Team,-1
+10,Canadian Grand Prix,Mercedes,60
+10,Canadian Grand Prix,Red Bull Racing,38
+10,Canadian Grand Prix,McLaren,14
+10,Canadian Grand Prix,Ferrari,32
+10,Canadian Grand Prix,Aston Martin,20
+10,Canadian Grand Prix,Kick Sauber,15
+10,Canadian Grand Prix,Haas F1 Team,14
+10,Canadian Grand Prix,Williams,3
+10,Canadian Grand Prix,Alpine,6
+10,Canadian Grand Prix,Racing Bulls,-11
+11,Austrian Grand Prix,McLaren,62
+11,Austrian Grand Prix,Ferrari,45
+11,Austrian Grand Prix,Mercedes,12
+11,Austrian Grand Prix,Racing Bulls,16
+11,Austrian Grand Prix,Aston Martin,13
+11,Austrian Grand Prix,Kick Sauber,26
+11,Austrian Grand Prix,Haas F1 Team,21
+11,Austrian Grand Prix,Alpine,-1
+11,Austrian Grand Prix,Red Bull Racing,-3
+11,Austrian Grand Prix,Williams,-19
+12,British Grand Prix,McLaren,64
+12,British Grand Prix,Kick Sauber,24
+12,British Grand Prix,Ferrari,23
+12,British Grand Prix,Red Bull Racing,14
+12,British Grand Prix,Alpine,3
+12,British Grand Prix,Aston Martin,22
+12,British Grand Prix,Williams,8
+12,British Grand Prix,Mercedes,-1
+12,British Grand Prix,Haas F1 Team,16
+12,British Grand Prix,Racing Bulls,-20
+13,Belgian Grand Prix,McLaren,76
+13,Belgian Grand Prix,Ferrari,55
+13,Belgian Grand Prix,Red Bull Racing,27
+13,Belgian Grand Prix,Mercedes,28
+13,Belgian Grand Prix,Williams,17
+13,Belgian Grand Prix,Racing Bulls,1
+13,Belgian Grand Prix,Kick Sauber,9
+13,Belgian Grand Prix,Alpine,-4
+13,Belgian Grand Prix,Haas F1 Team,6
+13,Belgian Grand Prix,Aston Martin,10
+14,Hungarian Grand Prix,McLaren,65
+14,Hungarian Grand Prix,Mercedes,33
+14,Hungarian Grand Prix,Ferrari,22
+14,Hungarian Grand Prix,Aston Martin,27
+14,Hungarian Grand Prix,Kick Sauber,23
+14,Hungarian Grand Prix,Racing Bulls,11
+14,Hungarian Grand Prix,Red Bull Racing,12
+14,Hungarian Grand Prix,Williams,9
+14,Hungarian Grand Prix,Haas F1 Team,-9
+14,Hungarian Grand Prix,Alpine,-5
+15,Dutch Grand Prix,McLaren,35
+15,Dutch Grand Prix,Red Bull Racing,35
+15,Dutch Grand Prix,Racing Bulls,24
+15,Dutch Grand Prix,Mercedes,17
+15,Dutch Grand Prix,Williams,22
+15,Dutch Grand Prix,Haas F1 Team,35
+15,Dutch Grand Prix,Aston Martin,35
+15,Dutch Grand Prix,Alpine,6
+15,Dutch Grand Prix,Kick Sauber,5
+15,Dutch Grand Prix,Ferrari,-10
+16,Italian Grand Prix,Red Bull Racing,34
+16,Italian Grand Prix,McLaren,52
+16,Italian Grand Prix,Ferrari,41
+16,Italian Grand Prix,Mercedes,22
+16,Italian Grand Prix,Williams,18
+16,Italian Grand Prix,Kick Sauber,-3
+16,Italian Grand Prix,Racing Bulls,17
+16,Italian Grand Prix,Haas F1 Team,0
+16,Italian Grand Prix,Alpine,5
+16,Italian Grand Prix,Aston Martin,-10
+17,Azerbaijan Grand Prix,Red Bull Racing,50
+17,Azerbaijan Grand Prix,Mercedes,48
+17,Azerbaijan Grand Prix,Williams,32
+17,Azerbaijan Grand Prix,Racing Bulls,19
+17,Azerbaijan Grand Prix,McLaren,4
+17,Azerbaijan Grand Prix,Ferrari,16
+17,Azerbaijan Grand Prix,Kick Sauber,8
+17,Azerbaijan Grand Prix,Haas F1 Team,13
+17,Azerbaijan Grand Prix,Aston Martin,-7
+17,Azerbaijan Grand Prix,Alpine,0
+18,Singapore Grand Prix,Mercedes,52
+18,Singapore Grand Prix,Red Bull Racing,29
+18,Singapore Grand Prix,McLaren,42
+18,Singapore Grand Prix,Ferrari,22
+18,Singapore Grand Prix,Aston Martin,22
+18,Singapore Grand Prix,Haas F1 Team,5
+18,Singapore Grand Prix,Williams,22
+18,Singapore Grand Prix,Racing Bulls,0
+18,Singapore Grand Prix,Alpine,1
+18,Singapore Grand Prix,Kick Sauber,-12
+19,United States Grand Prix,Red Bull Racing,70
+19,United States Grand Prix,McLaren,35
+19,United States Grand Prix,Ferrari,63
+19,United States Grand Prix,Mercedes,31
+19,United States Grand Prix,Kick Sauber,8
+19,United States Grand Prix,Haas F1 Team,5
+19,United States Grand Prix,Aston Martin,7
+19,United States Grand Prix,Racing Bulls,17
+19,United States Grand Prix,Williams,17
+19,United States Grand Prix,Alpine,2
+20,Mexico City Grand Prix,McLaren,55
+20,Mexico City Grand Prix,Ferrari,39
+20,Mexico City Grand Prix,Red Bull Racing,23
+20,Mexico City Grand Prix,Haas F1 Team,27
+20,Mexico City Grand Prix,Mercedes,33
+20,Mexico City Grand Prix,Kick Sauber,1
+20,Mexico City Grand Prix,Williams,7
+20,Mexico City Grand Prix,Racing Bulls,-13
+20,Mexico City Grand Prix,Aston Martin,2
+20,Mexico City Grand Prix,Alpine,8
+21,São Paulo Grand Prix,McLaren,56
+21,São Paulo Grand Prix,Mercedes,68
+21,São Paulo Grand Prix,Red Bull Racing,57
+21,São Paulo Grand Prix,Haas F1 Team,42
+21,São Paulo Grand Prix,Racing Bulls,21
+21,São Paulo Grand Prix,Kick Sauber,-13
+21,São Paulo Grand Prix,Alpine,8
+21,São Paulo Grand Prix,Williams,15
+21,São Paulo Grand Prix,Aston Martin,-4
+21,São Paulo Grand Prix,Ferrari,3
+22,Las Vegas Grand Prix,Red Bull Racing,44
+22,Las Vegas Grand Prix,Mercedes,58
+22,Las Vegas Grand Prix,Ferrari,38
+22,Las Vegas Grand Prix,Williams,7
+22,Las Vegas Grand Prix,Racing Bulls,11
+22,Las Vegas Grand Prix,Kick Sauber,0
+22,Las Vegas Grand Prix,Haas F1 Team,16
+22,Las Vegas Grand Prix,Aston Martin,-8
+22,Las Vegas Grand Prix,Alpine,-2
+22,Las Vegas Grand Prix,McLaren,-2
+23,Qatar Grand Prix,Red Bull Racing,52
+23,Qatar Grand Prix,McLaren,62
+23,Qatar Grand Prix,Williams,27
+23,Qatar Grand Prix,Mercedes,42
+23,Qatar Grand Prix,Aston Martin,-3
+23,Qatar Grand Prix,Ferrari,10
+23,Qatar Grand Prix,Racing Bulls,6
+23,Qatar Grand Prix,Kick Sauber,-4
+23,Qatar Grand Prix,Alpine,2
+23,Qatar Grand Prix,Haas F1 Team,-9
+24,Abu Dhabi Grand Prix,Red Bull Racing,35
+24,Abu Dhabi Grand Prix,McLaren,53
+24,Abu Dhabi Grand Prix,Ferrari,43
+24,Abu Dhabi Grand Prix,Mercedes,22
+24,Abu Dhabi Grand Prix,Aston Martin,29
+24,Abu Dhabi Grand Prix,Haas F1 Team,18
+24,Abu Dhabi Grand Prix,Kick Sauber,20
+24,Abu Dhabi Grand Prix,Williams,3
+24,Abu Dhabi Grand Prix,Racing Bulls,-10
+24,Abu Dhabi Grand Prix,Alpine,0
