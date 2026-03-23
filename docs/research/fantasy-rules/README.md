@@ -1,6 +1,6 @@
 # Fantasy Rules Research
 
-Defining our own rules now that SportsDeck is not offering F1 fantasy for 2026.
+Defining our own rules.
 
 ## Folder Structure
 
