@@ -106,7 +106,7 @@ A constructor's sprint score is the **sum of both drivers' sprint points**. No a
 
 **If qualifying is cancelled, position change is not scored for that race.** Drivers earn finish points only — no position gain or loss is applied.
 
-**Captain multiplier applies to all points across the entire weekend** — qualifying, sprint, and race finish, position gains, fastest lap, and DNF penalties. If the captain DNFs, the −10 (race) or −5 (sprint) penalty is also doubled — the captain designation amplifies both upside and downside.
+**Captain multiplier applies to all points across the entire weekend.** If the captain DNFs, the −10 (race) or −5 (sprint) penalty is also doubled — the captain designation amplifies both upside and downside.
 
 ### Constructors
 
@@ -122,7 +122,7 @@ A constructor's race score is the **sum of both drivers' race points**. No addit
 | ---------------------------------------------------- | ---- | ---------- | --------------- | ----- |
 | Dominant (P1 race, P1 quali, no gain)                | 25   | 10         | 0               | 35    |
 | Mid-field mover (P6 race, P12 quali, +6 grid→finish) | 8    | 0          | 6               | 14    |
-| Consistent mid (P7 race, P6 quali, +1)               | 6    | 5          | 1               | 12    |
+| Consistent mid (P7 race, P6 quali, −1)               | 6    | 5          | −1              | 10    |
 | Just outside points (P12 race, P14 quali, +2)        | 0    | 0          | 2               | 2     |
 
 **Constructor weekend (standard — qualifying + race):**

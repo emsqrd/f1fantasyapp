@@ -15,11 +15,11 @@ You've been spiraling on pricing for over a week. Format (5D+3C) and scoring are
 
 ## Current Status
 
-**Step 12 validation complete. All criteria pass.**
+**All steps complete.**
 
-Steps 0–11 are done. Step 12 simulation ran against the full 2025 season.
+Steps 0–12 are done. Step 13 wrote the source-of-truth pricing document.
 
-**Committed decisions (unchanged):**
+**Committed decisions:**
 - Format: 5D+2C, captain mechanic
 - Scoring: race finish, qualifying, sprint, position gains/losses, overtakes, fastest lap, DNF penalties + constructor = sum of drivers
 - In-season pricing approach: PPM direction-based; all parameters decided
@@ -31,17 +31,8 @@ Steps 0–11 are done. Step 12 simulation ran against the full 2025 season.
 - Price tiers: Elite ($22M+), Midfield ($8–15M), Backmarker ($4.5–8M)
 - Composition intent validated: 3 elites fits within $100M; 4 elites never fits
 - PPM parameters: neutral=1.0 (both types), bands ±0.80 (4 bands), tiered steps (A≥$22M / B<$22M), A-tier $0.1/$0.3, B-tier $0.2/$0.6, 3-race equal-weight window with 2 dummy races
-
-**Step 12 validation results:**
-- Floor Compression: **PASS** — 3 at floor (BOR, COL, ALP; target 2–3)
-- Team Evolution: **PASS** — 9 changes across 5 checkpoints
-- Active Management: **PASS** — $14.5M budget advantage; bounded
-- Band Distribution: **PASS** — 9% Great, 30% Good, 55% Poor, 7% Terrible
-- Tier Crossings: INFO — 0 crossings; tiers are static
-
-Two adjustments resolved the original failures: (1) PPM floor at zero prevents negative scores from poisoning the rolling window, and (2) overtake scoring (+1 per on-track position gained, detected via pairwise lap-by-lap comparison) lifts mid-grid/backmarker scores enough to prevent sustained Terrible-band classifications. Full report at `scripts/output/validation/validation_report.md`.
-
-**Next:** Step 13 — write source-of-truth pricing document.
+- PPM floor at zero: negative scores produce 0 PPM, preventing floor traps
+- `decisions/pricing.md` is the complete source-of-truth for all pricing decisions
 
 ---
 
@@ -397,4 +388,4 @@ After completing all steps:
 - [x] Preseason pricing decided: official F1 Fantasy prices adopted; formula parameters moot (Step 10)
 - [x] PPM parameters decided: neutral points, band width, step type, step sizes, window (Step 11)
 - [x] Final validation simulation passes against stated criteria (Step 12)
-- [ ] `decisions/pricing.md` contains complete preseason + in-season model (Step 13)
+- [x] `decisions/pricing.md` contains complete preseason + in-season model (Step 13)

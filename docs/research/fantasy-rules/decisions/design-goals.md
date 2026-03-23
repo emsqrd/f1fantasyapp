@@ -88,7 +88,7 @@ All players operate under the same rules: same budget, same transfer allowance, 
 
 **Prices should be readable signals, not mysteries.**
 
-The purpose of in-season pricing is to reflect current performance. A player who looks at an entity's recent results and its current price should be able to anticipate the direction of the next price move. The mechanism is published and deterministic — no hidden factors, editorial overrides, or randomness after the season begins.
+The purpose of in-season pricing is to reflect current performance. A player who looks at an entity's recent results and its current price should be able to anticipate the direction of the next price move. The mechanism is published and deterministic — no hidden factors, editorial overrides, or randomness after the season begins. The sole exception is mid-season team changes, where the game operator sets the price and publishes the rationale (see `pricing.md`).
 
 This is an extension of the Transparency goal: the pricing formula is public, and a motivated player can verify any price change against the published rules and official FIA results. The knowledge edge is seeing a price move coming before it happens, not in decoding an opaque mechanism.
 
