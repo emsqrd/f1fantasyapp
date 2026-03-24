@@ -13,6 +13,7 @@ public class Race : BaseEntity
     public required string Country { get; set; }
     public required DateTime RaceDate { get; set; }
     public DateTime? LockDeadline { get; set; }
+    public bool HasSprint { get; set; }
 
     public Season Season { get; set; } = null!;
 }
