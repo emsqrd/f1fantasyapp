@@ -24,6 +24,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<TeamConstructor> TeamConstructors => Set<TeamConstructor>();
     public DbSet<LineupEntry> LineupEntries => Set<LineupEntry>();
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
+    public DbSet<DriverQualifyingResult> DriverQualifyingResults => Set<DriverQualifyingResult>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -84,6 +85,21 @@ public class ApplicationDbContext : DbContext
                 .HasOne(e => e.Season)
                 .WithMany(s => s.Races)
                 .HasForeignKey(e => e.SeasonId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<DriverQualifyingResult>(entity =>
+        {
+            entity
+                .HasOne(dqr => dqr.Driver)
+                .WithMany()
+                .HasForeignKey(dqr => dqr.DriverId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity
+                .HasOne(dqr => dqr.Race)
+                .WithMany()
+                .HasForeignKey(dqr => dqr.RaceId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
