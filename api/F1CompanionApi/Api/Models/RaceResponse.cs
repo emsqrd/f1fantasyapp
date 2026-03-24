@@ -12,4 +12,5 @@ public class RaceResponse
     public required DateTime RaceDate { get; set; }
     public DateTime? LockDeadline { get; set; }
     public required bool IsCurrent { get; set; }
+    public bool HasSprint { get; set; }
 }

@@ -27,6 +27,7 @@ public static class RaceResponseMapper
             RaceDate = race.RaceDate,
             LockDeadline = race.LockDeadline,
             IsCurrent = race.Id == currentRaceId,
+            HasSprint = race.HasSprint,
         };
     }
 }
