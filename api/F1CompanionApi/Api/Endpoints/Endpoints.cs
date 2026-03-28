@@ -13,6 +13,7 @@ public static class Endpoints
             .MapLeagueEndpoints()
             .MapMeEndpoints()
             .MapRaceEndpoints()
+            .MapRaceResultEndpoints()
             .MapSeasonEndpoints()
             .MapTeamEndpoints();
 

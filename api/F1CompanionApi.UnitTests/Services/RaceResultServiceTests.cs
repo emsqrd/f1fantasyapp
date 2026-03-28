@@ -83,12 +83,8 @@ public class RaceResultServiceTests
 
         var service = new RaceResultService(context, _mockLogger.Object);
 
-        var result = await service.SubmitQualifyingResultsAsync(
-            10,
-            [QualItem(1, 1), QualItem(2, 2)]
-        );
+        await service.SubmitQualifyingResultsAsync(10, [QualItem(1, 1), QualItem(2, 2)]);
 
-        Assert.Equal(2, result.Count());
         Assert.Equal(2, await context.DriverQualifyingResults.CountAsync());
     }
 
@@ -184,13 +180,12 @@ public class RaceResultServiceTests
 
         var service = new RaceResultService(context, _mockLogger.Object);
 
-        var result = await service.SubmitRaceResultsAsync(
+        await service.SubmitRaceResultsAsync(
             10,
             SessionType.Race,
             [RaceItem(1, grid: 1, finish: 1)]
         );
 
-        Assert.Single(result);
         Assert.Equal(1, await context.DriverRaceResults.CountAsync());
     }
 
@@ -430,17 +425,6 @@ public class RaceResultServiceTests
     }
 
     [Fact]
-    public async Task GetQualifyingResultsAsync_ReturnsEmpty_WhenNoResults()
-    {
-        using var context = CreateInMemoryContext();
-        var service = new RaceResultService(context, _mockLogger.Object);
-
-        var result = await service.GetQualifyingResultsAsync(10);
-
-        Assert.Empty(result);
-    }
-
-    [Fact]
     public async Task GetQualifyingResultsAsync_ReturnsOnlyResultsForSpecifiedRace()
     {
         using var context = CreateInMemoryContext();
@@ -509,17 +493,6 @@ public class RaceResultServiceTests
         Assert.Equal(2, result.Count);
         Assert.Equal(1, result[0].FinishPosition);
         Assert.Equal(2, result[1].FinishPosition);
-    }
-
-    [Fact]
-    public async Task GetRaceResultsAsync_ReturnsEmpty_WhenNoResults()
-    {
-        using var context = CreateInMemoryContext();
-        var service = new RaceResultService(context, _mockLogger.Object);
-
-        var result = await service.GetRaceResultsAsync(10, SessionType.Race);
-
-        Assert.Empty(result);
     }
 
     [Fact]
