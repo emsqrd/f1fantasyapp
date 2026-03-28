@@ -96,6 +96,12 @@ public class GlobalExceptionHandler : IExceptionHandler
             LeagueFullException ex => (StatusCodes.Status409Conflict, "League Full", ex.Message),
 
             // Custom Domain Exceptions - Validation Failures
+            SprintNotAvailableException ex => (
+                StatusCodes.Status400BadRequest,
+                "Sprint Not Available",
+                ex.Message
+            ),
+
             TeamFullException ex => (StatusCodes.Status400BadRequest, "Team Full", ex.Message),
 
             BudgetExceededException ex => (
