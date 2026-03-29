@@ -135,6 +135,19 @@ def _either_pitted(
     )
 
 
+def get_fastest_lap_driver(laps) -> str | None:
+    """Return the abbreviation of the driver who set the fastest lap, or None."""
+    if laps is None or laps.empty:
+        return None
+    try:
+        fastest = laps.pick_fastest()
+        if fastest is not None and pd.notna(fastest.get("Driver")):
+            return str(fastest["Driver"])
+    except Exception:
+        pass
+    return None
+
+
 def count_overtakes(laps) -> dict[str, int]:
     """Count on-track overtakes per driver from lap-by-lap position data.
 
@@ -230,7 +243,8 @@ def build_qualifying_payload(
 
 
 def build_race_payload(
-    session, driver_map: dict[str, int], overtakes: dict[str, int]
+    session, driver_map: dict[str, int], overtakes: dict[str, int],
+    fastest_lap_driver: str | None = None,
 ) -> tuple[list[dict], list[str]]:
     """Build the race/sprint results payload from a FastF1 session.
 
@@ -256,7 +270,7 @@ def build_race_payload(
         else:
             finish_position = int(finish)
 
-        fastest_lap = bool(row.get("FastestLap", False))
+        fastest_lap = abbr == fastest_lap_driver
 
         items.append({
             "driverId": driver_id,
@@ -360,7 +374,8 @@ def ingest(year: int, round_number: int, env: str) -> None:
         sprint = load_session(year, round_number, "Sprint")
         if sprint is not None:
             sprint_overtakes = count_overtakes(sprint.laps)
-            payload, warnings = build_race_payload(sprint, driver_map, sprint_overtakes)
+            sprint_fl = get_fastest_lap_driver(sprint.laps)
+            payload, warnings = build_race_payload(sprint, driver_map, sprint_overtakes, sprint_fl)
             report_warnings(warnings, "sprint")
             if payload:
                 submit_results(api_session, api_url, race_id, "sprint", payload)
@@ -372,7 +387,8 @@ def ingest(year: int, round_number: int, env: str) -> None:
     race_session = load_session(year, round_number, "Race")
     if race_session is not None:
         race_overtakes = count_overtakes(race_session.laps)
-        payload, warnings = build_race_payload(race_session, driver_map, race_overtakes)
+        race_fl = get_fastest_lap_driver(race_session.laps)
+        payload, warnings = build_race_payload(race_session, driver_map, race_overtakes, race_fl)
         report_warnings(warnings, "race")
         if payload:
             submit_results(api_session, api_url, race_id, "race", payload)

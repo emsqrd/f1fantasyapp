@@ -10,6 +10,7 @@ from ingest_results import (
     build_race_payload,
     count_overtakes,
     find_race,
+    get_fastest_lap_driver,
     map_status,
 )
 
@@ -151,6 +152,40 @@ class TestCountOvertakes:
         assert count_overtakes(pd.DataFrame()) == {}
 
 
+# --- get_fastest_lap_driver ---
+
+
+class _FakeLaps:
+    """Minimal mock for FastF1 laps with pick_fastest()."""
+
+    def __init__(self, data, fastest_driver=None):
+        self._df = pd.DataFrame(data)
+        self._fastest_driver = fastest_driver
+        self.empty = self._df.empty
+
+    def pick_fastest(self):
+        if self._fastest_driver is None:
+            return None
+        return pd.Series({"Driver": self._fastest_driver})
+
+
+class TestGetFastestLapDriver:
+    def test_returns_driver_abbreviation(self):
+        laps = _FakeLaps([{"Driver": "VER"}], fastest_driver="VER")
+        assert get_fastest_lap_driver(laps) == "VER"
+
+    def test_returns_none_for_none_laps(self):
+        assert get_fastest_lap_driver(None) is None
+
+    def test_returns_none_for_empty_laps(self):
+        laps = _FakeLaps([])
+        assert get_fastest_lap_driver(laps) is None
+
+    def test_returns_none_when_pick_fastest_returns_none(self):
+        laps = _FakeLaps([{"Driver": "VER"}], fastest_driver=None)
+        assert get_fastest_lap_driver(laps) is None
+
+
 # --- build_qualifying_payload ---
 
 
@@ -204,11 +239,11 @@ class TestBuildRacePayload:
     def test_classified_driver(self):
         session = _make_session([
             {"Abbreviation": "VER", "Status": "Finished", "GridPosition": 1,
-             "Position": 1, "FastestLap": True},
+             "Position": 1},
         ])
         driver_map = {"VER": 10}
         overtakes = {"VER": 3}
-        payload, warnings = build_race_payload(session, driver_map, overtakes)
+        payload, warnings = build_race_payload(session, driver_map, overtakes, fastest_lap_driver="VER")
 
         assert len(payload) == 1
         assert payload[0] == {
@@ -221,10 +256,30 @@ class TestBuildRacePayload:
         }
         assert warnings == []
 
+    def test_fastest_lap_false_when_not_matching(self):
+        session = _make_session([
+            {"Abbreviation": "VER", "Status": "Finished", "GridPosition": 1,
+             "Position": 1},
+        ])
+        driver_map = {"VER": 10}
+        payload, _ = build_race_payload(session, driver_map, {}, fastest_lap_driver="NOR")
+
+        assert payload[0]["fastestLap"] is False
+
+    def test_fastest_lap_false_when_none(self):
+        session = _make_session([
+            {"Abbreviation": "VER", "Status": "Finished", "GridPosition": 1,
+             "Position": 1},
+        ])
+        driver_map = {"VER": 10}
+        payload, _ = build_race_payload(session, driver_map, {})
+
+        assert payload[0]["fastestLap"] is False
+
     def test_dnf_driver_has_null_finish_position(self):
         session = _make_session([
             {"Abbreviation": "NOR", "Status": "Retired", "GridPosition": 3,
-             "Position": float("nan"), "FastestLap": False},
+             "Position": float("nan")},
         ])
         driver_map = {"NOR": 20}
         payload, warnings = build_race_payload(session, driver_map, {})
@@ -235,7 +290,7 @@ class TestBuildRacePayload:
     def test_dsq_driver_has_null_finish_position(self):
         session = _make_session([
             {"Abbreviation": "VER", "Status": "Disqualified", "GridPosition": 1,
-             "Position": 1, "FastestLap": False},
+             "Position": 1},
         ])
         driver_map = {"VER": 10}
         payload, warnings = build_race_payload(session, driver_map, {})
@@ -246,7 +301,7 @@ class TestBuildRacePayload:
     def test_lapped_driver_is_classified(self):
         session = _make_session([
             {"Abbreviation": "VER", "Status": "+1 Lap", "GridPosition": 15,
-             "Position": 12, "FastestLap": False},
+             "Position": 12},
         ])
         driver_map = {"VER": 10}
         payload, warnings = build_race_payload(session, driver_map, {})
@@ -257,7 +312,7 @@ class TestBuildRacePayload:
     def test_skips_unknown_driver_with_warning(self):
         session = _make_session([
             {"Abbreviation": "XXX", "Status": "Finished", "GridPosition": 1,
-             "Position": 1, "FastestLap": False},
+             "Position": 1},
         ])
         payload, warnings = build_race_payload(session, {}, {})
 
@@ -268,7 +323,7 @@ class TestBuildRacePayload:
     def test_missing_overtakes_defaults_to_zero(self):
         session = _make_session([
             {"Abbreviation": "VER", "Status": "Finished", "GridPosition": 1,
-             "Position": 1, "FastestLap": False},
+             "Position": 1},
         ])
         driver_map = {"VER": 10}
         payload, warnings = build_race_payload(session, driver_map, {})
@@ -278,7 +333,7 @@ class TestBuildRacePayload:
     def test_missing_grid_position_defaults_to_zero(self):
         session = _make_session([
             {"Abbreviation": "VER", "Status": "Finished", "GridPosition": float("nan"),
-             "Position": 1, "FastestLap": False},
+             "Position": 1},
         ])
         driver_map = {"VER": 10}
         payload, warnings = build_race_payload(session, driver_map, {})
