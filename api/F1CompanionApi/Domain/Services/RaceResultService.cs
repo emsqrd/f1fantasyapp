@@ -76,6 +76,7 @@ public class RaceResultService : IRaceResultService
                 DriverId = i.DriverId,
                 RaceId = raceId,
                 Position = i.Position,
+                CreatedAt = DateTime.UtcNow,
             })
             .ToList();
 
@@ -132,6 +133,7 @@ public class RaceResultService : IRaceResultService
                 Overtakes = i.Overtakes,
                 FastestLap = i.FastestLap,
                 Status = i.Status,
+                CreatedAt = DateTime.UtcNow,
             })
             .ToList();
 
