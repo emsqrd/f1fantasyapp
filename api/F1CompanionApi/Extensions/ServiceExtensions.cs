@@ -1,4 +1,3 @@
-using System.Text;
 using F1CompanionApi.Data;
 using F1CompanionApi.Domain.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -99,20 +98,22 @@ public static class ServiceExtensions
     {
         services.AddSingleton<ISupabaseAuthService, SupabaseAuthService>();
 
+        var authUrl =
+            configuration["Supabase:AuthUrl"]
+            ?? throw new InvalidOperationException("Supabase auth URL not configured");
+
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                var jwtSecret =
-                    configuration["Supabase:JwtSecret"]
-                    ?? throw new InvalidOperationException("Supabase JWT secret not configured");
-
-                var key = Encoding.UTF8.GetBytes(jwtSecret);
+                options.Authority = authUrl;
+                options.RequireHttpsMetadata = authUrl.StartsWith(
+                    "https://",
+                    StringComparison.OrdinalIgnoreCase
+                );
 
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
                     ValidateIssuer = false,
                     ValidateAudience = true,
                     ValidAudience = "authenticated",
@@ -127,6 +128,7 @@ public static class ServiceExtensions
         services.AddScoped<IDriverService, DriverService>();
         services.AddScoped<ILeagueService, LeagueService>();
         services.AddScoped<ILeagueInviteService, LeagueInviteService>();
+        services.AddScoped<IRaceResultService, RaceResultService>();
         services.AddScoped<IRaceService, RaceService>();
         services.AddScoped<ISeasonService, SeasonService>();
         services.AddScoped<ITeamService, TeamService>();

@@ -1,0 +1,4 @@
+.env.local
+.env.prod
+.venv/
+.ff1_cache/

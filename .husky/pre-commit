@@ -13,39 +13,55 @@ API_PID=""
 
 # Run web checks in background if web source files changed
 if [ -n "$WEB_CHANGED" ]; then
-  {
+  (
+    FAILED=0
     echo "Web: Formatting check..."
-    npm run web:format:check || exit 1
+    if ! npm run web:format:check; then FAILED=1; fi
 
-    echo ""
-    echo "Web: Linting..."
-    npm run web:lint || exit 1
+    if [ $FAILED -eq 0 ]; then
+      echo ""
+      echo "Web: Linting..."
+      if ! npm run web:lint; then FAILED=1; fi
+    fi
 
-    echo ""
-    echo "Web: Building..."
-    npm run web:build || exit 1
+    if [ $FAILED -eq 0 ]; then
+      echo ""
+      echo "Web: Building..."
+      if ! npm run web:build; then FAILED=1; fi
+    fi
 
-    echo ""
-    echo "Web: Testing..."
-    npm run web:test || exit 1
-  } > "$WEB_LOG" 2>&1 &
+    if [ $FAILED -eq 0 ]; then
+      echo ""
+      echo "Web: Testing..."
+      if ! npm run web:test; then FAILED=1; fi
+    fi
+
+    exit $FAILED
+  ) > "$WEB_LOG" 2>&1 &
   WEB_PID=$!
 fi
 
 # Run API checks in background if API source files changed
 if [ -n "$API_CHANGED" ]; then
-  {
+  (
+    FAILED=0
     echo "API: Formatting check..."
-    npm run api:format:check || exit 1
+    if ! npm run api:format:check; then FAILED=1; fi
 
-    echo ""
-    echo "API: Building..."
-    npm run api:build || exit 1
+    if [ $FAILED -eq 0 ]; then
+      echo ""
+      echo "API: Building..."
+      if ! npm run api:build; then FAILED=1; fi
+    fi
 
-    echo ""
-    echo "API: Testing..."
-    npm run api:test || exit 1
-  } > "$API_LOG" 2>&1 &
+    if [ $FAILED -eq 0 ]; then
+      echo ""
+      echo "API: Testing..."
+      if ! npm run api:test; then FAILED=1; fi
+    fi
+
+    exit $FAILED
+  ) > "$API_LOG" 2>&1 &
   API_PID=$!
 fi
 
