@@ -3,6 +3,8 @@ from types import SimpleNamespace
 import pandas as pd
 import pytest
 
+from unittest.mock import MagicMock, patch
+
 from ingest_results import (
     IngestError,
     RaceStatus,
@@ -11,6 +13,7 @@ from ingest_results import (
     count_overtakes,
     find_race,
     get_fastest_lap_driver,
+    load_session,
     map_status,
 )
 
@@ -48,6 +51,30 @@ class TestMapStatus:
 
     def test_whitespace_is_stripped(self):
         assert map_status("  Finished  ") == RaceStatus.CLASSIFIED
+
+
+# --- load_session ---
+
+
+class TestLoadSession:
+    def test_raises_ingest_error_when_results_empty(self):
+        mock_session = MagicMock()
+        mock_session.results = pd.DataFrame()
+        with patch("ingest_results.fastf1.get_session", return_value=mock_session):
+            with pytest.raises(IngestError, match="may not have occurred yet"):
+                load_session(2026, 7, "Race")
+
+    def test_returns_none_when_session_type_does_not_exist(self):
+        with patch("ingest_results.fastf1.get_session", side_effect=Exception("Session type 'Sprint' does not exist")):
+            result = load_session(2026, 1, "Sprint")
+            assert result is None
+
+    def test_returns_session_when_data_loaded(self):
+        mock_session = MagicMock()
+        mock_session.results = pd.DataFrame([{"Driver": "VER"}])
+        with patch("ingest_results.fastf1.get_session", return_value=mock_session):
+            result = load_session(2026, 1, "Race")
+            assert result is mock_session
 
 
 # --- find_race ---

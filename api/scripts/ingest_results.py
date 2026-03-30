@@ -12,6 +12,7 @@ Usage:
 import argparse
 import os
 import sys
+from datetime import datetime, timezone
 from enum import IntEnum
 from itertools import combinations
 
@@ -106,7 +107,13 @@ def load_session(year: int, round_number: int, session_name: str):
     try:
         session = fastf1.get_session(year, round_number, session_name)
         session.load(telemetry=False, weather=False, messages=False)
+        if session.results is None or session.results.empty:
+            raise IngestError(
+                f"No data available for {session_name} R{round_number} — session may not have occurred yet"
+            )
         return session
+    except IngestError:
+        raise
     except Exception as exc:
         print(f"  Warning: could not load {session_name} R{round_number}: {exc}")
         return None
@@ -355,7 +362,11 @@ def ingest(year: int, round_number: int, env: str) -> None:
     race = find_race(races, round_number)
     race_id = race["id"]
     has_sprint = race.get("hasSprint", False)
+    race_date = datetime.fromisoformat(race["raceDate"]).replace(tzinfo=timezone.utc)
     print(f"  Race: {race['name']} (id={race_id}, hasSprint={has_sprint})")
+
+    if datetime.now(timezone.utc) < race_date:
+        raise IngestError(f"Race has not occurred yet (scheduled {race_date.date()})")
 
     # Qualifying
     print(f"Loading qualifying session (R{round_number})...")
@@ -400,7 +411,7 @@ def ingest(year: int, round_number: int, env: str) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description="Import F1 results into the Fantasy API")
-    parser.add_argument("--year", type=int, required=True, help="Season year")
+    parser.add_argument("--year", type=int, default=datetime.now().year, help="Season year (default: current year)")
     parser.add_argument("--round", type=int, required=True, help="Round number")
     parser.add_argument(
         "--env",
