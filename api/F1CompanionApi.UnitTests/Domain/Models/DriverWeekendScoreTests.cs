@@ -4,7 +4,7 @@ namespace F1CompanionApi.UnitTests.Domain.Models;
 
 public class DriverWeekendScoreTests
 {
-    private static DriverQualifyingScore Qualifying(int points) => new(DriverId: 1, points);
+    private static int Qualifying(int points) => points;
 
     private static DriverSessionScore Session(
         string name,

@@ -4,7 +4,7 @@ namespace F1CompanionApi.Domain.Models;
 
 public record DriverWeekendScore(
     int DriverId,
-    DriverQualifyingScore? Qualifying,
+    int? Qualifying,
     DriverSessionScore? Sprint,
     DriverSessionScore? Race,
     bool IsCaptain
@@ -12,12 +12,11 @@ public record DriverWeekendScore(
 {
     private int Multiplier => IsCaptain ? ScoringConstants.CaptainMultiplier : 1;
 
-    public int AdjustedQualifying => (Qualifying?.PositionPoints ?? 0) * Multiplier;
+    public int AdjustedQualifying => (Qualifying ?? 0) * Multiplier;
     public int AdjustedSprint => (Sprint?.Total ?? 0) * Multiplier;
     public int AdjustedRace => (Race?.Total ?? 0) * Multiplier;
 
-    public int RawTotal =>
-        (Qualifying?.PositionPoints ?? 0) + (Sprint?.Total ?? 0) + (Race?.Total ?? 0);
+    public int RawTotal => (Qualifying ?? 0) + (Sprint?.Total ?? 0) + (Race?.Total ?? 0);
 
     public int AdjustedTotal => RawTotal * Multiplier;
 }

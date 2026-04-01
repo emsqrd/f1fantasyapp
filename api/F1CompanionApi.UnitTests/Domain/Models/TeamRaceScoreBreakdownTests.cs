@@ -12,7 +12,7 @@ public class TeamRaceScoreBreakdownTests
     ) =>
         new(
             DriverId: id,
-            Qualifying: new DriverQualifyingScore(id, qualPoints),
+            Qualifying: qualPoints,
             Sprint: null,
             Race: new DriverSessionScore(id, "Race", racePoints, 0, 0, 0, 0),
             IsCaptain: isCaptain

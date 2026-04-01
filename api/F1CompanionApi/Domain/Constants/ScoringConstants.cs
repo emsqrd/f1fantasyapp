@@ -56,6 +56,8 @@ public static class ScoringConstants
     public const int RaceDnfPenalty = -10;
     public const int CaptainMultiplier = 2;
 
-    public static int GetPositionPoints(FrozenDictionary<int, int> table, int position) =>
-        table.TryGetValue(position, out var points) ? points : 0;
+    public static int GetPositionPoints(FrozenDictionary<int, int> pointsByPosition, int position)
+    {
+        return pointsByPosition.TryGetValue(position, out var points) ? points : 0;
+    }
 }

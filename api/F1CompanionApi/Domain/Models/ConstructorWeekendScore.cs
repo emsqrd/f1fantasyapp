@@ -6,8 +6,7 @@ public record ConstructorWeekendScore(
     DriverWeekendScore Driver2
 )
 {
-    public int QualifyingTotal =>
-        (Driver1.Qualifying?.PositionPoints ?? 0) + (Driver2.Qualifying?.PositionPoints ?? 0);
+    public int QualifyingTotal => (Driver1.Qualifying ?? 0) + (Driver2.Qualifying ?? 0);
 
     public int SprintTotal => (Driver1.Sprint?.Total ?? 0) + (Driver2.Sprint?.Total ?? 0);
 

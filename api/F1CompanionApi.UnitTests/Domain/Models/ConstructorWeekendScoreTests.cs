@@ -13,7 +13,7 @@ public class ConstructorWeekendScoreTests
     ) =>
         new(
             DriverId: id,
-            Qualifying: new DriverQualifyingScore(id, qualPoints),
+            Qualifying: qualPoints,
             Sprint: new DriverSessionScore(id, "Sprint", sprintPoints, 0, 0, 0, 0),
             Race: new DriverSessionScore(id, "Race", racePoints, 0, 0, 0, 0),
             IsCaptain: isCaptain
