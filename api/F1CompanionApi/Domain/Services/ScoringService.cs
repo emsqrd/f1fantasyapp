@@ -14,6 +14,18 @@ public interface IScoringService
         DriverRaceResult result,
         bool qualifyingOccurred = true
     );
+    DriverWeekendScore CalculateDriverWeekendPoints(
+        DriverQualifyingResult? qualifying,
+        DriverRaceResult? sprint,
+        DriverRaceResult? race,
+        bool isCaptain,
+        bool qualifyingOccurred = true
+    );
+    ConstructorWeekendScore CalculateConstructorWeekendPoints(
+        int constructorId,
+        DriverWeekendScore driver1,
+        DriverWeekendScore driver2
+    );
 }
 
 public class ScoringService : IScoringService
@@ -63,6 +75,32 @@ public class ScoringService : IScoringService
             ScoringConstants.RaceDnfPenalty,
             qualifyingOccurred
         );
+    }
+
+    public DriverWeekendScore CalculateDriverWeekendPoints(
+        DriverQualifyingResult? qualifying,
+        DriverRaceResult? sprint,
+        DriverRaceResult? race,
+        bool isCaptain,
+        bool qualifyingOccurred = true
+    )
+    {
+        var driverId = qualifying?.DriverId ?? sprint?.DriverId ?? race?.DriverId ?? 0;
+        var qualifyingScore =
+            qualifying != null ? (int?)CalculateDriverQualifyingPoints(qualifying) : null;
+        var sprintScore = sprint != null ? CalculateDriverSprintPoints(sprint) : null;
+        var raceScore = race != null ? CalculateDriverRacePoints(race, qualifyingOccurred) : null;
+
+        return new DriverWeekendScore(driverId, qualifyingScore, sprintScore, raceScore, isCaptain);
+    }
+
+    public ConstructorWeekendScore CalculateConstructorWeekendPoints(
+        int constructorId,
+        DriverWeekendScore driver1,
+        DriverWeekendScore driver2
+    )
+    {
+        return new ConstructorWeekendScore(constructorId, driver1, driver2);
     }
 
     private static DriverSessionScore CalculateSessionPoints(

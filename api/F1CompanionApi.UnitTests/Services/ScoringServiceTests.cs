@@ -314,4 +314,202 @@ public class ScoringServiceTests
     }
 
     #endregion
+
+    #region CalculateDriverWeekendPoints
+
+    [Fact]
+    public void CalculateDriverWeekendPoints_StandardWeekend_SumsAllSessions()
+    {
+        var service = CreateService();
+        // P2 quali (9), P2 race from grid 2 (18 pts, 0 change)
+        var result = service.CalculateDriverWeekendPoints(
+            QualResult(1, 2),
+            null,
+            RaceResult(grid: 2, finish: 2),
+            isCaptain: false
+        );
+        Assert.Equal(9, result.AdjustedQualifying);
+        Assert.Equal(18, result.AdjustedRace);
+        Assert.Equal(27, result.RawTotal);
+    }
+
+    [Fact]
+    public void CalculateDriverWeekendPoints_NullSprint_ZeroSprintContribution()
+    {
+        var service = CreateService();
+        var result = service.CalculateDriverWeekendPoints(
+            QualResult(1, 1),
+            null,
+            RaceResult(grid: 1, finish: 1),
+            isCaptain: false
+        );
+        Assert.Equal(0, result.AdjustedSprint);
+    }
+
+    [Fact]
+    public void CalculateDriverWeekendPoints_NullQualifying_ZeroQualifyingContribution()
+    {
+        var service = CreateService();
+        var result = service.CalculateDriverWeekendPoints(
+            null,
+            null,
+            RaceResult(grid: 1, finish: 1),
+            isCaptain: false
+        );
+        Assert.Equal(0, result.AdjustedQualifying);
+    }
+
+    [Fact]
+    public void CalculateDriverWeekendPoints_Captain_DoublesEachSessionIndependently()
+    {
+        var service = CreateService();
+        // P1 quali (10), P1 sprint from grid 1 (8), P1 race from grid 1 (25)
+        var result = service.CalculateDriverWeekendPoints(
+            QualResult(1, 1),
+            RaceResult(grid: 1, finish: 1),
+            RaceResult(grid: 1, finish: 1),
+            isCaptain: true
+        );
+        Assert.Equal(20, result.AdjustedQualifying);
+        Assert.Equal(16, result.AdjustedSprint);
+        Assert.Equal(50, result.AdjustedRace);
+    }
+
+    [Fact]
+    public void CalculateDriverWeekendPoints_CaptainWithDnf_DoublesPenalty()
+    {
+        var service = CreateService();
+        // DNF race → -10 raw, -20 as captain
+        var result = service.CalculateDriverWeekendPoints(
+            null,
+            null,
+            RaceResult(finish: null, status: RaceStatus.DNF),
+            isCaptain: true
+        );
+        Assert.Equal(-20, result.AdjustedRace);
+    }
+
+    [Fact]
+    public void CalculateDriverWeekendPoints_DominantDriverAsCaptain_Returns70()
+    {
+        // P1 quali (10) + P1 race from grid 1 (25) = 35 raw, 70 as captain
+        var service = CreateService();
+        var result = service.CalculateDriverWeekendPoints(
+            QualResult(1, 1),
+            null,
+            RaceResult(grid: 1, finish: 1),
+            isCaptain: true
+        );
+        Assert.Equal(35, result.RawTotal);
+        Assert.Equal(70, result.AdjustedTotal);
+    }
+
+    [Fact]
+    public void CalculateDriverWeekendPoints_SprintOnlyPartialWeekend_OnlySprintPoints()
+    {
+        var service = CreateService();
+        var result = service.CalculateDriverWeekendPoints(
+            null,
+            RaceResult(grid: 1, finish: 1),
+            null,
+            isCaptain: false
+        );
+        Assert.Equal(8, result.AdjustedSprint);
+        Assert.Equal(0, result.AdjustedQualifying);
+        Assert.Equal(0, result.AdjustedRace);
+    }
+
+    #endregion
+
+    #region CalculateConstructorWeekendPoints
+
+    [Fact]
+    public void CalculateConstructorWeekendPoints_PerSessionTotals_SumsBothDriversRawPoints()
+    {
+        var service = CreateService();
+        // Driver 1: P1 quali (10), P1 race from grid 1 (25)
+        // Driver 2: P5 quali (6), P5 race from grid 5 (10)
+        var driver1 = service.CalculateDriverWeekendPoints(
+            QualResult(1, 1),
+            null,
+            RaceResult(driverId: 1, grid: 1, finish: 1),
+            isCaptain: false
+        );
+        var driver2 = service.CalculateDriverWeekendPoints(
+            QualResult(2, 5),
+            null,
+            RaceResult(driverId: 2, grid: 5, finish: 5),
+            isCaptain: false
+        );
+        var result = service.CalculateConstructorWeekendPoints(1, driver1, driver2);
+        Assert.Equal(16, result.QualifyingTotal);
+        Assert.Equal(35, result.RaceTotal);
+    }
+
+    [Fact]
+    public void CalculateConstructorWeekendPoints_CaptainOnOneDriver_DoesNotAffectConstructorTotals()
+    {
+        var service = CreateService();
+        // Driver 1 is captain (adjusted total = 70); constructor must use raw totals
+        var driver1 = service.CalculateDriverWeekendPoints(
+            QualResult(1, 1),
+            null,
+            RaceResult(driverId: 1, grid: 1, finish: 1),
+            isCaptain: true
+        );
+        var driver2 = service.CalculateDriverWeekendPoints(
+            QualResult(2, 5),
+            null,
+            RaceResult(driverId: 2, grid: 5, finish: 5),
+            isCaptain: false
+        );
+        var result = service.CalculateConstructorWeekendPoints(1, driver1, driver2);
+        // Raw totals: 35 + 16 = 51; would be 86 if captain multiplier bled through
+        Assert.Equal(driver1.RawTotal + driver2.RawTotal, result.Total);
+    }
+
+    [Fact]
+    public void CalculateConstructorWeekendPoints_McLarenExample_Returns43()
+    {
+        // McLaren: Driver A Q2/P2 (9+18=27), Driver B Q5/P5 (6+10=16) → 43
+        var service = CreateService();
+        var driverA = service.CalculateDriverWeekendPoints(
+            QualResult(1, 2),
+            null,
+            RaceResult(driverId: 1, grid: 2, finish: 2),
+            isCaptain: false
+        );
+        var driverB = service.CalculateDriverWeekendPoints(
+            QualResult(2, 5),
+            null,
+            RaceResult(driverId: 2, grid: 5, finish: 5),
+            isCaptain: false
+        );
+        var result = service.CalculateConstructorWeekendPoints(1, driverA, driverB);
+        Assert.Equal(43, result.Total);
+    }
+
+    [Fact]
+    public void CalculateConstructorWeekendPoints_OneDriverDnf_PenaltyFlowsThroughRaceTotal()
+    {
+        var service = CreateService();
+        // Driver 1: P1 race (25 pts)
+        // Driver 2: DNF race (-10 pts)
+        var driver1 = service.CalculateDriverWeekendPoints(
+            null,
+            null,
+            RaceResult(driverId: 1, grid: 1, finish: 1),
+            isCaptain: false
+        );
+        var driver2 = service.CalculateDriverWeekendPoints(
+            null,
+            null,
+            RaceResult(driverId: 2, finish: null, status: RaceStatus.DNF),
+            isCaptain: false
+        );
+        var result = service.CalculateConstructorWeekendPoints(1, driver1, driver2);
+        Assert.Equal(15, result.RaceTotal);
+    }
+
+    #endregion
 }
