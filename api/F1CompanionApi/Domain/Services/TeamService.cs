@@ -2,6 +2,7 @@ using F1CompanionApi.Api.Mappers;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
+using F1CompanionApi.Domain.Constants;
 using F1CompanionApi.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
 

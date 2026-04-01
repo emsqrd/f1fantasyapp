@@ -1,4 +1,4 @@
-using F1CompanionApi.Domain;
+using F1CompanionApi.Domain.Constants;
 using F1CompanionApi.Domain.Exceptions;
 
 namespace F1CompanionApi.UnitTests.Domain.Exceptions;
