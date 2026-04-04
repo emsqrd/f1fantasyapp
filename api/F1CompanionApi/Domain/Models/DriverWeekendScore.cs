@@ -1,22 +1,14 @@
-using F1CompanionApi.Domain.Constants;
-
 namespace F1CompanionApi.Domain.Models;
 
 public record DriverWeekendScore(
     int DriverId,
     int? Qualifying,
     DriverSessionScore? Sprint,
-    DriverSessionScore? Race,
-    bool IsCaptain
+    DriverSessionScore? Race
 )
 {
-    private int Multiplier => IsCaptain ? ScoringConstants.CaptainMultiplier : 1;
-
-    public int AdjustedQualifying => (Qualifying ?? 0) * Multiplier;
-    public int AdjustedSprint => (Sprint?.Total ?? 0) * Multiplier;
-    public int AdjustedRace => (Race?.Total ?? 0) * Multiplier;
-
-    public int RawTotal => (Qualifying ?? 0) + (Sprint?.Total ?? 0) + (Race?.Total ?? 0);
-
-    public int AdjustedTotal => RawTotal * Multiplier;
+    /// <summary>
+    /// Combined points across every session the driver contested this weekend.
+    /// </summary>
+    public int TotalPoints => (Qualifying ?? 0) + (Sprint?.Total ?? 0) + (Race?.Total ?? 0);
 }

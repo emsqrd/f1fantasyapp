@@ -8,15 +8,13 @@ public class ConstructorWeekendScoreTests
         int id,
         int qualPoints,
         int sprintPoints,
-        int racePoints,
-        bool isCaptain = false
+        int racePoints
     ) =>
         new(
             DriverId: id,
             Qualifying: qualPoints,
             Sprint: new DriverSessionScore(id, "Sprint", sprintPoints, 0, 0, 0, 0),
-            Race: new DriverSessionScore(id, "Race", racePoints, 0, 0, 0, 0),
-            IsCaptain: isCaptain
+            Race: new DriverSessionScore(id, "Race", racePoints, 0, 0, 0, 0)
         );
 
     [Fact]
@@ -68,39 +66,10 @@ public class ConstructorWeekendScoreTests
     }
 
     [Fact]
-    public void CaptainMultiplierOnOneDriver_DoesNotAffectConstructorTotals()
-    {
-        var captainDriver = MakeDriver(
-            1,
-            qualPoints: 9,
-            sprintPoints: 0,
-            racePoints: 18,
-            isCaptain: true
-        );
-        var regularDriver = MakeDriver(
-            2,
-            qualPoints: 6,
-            sprintPoints: 0,
-            racePoints: 10,
-            isCaptain: false
-        );
-
-        var constructor = new ConstructorWeekendScore(
-            ConstructorId: 1,
-            Driver1: captainDriver,
-            Driver2: regularDriver
-        );
-
-        Assert.Equal(15, constructor.QualifyingTotal);
-        Assert.Equal(28, constructor.RaceTotal);
-        Assert.Equal(43, constructor.Total);
-    }
-
-    [Fact]
     public void NullSessions_ContributeZeroToConstructorTotals()
     {
-        var driver1 = new DriverWeekendScore(1, null, null, null, false);
-        var driver2 = new DriverWeekendScore(2, null, null, null, false);
+        var driver1 = new DriverWeekendScore(1, null, null, null);
+        var driver2 = new DriverWeekendScore(2, null, null, null);
 
         var constructor = new ConstructorWeekendScore(ConstructorId: 1, driver1, driver2);
 

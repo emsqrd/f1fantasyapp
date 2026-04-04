@@ -4,17 +4,19 @@ namespace F1CompanionApi.UnitTests.Domain.Models;
 
 public class TeamRaceScoreBreakdownTests
 {
-    private static DriverWeekendScore MakeDriver(
+    private static TeamDriverScore MakeDriver(
         int id,
         int qualPoints,
         int racePoints,
         bool isCaptain = false
     ) =>
         new(
-            DriverId: id,
-            Qualifying: qualPoints,
-            Sprint: null,
-            Race: new DriverSessionScore(id, "Race", racePoints, 0, 0, 0, 0),
+            EntityScore: new DriverWeekendScore(
+                DriverId: id,
+                Qualifying: qualPoints,
+                Sprint: null,
+                Race: new DriverSessionScore(id, "Race", racePoints, 0, 0, 0, 0)
+            ),
             IsCaptain: isCaptain
         );
 
@@ -29,9 +31,11 @@ public class TeamRaceScoreBreakdownTests
     {
         var driver1 = MakeDriver(1, qualPoints: 10, racePoints: 0, isCaptain: true);
         var driver2 = MakeDriver(2, qualPoints: 9, racePoints: 0);
-        var constructorDriver1 = MakeDriver(3, qualPoints: 6, racePoints: 0);
-        var constructorDriver2 = MakeDriver(4, qualPoints: 5, racePoints: 0);
-        var constructor = MakeConstructor(1, constructorDriver1, constructorDriver2);
+        var constructor = MakeConstructor(
+            1,
+            new DriverWeekendScore(3, 6, null, null),
+            new DriverWeekendScore(4, 5, null, null)
+        );
 
         var breakdown = new TeamRaceScoreBreakdown(
             TeamId: 1,
@@ -49,9 +53,16 @@ public class TeamRaceScoreBreakdownTests
     {
         var driver1 = MakeDriver(1, qualPoints: 0, racePoints: 25, isCaptain: true);
         var driver2 = MakeDriver(2, qualPoints: 0, racePoints: 18);
-        var constructorDriver1 = MakeDriver(3, qualPoints: 0, racePoints: 10);
-        var constructorDriver2 = MakeDriver(4, qualPoints: 0, racePoints: 8);
-        var constructor = MakeConstructor(1, constructorDriver1, constructorDriver2);
+        var constructor = MakeConstructor(
+            1,
+            new DriverWeekendScore(
+                3,
+                null,
+                null,
+                new DriverSessionScore(3, "Race", 10, 0, 0, 0, 0)
+            ),
+            new DriverWeekendScore(4, null, null, new DriverSessionScore(4, "Race", 8, 0, 0, 0, 0))
+        );
 
         var breakdown = new TeamRaceScoreBreakdown(
             TeamId: 1,
@@ -68,9 +79,11 @@ public class TeamRaceScoreBreakdownTests
     public void TotalPoints_SumsAllSessionTotals()
     {
         var driver = MakeDriver(1, qualPoints: 10, racePoints: 25);
-        var constructorDriver1 = MakeDriver(2, qualPoints: 9, racePoints: 18);
-        var constructorDriver2 = MakeDriver(3, qualPoints: 6, racePoints: 10);
-        var constructor = MakeConstructor(1, constructorDriver1, constructorDriver2);
+        var constructor = MakeConstructor(
+            1,
+            new DriverWeekendScore(2, 9, null, new DriverSessionScore(2, "Race", 18, 0, 0, 0, 0)),
+            new DriverWeekendScore(3, 6, null, new DriverSessionScore(3, "Race", 10, 0, 0, 0, 0))
+        );
 
         var breakdown = new TeamRaceScoreBreakdown(
             TeamId: 1,

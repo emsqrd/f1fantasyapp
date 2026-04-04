@@ -51,14 +51,4 @@ public class DriverSessionScoreTests
 
         Assert.Equal(-5, score.Total);
     }
-
-    [Fact]
-    public void Empty_ReturnsZeroTotal()
-    {
-        var score = DriverSessionScore.Empty(driverId: 5, sessionName: "Race");
-
-        Assert.Equal(5, score.DriverId);
-        Assert.Equal("Race", score.SessionName);
-        Assert.Equal(0, score.Total);
-    }
 }

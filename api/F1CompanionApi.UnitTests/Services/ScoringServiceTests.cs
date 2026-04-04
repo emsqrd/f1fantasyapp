@@ -362,12 +362,11 @@ public class ScoringServiceTests
         var result = service.CalculateDriverWeekendPoints(
             QualResult(1, 2),
             null,
-            RaceResult(grid: 2, finish: 2),
-            isCaptain: false
+            RaceResult(grid: 2, finish: 2)
         );
-        Assert.Equal(9, result.AdjustedQualifying);
-        Assert.Equal(18, result.AdjustedRace);
-        Assert.Equal(27, result.RawTotal);
+        Assert.Equal(9, result.Qualifying);
+        Assert.Equal(18, result.Race!.Total);
+        Assert.Equal(27, result.TotalPoints);
     }
 
     [Fact]
@@ -377,10 +376,9 @@ public class ScoringServiceTests
         var result = service.CalculateDriverWeekendPoints(
             QualResult(1, 1),
             null,
-            RaceResult(grid: 1, finish: 1),
-            isCaptain: false
+            RaceResult(grid: 1, finish: 1)
         );
-        Assert.Equal(0, result.AdjustedSprint);
+        Assert.Null(result.Sprint);
     }
 
     [Fact]
@@ -390,55 +388,9 @@ public class ScoringServiceTests
         var result = service.CalculateDriverWeekendPoints(
             null,
             null,
-            RaceResult(grid: 1, finish: 1),
-            isCaptain: false
+            RaceResult(grid: 1, finish: 1)
         );
-        Assert.Equal(0, result.AdjustedQualifying);
-    }
-
-    [Fact]
-    public void CalculateDriverWeekendPoints_Captain_DoublesEachSessionIndependently()
-    {
-        var service = CreateService();
-        // P1 quali (10), P1 sprint from grid 1 (8), P1 race from grid 1 (25)
-        var result = service.CalculateDriverWeekendPoints(
-            QualResult(1, 1),
-            RaceResult(grid: 1, finish: 1),
-            RaceResult(grid: 1, finish: 1),
-            isCaptain: true
-        );
-        Assert.Equal(20, result.AdjustedQualifying);
-        Assert.Equal(16, result.AdjustedSprint);
-        Assert.Equal(50, result.AdjustedRace);
-    }
-
-    [Fact]
-    public void CalculateDriverWeekendPoints_CaptainWithDnf_DoublesPenalty()
-    {
-        var service = CreateService();
-        // DNF race → -10 raw, -20 as captain
-        var result = service.CalculateDriverWeekendPoints(
-            null,
-            null,
-            RaceResult(finish: null, status: RaceStatus.DNF),
-            isCaptain: true
-        );
-        Assert.Equal(-20, result.AdjustedRace);
-    }
-
-    [Fact]
-    public void CalculateDriverWeekendPoints_DominantDriverAsCaptain_Returns70()
-    {
-        // P1 quali (10) + P1 race from grid 1 (25) = 35 raw, 70 as captain
-        var service = CreateService();
-        var result = service.CalculateDriverWeekendPoints(
-            QualResult(1, 1),
-            null,
-            RaceResult(grid: 1, finish: 1),
-            isCaptain: true
-        );
-        Assert.Equal(35, result.RawTotal);
-        Assert.Equal(70, result.AdjustedTotal);
+        Assert.Null(result.Qualifying);
     }
 
     [Fact]
@@ -448,12 +400,11 @@ public class ScoringServiceTests
         var result = service.CalculateDriverWeekendPoints(
             null,
             RaceResult(grid: 1, finish: 1),
-            null,
-            isCaptain: false
+            null
         );
-        Assert.Equal(8, result.AdjustedSprint);
-        Assert.Equal(0, result.AdjustedQualifying);
-        Assert.Equal(0, result.AdjustedRace);
+        Assert.Equal(8, result.Sprint!.Total);
+        Assert.Null(result.Qualifying);
+        Assert.Null(result.Race);
     }
 
     #endregion
@@ -469,14 +420,12 @@ public class ScoringServiceTests
         var driver1 = service.CalculateDriverWeekendPoints(
             QualResult(1, 1),
             null,
-            RaceResult(driverId: 1, grid: 1, finish: 1),
-            isCaptain: false
+            RaceResult(driverId: 1, grid: 1, finish: 1)
         );
         var driver2 = service.CalculateDriverWeekendPoints(
             QualResult(2, 5),
             null,
-            RaceResult(driverId: 2, grid: 5, finish: 5),
-            isCaptain: false
+            RaceResult(driverId: 2, grid: 5, finish: 5)
         );
         var result = service.CalculateConstructorWeekendPoints(1, driver1, driver2);
         Assert.Equal(16, result.QualifyingTotal);
@@ -484,25 +433,21 @@ public class ScoringServiceTests
     }
 
     [Fact]
-    public void CalculateConstructorWeekendPoints_CaptainOnOneDriver_DoesNotAffectConstructorTotals()
+    public void CalculateConstructorWeekendPoints_TotalsMatchSumOfBothDrivers()
     {
         var service = CreateService();
-        // Driver 1 is captain (adjusted total = 70); constructor must use raw totals
         var driver1 = service.CalculateDriverWeekendPoints(
             QualResult(1, 1),
             null,
-            RaceResult(driverId: 1, grid: 1, finish: 1),
-            isCaptain: true
+            RaceResult(driverId: 1, grid: 1, finish: 1)
         );
         var driver2 = service.CalculateDriverWeekendPoints(
             QualResult(2, 5),
             null,
-            RaceResult(driverId: 2, grid: 5, finish: 5),
-            isCaptain: false
+            RaceResult(driverId: 2, grid: 5, finish: 5)
         );
         var result = service.CalculateConstructorWeekendPoints(1, driver1, driver2);
-        // Raw totals: 35 + 16 = 51; would be 86 if captain multiplier bled through
-        Assert.Equal(driver1.RawTotal + driver2.RawTotal, result.Total);
+        Assert.Equal(driver1.TotalPoints + driver2.TotalPoints, result.Total);
     }
 
     [Fact]
@@ -513,14 +458,12 @@ public class ScoringServiceTests
         var driverA = service.CalculateDriverWeekendPoints(
             QualResult(1, 2),
             null,
-            RaceResult(driverId: 1, grid: 2, finish: 2),
-            isCaptain: false
+            RaceResult(driverId: 1, grid: 2, finish: 2)
         );
         var driverB = service.CalculateDriverWeekendPoints(
             QualResult(2, 5),
             null,
-            RaceResult(driverId: 2, grid: 5, finish: 5),
-            isCaptain: false
+            RaceResult(driverId: 2, grid: 5, finish: 5)
         );
         var result = service.CalculateConstructorWeekendPoints(1, driverA, driverB);
         Assert.Equal(43, result.Total);
@@ -535,14 +478,12 @@ public class ScoringServiceTests
         var driver1 = service.CalculateDriverWeekendPoints(
             null,
             null,
-            RaceResult(driverId: 1, grid: 1, finish: 1),
-            isCaptain: false
+            RaceResult(driverId: 1, grid: 1, finish: 1)
         );
         var driver2 = service.CalculateDriverWeekendPoints(
             null,
             null,
-            RaceResult(driverId: 2, finish: null, status: RaceStatus.DNF),
-            isCaptain: false
+            RaceResult(driverId: 2, finish: null, status: RaceStatus.DNF)
         );
         var result = service.CalculateConstructorWeekendPoints(1, driver1, driver2);
         Assert.Equal(15, result.RaceTotal);
@@ -589,8 +530,8 @@ public class ScoringServiceTests
         Assert.Empty(result.ConstructorScores);
         var d1 = result.DriverScores.Single(d => d.DriverId == 1);
         var d2 = result.DriverScores.Single(d => d.DriverId == 2);
-        Assert.Equal(27, d1.RawTotal); // 9 + 18
-        Assert.Equal(16, d2.RawTotal); // 6 + 10
+        Assert.Equal(27, d1.EntityScore.TotalPoints); // 9 + 18
+        Assert.Equal(16, d2.EntityScore.TotalPoints); // 6 + 10
         Assert.Equal(43, result.TotalPoints);
     }
 
@@ -687,7 +628,7 @@ public class ScoringServiceTests
         var result = await service.CalculateTeamRaceScoreAsync(teamId: 1, raceId: 1);
 
         var d1 = result.DriverScores.Single();
-        Assert.Equal(d1.RawTotal, d1.AdjustedTotal);
+        Assert.Equal(d1.EntityScore.TotalPoints, d1.AdjustedTotal);
         Assert.Equal(35, result.TotalPoints);
     }
 
@@ -761,7 +702,7 @@ public class ScoringServiceTests
         var result = await service.CalculateTeamRaceScoreAsync(teamId: 1, raceId: 1);
 
         var d1 = result.DriverScores.Single();
-        Assert.Equal(3, d1.Race!.PositionChangePoints);
+        Assert.Equal(3, d1.EntityScore.Race!.PositionChangePoints);
     }
 
     [Fact]
@@ -966,26 +907,27 @@ public class ScoringServiceTests
         context.LineupEntries.Add(
             SeedLineupEntry(teamId: 1, raceId: 1, entityId: 10, LineupEntityType.Constructor)
         );
-        // Driver 3 is the active driver; Driver 5 is inactive (e.g. replaced mid-season)
+        // Driver 3 active; Driver 5 replaced mid-season by Driver 6
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 3, constructorId: 10, isActive: true));
         context.SeasonDrivers.Add(
             SeedSeasonDriver(driverId: 5, constructorId: 10, isActive: false)
         );
+        context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 6, constructorId: 10, isActive: true));
 
         context.DriverQualifyingResults.Add(QualResult(driverId: 3, position: 1)); // 10 pts
         context.DriverQualifyingResults.Add(QualResult(driverId: 5, position: 2)); // 9 pts — should be ignored
+        context.DriverQualifyingResults.Add(QualResult(driverId: 6, position: 5)); // 6 pts
         context.DriverRaceResults.Add(RaceResult(driverId: 3, grid: 1, finish: 1)); // 25 pts
         context.DriverRaceResults.Add(RaceResult(driverId: 5, grid: 2, finish: 2)); // 18 pts — should be ignored
+        context.DriverRaceResults.Add(RaceResult(driverId: 6, grid: 5, finish: 5)); // 10 pts
 
         await context.SaveChangesAsync();
 
         var result = await service.CalculateTeamRaceScoreAsync(teamId: 1, raceId: 1);
 
-        var constructor = result.ConstructorScores.Single();
-        // Only Driver 3 counts: Q=10, Race=25; Driver 5 excluded
-        Assert.Equal(10, result.QualifyingTotal);
-        Assert.Equal(25, result.RaceTotal);
-        Assert.Null(constructor.Driver2.Qualifying); // second slot has no driver
+        // Drivers 3 and 6 count; Driver 5 excluded
+        Assert.Equal(16, result.QualifyingTotal); // 10 + 6
+        Assert.Equal(35, result.RaceTotal); // 25 + 10
     }
 
     #endregion
