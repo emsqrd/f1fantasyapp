@@ -27,6 +27,54 @@ public class ScoringServiceTests
 
     private ScoringService CreateService() => new(CreateInMemoryContext(), _mockLogger.Object);
 
+    private ScoringService CreateServiceWithContext(ApplicationDbContext context) =>
+        new(context, _mockLogger.Object);
+
+    private static Race SeedRace(int id = 1, int seasonId = 1) =>
+        new()
+        {
+            Id = id,
+            SeasonId = seasonId,
+            Round = 1,
+            Name = "Test GP",
+            Location = "Test",
+            Circuit = "Test Circuit",
+            Country = "Test Country",
+            RaceDate = new DateTime(2025, 3, 1),
+        };
+
+    private static LineupEntry SeedLineupEntry(
+        int teamId,
+        int raceId,
+        int entityId,
+        LineupEntityType type,
+        bool isCaptain = false,
+        int slotPosition = 1
+    ) =>
+        new()
+        {
+            TeamId = teamId,
+            RaceId = raceId,
+            EntityId = entityId,
+            EntityType = type,
+            SlotPosition = slotPosition,
+            IsCaptain = isCaptain,
+        };
+
+    private static SeasonDriver SeedSeasonDriver(
+        int driverId,
+        int constructorId,
+        int seasonId = 1,
+        bool isActive = true
+    ) =>
+        new()
+        {
+            SeasonId = seasonId,
+            DriverId = driverId,
+            ConstructorId = constructorId,
+            IsActive = isActive,
+        };
+
     private static DriverQualifyingResult QualResult(int driverId, int position) =>
         new()
         {
@@ -285,17 +333,6 @@ public class ScoringServiceTests
     }
 
     [Fact]
-    public void CalculateDriverRacePoints_CancelledQualifying_NoPositionChangeApplied()
-    {
-        var service = CreateService();
-        var result = service.CalculateDriverRacePoints(
-            RaceResult(grid: 5, finish: 2),
-            qualifyingOccurred: false
-        );
-        Assert.Equal(0, result.PositionChangePoints);
-    }
-
-    [Fact]
     public void CalculateDriverRacePoints_DominantDriver_Returns25()
     {
         // Worked example: P1 race, P1 grid → 25 position pts + 0 change = 25 (qualifying adds 10, weekend total = 35)
@@ -509,6 +546,446 @@ public class ScoringServiceTests
         );
         var result = service.CalculateConstructorWeekendPoints(1, driver1, driver2);
         Assert.Equal(15, result.RaceTotal);
+    }
+
+    #endregion
+
+    #region CalculateTeamRaceScoreAsync
+
+    [Fact]
+    public async Task CalculateTeamRaceScoreAsync_StandardWeekend_ScoresAllDriverEntries()
+    {
+        var context = CreateInMemoryContext();
+        var service = CreateServiceWithContext(context);
+
+        context.Races.Add(SeedRace(id: 1, seasonId: 1));
+        context.LineupEntries.Add(
+            SeedLineupEntry(
+                teamId: 1,
+                raceId: 1,
+                entityId: 1,
+                LineupEntityType.Driver,
+                slotPosition: 1
+            )
+        );
+        context.LineupEntries.Add(
+            SeedLineupEntry(
+                teamId: 1,
+                raceId: 1,
+                entityId: 2,
+                LineupEntityType.Driver,
+                slotPosition: 2
+            )
+        );
+        context.DriverQualifyingResults.Add(QualResult(driverId: 1, position: 2)); // 9 pts
+        context.DriverQualifyingResults.Add(QualResult(driverId: 2, position: 5)); // 6 pts
+        context.DriverRaceResults.Add(RaceResult(driverId: 1, grid: 2, finish: 2)); // 18 pts
+        context.DriverRaceResults.Add(RaceResult(driverId: 2, grid: 5, finish: 5)); // 10 pts
+        await context.SaveChangesAsync();
+
+        var result = await service.CalculateTeamRaceScoreAsync(teamId: 1, raceId: 1);
+
+        Assert.Equal(2, result.DriverScores.Count);
+        Assert.Empty(result.ConstructorScores);
+        var d1 = result.DriverScores.Single(d => d.DriverId == 1);
+        var d2 = result.DriverScores.Single(d => d.DriverId == 2);
+        Assert.Equal(27, d1.RawTotal); // 9 + 18
+        Assert.Equal(16, d2.RawTotal); // 6 + 10
+        Assert.Equal(43, result.TotalPoints);
+    }
+
+    [Fact]
+    public async Task CalculateTeamRaceScoreAsync_ConstructorEntry_PerSessionTotalsMatchDriverRawPoints()
+    {
+        var context = CreateInMemoryContext();
+        var service = CreateServiceWithContext(context);
+
+        context.Races.Add(SeedRace(id: 1, seasonId: 1));
+        context.LineupEntries.Add(
+            SeedLineupEntry(teamId: 1, raceId: 1, entityId: 10, LineupEntityType.Constructor)
+        );
+        context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 3, constructorId: 10));
+        context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 4, constructorId: 10));
+        context.DriverQualifyingResults.Add(QualResult(driverId: 3, position: 1)); // 10 pts
+        context.DriverQualifyingResults.Add(QualResult(driverId: 4, position: 5)); // 6 pts
+        context.DriverRaceResults.Add(RaceResult(driverId: 3, grid: 1, finish: 1)); // 25 pts
+        context.DriverRaceResults.Add(RaceResult(driverId: 4, grid: 5, finish: 5)); // 10 pts
+        await context.SaveChangesAsync();
+
+        var result = await service.CalculateTeamRaceScoreAsync(teamId: 1, raceId: 1);
+
+        Assert.Single(result.ConstructorScores);
+        var ctor = result.ConstructorScores.Single(c => c.ConstructorId == 10);
+        Assert.Equal(16, ctor.QualifyingTotal); // 10 + 6
+        Assert.Equal(35, ctor.RaceTotal); // 25 + 10
+    }
+
+    [Fact]
+    public async Task CalculateTeamRaceScoreAsync_CaptainDriver_MultiplierReflectedInTeamTotals()
+    {
+        var context = CreateInMemoryContext();
+        var service = CreateServiceWithContext(context);
+
+        context.Races.Add(SeedRace(id: 1, seasonId: 1));
+        context.LineupEntries.Add(
+            SeedLineupEntry(
+                teamId: 1,
+                raceId: 1,
+                entityId: 1,
+                LineupEntityType.Driver,
+                isCaptain: true,
+                slotPosition: 1
+            )
+        );
+        context.LineupEntries.Add(
+            SeedLineupEntry(
+                teamId: 1,
+                raceId: 1,
+                entityId: 10,
+                LineupEntityType.Constructor,
+                slotPosition: 2
+            )
+        );
+        context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 3, constructorId: 10));
+        context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 4, constructorId: 10));
+        context.DriverQualifyingResults.Add(QualResult(driverId: 1, position: 1)); // 10 pts
+        context.DriverQualifyingResults.Add(QualResult(driverId: 3, position: 5)); // 6 pts
+        context.DriverQualifyingResults.Add(QualResult(driverId: 4, position: 10)); // 1 pt
+        context.DriverRaceResults.Add(RaceResult(driverId: 1, grid: 1, finish: 1)); // 25 pts
+        context.DriverRaceResults.Add(RaceResult(driverId: 3, grid: 5, finish: 5)); // 10 pts
+        context.DriverRaceResults.Add(RaceResult(driverId: 4, grid: 10, finish: 10)); // 1 pt
+        await context.SaveChangesAsync();
+
+        var result = await service.CalculateTeamRaceScoreAsync(teamId: 1, raceId: 1);
+
+        // Captain driver 1: AdjustedQualifying=20, AdjustedRace=50
+        // Constructor 10: QualifyingTotal=7, RaceTotal=11
+        Assert.Equal(27, result.QualifyingTotal); // 20 + 7
+        Assert.Equal(61, result.RaceTotal); // 50 + 11
+    }
+
+    [Fact]
+    public async Task CalculateTeamRaceScoreAsync_NoCaptain_NoMultiplierApplied()
+    {
+        var context = CreateInMemoryContext();
+        var service = CreateServiceWithContext(context);
+
+        context.Races.Add(SeedRace(id: 1, seasonId: 1));
+        context.LineupEntries.Add(
+            SeedLineupEntry(
+                teamId: 1,
+                raceId: 1,
+                entityId: 1,
+                LineupEntityType.Driver,
+                isCaptain: false
+            )
+        );
+        context.DriverQualifyingResults.Add(QualResult(driverId: 1, position: 1)); // 10 pts
+        context.DriverRaceResults.Add(RaceResult(driverId: 1, grid: 1, finish: 1)); // 25 pts
+        await context.SaveChangesAsync();
+
+        var result = await service.CalculateTeamRaceScoreAsync(teamId: 1, raceId: 1);
+
+        var d1 = result.DriverScores.Single();
+        Assert.Equal(d1.RawTotal, d1.AdjustedTotal);
+        Assert.Equal(35, result.TotalPoints);
+    }
+
+    [Fact]
+    public async Task CalculateTeamRaceScoreAsync_SprintWeekend_AllSessionTypesScored()
+    {
+        var context = CreateInMemoryContext();
+        var service = CreateServiceWithContext(context);
+
+        context.Races.Add(SeedRace(id: 1, seasonId: 1));
+        context.LineupEntries.Add(
+            SeedLineupEntry(teamId: 1, raceId: 1, entityId: 1, LineupEntityType.Driver)
+        );
+        context.DriverQualifyingResults.Add(QualResult(driverId: 1, position: 1)); // 10 pts
+        context.DriverRaceResults.Add(
+            new DriverRaceResult
+            {
+                DriverId = 1,
+                RaceId = 1,
+                SessionType = SessionType.Sprint,
+                GridPosition = 1,
+                FinishPosition = 1,
+                Overtakes = 0,
+                FastestLap = false,
+                Status = RaceStatus.Classified,
+            }
+        );
+        context.DriverRaceResults.Add(RaceResult(driverId: 1, grid: 1, finish: 1)); // 25 pts
+        await context.SaveChangesAsync();
+
+        var result = await service.CalculateTeamRaceScoreAsync(teamId: 1, raceId: 1);
+
+        Assert.Equal(10, result.QualifyingTotal); // 10 quali pts
+        Assert.Equal(8, result.SprintTotal); // 8 sprint pts (P1)
+        Assert.Equal(25, result.RaceTotal); // 25 race pts
+        Assert.Equal(43, result.TotalPoints);
+    }
+
+    [Fact]
+    public async Task CalculateTeamRaceScoreAsync_DriverWithNoResults_ReturnsZeroPoints()
+    {
+        var context = CreateInMemoryContext();
+        var service = CreateServiceWithContext(context);
+
+        context.Races.Add(SeedRace(id: 1, seasonId: 1));
+        context.LineupEntries.Add(
+            SeedLineupEntry(teamId: 1, raceId: 1, entityId: 99, LineupEntityType.Driver)
+        );
+        await context.SaveChangesAsync();
+
+        var result = await service.CalculateTeamRaceScoreAsync(teamId: 1, raceId: 1);
+
+        Assert.Single(result.DriverScores);
+        Assert.Equal(0, result.TotalPoints);
+    }
+
+    [Fact]
+    public async Task CalculateTeamRaceScoreAsync_NoQualifyingResults_PositionChangeStillScored()
+    {
+        var context = CreateInMemoryContext();
+        var service = CreateServiceWithContext(context);
+
+        context.Races.Add(SeedRace(id: 1, seasonId: 1));
+        context.LineupEntries.Add(
+            SeedLineupEntry(teamId: 1, raceId: 1, entityId: 1, LineupEntityType.Driver)
+        );
+        // No qualifying results — position change still scored from grid position
+        context.DriverRaceResults.Add(RaceResult(driverId: 1, grid: 5, finish: 2));
+        await context.SaveChangesAsync();
+
+        var result = await service.CalculateTeamRaceScoreAsync(teamId: 1, raceId: 1);
+
+        var d1 = result.DriverScores.Single();
+        Assert.Equal(3, d1.Race!.PositionChangePoints);
+    }
+
+    [Fact]
+    public async Task CalculateTeamRaceScoreAsync_PartialWeekend_SprintOnlyIngested_OnlySprintTotalPopulated()
+    {
+        var context = CreateInMemoryContext();
+        var service = CreateServiceWithContext(context);
+
+        context.Races.Add(SeedRace(id: 1, seasonId: 1));
+        context.LineupEntries.Add(
+            SeedLineupEntry(teamId: 1, raceId: 1, entityId: 1, LineupEntityType.Driver)
+        );
+        context.DriverRaceResults.Add(
+            new DriverRaceResult
+            {
+                DriverId = 1,
+                RaceId = 1,
+                SessionType = SessionType.Sprint,
+                GridPosition = 1,
+                FinishPosition = 1,
+                Overtakes = 0,
+                FastestLap = false,
+                Status = RaceStatus.Classified,
+            }
+        );
+        await context.SaveChangesAsync();
+
+        var result = await service.CalculateTeamRaceScoreAsync(teamId: 1, raceId: 1);
+
+        Assert.Equal(0, result.QualifyingTotal);
+        Assert.Equal(8, result.SprintTotal); // P1 sprint = 8
+        Assert.Equal(0, result.RaceTotal);
+    }
+
+    [Fact]
+    public async Task CalculateTeamRaceScoreAsync_PerSessionTotals_CombineDriverAdjustedAndConstructorRaw()
+    {
+        var context = CreateInMemoryContext();
+        var service = CreateServiceWithContext(context);
+
+        context.Races.Add(SeedRace(id: 1, seasonId: 1));
+        context.LineupEntries.Add(
+            SeedLineupEntry(
+                teamId: 1,
+                raceId: 1,
+                entityId: 1,
+                LineupEntityType.Driver,
+                isCaptain: true,
+                slotPosition: 1
+            )
+        );
+        context.LineupEntries.Add(
+            SeedLineupEntry(
+                teamId: 1,
+                raceId: 1,
+                entityId: 10,
+                LineupEntityType.Constructor,
+                slotPosition: 2
+            )
+        );
+        context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 3, constructorId: 10));
+        context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 4, constructorId: 10));
+        context.DriverQualifyingResults.Add(QualResult(driverId: 1, position: 1)); // 10 pts
+        context.DriverQualifyingResults.Add(QualResult(driverId: 3, position: 3)); // 8 pts
+        context.DriverQualifyingResults.Add(QualResult(driverId: 4, position: 10)); // 1 pt
+        await context.SaveChangesAsync();
+
+        var result = await service.CalculateTeamRaceScoreAsync(teamId: 1, raceId: 1);
+
+        // QualifyingTotal = driver1.AdjustedQualifying (10*2=20) + ctor.QualifyingTotal (8+1=9)
+        Assert.Equal(29, result.QualifyingTotal);
+    }
+
+    [Fact]
+    public async Task CalculateTeamRaceScoreAsync_FullIntegration_MatchesHandCalculatedTotal()
+    {
+        var context = CreateInMemoryContext();
+        var service = CreateServiceWithContext(context);
+
+        context.Races.Add(SeedRace(id: 1, seasonId: 1));
+        // Lineup: Driver 1 (captain), Driver 2, Constructor 10
+        context.LineupEntries.Add(
+            SeedLineupEntry(
+                teamId: 1,
+                raceId: 1,
+                entityId: 1,
+                LineupEntityType.Driver,
+                isCaptain: true,
+                slotPosition: 1
+            )
+        );
+        context.LineupEntries.Add(
+            SeedLineupEntry(
+                teamId: 1,
+                raceId: 1,
+                entityId: 2,
+                LineupEntityType.Driver,
+                slotPosition: 2
+            )
+        );
+        context.LineupEntries.Add(
+            SeedLineupEntry(
+                teamId: 1,
+                raceId: 1,
+                entityId: 10,
+                LineupEntityType.Constructor,
+                slotPosition: 3
+            )
+        );
+        // Constructor 10 has Driver 3 and Driver 4
+        context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 3, constructorId: 10));
+        context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 4, constructorId: 10));
+
+        // Qualifying: D1 P1(10), D2 P8(3), D3 P3(8), D4 P10(1)
+        context.DriverQualifyingResults.Add(QualResult(driverId: 1, position: 1));
+        context.DriverQualifyingResults.Add(QualResult(driverId: 2, position: 8));
+        context.DriverQualifyingResults.Add(QualResult(driverId: 3, position: 3));
+        context.DriverQualifyingResults.Add(QualResult(driverId: 4, position: 10));
+
+        // Sprint: D1 P1(8), D2 P8(1), D3 P3(6), D4 DNF(-5)
+        context.DriverRaceResults.Add(
+            new DriverRaceResult
+            {
+                DriverId = 1,
+                RaceId = 1,
+                SessionType = SessionType.Sprint,
+                GridPosition = 1,
+                FinishPosition = 1,
+                Overtakes = 0,
+                FastestLap = false,
+                Status = RaceStatus.Classified,
+            }
+        );
+        context.DriverRaceResults.Add(
+            new DriverRaceResult
+            {
+                DriverId = 2,
+                RaceId = 1,
+                SessionType = SessionType.Sprint,
+                GridPosition = 8,
+                FinishPosition = 8,
+                Overtakes = 0,
+                FastestLap = false,
+                Status = RaceStatus.Classified,
+            }
+        );
+        context.DriverRaceResults.Add(
+            new DriverRaceResult
+            {
+                DriverId = 3,
+                RaceId = 1,
+                SessionType = SessionType.Sprint,
+                GridPosition = 3,
+                FinishPosition = 3,
+                Overtakes = 0,
+                FastestLap = false,
+                Status = RaceStatus.Classified,
+            }
+        );
+        context.DriverRaceResults.Add(
+            new DriverRaceResult
+            {
+                DriverId = 4,
+                RaceId = 1,
+                SessionType = SessionType.Sprint,
+                GridPosition = 5,
+                FinishPosition = null,
+                Overtakes = 0,
+                FastestLap = false,
+                Status = RaceStatus.DNF,
+            }
+        );
+
+        // Race: D1 P1(25), D2 DNF(-10), D3 P3(15), D4 P6(8)
+        context.DriverRaceResults.Add(RaceResult(driverId: 1, grid: 1, finish: 1));
+        context.DriverRaceResults.Add(
+            RaceResult(driverId: 2, grid: 8, finish: null, status: RaceStatus.DNF)
+        );
+        context.DriverRaceResults.Add(RaceResult(driverId: 3, grid: 3, finish: 3));
+        context.DriverRaceResults.Add(RaceResult(driverId: 4, grid: 6, finish: 6));
+
+        await context.SaveChangesAsync();
+
+        var result = await service.CalculateTeamRaceScoreAsync(teamId: 1, raceId: 1);
+
+        // Driver 1 (captain): Q=10→20adj, Sprint=8→16adj, Race=25→50adj
+        // Driver 2: Q=3, Sprint=1, Race=-10
+        // Constructor 10: Q=8+1=9, Sprint=6+(-5)=1, Race=15+8=23
+        Assert.Equal(32, result.QualifyingTotal); // 20 + 3 + 9
+        Assert.Equal(18, result.SprintTotal); // 16 + 1 + 1
+        Assert.Equal(63, result.RaceTotal); // 50 + (-10) + 23
+        Assert.Equal(113, result.TotalPoints);
+    }
+
+    [Fact]
+    public async Task CalculateTeamRaceScoreAsync_InactiveConstructorDriver_ExcludedFromScore()
+    {
+        var context = CreateInMemoryContext();
+        var service = CreateServiceWithContext(context);
+
+        context.Races.Add(SeedRace(id: 1, seasonId: 1));
+        context.LineupEntries.Add(
+            SeedLineupEntry(teamId: 1, raceId: 1, entityId: 10, LineupEntityType.Constructor)
+        );
+        // Driver 3 is the active driver; Driver 5 is inactive (e.g. replaced mid-season)
+        context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 3, constructorId: 10, isActive: true));
+        context.SeasonDrivers.Add(
+            SeedSeasonDriver(driverId: 5, constructorId: 10, isActive: false)
+        );
+
+        context.DriverQualifyingResults.Add(QualResult(driverId: 3, position: 1)); // 10 pts
+        context.DriverQualifyingResults.Add(QualResult(driverId: 5, position: 2)); // 9 pts — should be ignored
+        context.DriverRaceResults.Add(RaceResult(driverId: 3, grid: 1, finish: 1)); // 25 pts
+        context.DriverRaceResults.Add(RaceResult(driverId: 5, grid: 2, finish: 2)); // 18 pts — should be ignored
+
+        await context.SaveChangesAsync();
+
+        var result = await service.CalculateTeamRaceScoreAsync(teamId: 1, raceId: 1);
+
+        var constructor = result.ConstructorScores.Single();
+        // Only Driver 3 counts: Q=10, Race=25; Driver 5 excluded
+        Assert.Equal(10, result.QualifyingTotal);
+        Assert.Equal(25, result.RaceTotal);
+        Assert.Null(constructor.Driver2.Qualifying); // second slot has no driver
     }
 
     #endregion
