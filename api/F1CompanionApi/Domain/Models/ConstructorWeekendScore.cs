@@ -2,24 +2,25 @@ namespace F1CompanionApi.Domain.Models;
 
 public record ConstructorWeekendScore(
     int ConstructorId,
-    DriverWeekendScore Driver1,
-    DriverWeekendScore Driver2
+    int? Qualifying,
+    DriverSessionScore? Sprint,
+    DriverSessionScore? Race
 )
 {
     /// <summary>
     /// Combined qualifying points from both drivers.
     /// </summary>
-    public int QualifyingTotal => (Driver1.Qualifying ?? 0) + (Driver2.Qualifying ?? 0);
+    public int QualifyingTotal => Qualifying ?? 0;
 
     /// <summary>
     /// Combined sprint points from both drivers.
     /// </summary>
-    public int SprintTotal => (Driver1.Sprint?.Total ?? 0) + (Driver2.Sprint?.Total ?? 0);
+    public int SprintTotal => Sprint?.Total ?? 0;
 
     /// <summary>
     /// Combined race points from both drivers.
     /// </summary>
-    public int RaceTotal => (Driver1.Race?.Total ?? 0) + (Driver2.Race?.Total ?? 0);
+    public int RaceTotal => Race?.Total ?? 0;
 
     /// <summary>
     /// Full weekend points for this constructor entry.

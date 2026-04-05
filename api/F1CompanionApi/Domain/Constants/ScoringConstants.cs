@@ -50,14 +50,11 @@ public static class ScoringConstants
         [10] = 1,
     }.ToFrozenDictionary();
 
+    public const int SprintOvertakeBonus = 1;
+    public const int RaceOvertakeBonus = 1;
     public const int SprintFastestLapBonus = 2;
     public const int RaceFastestLapBonus = 3;
     public const int SprintDnfPenalty = -5;
     public const int RaceDnfPenalty = -10;
     public const int CaptainMultiplier = 2;
-
-    public static int GetPositionPoints(FrozenDictionary<int, int> pointsByPosition, int position)
-    {
-        return pointsByPosition.TryGetValue(position, out var points) ? points : 0;
-    }
 }

@@ -4,26 +4,14 @@ namespace F1CompanionApi.UnitTests.Domain.Models;
 
 public class ConstructorWeekendScoreTests
 {
-    private static DriverWeekendScore MakeDriver(
-        int id,
-        int qualPoints,
-        int sprintPoints,
-        int racePoints
-    ) =>
-        new(
-            DriverId: id,
-            Qualifying: qualPoints,
-            Sprint: new DriverSessionScore(id, "Sprint", sprintPoints, 0, 0, 0, 0),
-            Race: new DriverSessionScore(id, "Race", racePoints, 0, 0, 0, 0)
-        );
-
     [Fact]
     public void QualifyingTotal_SumsBothDriversRawQualifyingPoints()
     {
         var constructor = new ConstructorWeekendScore(
             ConstructorId: 1,
-            Driver1: MakeDriver(1, qualPoints: 9, sprintPoints: 0, racePoints: 18),
-            Driver2: MakeDriver(2, qualPoints: 6, sprintPoints: 0, racePoints: 10)
+            Qualifying: 15,
+            Sprint: null,
+            Race: null
         );
 
         Assert.Equal(15, constructor.QualifyingTotal);
@@ -34,8 +22,9 @@ public class ConstructorWeekendScoreTests
     {
         var constructor = new ConstructorWeekendScore(
             ConstructorId: 1,
-            Driver1: MakeDriver(1, qualPoints: 0, sprintPoints: 8, racePoints: 0),
-            Driver2: MakeDriver(2, qualPoints: 0, sprintPoints: 5, racePoints: 0)
+            Qualifying: null,
+            Sprint: new DriverSessionScore(13, 0, 0, 0, 0),
+            Race: null
         );
 
         Assert.Equal(13, constructor.SprintTotal);
@@ -46,8 +35,9 @@ public class ConstructorWeekendScoreTests
     {
         var constructor = new ConstructorWeekendScore(
             ConstructorId: 1,
-            Driver1: MakeDriver(1, qualPoints: 0, sprintPoints: 0, racePoints: 18),
-            Driver2: MakeDriver(2, qualPoints: 0, sprintPoints: 0, racePoints: 10)
+            Qualifying: null,
+            Sprint: null,
+            Race: new DriverSessionScore(28, 0, 0, 0, 0)
         );
 
         Assert.Equal(28, constructor.RaceTotal);
@@ -58,8 +48,9 @@ public class ConstructorWeekendScoreTests
     {
         var constructor = new ConstructorWeekendScore(
             ConstructorId: 1,
-            Driver1: MakeDriver(1, qualPoints: 9, sprintPoints: 0, racePoints: 18),
-            Driver2: MakeDriver(2, qualPoints: 6, sprintPoints: 0, racePoints: 10)
+            Qualifying: 15,
+            Sprint: null,
+            Race: new DriverSessionScore(28, 0, 0, 0, 0)
         );
 
         Assert.Equal(43, constructor.Total);
@@ -68,10 +59,7 @@ public class ConstructorWeekendScoreTests
     [Fact]
     public void NullSessions_ContributeZeroToConstructorTotals()
     {
-        var driver1 = new DriverWeekendScore(1, null, null, null);
-        var driver2 = new DriverWeekendScore(2, null, null, null);
-
-        var constructor = new ConstructorWeekendScore(ConstructorId: 1, driver1, driver2);
+        var constructor = new ConstructorWeekendScore(ConstructorId: 1, null, null, null);
 
         Assert.Equal(0, constructor.QualifyingTotal);
         Assert.Equal(0, constructor.SprintTotal);

@@ -4,11 +4,8 @@ namespace F1CompanionApi.UnitTests.Domain.Models;
 
 public class DriverWeekendScoreTests
 {
-    private static DriverSessionScore Session(
-        string name,
-        int positionPoints,
-        int positionChange = 0
-    ) => new(1, name, positionPoints, positionChange, 0, 0, 0);
+    private static DriverSessionScore Session(int positionPoints, int positionChange = 0) =>
+        new(positionPoints, positionChange, 0, 0, 0);
 
     [Fact]
     public void TotalPoints_SumsAllSessionTotals()
@@ -16,8 +13,8 @@ public class DriverWeekendScoreTests
         var score = new DriverWeekendScore(
             DriverId: 1,
             Qualifying: 10,
-            Sprint: Session("Sprint", 8),
-            Race: Session("Race", 25)
+            Sprint: Session(8),
+            Race: Session(25)
         );
 
         Assert.Equal(43, score.TotalPoints);

@@ -8,8 +8,6 @@ public class DriverSessionScoreTests
     public void Total_SumsAllComponents()
     {
         var score = new DriverSessionScore(
-            DriverId: 1,
-            SessionName: "Race",
             PositionPoints: 25,
             PositionChangePoints: 3,
             OvertakePoints: 2,
@@ -24,8 +22,6 @@ public class DriverSessionScoreTests
     public void Total_WithNegativePenalty_SumsCorrectly()
     {
         var score = new DriverSessionScore(
-            DriverId: 1,
-            SessionName: "Race",
             PositionPoints: 0,
             PositionChangePoints: 0,
             OvertakePoints: 2,
@@ -40,8 +36,6 @@ public class DriverSessionScoreTests
     public void Total_MixedPositiveAndNegative_SumsCorrectly()
     {
         var score = new DriverSessionScore(
-            DriverId: 1,
-            SessionName: "Sprint",
             PositionPoints: 0,
             PositionChangePoints: -3,
             OvertakePoints: 1,

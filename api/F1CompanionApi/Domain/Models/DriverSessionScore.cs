@@ -1,8 +1,6 @@
 namespace F1CompanionApi.Domain.Models;
 
 public record DriverSessionScore(
-    int DriverId,
-    string SessionName,
     int PositionPoints,
     int PositionChangePoints,
     int OvertakePoints,
@@ -10,6 +8,8 @@ public record DriverSessionScore(
     int PenaltyPoints
 )
 {
+    public static readonly DriverSessionScore Empty = new(0, 0, 0, 0, 0);
+
     /// <summary>
     /// Sum of all scoring components for this session.
     /// </summary>

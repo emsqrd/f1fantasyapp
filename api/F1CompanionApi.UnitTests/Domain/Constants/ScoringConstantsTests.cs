@@ -10,11 +10,10 @@ public class ScoringConstantsTests
     [InlineData(11, 0)]
     public void QualifyingPositionPoints_ReturnsCorrectPoints(int position, int expectedPoints)
     {
-        var points = ScoringConstants.GetPositionPoints(
-            ScoringConstants.QualifyingPositionPoints,
-            position
+        Assert.Equal(
+            expectedPoints,
+            ScoringConstants.QualifyingPositionPoints.GetValueOrDefault(position)
         );
-        Assert.Equal(expectedPoints, points);
     }
 
     [Theory]
@@ -23,11 +22,10 @@ public class ScoringConstantsTests
     [InlineData(9, 0)]
     public void SprintPositionPoints_ReturnsCorrectPoints(int position, int expectedPoints)
     {
-        var points = ScoringConstants.GetPositionPoints(
-            ScoringConstants.SprintPositionPoints,
-            position
+        Assert.Equal(
+            expectedPoints,
+            ScoringConstants.SprintPositionPoints.GetValueOrDefault(position)
         );
-        Assert.Equal(expectedPoints, points);
     }
 
     [Theory]
@@ -36,20 +34,16 @@ public class ScoringConstantsTests
     [InlineData(11, 0)]
     public void RacePositionPoints_ReturnsCorrectPoints(int position, int expectedPoints)
     {
-        var points = ScoringConstants.GetPositionPoints(
-            ScoringConstants.RacePositionPoints,
-            position
+        Assert.Equal(
+            expectedPoints,
+            ScoringConstants.RacePositionPoints.GetValueOrDefault(position)
         );
-        Assert.Equal(expectedPoints, points);
     }
 
     [Fact]
-    public void GetPositionPoints_OutOfRangePosition_ReturnsZero()
+    public void RacePositionPoints_OutOfRangePosition_ReturnsZero()
     {
-        Assert.Equal(0, ScoringConstants.GetPositionPoints(ScoringConstants.RacePositionPoints, 0));
-        Assert.Equal(
-            0,
-            ScoringConstants.GetPositionPoints(ScoringConstants.RacePositionPoints, -1)
-        );
+        Assert.Equal(0, ScoringConstants.RacePositionPoints.GetValueOrDefault(0));
+        Assert.Equal(0, ScoringConstants.RacePositionPoints.GetValueOrDefault(-1));
     }
 }
