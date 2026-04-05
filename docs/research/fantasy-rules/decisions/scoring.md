@@ -104,8 +104,6 @@ A constructor's sprint score is the **sum of both drivers' sprint points**. No a
 
 **Red-flagged races score from the official FIA classification.** If a race is red-flagged and the result is based on a prior lap, the FIA's published finishing positions are used as-is. No partial points — scoring is applied normally to whatever classification the FIA produces.
 
-**If qualifying is cancelled, position change is not scored for that race.** Drivers earn finish points only — no position gain or loss is applied.
-
 **Captain multiplier applies to all points across the entire weekend.** If the captain DNFs, the −10 (race) or −5 (sprint) penalty is also doubled — the captain designation amplifies both upside and downside.
 
 ### Constructors

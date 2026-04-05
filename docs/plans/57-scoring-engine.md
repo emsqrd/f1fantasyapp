@@ -2,11 +2,13 @@
 
 ## Context
 
-The scoring engine translates race results into fantasy team scores. It follows the same `ApplicationDbContext`-injected service pattern as the rest of the codebase. The session-level calculation methods are synchronous (pure math on entity objects), while the top-level `CalculateTeamRaceScoreAsync` loads its own data from the DB.
+The scoring engine translates race results into fantasy team scores. It follows the same `ApplicationDbContext`-injected service pattern as the rest of the codebase. Session-level calculation methods are synchronous (pure math on entity objects), while the top-level async methods load their own data from the DB.
 
-**Progressive scoring:** The engine works at any point during a weekend. After each event (sprint → qualifying → race), calling the engine returns the team's cumulative score with per-session breakdowns. The captain 2× multiplier applies per-session so progressive totals reflect it immediately.
+**Entity-first scoring:** The engine scores every driver and constructor for a race first, persisting those scores independently of team rosters. Team scores are then assembled from the persisted entity scores in a separate step. This separation means entity scores can be recalculated without re-scanning every team, and team assembly is a simple lookup against pre-computed values.
 
-This unblocks the scoring orchestration layer (#61) which will handle when to trigger scoring and persisting `TeamRaceScore` records.
+**Progressive scoring:** Calling `ScoreRaceEntitiesAsync` at any point during a weekend scores whatever results have been ingested so far. The captain 2× multiplier is applied when assembling team scores in `ScoreTeamsForRaceAsync`.
+
+This unblocks the scoring orchestration layer (#61) which will handle when to trigger scoring.
 
 **Authoritative scoring rules:** `docs/research/fantasy-rules/decisions/scoring.md`
 
@@ -14,17 +16,15 @@ This unblocks the scoring orchestration layer (#61) which will handle when to tr
 
 **Matches existing service pattern.** Injects `ApplicationDbContext` and `ILogger<ScoringService>`, registered as scoped in `ServiceExtensions.cs`. Interface + implementation in same file.
 
-**Score models mirror the data model separation.** `DriverQualifyingResult` and `DriverRaceResult` are already separate entities, so the score models follow suit: `DriverQualifyingScore` (position points only) and `DriverSessionScore` (full breakdown for sprint/race).
+**Entity-first, then team assembly.** `ScoreRaceEntitiesAsync` scores all drivers and constructors for a race, persisting results to `DriverRaceScore` and `ConstructorRaceScore`. `ScoreTeamsForRaceAsync` reads those persisted scores and assembles `TeamRaceScore` records, applying the captain multiplier at this step. This keeps entity scoring independent of team configuration.
 
-**Per-session scoring for both drivers and constructors.** A team's qualifying score = sum of driver qualifying scores (captain-adjusted) + sum of constructor qualifying scores. Constructor and driver scoring happen together per session, not as separate aggregation steps.
+**Domain model records in `Domain/Models/`.** Distinct from `Api/Models/` (HTTP DTOs).
 
-**Domain model records in `Domain/Models/`.** New directory, distinct from `Api/Models/` (HTTP DTOs).
+**Constants in `Domain/Constants/`.** `BudgetConstants.cs` lives alongside `ScoringConstants.cs`. Uses `FrozenDictionary<int, int>` for position point tables.
 
-**Constants in `Domain/Constants/`.** New directory. Move `BudgetConstants.cs` here alongside new `ScoringConstants.cs`. Uses `FrozenDictionary<int, int>` for position point tables.
+**Session methods are synchronous, top-level methods are async.** Session scoring methods take entity objects and do pure math. `ScoreRaceEntitiesAsync` and `ScoreTeamsForRaceAsync` query the DB then call the session methods.
 
-**Session methods are synchronous, top-level method is async.** Session scoring methods take entity objects and do pure math. `CalculateTeamRaceScoreAsync` queries the DB then calls the session methods.
-
-**Qualifying cancelled = no qualifying results exist.** If there are no `DriverQualifyingResult` rows for a race, position change is not scored for the race session.
+**Captain multiplier applied at team assembly.** The multiplier is applied to an entity's `TotalPoints` in `ScoreTeamsForRaceAsync`, not per-session at the driver level. This keeps driver and constructor scores captain-agnostic and reusable across teams.
 
 ---
 
@@ -46,67 +46,37 @@ Establishes the organizational structure and vocabulary: point tables, penalty v
   - `QualifyingPositionPoints`: `FrozenDictionary<int, int>` — P1=10..P10=1
   - `SprintPositionPoints`: `FrozenDictionary<int, int>` — P1=8..P8=1
   - `RacePositionPoints`: `FrozenDictionary<int, int>` — P1=25, P2=18, P3=15, P4=12, P5=10, P6=8, P7=6, P8=4, P9=2, P10=1
-  - Constants: `SprintFastestLapBonus = 2`, `RaceFastestLapBonus = 3`, `SprintDnfPenalty = -5`, `RaceDnfPenalty = -10`, `CaptainMultiplier = 2`
-  - Static helper: `int GetPositionPoints(FrozenDictionary<int, int> table, int position)` — returns mapped value or 0
-
-**`api/F1CompanionApi/Domain/Models/DriverQualifyingScore.cs`**
-- Record with: `DriverId`, `PositionPoints`
+  - Constants: `SprintOvertakeBonus = 1`, `RaceOvertakeBonus = 1`, `SprintFastestLapBonus = 2`, `RaceFastestLapBonus = 3`, `SprintDnfPenalty = -5`, `RaceDnfPenalty = -10`, `CaptainMultiplier = 2`
 
 **`api/F1CompanionApi/Domain/Models/DriverSessionScore.cs`**
-- Record with: `DriverId`, `SessionName` (string), `PositionPoints`, `PositionChangePoints`, `OvertakePoints`, `FastestLapPoints`, `PenaltyPoints`
+- Record with: `PositionPoints`, `PositionChangePoints`, `OvertakePoints`, `FastestLapPoints`, `PenaltyPoints`
 - Computed property: `Total` = sum of all components
-- Static factory: `Empty(int driverId, string sessionName)` returning all-zero record
+- Static field: `Empty` returning all-zero record
 
 **`api/F1CompanionApi/Domain/Models/DriverWeekendScore.cs`**
-- Record with: `DriverId`, `Qualifying` (DriverQualifyingScore?), `Sprint` (DriverSessionScore?), `Race` (DriverSessionScore?), `IsCaptain`
-- Computed per-session adjusted values (captain 2× applied per session):
-  - `AdjustedQualifying` = `(Qualifying?.PositionPoints ?? 0) * Multiplier`
-  - `AdjustedSprint` = `(Sprint?.Total ?? 0) * Multiplier`
-  - `AdjustedRace` = `(Race?.Total ?? 0) * Multiplier`
-- `RawTotal` = sum of raw session values
-- `AdjustedTotal` = sum of adjusted session values (equivalent to `RawTotal * Multiplier`)
-- Private `Multiplier` = `IsCaptain ? CaptainMultiplier : 1`
+- Record with: `DriverId`, `Qualifying` (`int?`), `Sprint` (`DriverSessionScore?`), `Race` (`DriverSessionScore?`)
+- Computed property: `TotalPoints` = sum of all sessions
 
 **`api/F1CompanionApi/Domain/Models/ConstructorWeekendScore.cs`**
-- Record with: `ConstructorId`, `Driver1` (DriverWeekendScore), `Driver2` (DriverWeekendScore)
-- Per-session totals (uses raw driver totals, not captain-adjusted):
-  - `QualifyingTotal` = sum of both drivers' qualifying position points
-  - `SprintTotal` = sum of both drivers' sprint totals
-  - `RaceTotal` = sum of both drivers' race totals
-- `Total` = `QualifyingTotal + SprintTotal + RaceTotal`
-
-**`api/F1CompanionApi/Domain/Models/TeamRaceScoreBreakdown.cs`**
-- Record with: `TeamId`, `RaceId`, `DriverScores` (list of DriverWeekendScore), `ConstructorScores` (list of ConstructorWeekendScore)
-- Per-session team totals:
-  - `QualifyingTotal` = sum of drivers' `AdjustedQualifying` + sum of constructors' `QualifyingTotal`
-  - `SprintTotal` = sum of drivers' `AdjustedSprint` + sum of constructors' `SprintTotal`
-  - `RaceTotal` = sum of drivers' `AdjustedRace` + sum of constructors' `RaceTotal`
-- `TotalPoints` = `QualifyingTotal + SprintTotal + RaceTotal`
+- Record with: `ConstructorId`, `Qualifying` (`int?`), `Sprint` (`DriverSessionScore?`), `Race` (`DriverSessionScore?`)
+- Computed per-session totals: `QualifyingTotal`, `SprintTotal`, `RaceTotal`
+- `Total` = sum of session totals
 
 ### Tests
 
 **`api/F1CompanionApi.UnitTests/Domain/Constants/ScoringConstantsTests.cs`**
-- Verify each position table returns correct points for all positions including boundary (P10/P8/P11+)
-- Verify `GetPositionPoints` returns 0 for out-of-range positions
+- Verify each position table returns correct points for all positions including boundary
 
 **`api/F1CompanionApi.UnitTests/Domain/Models/DriverSessionScoreTests.cs`**
-- `Total` sums all components correctly (positive, negative, mixed)
+- `Total` sums all components correctly
 - `Empty` returns zero total
 
 **`api/F1CompanionApi.UnitTests/Domain/Models/DriverWeekendScoreTests.cs`**
-- `RawTotal` sums session totals (with nullable handling)
-- `AdjustedTotal` doubles when captain, unchanged when not
-- Per-session adjusted values double when captain
-- Null sessions contribute zero to both raw and adjusted
+- `TotalPoints` sums session totals with nullable handling
 
 **`api/F1CompanionApi.UnitTests/Domain/Models/ConstructorWeekendScoreTests.cs`**
-- Per-session totals correctly sum both drivers' raw points
-- Captain multiplier on one driver doesn't affect constructor totals
+- Per-session totals correctly aggregate both drivers' raw points
 - Null sessions contribute zero
-
-**`api/F1CompanionApi.UnitTests/Domain/Models/TeamRaceScoreBreakdownTests.cs`**
-- Per-session team totals combine driver adjusted + constructor totals
-- `TotalPoints` = sum of session totals
 
 ---
 
@@ -122,24 +92,19 @@ Constructor: `ScoringService(ApplicationDbContext dbContext, ILogger<ScoringServ
 
 ```
 IScoringService:
-  DriverQualifyingScore CalculateDriverQualifyingPoints(DriverQualifyingResult result)
+  int CalculateDriverQualifyingPoints(DriverQualifyingResult result)
   DriverSessionScore CalculateDriverSprintPoints(DriverRaceResult result)
-  DriverSessionScore CalculateDriverRacePoints(DriverRaceResult result, bool qualifyingOccurred = true)
+  DriverSessionScore CalculateDriverRacePoints(DriverRaceResult result)
 ```
 
 `CalculateDriverQualifyingPoints`:
-- Look up position in qualifying table → PositionPoints
-- Returns `DriverQualifyingScore`
+- Look up position in qualifying table → returns position points as `int`
 
-`CalculateDriverSprintPoints`:
-- If classified: PositionPoints from sprint table, PositionChange = GridPosition - FinishPosition, Overtakes from result
-- If DNF/DSQ/DNS: PenaltyPoints = -5, PositionChange = 0, but Overtakes still counted
-- FastestLap: +2 regardless of status
-- Returns `DriverSessionScore`
-
-`CalculateDriverRacePoints(result, qualifyingOccurred)`:
-- Same structure as sprint but with race table, +3 fastest lap, -10 penalty
-- If `qualifyingOccurred == false`: PositionChange = 0
+`CalculateDriverSprintPoints` / `CalculateDriverRacePoints`:
+- Both delegate to a private `CalculateDriverSessionPoints` with the appropriate table and constants
+- If classified: PositionPoints from table, PositionChange = GridPosition - FinishPosition, Overtakes × bonus
+- If DNF/DSQ/DNS: PenaltyPoints applied, PositionChange = 0, Overtakes still counted
+- FastestLap: bonus regardless of status
 - Returns `DriverSessionScore`
 
 ### Modified Files
@@ -150,18 +115,14 @@ IScoringService:
 
 **`api/F1CompanionApi.UnitTests/Services/ScoringServiceTests.cs`**
 
-Uses in-memory DbContext (same pattern as other service tests).
-
 Qualifying tests:
 - Correct points for P1 (10), P10 (1), P11+ (0)
 
 Sprint tests:
 - Position points for classified (P1=8, P8=1, P9+=0)
-- Position gain (grid 5, finish 2 → +3)
-- Position loss (grid 2, finish 5 → -3)
-- Overtake points from result
-- Fastest lap bonus (+2)
-- DNF/DSQ/DNS penalty (-5, no position change, overtakes still counted)
+- Position gain/loss
+- Overtake points, fastest lap bonus (+2)
+- DNF penalty (-5, no position change, overtakes still counted)
 - Fastest lap with DNF (-5 + 2 = -3 net)
 
 Race tests:
@@ -169,8 +130,7 @@ Race tests:
 - Position gain/loss
 - Overtakes, fastest lap (+3)
 - DNF/DSQ/DNS penalty (-10), fastest lap with DNF (-10 + 3 = -7)
-- Cancelled qualifying skips position change
-- Worked examples from scoring doc: dominant (35), mid-field mover (14)
+- Worked examples: dominant (25 race pts), mid-field mover (14 total)
 
 ---
 
@@ -182,11 +142,10 @@ Combines per-session driver scores into a weekend view, aggregates constructor s
 
 ```
 DriverWeekendScore CalculateDriverWeekendPoints(
+    int driverId,
     DriverQualifyingResult? qualifying,
     DriverRaceResult? sprint,
-    DriverRaceResult? race,
-    bool isCaptain,
-    bool qualifyingOccurred = true)
+    DriverRaceResult? race)
 
 ConstructorWeekendScore CalculateConstructorWeekendPoints(
     int constructorId,
@@ -195,77 +154,91 @@ ConstructorWeekendScore CalculateConstructorWeekendPoints(
 ```
 
 `CalculateDriverWeekendPoints`:
-- Calls `CalculateDriverQualifyingPoints` if qualifying is non-null, else null
-- Calls `CalculateDriverSprintPoints` if sprint is non-null, else null
-- Calls `CalculateDriverRacePoints` if race is non-null, else null (passes `qualifyingOccurred`)
-- Returns assembled `DriverWeekendScore` with captain flag
+- Calls qualifying/sprint/race methods only when the respective result is non-null
+- Returns assembled `DriverWeekendScore`
 
 `CalculateConstructorWeekendPoints`:
-- Simple assembly; computed properties on the record handle per-session and total aggregation
+- Sums both drivers' session scores using a private `SumDriverSessions` helper
+- Sessions where neither driver participated produce `null`
 
 ### Tests
 
 Weekend:
 - Standard weekend sums all sessions
-- Sprint null → zero sprint contribution
-- Qualifying null → zero qualifying contribution
-- Captain doubles each session independently (AdjustedQualifying, AdjustedSprint, AdjustedRace)
-- Captain DNF: race penalty is doubled (-20 from race)
-- Worked example: dominant driver (P1 quali + P1 race = 35, as captain = 70)
-- Partial weekend: sprint only → only sprint points in result
+- Null sprint / null qualifying → zero contribution
+- Partial weekend (sprint only) → only sprint points
 
 Constructor:
-- Per-session totals sum both drivers' raw points correctly
-- Captain multiplier on one driver doesn't affect constructor per-session totals
-- Worked example: McLaren (43 pts from scoring doc)
-- One driver DNF: penalty flows through in the appropriate session
+- Per-session totals sum both drivers' raw points
+- Worked example: McLaren (43 pts)
+- One driver DNF: penalty flows through in the appropriate session total
 
 ---
 
-## Commit 4: Team race score calculation
+## Commit 4: Persistence entities for entity and team scores
 
-Top-level async method that loads data from the DB and orchestrates the calculation. Works progressively — call it after any session's results are ingested.
+New DB entities to store calculated scores. These are written by the scoring service and read back when assembling team scores.
 
-### Method Added to `IScoringService`
+### New Files
+
+**`api/F1CompanionApi/Data/Entities/DriverRaceScore.cs`**
+- Unique index on `(DriverId, RaceId)`
+- Per-session point breakdowns: qualifying position points; sprint and race components (position, position change, overtakes, fastest lap, penalty, total)
+- `TotalPoints` (across all sessions), `CalculatedAt`
+
+**`api/F1CompanionApi/Data/Entities/ConstructorRaceScore.cs`**
+- Same shape as `DriverRaceScore` but keyed on `ConstructorId`
+
+**`api/F1CompanionApi/Data/Entities/TeamRaceScore.cs`**
+- Unique index on `(TeamId, RaceId)`
+- `TotalPoints`, `CalculatedAt`
+
+### Migration
+
+`dotnet ef migrations add AddEntityRaceScores --project F1CompanionApi`
+
+---
+
+## Commit 5: `ScoreRaceEntitiesAsync` and `ScoreTeamsForRaceAsync`
+
+Top-level async methods that load data from the DB, orchestrate calculation, and persist results.
+
+### Methods Added to `IScoringService`
 
 ```
-Task<TeamRaceScoreBreakdown> CalculateTeamRaceScoreAsync(int teamId, int raceId)
+Task ScoreRaceEntitiesAsync(int raceId)
+Task ScoreTeamsForRaceAsync(int raceId)
 ```
 
-Logic:
-1. Load lineup entries for `(teamId, raceId)` from DB
-2. Load all qualifying results for the race
-3. Load all race results for the race (both `SessionType.Race` and `SessionType.Sprint`)
-4. Load season drivers for the race's season (to map constructors → their two drivers)
-5. Determine `qualifyingOccurred` = qualifying results exist for this race
-6. Separate lineup entries into drivers (`EntityType.Driver`) and constructors (`EntityType.Constructor`)
-7. For each driver entry: find their qualifying/sprint/race results, determine captain from `IsCaptain`, call `CalculateDriverWeekendPoints`
-8. For each constructor entry: find the constructor's two drivers via `SeasonDriver` mappings, retrieve their already-calculated `DriverWeekendScore`s, call `CalculateConstructorWeekendPoints`
-9. Assemble and return `TeamRaceScoreBreakdown`
+`ScoreRaceEntitiesAsync`:
+1. Load the `Race` record (throws if not found)
+2. Load all qualifying results and race results for the race
+3. Load active `SeasonDriver` records for the race's season
+4. Score each driver who appears in either result set via `CalculateDriverWeekendPoints`
+5. Group season drivers by constructor; score each constructor via `CalculateConstructorWeekendPoints` (throws if a constructor doesn't have results for both drivers)
+6. Delete existing `DriverRaceScore` and `ConstructorRaceScore` rows for the race, insert new ones — committed atomically
 
-### New Files (temporary — remove before merging PR)
-
-**`api/F1CompanionApi/Api/Endpoints/DebugScoringEndpoints.cs`**
-- `GET /api/debug/score/{teamId}/{raceId}` → calls `IScoringService.CalculateTeamRaceScoreAsync`, returns `TeamRaceScoreBreakdown` as JSON
-- `.WithTags("Debug")`, no authorization required
-- Registered in `Endpoints.MapEndpoints()` via `.MapDebugScoringEndpoints()`
-
-> **⚠ REMOVE BEFORE MERGE:** `DebugScoringEndpoints.cs` and its registration in `Endpoints.cs` must be removed before the PR is merged.
+`ScoreTeamsForRaceAsync`:
+1. Load `DriverRaceScore`, `ConstructorRaceScore`, and `LineupEntry` rows for the race
+2. Group lineup entries by team; for each entry look up the entity's `TotalPoints` and apply `CaptainMultiplier` if `IsCaptain`
+3. Delete existing `TeamRaceScore` rows for the race, insert new ones
 
 ### Tests
 
-Uses in-memory DbContext seeded with full test data.
+`ScoreRaceEntitiesAsync`:
+- Standard weekend: correct per-field and total driver scores persisted
+- Sprint weekend: sprint components populated
+- Constructor scores: components aggregated from both drivers
+- Constructor missing one driver's results: throws `InvalidOperationException`
+- Race not found: throws `InvalidOperationException`
+- Called twice: replaces existing scores (idempotent)
+- No results: nothing persisted
 
-- Scores all driver entries for standard weekend
-- Constructor per-session totals match sum of their drivers' raw session points
-- Captain multiplier reflected in per-session team totals
-- No captain set → no multiplier
-- Sprint weekend with all session types
-- Driver with no results → zero points (not an error)
-- No qualifying results → position change not scored for race
-- Partial weekend (sprint only ingested) → SprintTotal populated, QualifyingTotal and RaceTotal zero
-- Per-session team totals: `QualifyingTotal` = drivers' adjusted qualifying + constructors' qualifying
-- Full integration example: multi-driver team, captain set, sprint weekend, includes DNFs — verify per-session and total points match hand-calculated expectation
+`ScoreTeamsForRaceAsync`:
+- Single driver entry: correct total persisted
+- Captain driver: total is doubled
+- Multiple teams with mixed driver/constructor entries: all teams scored correctly
+- Called twice: replaces existing team scores (idempotent)
 
 ---
 
@@ -281,27 +254,23 @@ cd api && dotnet format style --exclude **/Migrations/**
 cd api && dotnet format analyzers --exclude **/Migrations/**
 ```
 
-## Pre-Merge Checklist
-
-- [ ] Remove `api/F1CompanionApi/Api/Endpoints/DebugScoringEndpoints.cs`
-- [ ] Remove `.MapDebugScoringEndpoints()` call from `Endpoints.cs`
-
 ## Key Files
 
 | File | Action |
 |------|--------|
 | `api/F1CompanionApi/Domain/Constants/BudgetConstants.cs` | Moved (from `Domain/`) |
 | `api/F1CompanionApi/Domain/Constants/ScoringConstants.cs` | New |
-| `api/F1CompanionApi/Domain/Models/DriverQualifyingScore.cs` | New |
 | `api/F1CompanionApi/Domain/Models/DriverSessionScore.cs` | New |
 | `api/F1CompanionApi/Domain/Models/DriverWeekendScore.cs` | New |
 | `api/F1CompanionApi/Domain/Models/ConstructorWeekendScore.cs` | New |
-| `api/F1CompanionApi/Domain/Models/TeamRaceScoreBreakdown.cs` | New |
 | `api/F1CompanionApi/Domain/Services/ScoringService.cs` | New |
 | `api/F1CompanionApi/Extensions/ServiceExtensions.cs` | Modified (DI registration) |
 | `api/F1CompanionApi/Domain/Services/TeamService.cs` | Modified (namespace update) |
 | `api/F1CompanionApi/Domain/Exceptions/BudgetExceededException.cs` | Modified (namespace update) |
 | `api/F1CompanionApi/Api/Mappers/TeamResponseMapper.cs` | Modified (namespace update) |
+| `api/F1CompanionApi/Data/Entities/DriverRaceScore.cs` | New |
+| `api/F1CompanionApi/Data/Entities/ConstructorRaceScore.cs` | New |
+| `api/F1CompanionApi/Data/Entities/TeamRaceScore.cs` | New |
 | `api/F1CompanionApi.UnitTests/Domain/Constants/ScoringConstantsTests.cs` | New |
-| `api/F1CompanionApi.UnitTests/Domain/Models/*.cs` | New (4 files) |
+| `api/F1CompanionApi.UnitTests/Domain/Models/*.cs` | New (3 files) |
 | `api/F1CompanionApi.UnitTests/Services/ScoringServiceTests.cs` | New |

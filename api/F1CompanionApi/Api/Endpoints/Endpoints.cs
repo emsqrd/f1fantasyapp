@@ -15,8 +15,7 @@ public static class Endpoints
             .MapRaceEndpoints()
             .MapRaceResultEndpoints()
             .MapSeasonEndpoints()
-            .MapTeamEndpoints()
-            .MapDebugScoringEndpoints();
+            .MapTeamEndpoints();
 
         return app;
     }
