@@ -28,8 +28,27 @@ React SPA (Vite) → .NET 9 Minimal API → PostgreSQL
 - **Team** — Each user creates one team per season. Teams are subject to a budget cap; each driver/constructor has a price and the projected spend cannot exceed the cap.
 - **Roster Lock** — Each race has a `LockDeadline`. Once `now >= lockDeadline`, the team can no longer be modified (drivers/constructors cannot be added or removed). The UI shows a live countdown and disables pickers when locked.
 - **League** — Users create or join leagues to compete against others. Public leagues are browsable; private leagues use invite tokens. Max 15 teams per league. A team can belong to multiple leagues.
-- **Scoring** — Teams earn points based on real F1 race results. **Not yet implemented** — the leaderboard UI exists with placeholder/demo data but the scoring calculation engine is unbuilt.
+- **Scoring** — Teams earn points based on real F1 race results. See `docs/research/fantasy-rules/decisions/scoring.md` for the rules.
 - **Season / Race** — Seasons map to F1 calendar years and contain ordered races (with round numbers and lock deadlines). Driver and constructor pricing is dynamic per season.
+
+## F1 Domain
+
+**Grid:** 22 drivers across 11 constructors. Each constructor fields exactly 2 drivers.
+
+**Race weekends** come in two formats as it pertains to this game:
+
+- **Standard:** Qualifying → Race
+- **Sprint** (~6 per season): Sprint → Qualifying → Race
+
+**Game rules and design decisions** are documented in `docs/research/fantasy-rules/decisions/`:
+
+- `design-goals.md` — Player experience goals that all other decisions are evaluated against
+- `format.md` — Team shape: slot counts, budget cap, composition constraints
+- `rules.md` — Gameplay mechanics: transfers, captain, locking, budget, edge cases
+- `scoring.md` — Point tables and scoring logic (intentionally diverges from official F1 Fantasy)
+- `pricing.md` — Preseason pricing source, in-season PPM-based price movement formula
+
+The official F1 Fantasy scoring rules are captured for reference in `docs/research/fantasy-rules/reference/f1-official-scoring.md`.
 
 ## Project Context
 
@@ -136,6 +155,6 @@ Hosted on Fly.io + Supabase (free tier).
 
 - `web/CLAUDE.md` - Frontend architecture, patterns, and conventions
 - `api/CLAUDE.md` - Backend architecture, patterns, and conventions
-- `docs/research/` - Research findings and design specs (numbered, e.g. `50-team-page-findings.md`)
+- `docs/research/` - Research findings and design specs
 - `docs/mockups/` - Static HTML mockups (self-contained, design tokens from `web/src/index.css`)
 - `docs/plans/` - Feature implementation plans (written during plan mode)

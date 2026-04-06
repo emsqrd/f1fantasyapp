@@ -1,4 +1,4 @@
-namespace F1CompanionApi.Domain;
+namespace F1CompanionApi.Domain.Constants;
 
 public static class BudgetConstants
 {

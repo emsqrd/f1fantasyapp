@@ -1,3 +1,5 @@
+using F1CompanionApi.Domain.Constants;
+
 namespace F1CompanionApi.Domain.Exceptions;
 
 /// <summary>

@@ -1,6 +1,6 @@
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data.Entities;
-using F1CompanionApi.Domain;
+using F1CompanionApi.Domain.Constants;
 using F1CompanionApi.Extensions;
 
 namespace F1CompanionApi.Api.Mappers;

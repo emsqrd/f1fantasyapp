@@ -131,6 +131,7 @@ public static class ServiceExtensions
         services.AddScoped<IRaceResultService, RaceResultService>();
         services.AddScoped<IRaceService, RaceService>();
         services.AddScoped<ISeasonService, SeasonService>();
+        services.AddScoped<IScoringService, ScoringService>();
         services.AddScoped<ITeamService, TeamService>();
         services.AddScoped<IUserProfileService, UserProfileService>();
     }

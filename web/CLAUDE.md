@@ -42,28 +42,7 @@ npx prettier --write .   # Auto-fix formatting issues
 
 **File:** `src/router.tsx`
 
-TanStack Router uses **guard-based route protection** with pathless layout routes:
-
-```
-root
-├── index (/)                    [PUBLIC]
-├── sign-in, sign-up            [PUBLIC]
-├── _authenticated (layout)      [REQUIRES AUTH via requireAuth]
-│   ├── account
-│   └── _team-required (layout)  [REQUIRES TEAM via requireTeam]
-│       ├── leagues
-│       ├── league/$leagueId
-│       └── team/$teamId
-└── _no-team (layout)            [REQUIRES NO TEAM via requireNoTeam]
-    └── create-team
-```
-
-**Key concepts:**
-
-- **Pathless layouts** (underscore prefix) group routes with shared guards
-- **Route guards** in `src/lib/route-guards.ts` use `beforeLoad` to redirect unauthorized access
-- **Route loaders** fetch data before rendering using `loader` function
-- **Zod validation** for route parameters (e.g., `leagueId`, `teamId`)
+TanStack Router uses **guard-based route protection** with pathless layout routes (underscore prefix). Guards live in `src/lib/route-guards.ts` and run in `beforeLoad` to redirect unauthorized access. Route loaders fetch data before rendering. Route params are validated with Zod.
 
 **Adding protected routes:**
 

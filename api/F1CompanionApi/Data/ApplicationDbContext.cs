@@ -27,6 +27,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<DriverQualifyingResult> DriverQualifyingResults => Set<DriverQualifyingResult>();
     public DbSet<DriverRaceResult> DriverRaceResults => Set<DriverRaceResult>();
     public DbSet<TeamRaceScore> TeamRaceScores => Set<TeamRaceScore>();
+    public DbSet<DriverRaceScore> DriverRaceScores => Set<DriverRaceScore>();
+    public DbSet<ConstructorRaceScore> ConstructorRaceScores => Set<ConstructorRaceScore>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -132,6 +134,36 @@ public class ApplicationDbContext : DbContext
                 .HasOne(trs => trs.Race)
                 .WithMany()
                 .HasForeignKey(trs => trs.RaceId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<DriverRaceScore>(entity =>
+        {
+            entity
+                .HasOne(drs => drs.Driver)
+                .WithMany()
+                .HasForeignKey(drs => drs.DriverId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity
+                .HasOne(drs => drs.Race)
+                .WithMany()
+                .HasForeignKey(drs => drs.RaceId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ConstructorRaceScore>(entity =>
+        {
+            entity
+                .HasOne(crs => crs.Constructor)
+                .WithMany()
+                .HasForeignKey(crs => crs.ConstructorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity
+                .HasOne(crs => crs.Race)
+                .WithMany()
+                .HasForeignKey(crs => crs.RaceId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
