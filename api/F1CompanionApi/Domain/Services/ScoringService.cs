@@ -9,20 +9,6 @@ namespace F1CompanionApi.Domain.Services;
 
 public interface IScoringService
 {
-    int CalculateDriverQualifyingPoints(DriverQualifyingResult result);
-    DriverSessionScore CalculateDriverSprintPoints(DriverRaceResult result);
-    DriverSessionScore CalculateDriverRacePoints(DriverRaceResult result);
-    DriverWeekendScore CalculateDriverWeekendPoints(
-        int driverId,
-        DriverQualifyingResult? qualifying,
-        DriverRaceResult? sprint,
-        DriverRaceResult? race
-    );
-    ConstructorWeekendScore CalculateConstructorWeekendPoints(
-        int constructorId,
-        DriverWeekendScore driver1,
-        DriverWeekendScore driver2
-    );
     Task ScoreRaceEntitiesAsync(int raceId);
     Task ScoreTeamsForRaceAsync(int raceId);
 }
