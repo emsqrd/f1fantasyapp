@@ -102,7 +102,7 @@ public class TeamService : ITeamService
             : await _dbContext
                 .LineupEntries.Where(le =>
                     le.TeamId == team.Id
-                    && le.RaceId == currentRace.Id
+                    && le.SeasonRaceId == currentRace.Id
                     && le.EntityType == LineupEntityType.Driver
                     && le.IsCaptain
                 )
@@ -218,7 +218,7 @@ public class TeamService : ITeamService
                 new LineupEntry
                 {
                     TeamId = teamId,
-                    RaceId = currentRace.Id,
+                    SeasonRaceId = currentRace.Id,
                     EntityId = driverId,
                     EntityType = LineupEntityType.Driver,
                     SlotPosition = slotPosition,
@@ -287,7 +287,7 @@ public class TeamService : ITeamService
         {
             var entry = await _dbContext.LineupEntries.FirstOrDefaultAsync(le =>
                 le.TeamId == teamId
-                && le.RaceId == currentRace.Id
+                && le.SeasonRaceId == currentRace.Id
                 && le.EntityId == teamDriver.DriverId
                 && le.EntityType == LineupEntityType.Driver
             );
@@ -424,7 +424,7 @@ public class TeamService : ITeamService
                 new LineupEntry
                 {
                     TeamId = teamId,
-                    RaceId = currentRace.Id,
+                    SeasonRaceId = currentRace.Id,
                     EntityId = constructorId,
                     EntityType = LineupEntityType.Constructor,
                     SlotPosition = slotPosition,
@@ -495,7 +495,7 @@ public class TeamService : ITeamService
         {
             var entry = await _dbContext.LineupEntries.FirstOrDefaultAsync(le =>
                 le.TeamId == teamId
-                && le.RaceId == currentRace.Id
+                && le.SeasonRaceId == currentRace.Id
                 && le.EntityId == teamConstructor.ConstructorId
                 && le.EntityType == LineupEntityType.Constructor
             );
@@ -555,7 +555,7 @@ public class TeamService : ITeamService
         {
             newCaptainEntry = await _dbContext.LineupEntries.FirstOrDefaultAsync(le =>
                 le.TeamId == teamId
-                && le.RaceId == currentRace.Id
+                && le.SeasonRaceId == currentRace.Id
                 && le.EntityId == driverId
                 && le.EntityType == LineupEntityType.Driver
             );
@@ -575,7 +575,7 @@ public class TeamService : ITeamService
         }
 
         var existingCaptain = await _dbContext.LineupEntries.FirstOrDefaultAsync(le =>
-            le.TeamId == teamId && le.RaceId == currentRace.Id && le.IsCaptain
+            le.TeamId == teamId && le.SeasonRaceId == currentRace.Id && le.IsCaptain
         );
 
         if (existingCaptain is not null)
@@ -594,16 +594,16 @@ public class TeamService : ITeamService
         );
     }
 
-    private async Task<Race?> GetCurrentRaceAsync()
+    private async Task<SeasonRace?> GetCurrentRaceAsync()
     {
         var now = DateTime.UtcNow;
         return await _dbContext
-            .Races.Where(r => r.RaceDate >= now)
+            .SeasonRaces.Where(r => r.RaceDate >= now)
             .OrderBy(r => r.RaceDate)
             .FirstOrDefaultAsync();
     }
 
-    private async Task<Race?> GetCurrentRaceOrThrowIfLockedAsync()
+    private async Task<SeasonRace?> GetCurrentRaceOrThrowIfLockedAsync()
     {
         var currentRace = await GetCurrentRaceAsync();
 

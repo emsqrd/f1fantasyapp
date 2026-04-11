@@ -18,7 +18,7 @@ public static class DriverRaceResultResponseMapper
         {
             Id = result.Id,
             DriverId = result.DriverId,
-            RaceId = result.RaceId,
+            RaceId = result.SeasonRaceId,
             SessionType = result.SessionType,
             GridPosition = result.GridPosition,
             FinishPosition = result.FinishPosition,

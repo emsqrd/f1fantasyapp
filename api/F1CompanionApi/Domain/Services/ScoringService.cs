@@ -207,15 +207,15 @@ public class ScoringService : IScoringService
         _logger.LogInformation("Scoring entities for race {RaceId}", raceId);
 
         var race =
-            await _dbContext.Races.FindAsync(raceId)
+            await _dbContext.SeasonRaces.FindAsync(raceId)
             ?? throw new InvalidOperationException($"Race {raceId} not found.");
 
         var qualifyingResults = await _dbContext
-            .DriverQualifyingResults.Where(dqr => dqr.RaceId == raceId)
+            .DriverQualifyingResults.Where(dqr => dqr.SeasonRaceId == raceId)
             .ToListAsync();
 
         var raceResults = await _dbContext
-            .DriverRaceResults.Where(drr => drr.RaceId == raceId)
+            .DriverRaceResults.Where(drr => drr.SeasonRaceId == raceId)
             .ToListAsync();
 
         var seasonDrivers = await _dbContext
@@ -337,10 +337,12 @@ public class ScoringService : IScoringService
     )
     {
         _dbContext.DriverRaceScores.RemoveRange(
-            await _dbContext.DriverRaceScores.Where(d => d.RaceId == raceId).ToListAsync()
+            await _dbContext.DriverRaceScores.Where(d => d.SeasonRaceId == raceId).ToListAsync()
         );
         _dbContext.ConstructorRaceScores.RemoveRange(
-            await _dbContext.ConstructorRaceScores.Where(c => c.RaceId == raceId).ToListAsync()
+            await _dbContext
+                .ConstructorRaceScores.Where(c => c.SeasonRaceId == raceId)
+                .ToListAsync()
         );
 
         _dbContext.DriverRaceScores.AddRange(
@@ -363,7 +365,7 @@ public class ScoringService : IScoringService
         new()
         {
             DriverId = score.DriverId,
-            RaceId = raceId,
+            SeasonRaceId = raceId,
             QualifyingPositionPoints = score.Qualifying,
             SprintPositionPoints = score.Sprint?.PositionPoints,
             SprintPositionChangePoints = score.Sprint?.PositionChangePoints,
@@ -394,7 +396,7 @@ public class ScoringService : IScoringService
         new()
         {
             ConstructorId = score.ConstructorId,
-            RaceId = raceId,
+            SeasonRaceId = raceId,
             QualifyingPositionPoints = score.Qualifying,
             SprintPositionPoints = score.Sprint?.PositionPoints,
             SprintPositionChangePoints = score.Sprint?.PositionChangePoints,
@@ -421,15 +423,15 @@ public class ScoringService : IScoringService
         _logger.LogInformation("Scoring teams for race {RaceId}", raceId);
 
         var driverRaceScores = await _dbContext
-            .DriverRaceScores.Where(drs => drs.RaceId == raceId)
+            .DriverRaceScores.Where(drs => drs.SeasonRaceId == raceId)
             .ToListAsync();
 
         var constructorRaceScores = await _dbContext
-            .ConstructorRaceScores.Where(crs => crs.RaceId == raceId)
+            .ConstructorRaceScores.Where(crs => crs.SeasonRaceId == raceId)
             .ToListAsync();
 
         var lineupEntries = await _dbContext
-            .LineupEntries.Where(le => le.RaceId == raceId)
+            .LineupEntries.Where(le => le.SeasonRaceId == raceId)
             .ToListAsync();
 
         var teamScores = new List<TeamRaceScore>();
@@ -444,7 +446,7 @@ public class ScoringService : IScoringService
                 new TeamRaceScore
                 {
                     TeamId = team.Key,
-                    RaceId = raceId,
+                    SeasonRaceId = raceId,
                     TotalPoints = totalPoints,
                     CalculatedAt = DateTime.UtcNow,
                 }
@@ -452,7 +454,7 @@ public class ScoringService : IScoringService
         }
 
         var existingTeamScores = await _dbContext
-            .TeamRaceScores.Where(trs => trs.RaceId == raceId)
+            .TeamRaceScores.Where(trs => trs.SeasonRaceId == raceId)
             .ToListAsync();
 
         _dbContext.TeamRaceScores.RemoveRange(existingTeamScores);

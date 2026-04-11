@@ -56,7 +56,7 @@ public class RaceResultService : IRaceResultService
             raceId
         );
 
-        var race = await _dbContext.Races.FindAsync(raceId);
+        var race = await _dbContext.SeasonRaces.FindAsync(raceId);
 
         if (race is null)
             throw new KeyNotFoundException($"Race {raceId} not found");
@@ -66,7 +66,7 @@ public class RaceResultService : IRaceResultService
 
         // Delete any existing results so new ones can be created
         var existingQualifying = await _dbContext
-            .DriverQualifyingResults.Where(r => r.RaceId == raceId)
+            .DriverQualifyingResults.Where(r => r.SeasonRaceId == raceId)
             .ToListAsync();
         _dbContext.DriverQualifyingResults.RemoveRange(existingQualifying);
 
@@ -74,7 +74,7 @@ public class RaceResultService : IRaceResultService
             .Select(i => new DriverQualifyingResult
             {
                 DriverId = i.DriverId,
-                RaceId = raceId,
+                SeasonRaceId = raceId,
                 Position = i.Position,
                 CreatedAt = DateTime.UtcNow,
             })
@@ -106,7 +106,7 @@ public class RaceResultService : IRaceResultService
             raceId
         );
 
-        var race = await _dbContext.Races.FindAsync(raceId);
+        var race = await _dbContext.SeasonRaces.FindAsync(raceId);
         if (race is null)
             throw new KeyNotFoundException($"Race {raceId} not found");
 
@@ -118,7 +118,7 @@ public class RaceResultService : IRaceResultService
 
         // Delete any existing results so new ones can be created
         var existingRace = await _dbContext
-            .DriverRaceResults.Where(r => r.RaceId == raceId && r.SessionType == sessionType)
+            .DriverRaceResults.Where(r => r.SeasonRaceId == raceId && r.SessionType == sessionType)
             .ToListAsync();
         _dbContext.DriverRaceResults.RemoveRange(existingRace);
 
@@ -126,7 +126,7 @@ public class RaceResultService : IRaceResultService
             .Select(i => new DriverRaceResult
             {
                 DriverId = i.DriverId,
-                RaceId = raceId,
+                SeasonRaceId = raceId,
                 SessionType = sessionType,
                 GridPosition = i.GridPosition,
                 FinishPosition = i.FinishPosition,
@@ -154,7 +154,7 @@ public class RaceResultService : IRaceResultService
         _logger.LogDebug("Fetching qualifying results for race {RaceId}", raceId);
 
         var results = await _dbContext
-            .DriverQualifyingResults.Where(r => r.RaceId == raceId)
+            .DriverQualifyingResults.Where(r => r.SeasonRaceId == raceId)
             .OrderBy(r => r.Position)
             .ToListAsync();
 
@@ -174,7 +174,7 @@ public class RaceResultService : IRaceResultService
         _logger.LogDebug("Fetching {SessionType} results for race {RaceId}", sessionType, raceId);
 
         var results = await _dbContext
-            .DriverRaceResults.Where(r => r.RaceId == raceId && r.SessionType == sessionType)
+            .DriverRaceResults.Where(r => r.SeasonRaceId == raceId && r.SessionType == sessionType)
             .OrderBy(r => r.FinishPosition)
             .ToListAsync();
 

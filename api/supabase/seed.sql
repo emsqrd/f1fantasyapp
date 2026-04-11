@@ -203,7 +203,7 @@ BEGIN
 
   -- Insert all races for 2026 season
   -- Sprint races: China, Miami, Canada, Great Britain, Netherlands, Singapore
-  INSERT INTO "Races"
+  INSERT INTO "SeasonRaces"
     ("SeasonId", "Round", "Name", "CircuitId", "RaceDate", "LockDeadline", "HasSprint", "IsDeleted", "CreatedAt", "UpdatedAt", "DeletedAt")
   VALUES
     (season_id, 1, 'Australian Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Melbourne Grand Prix Circuit'), '2026-03-08 04:00:00+00', '2026-03-07 05:00:00+00', false, false, NOW(), NOW(), NULL),

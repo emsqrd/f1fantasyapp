@@ -6,14 +6,14 @@ namespace F1CompanionApi.Api.Mappers;
 public static class RaceResponseMapper
 {
     public static IEnumerable<RaceResponse> ToResponseModel(
-        this IEnumerable<Race> races,
+        this IEnumerable<SeasonRace> races,
         int? currentRaceId
     )
     {
         return races.Select(r => r.ToResponseModel(currentRaceId));
     }
 
-    public static RaceResponse ToResponseModel(this Race race, int? currentRaceId = null)
+    public static RaceResponse ToResponseModel(this SeasonRace race, int? currentRaceId = null)
     {
         return new RaceResponse
         {

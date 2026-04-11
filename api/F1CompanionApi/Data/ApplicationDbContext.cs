@@ -16,7 +16,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<League> Leagues => Set<League>();
     public DbSet<LeagueInvite> LeagueInvites => Set<LeagueInvite>();
     public DbSet<LeagueTeam> LeagueTeams => Set<LeagueTeam>();
-    public DbSet<Race> Races => Set<Race>();
+    public DbSet<SeasonRace> SeasonRaces => Set<SeasonRace>();
     public DbSet<Season> Seasons => Set<Season>();
     public DbSet<SeasonConstructor> SeasonConstructors => Set<SeasonConstructor>();
     public DbSet<SeasonDriver> SeasonDrivers => Set<SeasonDriver>();
@@ -84,11 +84,11 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<Race>(entity =>
+        modelBuilder.Entity<SeasonRace>(entity =>
         {
             entity
                 .HasOne(e => e.Season)
-                .WithMany(s => s.Races)
+                .WithMany(s => s.SeasonRaces)
                 .HasForeignKey(e => e.SeasonId)
                 .OnDelete(DeleteBehavior.Restrict);
 
@@ -108,9 +108,9 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity
-                .HasOne(dqr => dqr.Race)
+                .HasOne(dqr => dqr.SeasonRace)
                 .WithMany()
-                .HasForeignKey(dqr => dqr.RaceId)
+                .HasForeignKey(dqr => dqr.SeasonRaceId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -123,9 +123,9 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity
-                .HasOne(drr => drr.Race)
+                .HasOne(drr => drr.SeasonRace)
                 .WithMany()
-                .HasForeignKey(drr => drr.RaceId)
+                .HasForeignKey(drr => drr.SeasonRaceId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -138,9 +138,9 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity
-                .HasOne(trs => trs.Race)
+                .HasOne(trs => trs.SeasonRace)
                 .WithMany()
-                .HasForeignKey(trs => trs.RaceId)
+                .HasForeignKey(trs => trs.SeasonRaceId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -153,9 +153,9 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity
-                .HasOne(drs => drs.Race)
+                .HasOne(drs => drs.SeasonRace)
                 .WithMany()
-                .HasForeignKey(drs => drs.RaceId)
+                .HasForeignKey(drs => drs.SeasonRaceId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -168,9 +168,9 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity
-                .HasOne(crs => crs.Race)
+                .HasOne(crs => crs.SeasonRace)
                 .WithMany()
-                .HasForeignKey(crs => crs.RaceId)
+                .HasForeignKey(crs => crs.SeasonRaceId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -277,9 +277,9 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity
-                .HasOne(le => le.Race)
+                .HasOne(le => le.SeasonRace)
                 .WithMany()
-                .HasForeignKey(le => le.RaceId)
+                .HasForeignKey(le => le.SeasonRaceId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

@@ -37,7 +37,7 @@ public class RaceResultServiceTests
             CountryAbbreviation = "GB",
         };
 
-    private static Race CreateRace(int id, bool hasSprint = false) =>
+    private static SeasonRace CreateRace(int id, bool hasSprint = false) =>
         new()
         {
             Id = id,
@@ -76,7 +76,7 @@ public class RaceResultServiceTests
         using var context = CreateInMemoryContext();
         context.Drivers.Add(CreateDriver(1, "VER"));
         context.Drivers.Add(CreateDriver(2, "HAM"));
-        context.Races.Add(CreateRace(10));
+        context.SeasonRaces.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
         var service = new RaceResultService(context, _mockLogger.Object);
@@ -91,12 +91,12 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Drivers.Add(CreateDriver(1, "VER"));
-        context.Races.Add(CreateRace(10));
+        context.SeasonRaces.Add(CreateRace(10));
         context.DriverQualifyingResults.Add(
             new DriverQualifyingResult
             {
                 DriverId = 1,
-                RaceId = 10,
+                SeasonRaceId = 10,
                 Position = 5,
             }
         );
@@ -126,7 +126,7 @@ public class RaceResultServiceTests
     public async Task SubmitQualifyingResultsAsync_ThrowsArgumentException_WhenDuplicateDriverIds()
     {
         using var context = CreateInMemoryContext();
-        context.Races.Add(CreateRace(10));
+        context.SeasonRaces.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
         var service = new RaceResultService(context, _mockLogger.Object);
@@ -140,7 +140,7 @@ public class RaceResultServiceTests
     public async Task SubmitQualifyingResultsAsync_ThrowsArgumentException_WhenDriverNotFound()
     {
         using var context = CreateInMemoryContext();
-        context.Races.Add(CreateRace(10));
+        context.SeasonRaces.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
         var service = new RaceResultService(context, _mockLogger.Object);
@@ -154,7 +154,7 @@ public class RaceResultServiceTests
     public async Task SubmitQualifyingResultsAsync_ReturnsEmpty_WhenEmptyBatch()
     {
         using var context = CreateInMemoryContext();
-        context.Races.Add(CreateRace(10));
+        context.SeasonRaces.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
         var service = new RaceResultService(context, _mockLogger.Object);
@@ -173,7 +173,7 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Drivers.Add(CreateDriver(1, "VER"));
-        context.Races.Add(CreateRace(10));
+        context.SeasonRaces.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
         var service = new RaceResultService(context, _mockLogger.Object);
@@ -192,12 +192,12 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Drivers.Add(CreateDriver(1, "VER"));
-        context.Races.Add(CreateRace(10));
+        context.SeasonRaces.Add(CreateRace(10));
         context.DriverRaceResults.Add(
             new DriverRaceResult
             {
                 DriverId = 1,
-                RaceId = 10,
+                SeasonRaceId = 10,
                 SessionType = SessionType.Race,
                 GridPosition = 5,
                 FinishPosition = 3,
@@ -237,7 +237,7 @@ public class RaceResultServiceTests
     public async Task SubmitRaceResultsAsync_ThrowsSprintNotAvailableException_WhenRaceHasNoSprint()
     {
         using var context = CreateInMemoryContext();
-        context.Races.Add(CreateRace(10, hasSprint: false));
+        context.SeasonRaces.Add(CreateRace(10, hasSprint: false));
         await context.SaveChangesAsync();
 
         var service = new RaceResultService(context, _mockLogger.Object);
@@ -252,7 +252,7 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Drivers.Add(CreateDriver(1, "VER"));
-        context.Races.Add(CreateRace(10, hasSprint: true));
+        context.SeasonRaces.Add(CreateRace(10, hasSprint: true));
         await context.SaveChangesAsync();
 
         var service = new RaceResultService(context, _mockLogger.Object);
@@ -270,7 +270,7 @@ public class RaceResultServiceTests
     public async Task SubmitRaceResultsAsync_ThrowsArgumentException_WhenDuplicateDriverIds()
     {
         using var context = CreateInMemoryContext();
-        context.Races.Add(CreateRace(10));
+        context.SeasonRaces.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
         var service = new RaceResultService(context, _mockLogger.Object);
@@ -288,7 +288,7 @@ public class RaceResultServiceTests
     public async Task SubmitRaceResultsAsync_ThrowsArgumentException_WhenDriverNotFound()
     {
         using var context = CreateInMemoryContext();
-        context.Races.Add(CreateRace(10));
+        context.SeasonRaces.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
         var service = new RaceResultService(context, _mockLogger.Object);
@@ -302,7 +302,7 @@ public class RaceResultServiceTests
     public async Task SubmitRaceResultsAsync_ThrowsArgumentException_WhenMultipleFastestLaps()
     {
         using var context = CreateInMemoryContext();
-        context.Races.Add(CreateRace(10));
+        context.SeasonRaces.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
         var service = new RaceResultService(context, _mockLogger.Object);
@@ -343,7 +343,7 @@ public class RaceResultServiceTests
     )
     {
         using var context = CreateInMemoryContext();
-        context.Races.Add(CreateRace(10));
+        context.SeasonRaces.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
         var service = new RaceResultService(context, _mockLogger.Object);
@@ -361,7 +361,7 @@ public class RaceResultServiceTests
     public async Task SubmitRaceResultsAsync_ThrowsArgumentException_WhenFinishPositionNullForClassified()
     {
         using var context = CreateInMemoryContext();
-        context.Races.Add(CreateRace(10));
+        context.SeasonRaces.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
         var service = new RaceResultService(context, _mockLogger.Object);
@@ -379,7 +379,7 @@ public class RaceResultServiceTests
     public async Task SubmitRaceResultsAsync_ReturnsEmpty_WhenEmptyBatch()
     {
         using var context = CreateInMemoryContext();
-        context.Races.Add(CreateRace(10));
+        context.SeasonRaces.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
         var service = new RaceResultService(context, _mockLogger.Object);
@@ -401,13 +401,13 @@ public class RaceResultServiceTests
             new DriverQualifyingResult
             {
                 DriverId = 2,
-                RaceId = 10,
+                SeasonRaceId = 10,
                 Position = 2,
             },
             new DriverQualifyingResult
             {
                 DriverId = 1,
-                RaceId = 10,
+                SeasonRaceId = 10,
                 Position = 1,
             }
         );
@@ -430,13 +430,13 @@ public class RaceResultServiceTests
             new DriverQualifyingResult
             {
                 DriverId = 1,
-                RaceId = 10,
+                SeasonRaceId = 10,
                 Position = 1,
             },
             new DriverQualifyingResult
             {
                 DriverId = 1,
-                RaceId = 11,
+                SeasonRaceId = 11,
                 Position = 3,
             }
         );
@@ -462,7 +462,7 @@ public class RaceResultServiceTests
             new DriverRaceResult
             {
                 DriverId = 2,
-                RaceId = 10,
+                SeasonRaceId = 10,
                 SessionType = SessionType.Race,
                 GridPosition = 2,
                 FinishPosition = 2,
@@ -473,7 +473,7 @@ public class RaceResultServiceTests
             new DriverRaceResult
             {
                 DriverId = 1,
-                RaceId = 10,
+                SeasonRaceId = 10,
                 SessionType = SessionType.Race,
                 GridPosition = 1,
                 FinishPosition = 1,
@@ -501,7 +501,7 @@ public class RaceResultServiceTests
             new DriverRaceResult
             {
                 DriverId = 1,
-                RaceId = 10,
+                SeasonRaceId = 10,
                 SessionType = SessionType.Race,
                 GridPosition = 1,
                 FinishPosition = 1,
@@ -512,7 +512,7 @@ public class RaceResultServiceTests
             new DriverRaceResult
             {
                 DriverId = 1,
-                RaceId = 10,
+                SeasonRaceId = 10,
                 SessionType = SessionType.Sprint,
                 GridPosition = 2,
                 FinishPosition = 2,

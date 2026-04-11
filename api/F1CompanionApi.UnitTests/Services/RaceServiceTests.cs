@@ -69,7 +69,7 @@ public class RaceServiceTests
 
         var races = new[]
         {
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 1,
@@ -77,7 +77,7 @@ public class RaceServiceTests
                 CircuitId = circuit1.Id,
                 RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 2,
@@ -85,7 +85,7 @@ public class RaceServiceTests
                 CircuitId = circuit2.Id,
                 RaceDate = new DateTime(2024, 3, 9, 17, 0, 0, DateTimeKind.Utc),
             },
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 3,
@@ -95,7 +95,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.SeasonRaces.AddRange(races);
         await context.SaveChangesAsync();
 
         // Act
@@ -149,7 +149,7 @@ public class RaceServiceTests
 
         var races = new[]
         {
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 1,
@@ -159,7 +159,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.SeasonRaces.AddRange(races);
         await context.SaveChangesAsync();
 
         // Act
@@ -200,7 +200,7 @@ public class RaceServiceTests
 
         var races = new[]
         {
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 1,
@@ -208,7 +208,7 @@ public class RaceServiceTests
                 CircuitId = circuit.Id,
                 RaceDate = new DateTime(2023, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
-            new Race
+            new SeasonRace
             {
                 SeasonId = 2,
                 Round = 1,
@@ -216,7 +216,7 @@ public class RaceServiceTests
                 CircuitId = circuit.Id,
                 RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
-            new Race
+            new SeasonRace
             {
                 SeasonId = 2,
                 Round = 2,
@@ -226,7 +226,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.SeasonRaces.AddRange(races);
         await context.SaveChangesAsync();
 
         // Act
@@ -252,7 +252,7 @@ public class RaceServiceTests
 
         var races = new[]
         {
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 1,
@@ -260,7 +260,7 @@ public class RaceServiceTests
                 CircuitId = circuit.Id,
                 RaceDate = new DateTime(2023, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
-            new Race
+            new SeasonRace
             {
                 SeasonId = 2,
                 Round = 1,
@@ -270,7 +270,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.SeasonRaces.AddRange(races);
         await context.SaveChangesAsync();
 
         // Act
@@ -297,7 +297,7 @@ public class RaceServiceTests
 
         var races = new[]
         {
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 3,
@@ -305,7 +305,7 @@ public class RaceServiceTests
                 CircuitId = circuit.Id,
                 RaceDate = new DateTime(2024, 3, 24, 5, 0, 0, DateTimeKind.Utc),
             },
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 1,
@@ -313,7 +313,7 @@ public class RaceServiceTests
                 CircuitId = circuit.Id,
                 RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 2,
@@ -323,7 +323,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.SeasonRaces.AddRange(races);
         await context.SaveChangesAsync();
 
         // Act
@@ -351,7 +351,7 @@ public class RaceServiceTests
         var now = DateTime.UtcNow;
         var races = new[]
         {
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 1,
@@ -359,7 +359,7 @@ public class RaceServiceTests
                 CircuitId = circuit.Id,
                 RaceDate = now.AddDays(-10),
             },
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 2,
@@ -367,7 +367,7 @@ public class RaceServiceTests
                 CircuitId = circuit.Id,
                 RaceDate = now.AddDays(5),
             },
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 3,
@@ -377,7 +377,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.SeasonRaces.AddRange(races);
         await context.SaveChangesAsync();
 
         // Act
@@ -405,7 +405,7 @@ public class RaceServiceTests
         var now = DateTime.UtcNow;
         var races = new[]
         {
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 1,
@@ -413,7 +413,7 @@ public class RaceServiceTests
                 CircuitId = circuit.Id,
                 RaceDate = now.AddDays(-20),
             },
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 2,
@@ -423,7 +423,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.SeasonRaces.AddRange(races);
         await context.SaveChangesAsync();
 
         // Act
@@ -449,7 +449,7 @@ public class RaceServiceTests
         var now = DateTime.UtcNow;
         var races = new[]
         {
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 1,
@@ -457,7 +457,7 @@ public class RaceServiceTests
                 CircuitId = circuit.Id,
                 RaceDate = now.AddDays(5),
             },
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 2,
@@ -467,7 +467,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.SeasonRaces.AddRange(races);
         await context.SaveChangesAsync();
 
         // Act
@@ -492,7 +492,7 @@ public class RaceServiceTests
         await context.SaveChangesAsync();
 
         var now = DateTime.UtcNow;
-        var race = new Race
+        var race = new SeasonRace
         {
             SeasonId = 1,
             Round = 1,
@@ -501,7 +501,7 @@ public class RaceServiceTests
             RaceDate = now.AddSeconds(1), // Add 1 second buffer to account for test execution time
         };
 
-        context.Races.Add(race);
+        context.SeasonRaces.Add(race);
         await context.SaveChangesAsync();
 
         // Act
@@ -527,7 +527,7 @@ public class RaceServiceTests
         context.Circuits.Add(circuit);
         await context.SaveChangesAsync();
 
-        var race = new Race
+        var race = new SeasonRace
         {
             SeasonId = 1,
             Round = 1,
@@ -537,7 +537,7 @@ public class RaceServiceTests
             LockDeadline = lockDeadline,
         };
 
-        context.Races.Add(race);
+        context.SeasonRaces.Add(race);
         await context.SaveChangesAsync();
 
         // Act
@@ -572,7 +572,7 @@ public class RaceServiceTests
         context.Circuits.Add(circuit);
         await context.SaveChangesAsync();
 
-        var race = new Race
+        var race = new SeasonRace
         {
             SeasonId = 1,
             Round = 1,
@@ -581,7 +581,7 @@ public class RaceServiceTests
             RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
         };
 
-        context.Races.Add(race);
+        context.SeasonRaces.Add(race);
         await context.SaveChangesAsync();
 
         // Act
@@ -635,7 +635,7 @@ public class RaceServiceTests
         var now = DateTime.UtcNow;
         var races = new[]
         {
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 1,
@@ -643,7 +643,7 @@ public class RaceServiceTests
                 CircuitId = circuit.Id,
                 RaceDate = now.AddDays(-10),
             },
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 2,
@@ -651,7 +651,7 @@ public class RaceServiceTests
                 CircuitId = circuit.Id,
                 RaceDate = now.AddDays(5),
             },
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 3,
@@ -661,7 +661,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.SeasonRaces.AddRange(races);
         await context.SaveChangesAsync();
 
         var nextUpcomingRace = races[1];
@@ -688,7 +688,7 @@ public class RaceServiceTests
         var now = DateTime.UtcNow;
         var races = new[]
         {
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 1,
@@ -696,7 +696,7 @@ public class RaceServiceTests
                 CircuitId = circuit.Id,
                 RaceDate = now.AddDays(5),
             },
-            new Race
+            new SeasonRace
             {
                 SeasonId = 1,
                 Round = 2,
@@ -706,7 +706,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.SeasonRaces.AddRange(races);
         await context.SaveChangesAsync();
 
         var laterRace = races[1];
@@ -731,7 +731,7 @@ public class RaceServiceTests
         await context.SaveChangesAsync();
 
         var now = DateTime.UtcNow;
-        var race = new Race
+        var race = new SeasonRace
         {
             SeasonId = 1,
             Round = 1,
@@ -740,7 +740,7 @@ public class RaceServiceTests
             RaceDate = now.AddDays(-5),
         };
 
-        context.Races.Add(race);
+        context.SeasonRaces.Add(race);
         await context.SaveChangesAsync();
 
         // Act
@@ -763,7 +763,7 @@ public class RaceServiceTests
         await context.SaveChangesAsync();
 
         var now = DateTime.UtcNow;
-        var race = new Race
+        var race = new SeasonRace
         {
             SeasonId = 1,
             Round = 1,
@@ -772,7 +772,7 @@ public class RaceServiceTests
             RaceDate = now.AddSeconds(1), // Add 1 second buffer to account for test execution time
         };
 
-        context.Races.Add(race);
+        context.SeasonRaces.Add(race);
         await context.SaveChangesAsync();
 
         // Act
@@ -797,7 +797,7 @@ public class RaceServiceTests
         context.Circuits.Add(circuit);
         await context.SaveChangesAsync();
 
-        var race = new Race
+        var race = new SeasonRace
         {
             SeasonId = 1,
             Round = 1,
@@ -807,7 +807,7 @@ public class RaceServiceTests
             LockDeadline = lockDeadline,
         };
 
-        context.Races.Add(race);
+        context.SeasonRaces.Add(race);
         await context.SaveChangesAsync();
 
         // Act
