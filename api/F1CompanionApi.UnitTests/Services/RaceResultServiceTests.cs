@@ -44,9 +44,7 @@ public class RaceResultServiceTests
             SeasonId = 1,
             Round = id,
             Name = $"Race {id}",
-            Location = "Location",
-            Circuit = "Circuit",
-            Country = "Country",
+            CircuitId = 1,
             RaceDate = DateTime.UtcNow,
             HasSprint = hasSprint,
         };

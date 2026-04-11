@@ -37,9 +37,7 @@ public class ScoringServiceTests
             SeasonId = seasonId,
             Round = 1,
             Name = "Test GP",
-            Location = "Test",
-            Circuit = "Test Circuit",
-            Country = "Test Country",
+            CircuitId = 1,
             RaceDate = new DateTime(2025, 3, 1),
         };
 

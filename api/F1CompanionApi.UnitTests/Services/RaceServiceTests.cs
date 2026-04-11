@@ -39,6 +39,18 @@ public class RaceServiceTests
         _mockSeasonService.Setup(s => s.GetCurrentSeasonAsync()).ReturnsAsync(currentSeason);
     }
 
+    private static Circuit CreateCircuit(
+        string name = "Test Circuit",
+        string location = "Test Location",
+        string country = "Test Country"
+    ) =>
+        new()
+        {
+            Name = name,
+            Location = location,
+            Country = country,
+        };
+
     #region GetRacesAsync Tests
 
     [Fact]
@@ -49,6 +61,12 @@ public class RaceServiceTests
         SetupCurrentSeason(1);
         var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
 
+        var circuit1 = CreateCircuit("Bahrain International Circuit", "Sakhir", "Bahrain");
+        var circuit2 = CreateCircuit("Jeddah Corniche Circuit", "Jeddah", "Saudi Arabia");
+        var circuit3 = CreateCircuit("Albert Park Circuit", "Melbourne", "Australia");
+        context.Circuits.AddRange(circuit1, circuit2, circuit3);
+        await context.SaveChangesAsync();
+
         var races = new[]
         {
             new Race
@@ -56,9 +74,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 1,
                 Name = "Bahrain Grand Prix",
-                Location = "Sakhir",
-                Circuit = "Bahrain International Circuit",
-                Country = "Bahrain",
+                CircuitId = circuit1.Id,
                 RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
             new Race
@@ -66,9 +82,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 2,
                 Name = "Saudi Arabian Grand Prix",
-                Location = "Jeddah",
-                Circuit = "Jeddah Corniche Circuit",
-                Country = "Saudi Arabia",
+                CircuitId = circuit2.Id,
                 RaceDate = new DateTime(2024, 3, 9, 17, 0, 0, DateTimeKind.Utc),
             },
             new Race
@@ -76,9 +90,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 3,
                 Name = "Australian Grand Prix",
-                Location = "Melbourne",
-                Circuit = "Albert Park Circuit",
-                Country = "Australia",
+                CircuitId = circuit3.Id,
                 RaceDate = new DateTime(2024, 3, 24, 5, 0, 0, DateTimeKind.Utc),
             },
         };
@@ -131,6 +143,10 @@ public class RaceServiceTests
         _mockSeasonService.Setup(s => s.GetCurrentSeasonAsync()).ReturnsAsync((Season?)null);
         var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
 
+        var circuit = CreateCircuit();
+        context.Circuits.Add(circuit);
+        await context.SaveChangesAsync();
+
         var races = new[]
         {
             new Race
@@ -138,9 +154,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 1,
                 Name = "Bahrain Grand Prix",
-                Location = "Sakhir",
-                Circuit = "Bahrain International Circuit",
-                Country = "Bahrain",
+                CircuitId = circuit.Id,
                 RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
         };
@@ -180,6 +194,10 @@ public class RaceServiceTests
         SetupCurrentSeason(2);
         var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
 
+        var circuit = CreateCircuit();
+        context.Circuits.Add(circuit);
+        await context.SaveChangesAsync();
+
         var races = new[]
         {
             new Race
@@ -187,9 +205,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 1,
                 Name = "2023 Race",
-                Location = "Location 1",
-                Circuit = "Circuit 1",
-                Country = "Country 1",
+                CircuitId = circuit.Id,
                 RaceDate = new DateTime(2023, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
             new Race
@@ -197,9 +213,7 @@ public class RaceServiceTests
                 SeasonId = 2,
                 Round = 1,
                 Name = "2024 Race 1",
-                Location = "Location 2",
-                Circuit = "Circuit 2",
-                Country = "Country 2",
+                CircuitId = circuit.Id,
                 RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
             new Race
@@ -207,9 +221,7 @@ public class RaceServiceTests
                 SeasonId = 2,
                 Round = 2,
                 Name = "2024 Race 2",
-                Location = "Location 3",
-                Circuit = "Circuit 3",
-                Country = "Country 3",
+                CircuitId = circuit.Id,
                 RaceDate = new DateTime(2024, 3, 9, 17, 0, 0, DateTimeKind.Utc),
             },
         };
@@ -234,6 +246,10 @@ public class RaceServiceTests
         SetupCurrentSeason(2); // Current season is 2
         var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
 
+        var circuit = CreateCircuit();
+        context.Circuits.Add(circuit);
+        await context.SaveChangesAsync();
+
         var races = new[]
         {
             new Race
@@ -241,9 +257,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 1,
                 Name = "2023 Race",
-                Location = "Location 1",
-                Circuit = "Circuit 1",
-                Country = "Country 1",
+                CircuitId = circuit.Id,
                 RaceDate = new DateTime(2023, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
             new Race
@@ -251,9 +265,7 @@ public class RaceServiceTests
                 SeasonId = 2,
                 Round = 1,
                 Name = "2024 Race",
-                Location = "Location 2",
-                Circuit = "Circuit 2",
-                Country = "Country 2",
+                CircuitId = circuit.Id,
                 RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
         };
@@ -279,6 +291,10 @@ public class RaceServiceTests
         SetupCurrentSeason(1);
         var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
 
+        var circuit = CreateCircuit();
+        context.Circuits.Add(circuit);
+        await context.SaveChangesAsync();
+
         var races = new[]
         {
             new Race
@@ -286,9 +302,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 3,
                 Name = "Australian Grand Prix",
-                Location = "Melbourne",
-                Circuit = "Albert Park Circuit",
-                Country = "Australia",
+                CircuitId = circuit.Id,
                 RaceDate = new DateTime(2024, 3, 24, 5, 0, 0, DateTimeKind.Utc),
             },
             new Race
@@ -296,9 +310,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 1,
                 Name = "Bahrain Grand Prix",
-                Location = "Sakhir",
-                Circuit = "Bahrain International Circuit",
-                Country = "Bahrain",
+                CircuitId = circuit.Id,
                 RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
             new Race
@@ -306,9 +318,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 2,
                 Name = "Saudi Arabian Grand Prix",
-                Location = "Jeddah",
-                Circuit = "Jeddah Corniche Circuit",
-                Country = "Saudi Arabia",
+                CircuitId = circuit.Id,
                 RaceDate = new DateTime(2024, 3, 9, 17, 0, 0, DateTimeKind.Utc),
             },
         };
@@ -334,6 +344,10 @@ public class RaceServiceTests
         SetupCurrentSeason(1);
         var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
 
+        var circuit = CreateCircuit();
+        context.Circuits.Add(circuit);
+        await context.SaveChangesAsync();
+
         var now = DateTime.UtcNow;
         var races = new[]
         {
@@ -342,9 +356,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 1,
                 Name = "Past Race",
-                Location = "Past Location",
-                Circuit = "Past Circuit",
-                Country = "Past Country",
+                CircuitId = circuit.Id,
                 RaceDate = now.AddDays(-10),
             },
             new Race
@@ -352,9 +364,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 2,
                 Name = "Current Race",
-                Location = "Current Location",
-                Circuit = "Current Circuit",
-                Country = "Current Country",
+                CircuitId = circuit.Id,
                 RaceDate = now.AddDays(5),
             },
             new Race
@@ -362,9 +372,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 3,
                 Name = "Future Race",
-                Location = "Future Location",
-                Circuit = "Future Circuit",
-                Country = "Future Country",
+                CircuitId = circuit.Id,
                 RaceDate = now.AddDays(15),
             },
         };
@@ -390,6 +398,10 @@ public class RaceServiceTests
         SetupCurrentSeason(1);
         var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
 
+        var circuit = CreateCircuit();
+        context.Circuits.Add(circuit);
+        await context.SaveChangesAsync();
+
         var now = DateTime.UtcNow;
         var races = new[]
         {
@@ -398,9 +410,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 1,
                 Name = "Past Race 1",
-                Location = "Location 1",
-                Circuit = "Circuit 1",
-                Country = "Country 1",
+                CircuitId = circuit.Id,
                 RaceDate = now.AddDays(-20),
             },
             new Race
@@ -408,9 +418,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 2,
                 Name = "Past Race 2",
-                Location = "Location 2",
-                Circuit = "Circuit 2",
-                Country = "Country 2",
+                CircuitId = circuit.Id,
                 RaceDate = now.AddDays(-10),
             },
         };
@@ -434,6 +442,10 @@ public class RaceServiceTests
         SetupCurrentSeason(1);
         var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
 
+        var circuit = CreateCircuit();
+        context.Circuits.Add(circuit);
+        await context.SaveChangesAsync();
+
         var now = DateTime.UtcNow;
         var races = new[]
         {
@@ -442,9 +454,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 1,
                 Name = "Upcoming Race 1",
-                Location = "Location 1",
-                Circuit = "Circuit 1",
-                Country = "Country 1",
+                CircuitId = circuit.Id,
                 RaceDate = now.AddDays(5),
             },
             new Race
@@ -452,9 +462,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 2,
                 Name = "Upcoming Race 2",
-                Location = "Location 2",
-                Circuit = "Circuit 2",
-                Country = "Country 2",
+                CircuitId = circuit.Id,
                 RaceDate = now.AddDays(12),
             },
         };
@@ -479,15 +487,17 @@ public class RaceServiceTests
         SetupCurrentSeason(1);
         var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
 
+        var circuit = CreateCircuit();
+        context.Circuits.Add(circuit);
+        await context.SaveChangesAsync();
+
         var now = DateTime.UtcNow;
         var race = new Race
         {
             SeasonId = 1,
             Round = 1,
             Name = "Current Race",
-            Location = "Current Location",
-            Circuit = "Current Circuit",
-            Country = "Current Country",
+            CircuitId = circuit.Id,
             RaceDate = now.AddSeconds(1), // Add 1 second buffer to account for test execution time
         };
 
@@ -513,14 +523,16 @@ public class RaceServiceTests
         var raceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc);
         var lockDeadline = new DateTime(2024, 3, 2, 14, 0, 0, DateTimeKind.Utc);
 
+        var circuit = CreateCircuit("Bahrain International Circuit", "Sakhir", "Bahrain");
+        context.Circuits.Add(circuit);
+        await context.SaveChangesAsync();
+
         var race = new Race
         {
             SeasonId = 1,
             Round = 1,
             Name = "Bahrain Grand Prix",
-            Location = "Sakhir",
-            Circuit = "Bahrain International Circuit",
-            Country = "Bahrain",
+            CircuitId = circuit.Id,
             RaceDate = raceDate,
             LockDeadline = lockDeadline,
         };
@@ -537,9 +549,10 @@ public class RaceServiceTests
         Assert.Equal(1, raceResponse.SeasonId);
         Assert.Equal(1, raceResponse.Round);
         Assert.Equal("Bahrain Grand Prix", raceResponse.Name);
-        Assert.Equal("Sakhir", raceResponse.Location);
-        Assert.Equal("Bahrain International Circuit", raceResponse.Circuit);
-        Assert.Equal("Bahrain", raceResponse.Country);
+        Assert.Equal(circuit.Id, raceResponse.Circuit.Id);
+        Assert.Equal("Bahrain International Circuit", raceResponse.Circuit.Name);
+        Assert.Equal("Sakhir", raceResponse.Circuit.Location);
+        Assert.Equal("Bahrain", raceResponse.Circuit.Country);
         Assert.Equal(raceDate, raceResponse.RaceDate);
         Assert.Equal(lockDeadline, raceResponse.LockDeadline);
     }
@@ -555,14 +568,16 @@ public class RaceServiceTests
         using var context = CreateInMemoryContext();
         var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
 
+        var circuit = CreateCircuit("Bahrain International Circuit", "Sakhir", "Bahrain");
+        context.Circuits.Add(circuit);
+        await context.SaveChangesAsync();
+
         var race = new Race
         {
             SeasonId = 1,
             Round = 1,
             Name = "Bahrain Grand Prix",
-            Location = "Sakhir",
-            Circuit = "Bahrain International Circuit",
-            Country = "Bahrain",
+            CircuitId = circuit.Id,
             RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
         };
 
@@ -613,6 +628,10 @@ public class RaceServiceTests
         using var context = CreateInMemoryContext();
         var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
 
+        var circuit = CreateCircuit();
+        context.Circuits.Add(circuit);
+        await context.SaveChangesAsync();
+
         var now = DateTime.UtcNow;
         var races = new[]
         {
@@ -621,9 +640,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 1,
                 Name = "Past Race",
-                Location = "Location",
-                Circuit = "Circuit",
-                Country = "Country",
+                CircuitId = circuit.Id,
                 RaceDate = now.AddDays(-10),
             },
             new Race
@@ -631,9 +648,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 2,
                 Name = "Next Upcoming Race",
-                Location = "Location",
-                Circuit = "Circuit",
-                Country = "Country",
+                CircuitId = circuit.Id,
                 RaceDate = now.AddDays(5),
             },
             new Race
@@ -641,9 +656,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 3,
                 Name = "Future Race",
-                Location = "Location",
-                Circuit = "Circuit",
-                Country = "Country",
+                CircuitId = circuit.Id,
                 RaceDate = now.AddDays(15),
             },
         };
@@ -668,6 +681,10 @@ public class RaceServiceTests
         using var context = CreateInMemoryContext();
         var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
 
+        var circuit = CreateCircuit();
+        context.Circuits.Add(circuit);
+        await context.SaveChangesAsync();
+
         var now = DateTime.UtcNow;
         var races = new[]
         {
@@ -676,9 +693,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 1,
                 Name = "Next Upcoming Race",
-                Location = "Location",
-                Circuit = "Circuit",
-                Country = "Country",
+                CircuitId = circuit.Id,
                 RaceDate = now.AddDays(5),
             },
             new Race
@@ -686,9 +701,7 @@ public class RaceServiceTests
                 SeasonId = 1,
                 Round = 2,
                 Name = "Later Future Race",
-                Location = "Location",
-                Circuit = "Circuit",
-                Country = "Country",
+                CircuitId = circuit.Id,
                 RaceDate = now.AddDays(15),
             },
         };
@@ -713,15 +726,17 @@ public class RaceServiceTests
         using var context = CreateInMemoryContext();
         var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
 
+        var circuit = CreateCircuit();
+        context.Circuits.Add(circuit);
+        await context.SaveChangesAsync();
+
         var now = DateTime.UtcNow;
         var race = new Race
         {
             SeasonId = 1,
             Round = 1,
             Name = "Past Race",
-            Location = "Location",
-            Circuit = "Circuit",
-            Country = "Country",
+            CircuitId = circuit.Id,
             RaceDate = now.AddDays(-5),
         };
 
@@ -743,15 +758,17 @@ public class RaceServiceTests
         using var context = CreateInMemoryContext();
         var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
 
+        var circuit = CreateCircuit();
+        context.Circuits.Add(circuit);
+        await context.SaveChangesAsync();
+
         var now = DateTime.UtcNow;
         var race = new Race
         {
             SeasonId = 1,
             Round = 1,
             Name = "Current Race",
-            Location = "Location",
-            Circuit = "Circuit",
-            Country = "Country",
+            CircuitId = circuit.Id,
             RaceDate = now.AddSeconds(1), // Add 1 second buffer to account for test execution time
         };
 
@@ -776,14 +793,16 @@ public class RaceServiceTests
         var raceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc);
         var lockDeadline = new DateTime(2024, 3, 2, 14, 0, 0, DateTimeKind.Utc);
 
+        var circuit = CreateCircuit("Bahrain International Circuit", "Sakhir", "Bahrain");
+        context.Circuits.Add(circuit);
+        await context.SaveChangesAsync();
+
         var race = new Race
         {
             SeasonId = 1,
             Round = 1,
             Name = "Bahrain Grand Prix",
-            Location = "Sakhir",
-            Circuit = "Bahrain International Circuit",
-            Country = "Bahrain",
+            CircuitId = circuit.Id,
             RaceDate = raceDate,
             LockDeadline = lockDeadline,
         };
@@ -800,9 +819,10 @@ public class RaceServiceTests
         Assert.Equal(1, result.SeasonId);
         Assert.Equal(1, result.Round);
         Assert.Equal("Bahrain Grand Prix", result.Name);
-        Assert.Equal("Sakhir", result.Location);
-        Assert.Equal("Bahrain International Circuit", result.Circuit);
-        Assert.Equal("Bahrain", result.Country);
+        Assert.Equal(circuit.Id, result.Circuit.Id);
+        Assert.Equal("Bahrain International Circuit", result.Circuit.Name);
+        Assert.Equal("Sakhir", result.Circuit.Location);
+        Assert.Equal("Bahrain", result.Circuit.Country);
         Assert.Equal(raceDate, result.RaceDate);
         Assert.Equal(lockDeadline, result.LockDeadline);
     }

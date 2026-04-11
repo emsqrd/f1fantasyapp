@@ -1647,14 +1647,21 @@ public class TeamServiceTests
         DateTime? lockDeadline = null
     )
     {
+        var circuit = new Circuit
+        {
+            Name = "Test Circuit",
+            Location = "Test",
+            Country = "Test Country",
+        };
+        context.Circuits.Add(circuit);
+        context.SaveChanges();
+
         var race = new Race
         {
             SeasonId = 1,
             Round = 1,
             Name = "Test Grand Prix",
-            Location = "Test",
-            Circuit = "Test Circuit",
-            Country = "Test Country",
+            CircuitId = circuit.Id,
             RaceDate = raceDate,
             LockDeadline = lockDeadline,
         };

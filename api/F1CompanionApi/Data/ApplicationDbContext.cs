@@ -10,6 +10,7 @@ public class ApplicationDbContext : DbContext
 
     // Add your DbSets here
     public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<Circuit> Circuits => Set<Circuit>();
     public DbSet<Constructor> Constructors => Set<Constructor>();
     public DbSet<Driver> Drivers => Set<Driver>();
     public DbSet<League> Leagues => Set<League>();
@@ -89,6 +90,12 @@ public class ApplicationDbContext : DbContext
                 .HasOne(e => e.Season)
                 .WithMany(s => s.Races)
                 .HasForeignKey(e => e.SeasonId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity
+                .HasOne(e => e.Circuit)
+                .WithMany()
+                .HasForeignKey(e => e.CircuitId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
