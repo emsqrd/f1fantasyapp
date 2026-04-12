@@ -51,6 +51,7 @@ public class RaceService : IRaceService
 
         var races = await _dbContext
             .Races.Where(r => r.SeasonId == seasonId)
+            .Include(r => r.Circuit)
             .OrderBy(r => r.Round)
             .ToListAsync();
 
@@ -66,7 +67,9 @@ public class RaceService : IRaceService
     {
         _logger.LogDebug("Fetching race {RaceId}", id);
 
-        var race = await _dbContext.Races.FindAsync(id);
+        var race = await _dbContext
+            .Races.Include(r => r.Circuit)
+            .FirstOrDefaultAsync(r => r.Id == id);
 
         if (race is null)
             return null;

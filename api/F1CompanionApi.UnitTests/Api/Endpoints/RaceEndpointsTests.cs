@@ -19,6 +19,17 @@ public class RaceEndpointsTests
         _mockRaceService = new Mock<IRaceService>();
     }
 
+    private CircuitResponse CreateCircuit(string name, string location, string country)
+    {
+        return new CircuitResponse
+        {
+            Id = 1,
+            Name = name,
+            Location = location,
+            Country = country,
+        };
+    }
+
     #region GetRacesAsync Tests
 
     [Fact]
@@ -34,9 +45,7 @@ public class RaceEndpointsTests
                 SeasonId = seasonId,
                 Round = 1,
                 Name = "Bahrain Grand Prix",
-                Location = "Sakhir",
-                Circuit = "Bahrain International Circuit",
-                Country = "Bahrain",
+                Circuit = CreateCircuit("Bahrain International Circuit", "Sakhir", "Bahrain"),
                 RaceDate = new DateTime(2024, 3, 2, 0, 0, 0, DateTimeKind.Utc),
                 LockDeadline = new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc),
                 IsCurrent = false,
@@ -47,9 +56,7 @@ public class RaceEndpointsTests
                 SeasonId = seasonId,
                 Round = 2,
                 Name = "Saudi Arabian Grand Prix",
-                Location = "Jeddah",
-                Circuit = "Jeddah Corniche Circuit",
-                Country = "Saudi Arabia",
+                Circuit = CreateCircuit("Jeddah Corniche Circuit", "Jeddah", "Saudi Arabia"),
                 RaceDate = new DateTime(2024, 3, 9, 0, 0, 0, DateTimeKind.Utc),
                 LockDeadline = new DateTime(2024, 3, 8, 0, 0, 0, DateTimeKind.Utc),
                 IsCurrent = true,
@@ -80,9 +87,7 @@ public class RaceEndpointsTests
                 SeasonId = 2,
                 Round = 1,
                 Name = "Australian Grand Prix",
-                Location = "Melbourne",
-                Circuit = "Albert Park Circuit",
-                Country = "Australia",
+                Circuit = CreateCircuit("Albert Park Circuit", "Melbourne", "Australia"),
                 RaceDate = new DateTime(2024, 3, 24, 0, 0, 0, DateTimeKind.Utc),
                 LockDeadline = null,
                 IsCurrent = true,
@@ -151,9 +156,7 @@ public class RaceEndpointsTests
             SeasonId = 1,
             Round = 5,
             Name = "Monaco Grand Prix",
-            Location = "Monte Carlo",
-            Circuit = "Circuit de Monaco",
-            Country = "Monaco",
+            Circuit = CreateCircuit("Circuit de Monaco", "Monte Carlo", "Monaco"),
             RaceDate = new DateTime(2024, 5, 26, 0, 0, 0, DateTimeKind.Utc),
             LockDeadline = new DateTime(2024, 5, 25, 12, 0, 0, DateTimeKind.Utc),
             IsCurrent = true,
@@ -197,9 +200,7 @@ public class RaceEndpointsTests
             SeasonId = 1,
             Round = 10,
             Name = "British Grand Prix",
-            Location = "Silverstone",
-            Circuit = "Silverstone Circuit",
-            Country = "United Kingdom",
+            Circuit = CreateCircuit("Silverstone Circuit", "Silverstone", "United Kingdom"),
             RaceDate = new DateTime(2024, 7, 7, 0, 0, 0, DateTimeKind.Utc),
             LockDeadline = null,
             IsCurrent = false,

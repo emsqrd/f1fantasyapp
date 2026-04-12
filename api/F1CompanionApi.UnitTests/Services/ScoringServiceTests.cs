@@ -30,6 +30,15 @@ public class ScoringServiceTests
     private ScoringService CreateServiceWithContext(ApplicationDbContext context) =>
         new(context, _mockLogger.Object);
 
+    private static Circuit SeedCircuit(int id) =>
+        new()
+        {
+            Id = id,
+            Name = "Test Circuit",
+            Location = "Test",
+            Country = "Test Country",
+        };
+
     private static Race SeedRace(int id = 1, int seasonId = 1) =>
         new()
         {
@@ -37,9 +46,7 @@ public class ScoringServiceTests
             SeasonId = seasonId,
             Round = 1,
             Name = "Test GP",
-            Location = "Test",
-            Circuit = "Test Circuit",
-            Country = "Test Country",
+            CircuitId = id,
             RaceDate = new DateTime(2025, 3, 1),
         };
 
@@ -489,6 +496,7 @@ public class ScoringServiceTests
         var context = CreateInMemoryContext();
         var service = CreateServiceWithContext(context);
 
+        context.Circuits.Add(SeedCircuit(1));
         context.Races.Add(SeedRace(id: 1, seasonId: 1));
         // Driver 1: Q1 (10 pts), Race P1 from grid 1 (25 pts, 0 change)
         // Driver 2: Q5 (6 pts), Race P5 from grid 5 (10 pts, 0 change)
@@ -523,6 +531,7 @@ public class ScoringServiceTests
         var context = CreateInMemoryContext();
         var service = CreateServiceWithContext(context);
 
+        context.Circuits.Add(SeedCircuit(1));
         context.Races.Add(SeedRace(id: 1, seasonId: 1));
         context.DriverQualifyingResults.Add(QualResult(driverId: 1, position: 1)); // 10 pts
         context.DriverRaceResults.Add(SprintResult(driverId: 1, grid: 1, finish: 1)); // 8 pts
@@ -545,6 +554,7 @@ public class ScoringServiceTests
         var context = CreateInMemoryContext();
         var service = CreateServiceWithContext(context);
 
+        context.Circuits.Add(SeedCircuit(1));
         context.Races.Add(SeedRace(id: 1, seasonId: 1));
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 3, constructorId: 10));
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 4, constructorId: 10));
@@ -572,6 +582,7 @@ public class ScoringServiceTests
         var context = CreateInMemoryContext();
         var service = CreateServiceWithContext(context);
 
+        context.Circuits.Add(SeedCircuit(1));
         context.Races.Add(SeedRace(id: 1, seasonId: 1));
         // Constructor 10 has 2 active drivers but only 1 has results
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 3, constructorId: 10, isActive: true));
@@ -606,6 +617,7 @@ public class ScoringServiceTests
         var context = CreateInMemoryContext();
         var service = CreateServiceWithContext(context);
 
+        context.Circuits.Add(SeedCircuit(1));
         context.Races.Add(SeedRace(id: 1, seasonId: 1));
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 1, constructorId: 10));
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 2, constructorId: 10));
@@ -628,6 +640,7 @@ public class ScoringServiceTests
         var context = CreateInMemoryContext();
         var service = CreateServiceWithContext(context);
 
+        context.Circuits.Add(SeedCircuit(1));
         context.Races.Add(SeedRace(id: 1, seasonId: 1));
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 3, constructorId: 10));
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 4, constructorId: 10));

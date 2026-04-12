@@ -37,6 +37,15 @@ public class RaceResultServiceTests
             CountryAbbreviation = "GB",
         };
 
+    private static Circuit CreateCircuit(int id) =>
+        new()
+        {
+            Id = id,
+            Name = "Circuit",
+            Location = "Location",
+            Country = "Country",
+        };
+
     private static Race CreateRace(int id, bool hasSprint = false) =>
         new()
         {
@@ -44,9 +53,7 @@ public class RaceResultServiceTests
             SeasonId = 1,
             Round = id,
             Name = $"Race {id}",
-            Location = "Location",
-            Circuit = "Circuit",
-            Country = "Country",
+            CircuitId = id,
             RaceDate = DateTime.UtcNow,
             HasSprint = hasSprint,
         };
@@ -78,6 +85,7 @@ public class RaceResultServiceTests
         using var context = CreateInMemoryContext();
         context.Drivers.Add(CreateDriver(1, "VER"));
         context.Drivers.Add(CreateDriver(2, "HAM"));
+        context.Circuits.Add(CreateCircuit(10));
         context.Races.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
@@ -93,6 +101,7 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Drivers.Add(CreateDriver(1, "VER"));
+        context.Circuits.Add(CreateCircuit(10));
         context.Races.Add(CreateRace(10));
         context.DriverQualifyingResults.Add(
             new DriverQualifyingResult
@@ -128,6 +137,7 @@ public class RaceResultServiceTests
     public async Task SubmitQualifyingResultsAsync_ThrowsArgumentException_WhenDuplicateDriverIds()
     {
         using var context = CreateInMemoryContext();
+        context.Circuits.Add(CreateCircuit(10));
         context.Races.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
@@ -142,6 +152,7 @@ public class RaceResultServiceTests
     public async Task SubmitQualifyingResultsAsync_ThrowsArgumentException_WhenDriverNotFound()
     {
         using var context = CreateInMemoryContext();
+        context.Circuits.Add(CreateCircuit(10));
         context.Races.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
@@ -156,6 +167,7 @@ public class RaceResultServiceTests
     public async Task SubmitQualifyingResultsAsync_ReturnsEmpty_WhenEmptyBatch()
     {
         using var context = CreateInMemoryContext();
+        context.Circuits.Add(CreateCircuit(10));
         context.Races.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
@@ -175,6 +187,7 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Drivers.Add(CreateDriver(1, "VER"));
+        context.Circuits.Add(CreateCircuit(10));
         context.Races.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
@@ -194,6 +207,7 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Drivers.Add(CreateDriver(1, "VER"));
+        context.Circuits.Add(CreateCircuit(10));
         context.Races.Add(CreateRace(10));
         context.DriverRaceResults.Add(
             new DriverRaceResult
@@ -239,6 +253,7 @@ public class RaceResultServiceTests
     public async Task SubmitRaceResultsAsync_ThrowsSprintNotAvailableException_WhenRaceHasNoSprint()
     {
         using var context = CreateInMemoryContext();
+        context.Circuits.Add(CreateCircuit(10));
         context.Races.Add(CreateRace(10, hasSprint: false));
         await context.SaveChangesAsync();
 
@@ -254,6 +269,7 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Drivers.Add(CreateDriver(1, "VER"));
+        context.Circuits.Add(CreateCircuit(10));
         context.Races.Add(CreateRace(10, hasSprint: true));
         await context.SaveChangesAsync();
 
@@ -272,6 +288,7 @@ public class RaceResultServiceTests
     public async Task SubmitRaceResultsAsync_ThrowsArgumentException_WhenDuplicateDriverIds()
     {
         using var context = CreateInMemoryContext();
+        context.Circuits.Add(CreateCircuit(10));
         context.Races.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
@@ -290,6 +307,7 @@ public class RaceResultServiceTests
     public async Task SubmitRaceResultsAsync_ThrowsArgumentException_WhenDriverNotFound()
     {
         using var context = CreateInMemoryContext();
+        context.Circuits.Add(CreateCircuit(10));
         context.Races.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
@@ -304,6 +322,7 @@ public class RaceResultServiceTests
     public async Task SubmitRaceResultsAsync_ThrowsArgumentException_WhenMultipleFastestLaps()
     {
         using var context = CreateInMemoryContext();
+        context.Circuits.Add(CreateCircuit(10));
         context.Races.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
@@ -345,6 +364,7 @@ public class RaceResultServiceTests
     )
     {
         using var context = CreateInMemoryContext();
+        context.Circuits.Add(CreateCircuit(10));
         context.Races.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
@@ -363,6 +383,7 @@ public class RaceResultServiceTests
     public async Task SubmitRaceResultsAsync_ThrowsArgumentException_WhenFinishPositionNullForClassified()
     {
         using var context = CreateInMemoryContext();
+        context.Circuits.Add(CreateCircuit(10));
         context.Races.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
@@ -381,6 +402,7 @@ public class RaceResultServiceTests
     public async Task SubmitRaceResultsAsync_ReturnsEmpty_WhenEmptyBatch()
     {
         using var context = CreateInMemoryContext();
+        context.Circuits.Add(CreateCircuit(10));
         context.Races.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
