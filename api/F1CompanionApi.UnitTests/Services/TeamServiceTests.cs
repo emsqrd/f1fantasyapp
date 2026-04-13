@@ -1125,7 +1125,7 @@ public class TeamServiceTests
         var entry = await context.LineupEntries.FirstOrDefaultAsync();
         Assert.NotNull(entry);
         Assert.Equal(team.Id, entry.TeamId);
-        Assert.Equal(race.Id, entry.RaceId);
+        Assert.Equal(race.Id, entry.RaceWeekendId);
         Assert.Equal(driver.Id, entry.EntityId);
         Assert.Equal(LineupEntityType.Driver, entry.EntityType);
         Assert.Equal(0, entry.SlotPosition);
@@ -1172,7 +1172,7 @@ public class TeamServiceTests
         // Assert
         var entry = await context.LineupEntries.FirstOrDefaultAsync();
         Assert.NotNull(entry);
-        Assert.Equal(race.Id, entry.RaceId);
+        Assert.Equal(race.Id, entry.RaceWeekendId);
         Assert.Equal(LineupEntityType.Driver, entry.EntityType);
     }
 
@@ -1261,7 +1261,7 @@ public class TeamServiceTests
         var entry = await context.LineupEntries.FirstOrDefaultAsync();
         Assert.NotNull(entry);
         Assert.Equal(team.Id, entry.TeamId);
-        Assert.Equal(race.Id, entry.RaceId);
+        Assert.Equal(race.Id, entry.RaceWeekendId);
         Assert.Equal(constructor.Id, entry.EntityId);
         Assert.Equal(LineupEntityType.Constructor, entry.EntityType);
         Assert.Equal(0, entry.SlotPosition);
@@ -1385,7 +1385,7 @@ public class TeamServiceTests
 
         // Assert
         var entry = await context.LineupEntries.FirstOrDefaultAsync(le =>
-            le.TeamId == team.Id && le.RaceId == race.Id && le.EntityId == driver.Id
+            le.TeamId == team.Id && le.RaceWeekendId == race.Id && le.EntityId == driver.Id
         );
         Assert.NotNull(entry);
         Assert.True(entry.IsCaptain);
@@ -1416,10 +1416,10 @@ public class TeamServiceTests
 
         // Assert
         var entry1 = await context.LineupEntries.FirstOrDefaultAsync(le =>
-            le.TeamId == team.Id && le.RaceId == race.Id && le.EntityId == driver1.Id
+            le.TeamId == team.Id && le.RaceWeekendId == race.Id && le.EntityId == driver1.Id
         );
         var entry2 = await context.LineupEntries.FirstOrDefaultAsync(le =>
-            le.TeamId == team.Id && le.RaceId == race.Id && le.EntityId == driver2.Id
+            le.TeamId == team.Id && le.RaceWeekendId == race.Id && le.EntityId == driver2.Id
         );
         Assert.NotNull(entry1);
         Assert.False(entry1.IsCaptain);
@@ -1450,7 +1450,7 @@ public class TeamServiceTests
 
         // Assert
         var entry = await context.LineupEntries.FirstOrDefaultAsync(le =>
-            le.TeamId == team.Id && le.RaceId == race.Id && le.EntityId == driver.Id
+            le.TeamId == team.Id && le.RaceWeekendId == race.Id && le.EntityId == driver.Id
         );
         Assert.NotNull(entry);
         Assert.False(entry.IsCaptain);
@@ -1641,7 +1641,7 @@ public class TeamServiceTests
         return constructor;
     }
 
-    private Race CreateTestRace(
+    private RaceWeekend CreateTestRace(
         ApplicationDbContext context,
         DateTime raceDate,
         DateTime? lockDeadline = null
@@ -1656,7 +1656,7 @@ public class TeamServiceTests
         context.Circuits.Add(circuit);
         context.SaveChanges();
 
-        var race = new Race
+        var race = new RaceWeekend
         {
             SeasonId = 1,
             Round = 1,
@@ -1665,7 +1665,7 @@ public class TeamServiceTests
             RaceDate = raceDate,
             LockDeadline = lockDeadline,
         };
-        context.Races.Add(race);
+        context.RaceWeekends.Add(race);
         context.SaveChanges();
         return race;
     }

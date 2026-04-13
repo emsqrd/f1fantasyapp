@@ -51,7 +51,7 @@ public static class RaceResultEndpoints
     }
 
     private static async Task<IResult> SubmitQualifyingResultsAsync(
-        IRaceResultService raceResultService,
+        IRaceWeekendResultService raceWeekendResultService,
         int raceId,
         [FromBody] List<QualifyingResultItem> items,
         [FromServices] ILogger logger
@@ -59,26 +59,26 @@ public static class RaceResultEndpoints
     {
         logger.LogInformation("Submitting qualifying results for race {RaceId}", raceId);
 
-        var results = await raceResultService.SubmitQualifyingResultsAsync(raceId, items);
+        var results = await raceWeekendResultService.SubmitQualifyingResultsAsync(raceId, items);
 
         return Results.Ok(results);
     }
 
     private static async Task<IResult> GetQualifyingResultsAsync(
-        IRaceResultService raceResultService,
+        IRaceWeekendResultService raceWeekendResultService,
         int raceId,
         [FromServices] ILogger logger
     )
     {
         logger.LogDebug("Fetching qualifying results for race {RaceId}", raceId);
 
-        var results = await raceResultService.GetQualifyingResultsAsync(raceId);
+        var results = await raceWeekendResultService.GetQualifyingResultsAsync(raceId);
 
         return Results.Ok(results);
     }
 
     private static async Task<IResult> SubmitRaceResultsAsync(
-        IRaceResultService raceResultService,
+        IRaceWeekendResultService raceWeekendResultService,
         int raceId,
         [FromBody] List<RaceResultItem> items,
         [FromServices] ILogger logger
@@ -86,9 +86,9 @@ public static class RaceResultEndpoints
     {
         logger.LogInformation("Submitting race results for race {RaceId}", raceId);
 
-        var results = await raceResultService.SubmitRaceResultsAsync(
+        var results = await raceWeekendResultService.SubmitRaceResultsAsync(
             raceId,
-            SessionType.Race,
+            SessionType.GrandPrix,
             items
         );
 
@@ -96,20 +96,23 @@ public static class RaceResultEndpoints
     }
 
     private static async Task<IResult> GetRaceResultsAsync(
-        IRaceResultService raceResultService,
+        IRaceWeekendResultService raceWeekendResultService,
         int raceId,
         [FromServices] ILogger logger
     )
     {
         logger.LogDebug("Fetching race results for race {RaceId}", raceId);
 
-        var results = await raceResultService.GetRaceResultsAsync(raceId, SessionType.Race);
+        var results = await raceWeekendResultService.GetRaceResultsAsync(
+            raceId,
+            SessionType.GrandPrix
+        );
 
         return Results.Ok(results);
     }
 
     private static async Task<IResult> SubmitSprintResultsAsync(
-        IRaceResultService raceResultService,
+        IRaceWeekendResultService raceWeekendResultService,
         int raceId,
         [FromBody] List<RaceResultItem> items,
         [FromServices] ILogger logger
@@ -117,7 +120,7 @@ public static class RaceResultEndpoints
     {
         logger.LogInformation("Submitting sprint results for race {RaceId}", raceId);
 
-        var results = await raceResultService.SubmitRaceResultsAsync(
+        var results = await raceWeekendResultService.SubmitRaceResultsAsync(
             raceId,
             SessionType.Sprint,
             items
@@ -127,14 +130,17 @@ public static class RaceResultEndpoints
     }
 
     private static async Task<IResult> GetSprintResultsAsync(
-        IRaceResultService raceResultService,
+        IRaceWeekendResultService raceWeekendResultService,
         int raceId,
         [FromServices] ILogger logger
     )
     {
         logger.LogDebug("Fetching sprint results for race {RaceId}", raceId);
 
-        var results = await raceResultService.GetRaceResultsAsync(raceId, SessionType.Sprint);
+        var results = await raceWeekendResultService.GetRaceResultsAsync(
+            raceId,
+            SessionType.Sprint
+        );
 
         return Results.Ok(results);
     }

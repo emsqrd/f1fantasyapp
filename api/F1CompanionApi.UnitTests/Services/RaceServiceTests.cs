@@ -9,12 +9,12 @@ namespace F1CompanionApi.UnitTests.Services;
 
 public class RaceServiceTests
 {
-    private readonly Mock<ILogger<RaceService>> _mockLogger;
+    private readonly Mock<ILogger<RaceWeekendService>> _mockLogger;
     private readonly Mock<ISeasonService> _mockSeasonService;
 
     public RaceServiceTests()
     {
-        _mockLogger = new Mock<ILogger<RaceService>>();
+        _mockLogger = new Mock<ILogger<RaceWeekendService>>();
         _mockSeasonService = new Mock<ISeasonService>();
     }
 
@@ -57,7 +57,11 @@ public class RaceServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         SetupCurrentSeason(1);
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         var circuits = new[]
         {
@@ -70,7 +74,7 @@ public class RaceServiceTests
 
         var races = new[]
         {
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 1,
@@ -78,7 +82,7 @@ public class RaceServiceTests
                 CircuitId = circuits[0].Id,
                 RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 2,
@@ -86,7 +90,7 @@ public class RaceServiceTests
                 CircuitId = circuits[1].Id,
                 RaceDate = new DateTime(2024, 3, 9, 17, 0, 0, DateTimeKind.Utc),
             },
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 3,
@@ -96,7 +100,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.RaceWeekends.AddRange(races);
         await context.SaveChangesAsync();
 
         // Act
@@ -113,7 +117,11 @@ public class RaceServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         SetupCurrentSeason(1);
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         // Act
         await service.GetRacesAsync();
@@ -127,7 +135,11 @@ public class RaceServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         // Act
         await service.GetRacesAsync(1);
@@ -142,13 +154,17 @@ public class RaceServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         _mockSeasonService.Setup(s => s.GetCurrentSeasonAsync()).ReturnsAsync((Season?)null);
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         var circuit = CreateCircuit("Bahrain International Circuit", "Sakhir", "Bahrain");
         context.Circuits.Add(circuit);
         await context.SaveChangesAsync();
 
-        var race = new Race
+        var race = new RaceWeekend
         {
             SeasonId = 1,
             Round = 1,
@@ -157,7 +173,7 @@ public class RaceServiceTests
             RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
         };
 
-        context.Races.Add(race);
+        context.RaceWeekends.Add(race);
         await context.SaveChangesAsync();
 
         // Act
@@ -174,7 +190,11 @@ public class RaceServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         SetupCurrentSeason(1);
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         // Act
         var result = await service.GetRacesAsync();
@@ -190,7 +210,11 @@ public class RaceServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         SetupCurrentSeason(2);
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         var circuits = new[]
         {
@@ -203,7 +227,7 @@ public class RaceServiceTests
 
         var races = new[]
         {
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 1,
@@ -211,7 +235,7 @@ public class RaceServiceTests
                 CircuitId = circuits[0].Id,
                 RaceDate = new DateTime(2023, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 2,
                 Round = 1,
@@ -219,7 +243,7 @@ public class RaceServiceTests
                 CircuitId = circuits[1].Id,
                 RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 2,
                 Round = 2,
@@ -229,7 +253,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.RaceWeekends.AddRange(races);
         await context.SaveChangesAsync();
 
         // Act
@@ -247,7 +271,11 @@ public class RaceServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         SetupCurrentSeason(2); // Current season is 2
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         var circuits = new[]
         {
@@ -259,7 +287,7 @@ public class RaceServiceTests
 
         var races = new[]
         {
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 1,
@@ -267,7 +295,7 @@ public class RaceServiceTests
                 CircuitId = circuits[0].Id,
                 RaceDate = new DateTime(2023, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 2,
                 Round = 1,
@@ -277,7 +305,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.RaceWeekends.AddRange(races);
         await context.SaveChangesAsync();
 
         // Act
@@ -296,7 +324,11 @@ public class RaceServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         SetupCurrentSeason(1);
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         var circuits = new[]
         {
@@ -309,7 +341,7 @@ public class RaceServiceTests
 
         var races = new[]
         {
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 3,
@@ -317,7 +349,7 @@ public class RaceServiceTests
                 CircuitId = circuits[0].Id,
                 RaceDate = new DateTime(2024, 3, 24, 5, 0, 0, DateTimeKind.Utc),
             },
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 1,
@@ -325,7 +357,7 @@ public class RaceServiceTests
                 CircuitId = circuits[1].Id,
                 RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
             },
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 2,
@@ -335,7 +367,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.RaceWeekends.AddRange(races);
         await context.SaveChangesAsync();
 
         // Act
@@ -354,7 +386,11 @@ public class RaceServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         SetupCurrentSeason(1);
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         var circuits = new[]
         {
@@ -368,7 +404,7 @@ public class RaceServiceTests
         var now = DateTime.UtcNow;
         var races = new[]
         {
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 1,
@@ -376,7 +412,7 @@ public class RaceServiceTests
                 CircuitId = circuits[0].Id,
                 RaceDate = now.AddDays(-10),
             },
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 2,
@@ -384,7 +420,7 @@ public class RaceServiceTests
                 CircuitId = circuits[1].Id,
                 RaceDate = now.AddDays(5),
             },
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 3,
@@ -394,7 +430,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.RaceWeekends.AddRange(races);
         await context.SaveChangesAsync();
 
         // Act
@@ -413,7 +449,11 @@ public class RaceServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         SetupCurrentSeason(1);
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         var circuits = new[]
         {
@@ -426,7 +466,7 @@ public class RaceServiceTests
         var now = DateTime.UtcNow;
         var races = new[]
         {
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 1,
@@ -434,7 +474,7 @@ public class RaceServiceTests
                 CircuitId = circuits[0].Id,
                 RaceDate = now.AddDays(-20),
             },
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 2,
@@ -444,7 +484,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.RaceWeekends.AddRange(races);
         await context.SaveChangesAsync();
 
         // Act
@@ -461,7 +501,11 @@ public class RaceServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         SetupCurrentSeason(1);
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         var circuits = new[]
         {
@@ -474,7 +518,7 @@ public class RaceServiceTests
         var now = DateTime.UtcNow;
         var races = new[]
         {
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 1,
@@ -482,7 +526,7 @@ public class RaceServiceTests
                 CircuitId = circuits[0].Id,
                 RaceDate = now.AddDays(5),
             },
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 2,
@@ -492,7 +536,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.RaceWeekends.AddRange(races);
         await context.SaveChangesAsync();
 
         // Act
@@ -510,14 +554,18 @@ public class RaceServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         SetupCurrentSeason(1);
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         var circuit = CreateCircuit("Current Circuit", "Current Location", "Current Country");
         context.Circuits.Add(circuit);
         await context.SaveChangesAsync();
 
         var now = DateTime.UtcNow;
-        var race = new Race
+        var race = new RaceWeekend
         {
             SeasonId = 1,
             Round = 1,
@@ -526,7 +574,7 @@ public class RaceServiceTests
             RaceDate = now.AddSeconds(1), // Add 1 second buffer to account for test execution time
         };
 
-        context.Races.Add(race);
+        context.RaceWeekends.Add(race);
         await context.SaveChangesAsync();
 
         // Act
@@ -543,7 +591,11 @@ public class RaceServiceTests
         // Arrange
         using var context = CreateInMemoryContext();
         SetupCurrentSeason(1);
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         var raceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc);
         var lockDeadline = new DateTime(2024, 3, 2, 14, 0, 0, DateTimeKind.Utc);
@@ -552,7 +604,7 @@ public class RaceServiceTests
         context.Circuits.Add(circuit);
         await context.SaveChangesAsync();
 
-        var race = new Race
+        var race = new RaceWeekend
         {
             SeasonId = 1,
             Round = 1,
@@ -562,7 +614,7 @@ public class RaceServiceTests
             LockDeadline = lockDeadline,
         };
 
-        context.Races.Add(race);
+        context.RaceWeekends.Add(race);
         await context.SaveChangesAsync();
 
         // Act
@@ -590,13 +642,17 @@ public class RaceServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         var circuit = CreateCircuit("Bahrain International Circuit", "Sakhir", "Bahrain");
         context.Circuits.Add(circuit);
         await context.SaveChangesAsync();
 
-        var race = new Race
+        var race = new RaceWeekend
         {
             SeasonId = 1,
             Round = 1,
@@ -605,7 +661,7 @@ public class RaceServiceTests
             RaceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc),
         };
 
-        context.Races.Add(race);
+        context.RaceWeekends.Add(race);
         await context.SaveChangesAsync();
 
         // Act
@@ -622,7 +678,11 @@ public class RaceServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         // Act
         var result = await service.GetRaceByIdAsync(999);
@@ -636,7 +696,11 @@ public class RaceServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         // Act
         var result = await service.GetRaceByIdAsync(1);
@@ -650,7 +714,11 @@ public class RaceServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         var circuits = new[]
         {
@@ -664,7 +732,7 @@ public class RaceServiceTests
         var now = DateTime.UtcNow;
         var races = new[]
         {
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 1,
@@ -672,7 +740,7 @@ public class RaceServiceTests
                 CircuitId = circuits[0].Id,
                 RaceDate = now.AddDays(-10),
             },
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 2,
@@ -680,7 +748,7 @@ public class RaceServiceTests
                 CircuitId = circuits[1].Id,
                 RaceDate = now.AddDays(5),
             },
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 3,
@@ -690,7 +758,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.RaceWeekends.AddRange(races);
         await context.SaveChangesAsync();
 
         var nextUpcomingRace = races[1];
@@ -708,7 +776,11 @@ public class RaceServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         var circuits = new[]
         {
@@ -721,7 +793,7 @@ public class RaceServiceTests
         var now = DateTime.UtcNow;
         var races = new[]
         {
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 1,
@@ -729,7 +801,7 @@ public class RaceServiceTests
                 CircuitId = circuits[0].Id,
                 RaceDate = now.AddDays(5),
             },
-            new Race
+            new RaceWeekend
             {
                 SeasonId = 1,
                 Round = 2,
@@ -739,7 +811,7 @@ public class RaceServiceTests
             },
         };
 
-        context.Races.AddRange(races);
+        context.RaceWeekends.AddRange(races);
         await context.SaveChangesAsync();
 
         var laterRace = races[1];
@@ -757,14 +829,18 @@ public class RaceServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         var circuit = CreateCircuit("Circuit 1", "Location", "Country");
         context.Circuits.Add(circuit);
         await context.SaveChangesAsync();
 
         var now = DateTime.UtcNow;
-        var race = new Race
+        var race = new RaceWeekend
         {
             SeasonId = 1,
             Round = 1,
@@ -773,7 +849,7 @@ public class RaceServiceTests
             RaceDate = now.AddDays(-5),
         };
 
-        context.Races.Add(race);
+        context.RaceWeekends.Add(race);
         await context.SaveChangesAsync();
 
         // Act
@@ -789,14 +865,18 @@ public class RaceServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         var circuit = CreateCircuit("Circuit 1", "Location", "Country");
         context.Circuits.Add(circuit);
         await context.SaveChangesAsync();
 
         var now = DateTime.UtcNow;
-        var race = new Race
+        var race = new RaceWeekend
         {
             SeasonId = 1,
             Round = 1,
@@ -805,7 +885,7 @@ public class RaceServiceTests
             RaceDate = now.AddSeconds(1), // Add 1 second buffer to account for test execution time
         };
 
-        context.Races.Add(race);
+        context.RaceWeekends.Add(race);
         await context.SaveChangesAsync();
 
         // Act
@@ -821,7 +901,11 @@ public class RaceServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceService(context, _mockLogger.Object, _mockSeasonService.Object);
+        var service = new RaceWeekendService(
+            context,
+            _mockLogger.Object,
+            _mockSeasonService.Object
+        );
 
         var raceDate = new DateTime(2024, 3, 2, 15, 0, 0, DateTimeKind.Utc);
         var lockDeadline = new DateTime(2024, 3, 2, 14, 0, 0, DateTimeKind.Utc);
@@ -830,7 +914,7 @@ public class RaceServiceTests
         context.Circuits.Add(circuit);
         await context.SaveChangesAsync();
 
-        var race = new Race
+        var race = new RaceWeekend
         {
             SeasonId = 1,
             Round = 1,
@@ -840,7 +924,7 @@ public class RaceServiceTests
             LockDeadline = lockDeadline,
         };
 
-        context.Races.Add(race);
+        context.RaceWeekends.Add(race);
         await context.SaveChangesAsync();
 
         // Act

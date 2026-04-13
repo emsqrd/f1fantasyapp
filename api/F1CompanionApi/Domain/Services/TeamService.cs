@@ -95,14 +95,14 @@ public class TeamService : ITeamService
             return null;
         }
 
-        var currentRace = await GetCurrentRaceAsync();
+        var currentRaceWeekend = await GetCurrentRaceWeekendAsync();
 
-        int? captainDriverId = currentRace is null
+        int? captainDriverId = currentRaceWeekend is null
             ? null
             : await _dbContext
                 .LineupEntries.Where(le =>
                     le.TeamId == team.Id
-                    && le.RaceId == currentRace.Id
+                    && le.RaceWeekendId == currentRaceWeekend.Id
                     && le.EntityType == LineupEntityType.Driver
                     && le.IsCaptain
                 )
@@ -121,7 +121,7 @@ public class TeamService : ITeamService
             slotPosition
         );
 
-        var currentRace = await GetCurrentRaceOrThrowIfLockedAsync();
+        var currentRaceWeekend = await GetCurrentRaceWeekendOrThrowIfLockedAsync();
 
         // Validate team ownership
         var team = await _dbContext
@@ -212,13 +212,13 @@ public class TeamService : ITeamService
 
         _dbContext.TeamDrivers.Add(teamDriver);
 
-        if (currentRace is not null)
+        if (currentRaceWeekend is not null)
         {
             _dbContext.LineupEntries.Add(
                 new LineupEntry
                 {
                     TeamId = teamId,
-                    RaceId = currentRace.Id,
+                    RaceWeekendId = currentRaceWeekend.Id,
                     EntityId = driverId,
                     EntityType = LineupEntityType.Driver,
                     SlotPosition = slotPosition,
@@ -245,7 +245,7 @@ public class TeamService : ITeamService
             slotPosition
         );
 
-        var currentRace = await GetCurrentRaceOrThrowIfLockedAsync();
+        var currentRaceWeekend = await GetCurrentRaceWeekendOrThrowIfLockedAsync();
 
         // Validate team ownership
         var team = await _dbContext.Teams.FirstOrDefaultAsync(t => t.Id == teamId);
@@ -283,11 +283,11 @@ public class TeamService : ITeamService
 
         _dbContext.TeamDrivers.Remove(teamDriver);
 
-        if (currentRace is not null)
+        if (currentRaceWeekend is not null)
         {
             var entry = await _dbContext.LineupEntries.FirstOrDefaultAsync(le =>
                 le.TeamId == teamId
-                && le.RaceId == currentRace.Id
+                && le.RaceWeekendId == currentRaceWeekend.Id
                 && le.EntityId == teamDriver.DriverId
                 && le.EntityType == LineupEntityType.Driver
             );
@@ -319,7 +319,7 @@ public class TeamService : ITeamService
             slotPosition
         );
 
-        var currentRace = await GetCurrentRaceOrThrowIfLockedAsync();
+        var currentRaceWeekend = await GetCurrentRaceWeekendOrThrowIfLockedAsync();
 
         // Validate team ownership
         var team = await _dbContext
@@ -418,13 +418,13 @@ public class TeamService : ITeamService
 
         _dbContext.TeamConstructors.Add(teamConstructor);
 
-        if (currentRace is not null)
+        if (currentRaceWeekend is not null)
         {
             _dbContext.LineupEntries.Add(
                 new LineupEntry
                 {
                     TeamId = teamId,
-                    RaceId = currentRace.Id,
+                    RaceWeekendId = currentRaceWeekend.Id,
                     EntityId = constructorId,
                     EntityType = LineupEntityType.Constructor,
                     SlotPosition = slotPosition,
@@ -451,7 +451,7 @@ public class TeamService : ITeamService
             slotPosition
         );
 
-        var currentRace = await GetCurrentRaceOrThrowIfLockedAsync();
+        var currentRaceWeekend = await GetCurrentRaceWeekendOrThrowIfLockedAsync();
 
         // Validate team ownership
         var team = await _dbContext.Teams.FirstOrDefaultAsync(t => t.Id == teamId);
@@ -491,11 +491,11 @@ public class TeamService : ITeamService
 
         _dbContext.TeamConstructors.Remove(teamConstructor);
 
-        if (currentRace is not null)
+        if (currentRaceWeekend is not null)
         {
             var entry = await _dbContext.LineupEntries.FirstOrDefaultAsync(le =>
                 le.TeamId == teamId
-                && le.RaceId == currentRace.Id
+                && le.RaceWeekendId == currentRaceWeekend.Id
                 && le.EntityId == teamConstructor.ConstructorId
                 && le.EntityType == LineupEntityType.Constructor
             );
@@ -522,7 +522,7 @@ public class TeamService : ITeamService
             teamId
         );
 
-        var currentRace = await GetCurrentRaceOrThrowIfLockedAsync();
+        var currentRaceWeekend = await GetCurrentRaceWeekendOrThrowIfLockedAsync();
 
         var team = await _dbContext.Teams.FirstOrDefaultAsync(t => t.Id == teamId);
 
@@ -543,7 +543,7 @@ public class TeamService : ITeamService
             throw new TeamOwnershipException(teamId, team.UserId, userId);
         }
 
-        if (currentRace is null)
+        if (currentRaceWeekend is null)
         {
             _logger.LogWarning("No upcoming race — cannot set captain for team {TeamId}", teamId);
             throw new NoUpcomingRaceException();
@@ -555,7 +555,7 @@ public class TeamService : ITeamService
         {
             newCaptainEntry = await _dbContext.LineupEntries.FirstOrDefaultAsync(le =>
                 le.TeamId == teamId
-                && le.RaceId == currentRace.Id
+                && le.RaceWeekendId == currentRaceWeekend.Id
                 && le.EntityId == driverId
                 && le.EntityType == LineupEntityType.Driver
             );
@@ -566,7 +566,7 @@ public class TeamService : ITeamService
                     "Driver {DriverId} is not in the lineup for team {TeamId} race {RaceId}",
                     driverId,
                     teamId,
-                    currentRace.Id
+                    currentRaceWeekend.Id
                 );
                 throw new InvalidOperationException(
                     $"Driver {driverId} is not in the current lineup"
@@ -575,7 +575,7 @@ public class TeamService : ITeamService
         }
 
         var existingCaptain = await _dbContext.LineupEntries.FirstOrDefaultAsync(le =>
-            le.TeamId == teamId && le.RaceId == currentRace.Id && le.IsCaptain
+            le.TeamId == teamId && le.RaceWeekendId == currentRaceWeekend.Id && le.IsCaptain
         );
 
         if (existingCaptain is not null)
@@ -590,27 +590,30 @@ public class TeamService : ITeamService
             "Captain set to driver {DriverId} for team {TeamId} race {RaceId}",
             driverId,
             teamId,
-            currentRace.Id
+            currentRaceWeekend.Id
         );
     }
 
-    private async Task<Race?> GetCurrentRaceAsync()
+    private async Task<RaceWeekend?> GetCurrentRaceWeekendAsync()
     {
         var now = DateTime.UtcNow;
         return await _dbContext
-            .Races.Where(r => r.RaceDate >= now)
+            .RaceWeekends.Where(r => r.RaceDate >= now)
             .OrderBy(r => r.RaceDate)
             .FirstOrDefaultAsync();
     }
 
-    private async Task<Race?> GetCurrentRaceOrThrowIfLockedAsync()
+    private async Task<RaceWeekend?> GetCurrentRaceWeekendOrThrowIfLockedAsync()
     {
-        var currentRace = await GetCurrentRaceAsync();
+        var currentRaceWeekend = await GetCurrentRaceWeekendAsync();
 
         var now = DateTime.UtcNow;
-        if (currentRace?.LockDeadline is not null && now >= currentRace.LockDeadline)
-            throw new RosterLockedException(currentRace.Name, currentRace.LockDeadline.Value);
+        if (currentRaceWeekend?.LockDeadline is not null && now >= currentRaceWeekend.LockDeadline)
+            throw new RosterLockedException(
+                currentRaceWeekend.Name,
+                currentRaceWeekend.LockDeadline.Value
+            );
 
-        return currentRace;
+        return currentRaceWeekend;
     }
 }

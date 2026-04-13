@@ -2,11 +2,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Data.Entities;
 
-[Index(nameof(DriverId), nameof(RaceId), IsUnique = true)]
+[Index(nameof(DriverId), nameof(RaceWeekendId), IsUnique = true)]
 public class DriverRaceScore : BaseEntity
 {
     public required int DriverId { get; set; }
-    public required int RaceId { get; set; }
+    public required int RaceWeekendId { get; set; }
 
     public int? QualifyingPositionPoints { get; set; }
 
@@ -28,5 +28,5 @@ public class DriverRaceScore : BaseEntity
     public required DateTime CalculatedAt { get; set; }
 
     public Driver Driver { get; set; } = null!;
-    public Race Race { get; set; } = null!;
+    public RaceWeekend RaceWeekend { get; set; } = null!;
 }

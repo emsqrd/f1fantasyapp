@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 namespace F1CompanionApi.Data.Entities;
 
 [Index(nameof(SeasonId), nameof(Round), IsUnique = true)]
-public class Race : BaseEntity
+public class RaceWeekend : BaseEntity
 {
     public required int SeasonId { get; set; }
     public required int Round { get; set; }

@@ -6,26 +6,29 @@ namespace F1CompanionApi.Api.Mappers;
 public static class RaceResponseMapper
 {
     public static IEnumerable<RaceResponse> ToResponseModel(
-        this IEnumerable<Race> races,
+        this IEnumerable<RaceWeekend> raceWeekends,
         int? currentRaceId
     )
     {
-        return races.Select(r => r.ToResponseModel(currentRaceId));
+        return raceWeekends.Select(r => r.ToResponseModel(currentRaceId));
     }
 
-    public static RaceResponse ToResponseModel(this Race race, int? currentRaceId = null)
+    public static RaceResponse ToResponseModel(
+        this RaceWeekend raceWeekend,
+        int? currentRaceId = null
+    )
     {
         return new RaceResponse
         {
-            Id = race.Id,
-            SeasonId = race.SeasonId,
-            Round = race.Round,
-            Name = race.Name,
-            Circuit = race.Circuit.ToResponseModel(),
-            RaceDate = race.RaceDate,
-            LockDeadline = race.LockDeadline,
-            IsCurrent = race.Id == currentRaceId,
-            HasSprint = race.HasSprint,
+            Id = raceWeekend.Id,
+            SeasonId = raceWeekend.SeasonId,
+            Round = raceWeekend.Round,
+            Name = raceWeekend.Name,
+            Circuit = raceWeekend.Circuit.ToResponseModel(),
+            RaceDate = raceWeekend.RaceDate,
+            LockDeadline = raceWeekend.LockDeadline,
+            IsCurrent = raceWeekend.Id == currentRaceId,
+            HasSprint = raceWeekend.HasSprint,
         };
     }
 }

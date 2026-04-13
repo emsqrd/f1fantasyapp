@@ -22,27 +22,27 @@ public static class RaceEndpoints
     }
 
     private static async Task<IResult> GetRacesAsync(
-        IRaceService raceService,
+        IRaceWeekendService raceWeekendService,
         [FromQuery] int? seasonId,
         [FromServices] ILogger logger
     )
     {
         logger.LogDebug("Fetching races for season {SeasonId}", seasonId);
 
-        var races = await raceService.GetRacesAsync(seasonId);
+        var races = await raceWeekendService.GetRacesAsync(seasonId);
 
         return Results.Ok(races);
     }
 
     private static async Task<IResult> GetRaceByIdAsync(
-        IRaceService raceService,
+        IRaceWeekendService raceWeekendService,
         int id,
         [FromServices] ILogger logger
     )
     {
         logger.LogDebug("Fetching race {RaceId}", id);
 
-        var race = await raceService.GetRaceByIdAsync(id);
+        var race = await raceWeekendService.GetRaceByIdAsync(id);
 
         if (race is null)
         {

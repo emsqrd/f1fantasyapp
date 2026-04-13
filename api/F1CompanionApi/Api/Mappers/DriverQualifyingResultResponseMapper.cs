@@ -18,7 +18,7 @@ public static class DriverQualifyingResultResponseMapper
         {
             Id = result.Id,
             DriverId = result.DriverId,
-            RaceId = result.RaceId,
+            RaceId = result.RaceWeekendId,
             Position = result.Position,
         };
     }

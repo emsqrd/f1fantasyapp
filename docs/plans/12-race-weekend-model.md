@@ -122,6 +122,7 @@ Each commit independently builds, tests, lints, formats. Each is a gate.
 - Rename remaining API-layer names:
   - `RaceResponse.cs` → `RaceWeekendResponse.cs` (class `RaceResponse` → `RaceWeekendResponse`)
   - `RaceResponseMapper.cs` → `RaceWeekendResponseMapper.cs`
+  - `RaceResultItem.cs` → `RacingResultItem.cs` (class `RaceResultItem` → `RacingResultItem`; mirrors `DriverRacingResult`)
   - Endpoint classes reference `IRaceWeekendResultService` (renamed in Commit B)
 - DTOs: `RaceWeekendResponse`; `DriverQualifyingResultResponse` and `DriverRacingResultResponse` with FK field renamed to `raceWeekendId` (surface `round` + `seasonId` alongside for client convenience).
 - Tests:

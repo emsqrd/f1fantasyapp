@@ -11,11 +11,11 @@ namespace F1CompanionApi.UnitTests.Services;
 
 public class RaceResultServiceTests
 {
-    private readonly Mock<ILogger<RaceResultService>> _mockLogger;
+    private readonly Mock<ILogger<RaceWeekendResultService>> _mockLogger;
 
     public RaceResultServiceTests()
     {
-        _mockLogger = new Mock<ILogger<RaceResultService>>();
+        _mockLogger = new Mock<ILogger<RaceWeekendResultService>>();
     }
 
     private ApplicationDbContext CreateInMemoryContext()
@@ -46,7 +46,7 @@ public class RaceResultServiceTests
             Country = "Country",
         };
 
-    private static Race CreateRace(int id, bool hasSprint = false) =>
+    private static RaceWeekend CreateRace(int id, bool hasSprint = false) =>
         new()
         {
             Id = id,
@@ -65,7 +65,7 @@ public class RaceResultServiceTests
         int driverId,
         int grid = 1,
         int? finish = 1,
-        RaceStatus status = RaceStatus.Classified
+        RacingStatus status = RacingStatus.Classified
     ) =>
         new()
         {
@@ -86,10 +86,10 @@ public class RaceResultServiceTests
         context.Drivers.Add(CreateDriver(1, "VER"));
         context.Drivers.Add(CreateDriver(2, "HAM"));
         context.Circuits.Add(CreateCircuit(10));
-        context.Races.Add(CreateRace(10));
+        context.RaceWeekends.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         await service.SubmitQualifyingResultsAsync(10, [QualItem(1, 1), QualItem(2, 2)]);
 
@@ -102,18 +102,18 @@ public class RaceResultServiceTests
         using var context = CreateInMemoryContext();
         context.Drivers.Add(CreateDriver(1, "VER"));
         context.Circuits.Add(CreateCircuit(10));
-        context.Races.Add(CreateRace(10));
+        context.RaceWeekends.Add(CreateRace(10));
         context.DriverQualifyingResults.Add(
             new DriverQualifyingResult
             {
                 DriverId = 1,
-                RaceId = 10,
+                RaceWeekendId = 10,
                 Position = 5,
             }
         );
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         await service.SubmitQualifyingResultsAsync(10, [QualItem(1, 1)]);
 
@@ -126,7 +126,7 @@ public class RaceResultServiceTests
     public async Task SubmitQualifyingResultsAsync_ThrowsKeyNotFoundException_WhenRaceNotFound()
     {
         using var context = CreateInMemoryContext();
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             service.SubmitQualifyingResultsAsync(99, [QualItem(1, 1)])
@@ -138,10 +138,10 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Circuits.Add(CreateCircuit(10));
-        context.Races.Add(CreateRace(10));
+        context.RaceWeekends.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             service.SubmitQualifyingResultsAsync(10, [QualItem(1, 1), QualItem(1, 2)])
@@ -153,10 +153,10 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Circuits.Add(CreateCircuit(10));
-        context.Races.Add(CreateRace(10));
+        context.RaceWeekends.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             service.SubmitQualifyingResultsAsync(10, [QualItem(99, 1)])
@@ -168,10 +168,10 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Circuits.Add(CreateCircuit(10));
-        context.Races.Add(CreateRace(10));
+        context.RaceWeekends.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         var result = await service.SubmitQualifyingResultsAsync(10, []);
 
@@ -188,18 +188,18 @@ public class RaceResultServiceTests
         using var context = CreateInMemoryContext();
         context.Drivers.Add(CreateDriver(1, "VER"));
         context.Circuits.Add(CreateCircuit(10));
-        context.Races.Add(CreateRace(10));
+        context.RaceWeekends.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         await service.SubmitRaceResultsAsync(
             10,
-            SessionType.Race,
+            SessionType.GrandPrix,
             [RaceItem(1, grid: 1, finish: 1)]
         );
 
-        Assert.Equal(1, await context.DriverRaceResults.CountAsync());
+        Assert.Equal(1, await context.DriverRacingResults.CountAsync());
     }
 
     [Fact]
@@ -208,44 +208,44 @@ public class RaceResultServiceTests
         using var context = CreateInMemoryContext();
         context.Drivers.Add(CreateDriver(1, "VER"));
         context.Circuits.Add(CreateCircuit(10));
-        context.Races.Add(CreateRace(10));
-        context.DriverRaceResults.Add(
-            new DriverRaceResult
+        context.RaceWeekends.Add(CreateRace(10));
+        context.DriverRacingResults.Add(
+            new DriverRacingResult
             {
                 DriverId = 1,
-                RaceId = 10,
-                SessionType = SessionType.Race,
+                RaceWeekendId = 10,
+                SessionType = SessionType.GrandPrix,
                 GridPosition = 5,
                 FinishPosition = 3,
                 Overtakes = 2,
                 FastestLap = false,
-                Status = RaceStatus.Classified,
+                Status = RacingStatus.Classified,
             }
         );
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         await service.SubmitRaceResultsAsync(
             10,
-            SessionType.Race,
+            SessionType.GrandPrix,
             [RaceItem(1, grid: 1, finish: 1)]
         );
 
-        var saved = await context.DriverRaceResults.SingleAsync();
+        var saved = await context.DriverRacingResults.SingleAsync();
         Assert.Equal(1, saved.GridPosition);
         Assert.Equal(1, saved.FinishPosition);
-        Assert.Equal(1, await context.DriverRaceResults.CountAsync());
+        Assert.Equal(1, await context.DriverRacingResults.CountAsync());
     }
 
     [Fact]
     public async Task SubmitRaceResultsAsync_ThrowsKeyNotFoundException_WhenRaceNotFound()
     {
         using var context = CreateInMemoryContext();
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            service.SubmitRaceResultsAsync(99, SessionType.Race, [RaceItem(1)])
+            service.SubmitRaceResultsAsync(99, SessionType.GrandPrix, [RaceItem(1)])
         );
     }
 
@@ -254,10 +254,10 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Circuits.Add(CreateCircuit(10));
-        context.Races.Add(CreateRace(10, hasSprint: false));
+        context.RaceWeekends.Add(CreateRace(10, hasSprint: false));
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         await Assert.ThrowsAsync<SprintNotAvailableException>(() =>
             service.SubmitRaceResultsAsync(10, SessionType.Sprint, [RaceItem(1)])
@@ -270,10 +270,10 @@ public class RaceResultServiceTests
         using var context = CreateInMemoryContext();
         context.Drivers.Add(CreateDriver(1, "VER"));
         context.Circuits.Add(CreateCircuit(10));
-        context.Races.Add(CreateRace(10, hasSprint: true));
+        context.RaceWeekends.Add(CreateRace(10, hasSprint: true));
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         var result = await service.SubmitRaceResultsAsync(
             10,
@@ -289,15 +289,15 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Circuits.Add(CreateCircuit(10));
-        context.Races.Add(CreateRace(10));
+        context.RaceWeekends.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             service.SubmitRaceResultsAsync(
                 10,
-                SessionType.Race,
+                SessionType.GrandPrix,
                 [RaceItem(1, grid: 1, finish: 1), RaceItem(1, grid: 2, finish: 2)]
             )
         );
@@ -308,13 +308,13 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Circuits.Add(CreateCircuit(10));
-        context.Races.Add(CreateRace(10));
+        context.RaceWeekends.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.SubmitRaceResultsAsync(10, SessionType.Race, [RaceItem(99)])
+            service.SubmitRaceResultsAsync(10, SessionType.GrandPrix, [RaceItem(99)])
         );
     }
 
@@ -323,10 +323,10 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Circuits.Add(CreateCircuit(10));
-        context.Races.Add(CreateRace(10));
+        context.RaceWeekends.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         var items = new List<RaceResultItem>
         {
@@ -337,7 +337,7 @@ public class RaceResultServiceTests
                 FinishPosition = 1,
                 Overtakes = 0,
                 FastestLap = true,
-                Status = RaceStatus.Classified,
+                Status = RacingStatus.Classified,
             },
             new()
             {
@@ -346,34 +346,34 @@ public class RaceResultServiceTests
                 FinishPosition = 2,
                 Overtakes = 0,
                 FastestLap = true,
-                Status = RaceStatus.Classified,
+                Status = RacingStatus.Classified,
             },
         };
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.SubmitRaceResultsAsync(10, SessionType.Race, items)
+            service.SubmitRaceResultsAsync(10, SessionType.GrandPrix, items)
         );
     }
 
     [Theory]
-    [InlineData(RaceStatus.DNF)]
-    [InlineData(RaceStatus.DSQ)]
-    [InlineData(RaceStatus.DNS)]
+    [InlineData(RacingStatus.DNF)]
+    [InlineData(RacingStatus.DSQ)]
+    [InlineData(RacingStatus.DNS)]
     public async Task SubmitRaceResultsAsync_ThrowsArgumentException_WhenFinishPositionSetForNonClassified(
-        RaceStatus status
+        RacingStatus status
     )
     {
         using var context = CreateInMemoryContext();
         context.Circuits.Add(CreateCircuit(10));
-        context.Races.Add(CreateRace(10));
+        context.RaceWeekends.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             service.SubmitRaceResultsAsync(
                 10,
-                SessionType.Race,
+                SessionType.GrandPrix,
                 [RaceItem(1, grid: 1, finish: 1, status: status)]
             )
         );
@@ -384,16 +384,16 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Circuits.Add(CreateCircuit(10));
-        context.Races.Add(CreateRace(10));
+        context.RaceWeekends.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             service.SubmitRaceResultsAsync(
                 10,
-                SessionType.Race,
-                [RaceItem(1, grid: 1, finish: null, status: RaceStatus.Classified)]
+                SessionType.GrandPrix,
+                [RaceItem(1, grid: 1, finish: null, status: RacingStatus.Classified)]
             )
         );
     }
@@ -403,12 +403,12 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Circuits.Add(CreateCircuit(10));
-        context.Races.Add(CreateRace(10));
+        context.RaceWeekends.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
-        var result = await service.SubmitRaceResultsAsync(10, SessionType.Race, []);
+        var result = await service.SubmitRaceResultsAsync(10, SessionType.GrandPrix, []);
 
         Assert.Empty(result);
     }
@@ -425,19 +425,19 @@ public class RaceResultServiceTests
             new DriverQualifyingResult
             {
                 DriverId = 2,
-                RaceId = 10,
+                RaceWeekendId = 10,
                 Position = 2,
             },
             new DriverQualifyingResult
             {
                 DriverId = 1,
-                RaceId = 10,
+                RaceWeekendId = 10,
                 Position = 1,
             }
         );
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         var result = (await service.GetQualifyingResultsAsync(10)).ToList();
 
@@ -454,19 +454,19 @@ public class RaceResultServiceTests
             new DriverQualifyingResult
             {
                 DriverId = 1,
-                RaceId = 10,
+                RaceWeekendId = 10,
                 Position = 1,
             },
             new DriverQualifyingResult
             {
                 DriverId = 1,
-                RaceId = 11,
+                RaceWeekendId = 11,
                 Position = 3,
             }
         );
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
         var result = (await service.GetQualifyingResultsAsync(10)).ToList();
 
@@ -482,35 +482,35 @@ public class RaceResultServiceTests
     public async Task GetRaceResultsAsync_ReturnsResults_OrderedByFinishPosition()
     {
         using var context = CreateInMemoryContext();
-        context.DriverRaceResults.AddRange(
-            new DriverRaceResult
+        context.DriverRacingResults.AddRange(
+            new DriverRacingResult
             {
                 DriverId = 2,
-                RaceId = 10,
-                SessionType = SessionType.Race,
+                RaceWeekendId = 10,
+                SessionType = SessionType.GrandPrix,
                 GridPosition = 2,
                 FinishPosition = 2,
                 Overtakes = 0,
                 FastestLap = false,
-                Status = RaceStatus.Classified,
+                Status = RacingStatus.Classified,
             },
-            new DriverRaceResult
+            new DriverRacingResult
             {
                 DriverId = 1,
-                RaceId = 10,
-                SessionType = SessionType.Race,
+                RaceWeekendId = 10,
+                SessionType = SessionType.GrandPrix,
                 GridPosition = 1,
                 FinishPosition = 1,
                 Overtakes = 0,
                 FastestLap = true,
-                Status = RaceStatus.Classified,
+                Status = RacingStatus.Classified,
             }
         );
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
-        var result = (await service.GetRaceResultsAsync(10, SessionType.Race)).ToList();
+        var result = (await service.GetRaceResultsAsync(10, SessionType.GrandPrix)).ToList();
 
         Assert.Equal(2, result.Count);
         Assert.Equal(1, result[0].FinishPosition);
@@ -521,38 +521,38 @@ public class RaceResultServiceTests
     public async Task GetRaceResultsAsync_ReturnsOnlyResultsForSpecifiedSessionType()
     {
         using var context = CreateInMemoryContext();
-        context.DriverRaceResults.AddRange(
-            new DriverRaceResult
+        context.DriverRacingResults.AddRange(
+            new DriverRacingResult
             {
                 DriverId = 1,
-                RaceId = 10,
-                SessionType = SessionType.Race,
+                RaceWeekendId = 10,
+                SessionType = SessionType.GrandPrix,
                 GridPosition = 1,
                 FinishPosition = 1,
                 Overtakes = 0,
                 FastestLap = false,
-                Status = RaceStatus.Classified,
+                Status = RacingStatus.Classified,
             },
-            new DriverRaceResult
+            new DriverRacingResult
             {
                 DriverId = 1,
-                RaceId = 10,
+                RaceWeekendId = 10,
                 SessionType = SessionType.Sprint,
                 GridPosition = 2,
                 FinishPosition = 2,
                 Overtakes = 0,
                 FastestLap = false,
-                Status = RaceStatus.Classified,
+                Status = RacingStatus.Classified,
             }
         );
         await context.SaveChangesAsync();
 
-        var service = new RaceResultService(context, _mockLogger.Object);
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
-        var result = (await service.GetRaceResultsAsync(10, SessionType.Race)).ToList();
+        var result = (await service.GetRaceResultsAsync(10, SessionType.GrandPrix)).ToList();
 
         Assert.Single(result);
-        Assert.Equal(SessionType.Race, result[0].SessionType);
+        Assert.Equal(SessionType.GrandPrix, result[0].SessionType);
     }
 
     #endregion

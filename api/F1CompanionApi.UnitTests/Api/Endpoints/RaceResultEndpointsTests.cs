@@ -12,12 +12,12 @@ namespace F1CompanionApi.UnitTests.Api.Endpoints;
 public class RaceResultEndpointsTests
 {
     private readonly Mock<ILogger> _mockLogger;
-    private readonly Mock<IRaceResultService> _mockRaceResultService;
+    private readonly Mock<IRaceWeekendResultService> _mockRaceResultService;
 
     public RaceResultEndpointsTests()
     {
         _mockLogger = new Mock<ILogger>();
-        _mockRaceResultService = new Mock<IRaceResultService>();
+        _mockRaceResultService = new Mock<IRaceWeekendResultService>();
     }
 
     #region SubmitQualifyingResultsAsync Tests
@@ -114,7 +114,7 @@ public class RaceResultEndpointsTests
                 FinishPosition = 1,
                 Overtakes = 0,
                 FastestLap = true,
-                Status = RaceStatus.Classified,
+                Status = RacingStatus.Classified,
             },
         };
         var expected = new List<DriverRaceResultResponse>
@@ -124,17 +124,17 @@ public class RaceResultEndpointsTests
                 Id = 1,
                 DriverId = 1,
                 RaceId = raceId,
-                SessionType = SessionType.Race,
+                SessionType = SessionType.GrandPrix,
                 GridPosition = 1,
                 FinishPosition = 1,
                 Overtakes = 0,
                 FastestLap = true,
-                Status = RaceStatus.Classified,
+                Status = RacingStatus.Classified,
             },
         };
 
         _mockRaceResultService
-            .Setup(x => x.SubmitRaceResultsAsync(raceId, SessionType.Race, items))
+            .Setup(x => x.SubmitRaceResultsAsync(raceId, SessionType.GrandPrix, items))
             .ReturnsAsync(expected);
 
         // Act
@@ -143,7 +143,7 @@ public class RaceResultEndpointsTests
         // Assert
         Assert.IsType<Ok<IEnumerable<DriverRaceResultResponse>>>(result);
         _mockRaceResultService.Verify(
-            x => x.SubmitRaceResultsAsync(raceId, SessionType.Race, items),
+            x => x.SubmitRaceResultsAsync(raceId, SessionType.GrandPrix, items),
             Times.Once
         );
     }
@@ -164,17 +164,17 @@ public class RaceResultEndpointsTests
                 Id = 1,
                 DriverId = 1,
                 RaceId = raceId,
-                SessionType = SessionType.Race,
+                SessionType = SessionType.GrandPrix,
                 GridPosition = 3,
                 FinishPosition = 1,
                 Overtakes = 2,
                 FastestLap = false,
-                Status = RaceStatus.Classified,
+                Status = RacingStatus.Classified,
             },
         };
 
         _mockRaceResultService
-            .Setup(x => x.GetRaceResultsAsync(raceId, SessionType.Race))
+            .Setup(x => x.GetRaceResultsAsync(raceId, SessionType.GrandPrix))
             .ReturnsAsync(expected);
 
         // Act
@@ -183,7 +183,7 @@ public class RaceResultEndpointsTests
         // Assert
         Assert.IsType<Ok<IEnumerable<DriverRaceResultResponse>>>(result);
         _mockRaceResultService.Verify(
-            x => x.GetRaceResultsAsync(raceId, SessionType.Race),
+            x => x.GetRaceResultsAsync(raceId, SessionType.GrandPrix),
             Times.Once
         );
     }
@@ -206,7 +206,7 @@ public class RaceResultEndpointsTests
                 FinishPosition = 2,
                 Overtakes = 1,
                 FastestLap = false,
-                Status = RaceStatus.Classified,
+                Status = RacingStatus.Classified,
             },
         };
         var expected = new List<DriverRaceResultResponse>
@@ -221,7 +221,7 @@ public class RaceResultEndpointsTests
                 FinishPosition = 2,
                 Overtakes = 1,
                 FastestLap = false,
-                Status = RaceStatus.Classified,
+                Status = RacingStatus.Classified,
             },
         };
 
@@ -261,7 +261,7 @@ public class RaceResultEndpointsTests
                 FinishPosition = 2,
                 Overtakes = 1,
                 FastestLap = false,
-                Status = RaceStatus.Classified,
+                Status = RacingStatus.Classified,
             },
         };
 

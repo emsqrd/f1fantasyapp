@@ -10,15 +10,15 @@ public class SprintNotAvailableException : Exception
     /// <summary>
     /// Gets the ID of the race that does not have a sprint session.
     /// </summary>
-    public int RaceId { get; init; }
+    public int RaceWeekendId { get; init; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SprintNotAvailableException"/> class.
     /// </summary>
-    /// <param name="raceId">The ID of the race that does not have a sprint session.</param>
-    public SprintNotAvailableException(int raceId)
-        : base($"Race {raceId} does not have a sprint session")
+    /// <param name="raceWeekendId">The ID of the race that does not have a sprint session.</param>
+    public SprintNotAvailableException(int raceWeekendId)
+        : base($"Race Weekend {raceWeekendId} does not have a sprint session")
     {
-        RaceId = raceId;
+        RaceWeekendId = raceWeekendId;
     }
 }

@@ -11,12 +11,12 @@ namespace F1CompanionApi.UnitTests.Api.Endpoints;
 public class RaceEndpointsTests
 {
     private readonly Mock<ILogger> _mockLogger;
-    private readonly Mock<IRaceService> _mockRaceService;
+    private readonly Mock<IRaceWeekendService> _mockRaceService;
 
     public RaceEndpointsTests()
     {
         _mockLogger = new Mock<ILogger>();
-        _mockRaceService = new Mock<IRaceService>();
+        _mockRaceService = new Mock<IRaceWeekendService>();
     }
 
     private CircuitResponse CreateCircuit(string name, string location, string country)

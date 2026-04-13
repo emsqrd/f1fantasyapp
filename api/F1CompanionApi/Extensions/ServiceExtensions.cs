@@ -128,8 +128,8 @@ public static class ServiceExtensions
         services.AddScoped<IDriverService, DriverService>();
         services.AddScoped<ILeagueService, LeagueService>();
         services.AddScoped<ILeagueInviteService, LeagueInviteService>();
-        services.AddScoped<IRaceResultService, RaceResultService>();
-        services.AddScoped<IRaceService, RaceService>();
+        services.AddScoped<IRaceWeekendResultService, RaceWeekendResultService>();
+        services.AddScoped<IRaceWeekendService, RaceWeekendService>();
         services.AddScoped<ISeasonService, SeasonService>();
         services.AddScoped<IScoringService, ScoringService>();
         services.AddScoped<ITeamService, TeamService>();

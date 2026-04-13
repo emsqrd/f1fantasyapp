@@ -9,5 +9,5 @@ public class RaceResultItem
     public int? FinishPosition { get; set; }
     public required int Overtakes { get; set; }
     public required bool FastestLap { get; set; }
-    public required RaceStatus Status { get; set; }
+    public required RacingStatus Status { get; set; }
 }
