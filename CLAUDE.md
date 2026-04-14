@@ -86,15 +86,14 @@ When planning features (via plan mode or when asked to plan), organize the plan 
 
 ## Quick Start
 
+Always use `npm run <script>` from the repo root — never `npx`, `cd api && dotnet`, or `cd web && npm` directly.
+
 ### Development
 
 ```bash
-# Install frontend dependencies
-npm run web:install
-
-# Start both servers (in separate terminals)
+npm run web:install  # Install frontend dependencies (run once)
 npm run web:dev      # Frontend at http://localhost:5173
-npm run api:watch    # API with hot reload
+npm run api:watch    # API with hot reload (preferred over api:run)
 
 # Or use VSCode tasks: "Start All Servers"
 ```
@@ -102,22 +101,28 @@ npm run api:watch    # API with hot reload
 ### Testing
 
 ```bash
-# Run all tests
-npm run test:all
-
-# Individual projects
-npm run web:test
-npm run api:test
+npm run test:all          # Run all tests
+npm run web:test          # Frontend tests
+npm run web:test:watch    # Frontend tests in watch mode
+npm run web:coverage      # Frontend test coverage
+npm run api:test          # Backend tests
 ```
 
 ### Building
 
 ```bash
-# Build frontend
-npm run web:build
+npm run web:build  # Build frontend
+npm run api:build  # Build API
+```
 
-# Build API
-npm run api:build
+### Code Quality
+
+```bash
+npm run web:lint          # Lint frontend
+npm run web:format        # Format frontend
+npm run web:format:check  # Check frontend formatting (CI)
+npm run api:format        # Format backend
+npm run api:format:check  # Check backend formatting (CI)
 ```
 
 ## VSCode Integration
