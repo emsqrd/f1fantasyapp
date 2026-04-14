@@ -28,6 +28,7 @@ function createMockRace(overrides: Partial<Race> = {}): Race {
     raceDate: '2025-03-02T15:00:00Z',
     lockDeadline: '2025-03-02T14:00:00Z',
     isCurrent: false,
+    weekendFormat: 0,
     ...overrides,
   };
 }

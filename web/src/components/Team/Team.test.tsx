@@ -135,6 +135,7 @@ describe('Team Component', () => {
       raceDate: '2024-03-02',
       lockDeadline: '2024-03-01T12:00:00Z',
       isCurrent: false,
+      weekendFormat: 0,
     },
     {
       id: 2,
@@ -150,6 +151,7 @@ describe('Team Component', () => {
       raceDate: '2024-03-09',
       lockDeadline: null,
       isCurrent: true,
+      weekendFormat: 0,
     },
     {
       id: 3,
@@ -160,6 +162,7 @@ describe('Team Component', () => {
       raceDate: '2024-03-24',
       lockDeadline: '2024-03-23T12:00:00Z',
       isCurrent: false,
+      weekendFormat: 0,
     },
   ];
 

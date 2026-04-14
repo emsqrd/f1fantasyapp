@@ -2,7 +2,7 @@ namespace F1CompanionApi.Domain.Exceptions;
 
 /// <summary>
 /// Exception thrown when attempting to submit sprint results for a race that does not have a sprint session.
-/// This is considered exceptional because callers should check <c>Race.HasSprint</c> before submitting
+/// This is considered exceptional because callers should check <c>RaceWeekend.WeekendFormat</c> before submitting
 /// sprint results, indicating either a client error or a misconfigured race record.
 /// </summary>
 public class SprintNotAvailableException : Exception

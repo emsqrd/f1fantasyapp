@@ -46,7 +46,10 @@ public class RaceResultServiceTests
             Country = "Country",
         };
 
-    private static RaceWeekend CreateRace(int id, bool hasSprint = false) =>
+    private static RaceWeekend CreateRace(
+        int id,
+        WeekendFormat weekendFormat = WeekendFormat.Standard
+    ) =>
         new()
         {
             Id = id,
@@ -55,7 +58,7 @@ public class RaceResultServiceTests
             Name = $"Race {id}",
             CircuitId = id,
             RaceDate = DateTime.UtcNow,
-            HasSprint = hasSprint,
+            WeekendFormat = weekendFormat,
         };
 
     private static QualifyingResultItem QualItem(int driverId, int position) =>
@@ -254,7 +257,7 @@ public class RaceResultServiceTests
     {
         using var context = CreateInMemoryContext();
         context.Circuits.Add(CreateCircuit(10));
-        context.RaceWeekends.Add(CreateRace(10, hasSprint: false));
+        context.RaceWeekends.Add(CreateRace(10));
         await context.SaveChangesAsync();
 
         var service = new RaceWeekendResultService(context, _mockLogger.Object);
@@ -270,7 +273,7 @@ public class RaceResultServiceTests
         using var context = CreateInMemoryContext();
         context.Drivers.Add(CreateDriver(1, "VER"));
         context.Circuits.Add(CreateCircuit(10));
-        context.RaceWeekends.Add(CreateRace(10, hasSprint: true));
+        context.RaceWeekends.Add(CreateRace(10, WeekendFormat.Sprint));
         await context.SaveChangesAsync();
 
         var service = new RaceWeekendResultService(context, _mockLogger.Object);

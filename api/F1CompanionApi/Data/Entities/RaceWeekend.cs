@@ -11,7 +11,7 @@ public class RaceWeekend : BaseEntity
     public required int CircuitId { get; set; }
     public required DateTime RaceDate { get; set; }
     public DateTime? LockDeadline { get; set; }
-    public bool HasSprint { get; set; }
+    public WeekendFormat WeekendFormat { get; set; }
 
     public Season Season { get; set; } = null!;
     public Circuit Circuit { get; set; } = null!;

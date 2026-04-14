@@ -1,5 +1,7 @@
 import type { Circuit } from './Circuit';
 
+export type WeekendFormat = 0 | 1;
+
 export interface Race {
   id: number;
   seasonId: number;
@@ -9,4 +11,5 @@ export interface Race {
   raceDate: string;
   lockDeadline: string | null;
   isCurrent: boolean;
+  weekendFormat: WeekendFormat;
 }

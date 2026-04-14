@@ -113,7 +113,7 @@ public class RaceWeekendResultService : IRaceWeekendResultService
         if (race is null)
             throw new KeyNotFoundException($"Race {raceWeekendId} not found");
 
-        if (sessionType == SessionType.Sprint && !race.HasSprint)
+        if (sessionType == SessionType.Sprint && race.WeekendFormat != WeekendFormat.Sprint)
             throw new SprintNotAvailableException(raceWeekendId);
 
         ValidateRaceItems(raceItems);

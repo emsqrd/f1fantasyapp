@@ -1,3 +1,5 @@
+using F1CompanionApi.Data.Entities;
+
 namespace F1CompanionApi.Api.Models;
 
 public class RaceResponse
@@ -10,5 +12,5 @@ public class RaceResponse
     public required DateTime RaceDate { get; set; }
     public DateTime? LockDeadline { get; set; }
     public required bool IsCurrent { get; set; }
-    public bool HasSprint { get; set; }
+    public WeekendFormat WeekendFormat { get; set; }
 }
