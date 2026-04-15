@@ -14,7 +14,7 @@ public class DriverWeekendScoreTests
             DriverId: 1,
             Qualifying: 10,
             Sprint: Session(8),
-            Race: Session(25)
+            GrandPrix: Session(25)
         );
 
         Assert.Equal(43, score.TotalPoints);
@@ -23,7 +23,12 @@ public class DriverWeekendScoreTests
     [Fact]
     public void NullSessions_ContributeZeroToTotalPoints()
     {
-        var score = new DriverWeekendScore(DriverId: 1, Qualifying: null, Sprint: null, Race: null);
+        var score = new DriverWeekendScore(
+            DriverId: 1,
+            Qualifying: null,
+            Sprint: null,
+            GrandPrix: null
+        );
 
         Assert.Equal(0, score.TotalPoints);
     }

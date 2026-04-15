@@ -4,11 +4,11 @@ public record DriverWeekendScore(
     int DriverId,
     int? Qualifying,
     DriverSessionScore? Sprint,
-    DriverSessionScore? Race
+    DriverSessionScore? GrandPrix
 )
 {
     /// <summary>
     /// Combined points across every session the driver contested this weekend.
     /// </summary>
-    public int TotalPoints => (Qualifying ?? 0) + (Sprint?.Total ?? 0) + (Race?.Total ?? 0);
+    public int TotalPoints => (Qualifying ?? 0) + (Sprint?.Total ?? 0) + (GrandPrix?.Total ?? 0);
 }

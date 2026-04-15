@@ -11,7 +11,7 @@ public class ConstructorWeekendScoreTests
             ConstructorId: 1,
             Qualifying: 15,
             Sprint: null,
-            Race: null
+            GrandPrix: null
         );
 
         Assert.Equal(15, constructor.QualifyingTotal);
@@ -24,23 +24,23 @@ public class ConstructorWeekendScoreTests
             ConstructorId: 1,
             Qualifying: null,
             Sprint: new DriverSessionScore(13, 0, 0, 0, 0),
-            Race: null
+            GrandPrix: null
         );
 
         Assert.Equal(13, constructor.SprintTotal);
     }
 
     [Fact]
-    public void RaceTotal_SumsBothDriversRawRacePoints()
+    public void GrandPrixTotal_SumsBothDriversRawGrandPrixPoints()
     {
         var constructor = new ConstructorWeekendScore(
             ConstructorId: 1,
             Qualifying: null,
             Sprint: null,
-            Race: new DriverSessionScore(28, 0, 0, 0, 0)
+            GrandPrix: new DriverSessionScore(28, 0, 0, 0, 0)
         );
 
-        Assert.Equal(28, constructor.RaceTotal);
+        Assert.Equal(28, constructor.GrandPrixTotal);
     }
 
     [Fact]
@@ -50,7 +50,7 @@ public class ConstructorWeekendScoreTests
             ConstructorId: 1,
             Qualifying: 15,
             Sprint: null,
-            Race: new DriverSessionScore(28, 0, 0, 0, 0)
+            GrandPrix: new DriverSessionScore(28, 0, 0, 0, 0)
         );
 
         Assert.Equal(43, constructor.Total);
@@ -63,7 +63,7 @@ public class ConstructorWeekendScoreTests
 
         Assert.Equal(0, constructor.QualifyingTotal);
         Assert.Equal(0, constructor.SprintTotal);
-        Assert.Equal(0, constructor.RaceTotal);
+        Assert.Equal(0, constructor.GrandPrixTotal);
         Assert.Equal(0, constructor.Total);
     }
 }

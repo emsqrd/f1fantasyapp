@@ -203,69 +203,69 @@ public class ScoringServiceTests
 
     #endregion
 
-    #region CalculateDriverRacePoints
+    #region CalculateDriverGrandPrixPoints
 
     [Fact]
-    public void CalculateDriverRacePoints_P1Classified_Returns25PositionPoints()
+    public void CalculateDriverGrandPrixPoints_P1Classified_Returns25PositionPoints()
     {
         var service = CreateService();
-        var result = service.CalculateDriverRacePoints(RaceResult(grid: 1, finish: 1));
+        var result = service.CalculateDriverGrandPrixPoints(RaceResult(grid: 1, finish: 1));
         Assert.Equal(25, result.PositionPoints);
     }
 
     [Fact]
-    public void CalculateDriverRacePoints_P10Classified_Returns1PositionPoint()
+    public void CalculateDriverGrandPrixPoints_P10Classified_Returns1PositionPoint()
     {
         var service = CreateService();
-        var result = service.CalculateDriverRacePoints(RaceResult(grid: 10, finish: 10));
+        var result = service.CalculateDriverGrandPrixPoints(RaceResult(grid: 10, finish: 10));
         Assert.Equal(1, result.PositionPoints);
     }
 
     [Fact]
-    public void CalculateDriverRacePoints_P11Classified_Returns0PositionPoints()
+    public void CalculateDriverGrandPrixPoints_P11Classified_Returns0PositionPoints()
     {
         var service = CreateService();
-        var result = service.CalculateDriverRacePoints(RaceResult(grid: 11, finish: 11));
+        var result = service.CalculateDriverGrandPrixPoints(RaceResult(grid: 11, finish: 11));
         Assert.Equal(0, result.PositionPoints);
     }
 
     [Fact]
-    public void CalculateDriverRacePoints_PositionGain_ReturnsPositiveChangePoints()
+    public void CalculateDriverGrandPrixPoints_PositionGain_ReturnsPositiveChangePoints()
     {
         var service = CreateService();
-        var result = service.CalculateDriverRacePoints(RaceResult(grid: 12, finish: 6));
+        var result = service.CalculateDriverGrandPrixPoints(RaceResult(grid: 12, finish: 6));
         Assert.Equal(6, result.PositionChangePoints);
     }
 
     [Fact]
-    public void CalculateDriverRacePoints_PositionLoss_ReturnsNegativeChangePoints()
+    public void CalculateDriverGrandPrixPoints_PositionLoss_ReturnsNegativeChangePoints()
     {
         var service = CreateService();
-        var result = service.CalculateDriverRacePoints(RaceResult(grid: 5, finish: 8));
+        var result = service.CalculateDriverGrandPrixPoints(RaceResult(grid: 5, finish: 8));
         Assert.Equal(-3, result.PositionChangePoints);
     }
 
     [Fact]
-    public void CalculateDriverRacePoints_WithOvertakes_IncludesOvertakePoints()
+    public void CalculateDriverGrandPrixPoints_WithOvertakes_IncludesOvertakePoints()
     {
         var service = CreateService();
-        var result = service.CalculateDriverRacePoints(RaceResult(overtakes: 4));
+        var result = service.CalculateDriverGrandPrixPoints(RaceResult(overtakes: 4));
         Assert.Equal(4, result.OvertakePoints);
     }
 
     [Fact]
-    public void CalculateDriverRacePoints_FastestLap_Adds3Points()
+    public void CalculateDriverGrandPrixPoints_FastestLap_Adds3Points()
     {
         var service = CreateService();
-        var result = service.CalculateDriverRacePoints(RaceResult(fastestLap: true));
+        var result = service.CalculateDriverGrandPrixPoints(RaceResult(fastestLap: true));
         Assert.Equal(3, result.FastestLapPoints);
     }
 
     [Fact]
-    public void CalculateDriverRacePoints_Dnf_AppliesMinus10PenaltyAndZeroPositionChange()
+    public void CalculateDriverGrandPrixPoints_Dnf_AppliesMinus10PenaltyAndZeroPositionChange()
     {
         var service = CreateService();
-        var result = service.CalculateDriverRacePoints(
+        var result = service.CalculateDriverGrandPrixPoints(
             RaceResult(grid: 3, finish: null, status: RacingStatus.DNF)
         );
         Assert.Equal(-10, result.PenaltyPoints);
@@ -274,10 +274,10 @@ public class ScoringServiceTests
     }
 
     [Fact]
-    public void CalculateDriverRacePoints_Dsq_AppliesMinus10PenaltyAndZeroPositionChange()
+    public void CalculateDriverGrandPrixPoints_Dsq_AppliesMinus10PenaltyAndZeroPositionChange()
     {
         var service = CreateService();
-        var result = service.CalculateDriverRacePoints(
+        var result = service.CalculateDriverGrandPrixPoints(
             RaceResult(grid: 3, finish: null, status: RacingStatus.DSQ)
         );
         Assert.Equal(-10, result.PenaltyPoints);
@@ -286,10 +286,10 @@ public class ScoringServiceTests
     }
 
     [Fact]
-    public void CalculateDriverRacePoints_Dns_AppliesMinus10PenaltyAndZeroPositionChange()
+    public void CalculateDriverGrandPrixPoints_Dns_AppliesMinus10PenaltyAndZeroPositionChange()
     {
         var service = CreateService();
-        var result = service.CalculateDriverRacePoints(
+        var result = service.CalculateDriverGrandPrixPoints(
             RaceResult(grid: 3, finish: null, status: RacingStatus.DNS)
         );
         Assert.Equal(-10, result.PenaltyPoints);
@@ -298,40 +298,40 @@ public class ScoringServiceTests
     }
 
     [Fact]
-    public void CalculateDriverRacePoints_DnfWithOvertakes_OvertakesStillCounted()
+    public void CalculateDriverGrandPrixPoints_DnfWithOvertakes_OvertakesStillCounted()
     {
         var service = CreateService();
-        var result = service.CalculateDriverRacePoints(
+        var result = service.CalculateDriverGrandPrixPoints(
             RaceResult(grid: 5, finish: null, overtakes: 2, status: RacingStatus.DNF)
         );
         Assert.Equal(2, result.OvertakePoints);
     }
 
     [Fact]
-    public void CalculateDriverRacePoints_FastestLapWithDnf_TotalIsMinus7()
+    public void CalculateDriverGrandPrixPoints_FastestLapWithDnf_TotalIsMinus7()
     {
         var service = CreateService();
-        var result = service.CalculateDriverRacePoints(
+        var result = service.CalculateDriverGrandPrixPoints(
             RaceResult(finish: null, fastestLap: true, status: RacingStatus.DNF)
         );
         Assert.Equal(-7, result.Total);
     }
 
     [Fact]
-    public void CalculateDriverRacePoints_DominantDriver_Returns25()
+    public void CalculateDriverGrandPrixPoints_DominantDriver_Returns25()
     {
         // Worked example: P1 race, P1 grid → 25 position pts + 0 change = 25 (qualifying adds 10, weekend total = 35)
         var service = CreateService();
-        var result = service.CalculateDriverRacePoints(RaceResult(grid: 1, finish: 1));
+        var result = service.CalculateDriverGrandPrixPoints(RaceResult(grid: 1, finish: 1));
         Assert.Equal(25, result.Total);
     }
 
     [Fact]
-    public void CalculateDriverRacePoints_MidfieldMover_Returns14()
+    public void CalculateDriverGrandPrixPoints_MidfieldMover_Returns14()
     {
         // Worked example: P6 race, P12 grid → 8 position pts + 6 change = 14 (qualifying adds 0, weekend total = 14)
         var service = CreateService();
-        var result = service.CalculateDriverRacePoints(RaceResult(grid: 12, finish: 6));
+        var result = service.CalculateDriverGrandPrixPoints(RaceResult(grid: 12, finish: 6));
         Assert.Equal(14, result.Total);
     }
 
@@ -351,7 +351,7 @@ public class ScoringServiceTests
             RaceResult(grid: 2, finish: 2)
         );
         Assert.Equal(9, result.Qualifying);
-        Assert.Equal(18, result.Race!.Total);
+        Assert.Equal(18, result.GrandPrix!.Total);
         Assert.Equal(27, result.TotalPoints);
     }
 
@@ -393,7 +393,7 @@ public class ScoringServiceTests
         );
         Assert.Equal(8, result.Sprint!.Total);
         Assert.Null(result.Qualifying);
-        Assert.Null(result.Race);
+        Assert.Null(result.GrandPrix);
     }
 
     #endregion
@@ -420,7 +420,7 @@ public class ScoringServiceTests
         );
         var result = service.CalculateConstructorWeekendPoints(1, driver1, driver2);
         Assert.Equal(16, result.QualifyingTotal);
-        Assert.Equal(35, result.RaceTotal);
+        Assert.Equal(35, result.GrandPrixTotal);
     }
 
     [Fact]
@@ -463,7 +463,7 @@ public class ScoringServiceTests
             RaceResult(driverId: 2, finish: null, status: RacingStatus.DNF)
         );
         var result = service.CalculateConstructorWeekendPoints(1, driver1, driver2);
-        Assert.Equal(15, result.RaceTotal);
+        Assert.Equal(15, result.GrandPrixTotal);
     }
 
     #endregion
@@ -508,19 +508,19 @@ public class ScoringServiceTests
 
         await service.ScoreRaceEntitiesAsync(raceWeekendId: 1);
 
-        var scores = await context.DriverRaceScores.ToListAsync();
+        var scores = await context.DriverRaceWeekendScores.ToListAsync();
         Assert.Equal(2, scores.Count);
 
         var d1 = scores.Single(s => s.DriverId == 1);
         Assert.Equal(10, d1.QualifyingPositionPoints);
-        Assert.Equal(25, d1.RacePositionPoints);
-        Assert.Equal(0, d1.RacePositionChangePoints);
+        Assert.Equal(25, d1.GrandPrixPositionPoints);
+        Assert.Equal(0, d1.GrandPrixPositionChangePoints);
         Assert.Equal(35, d1.TotalPoints);
         Assert.Null(d1.SprintTotal);
 
         var d2 = scores.Single(s => s.DriverId == 2);
         Assert.Equal(6, d2.QualifyingPositionPoints);
-        Assert.Equal(10, d2.RacePositionPoints);
+        Assert.Equal(10, d2.GrandPrixPositionPoints);
         Assert.Equal(16, d2.TotalPoints);
         Assert.Null(d2.SprintTotal);
     }
@@ -540,11 +540,11 @@ public class ScoringServiceTests
 
         await service.ScoreRaceEntitiesAsync(raceWeekendId: 1);
 
-        var score = await context.DriverRaceScores.SingleAsync();
+        var score = await context.DriverRaceWeekendScores.SingleAsync();
         Assert.Equal(8, score.SprintPositionPoints);
         Assert.Equal(0, score.SprintPositionChangePoints);
         Assert.Equal(8, score.SprintTotal);
-        Assert.Equal(25, score.RaceTotal);
+        Assert.Equal(25, score.GrandPrixTotal);
         Assert.Equal(43, score.TotalPoints);
     }
 
@@ -568,10 +568,10 @@ public class ScoringServiceTests
 
         await service.ScoreRaceEntitiesAsync(raceWeekendId: 1);
 
-        var ctor = await context.ConstructorRaceScores.SingleAsync();
+        var ctor = await context.ConstructorRaceWeekendScores.SingleAsync();
         Assert.Equal(10, ctor.ConstructorId);
         Assert.Equal(16, ctor.QualifyingPositionPoints); // 10 + 6
-        Assert.Equal(35, ctor.RacePositionPoints); // 25 + 10
+        Assert.Equal(35, ctor.GrandPrixPositionPoints); // 25 + 10
         Assert.Equal(51, ctor.TotalPoints); // 16 + 35
         Assert.Null(ctor.SprintTotal);
     }
@@ -630,8 +630,8 @@ public class ScoringServiceTests
         await service.ScoreRaceEntitiesAsync(raceWeekendId: 1);
         await service.ScoreRaceEntitiesAsync(raceWeekendId: 1);
 
-        Assert.Equal(2, await context.DriverRaceScores.CountAsync());
-        Assert.Equal(1, await context.ConstructorRaceScores.CountAsync());
+        Assert.Equal(2, await context.DriverRaceWeekendScores.CountAsync());
+        Assert.Equal(1, await context.ConstructorRaceWeekendScores.CountAsync());
     }
 
     [Fact]
@@ -656,7 +656,7 @@ public class ScoringServiceTests
 
         await service.ScoreRaceEntitiesAsync(raceWeekendId: 1);
 
-        var ctor = await context.ConstructorRaceScores.SingleAsync();
+        var ctor = await context.ConstructorRaceWeekendScores.SingleAsync();
         Assert.Equal(12, ctor.SprintPositionPoints); // 8 + 4
         Assert.Equal(12, ctor.SprintTotal); // 8 + 4
         Assert.Equal(63, ctor.TotalPoints); // 16 + 12 + 35
@@ -666,7 +666,7 @@ public class ScoringServiceTests
 
     #region ScoreTeamsForRaceAsync
 
-    private static DriverRaceScore SeedDriverRaceScore(
+    private static DriverRaceWeekendScore SeedDriverRaceScore(
         int driverId,
         int raceWeekendId,
         int totalPoints
@@ -679,7 +679,7 @@ public class ScoringServiceTests
             CalculatedAt = DateTime.UtcNow,
         };
 
-    private static ConstructorRaceScore SeedConstructorRaceScore(
+    private static ConstructorRaceWeekendScore SeedConstructorRaceWeekendScore(
         int constructorId,
         int raceWeekendId,
         int totalPoints
@@ -698,7 +698,7 @@ public class ScoringServiceTests
         var context = CreateInMemoryContext();
         var service = CreateServiceWithContext(context);
 
-        context.DriverRaceScores.Add(
+        context.DriverRaceWeekendScores.Add(
             SeedDriverRaceScore(driverId: 1, raceWeekendId: 1, totalPoints: 35)
         );
         context.LineupEntries.Add(
@@ -708,7 +708,7 @@ public class ScoringServiceTests
 
         await service.ScoreTeamsForRaceAsync(raceWeekendId: 1);
 
-        var score = await context.TeamRaceScores.SingleAsync();
+        var score = await context.TeamRaceWeekendScores.SingleAsync();
         Assert.Equal(1, score.TeamId);
         Assert.Equal(35, score.TotalPoints);
     }
@@ -719,7 +719,7 @@ public class ScoringServiceTests
         var context = CreateInMemoryContext();
         var service = CreateServiceWithContext(context);
 
-        context.DriverRaceScores.Add(
+        context.DriverRaceWeekendScores.Add(
             SeedDriverRaceScore(driverId: 1, raceWeekendId: 1, totalPoints: 35)
         );
         context.LineupEntries.Add(
@@ -735,7 +735,7 @@ public class ScoringServiceTests
 
         await service.ScoreTeamsForRaceAsync(raceWeekendId: 1);
 
-        var score = await context.TeamRaceScores.SingleAsync();
+        var score = await context.TeamRaceWeekendScores.SingleAsync();
         Assert.Equal(70, score.TotalPoints);
     }
 
@@ -745,14 +745,14 @@ public class ScoringServiceTests
         var context = CreateInMemoryContext();
         var service = CreateServiceWithContext(context);
 
-        context.DriverRaceScores.Add(
+        context.DriverRaceWeekendScores.Add(
             SeedDriverRaceScore(driverId: 1, raceWeekendId: 1, totalPoints: 35)
         );
-        context.DriverRaceScores.Add(
+        context.DriverRaceWeekendScores.Add(
             SeedDriverRaceScore(driverId: 2, raceWeekendId: 1, totalPoints: 20)
         );
-        context.ConstructorRaceScores.Add(
-            SeedConstructorRaceScore(constructorId: 10, raceWeekendId: 1, totalPoints: 51)
+        context.ConstructorRaceWeekendScores.Add(
+            SeedConstructorRaceWeekendScore(constructorId: 10, raceWeekendId: 1, totalPoints: 51)
         );
         context.LineupEntries.Add(
             SeedLineupEntry(teamId: 1, raceWeekendId: 1, entityId: 1, LineupEntityType.Driver)
@@ -773,7 +773,7 @@ public class ScoringServiceTests
 
         await service.ScoreTeamsForRaceAsync(raceWeekendId: 1);
 
-        var scores = await context.TeamRaceScores.ToListAsync();
+        var scores = await context.TeamRaceWeekendScores.ToListAsync();
         Assert.Equal(2, scores.Count);
         Assert.Equal(86, scores.Single(s => s.TeamId == 1).TotalPoints); // 35 + 51
         Assert.Equal(20, scores.Single(s => s.TeamId == 2).TotalPoints);
@@ -793,7 +793,7 @@ public class ScoringServiceTests
 
         await service.ScoreTeamsForRaceAsync(raceWeekendId: 1);
 
-        var score = await context.TeamRaceScores.SingleAsync();
+        var score = await context.TeamRaceWeekendScores.SingleAsync();
         Assert.Equal(0, score.TotalPoints);
     }
 
@@ -803,7 +803,7 @@ public class ScoringServiceTests
         var context = CreateInMemoryContext();
         var service = CreateServiceWithContext(context);
 
-        context.DriverRaceScores.Add(
+        context.DriverRaceWeekendScores.Add(
             SeedDriverRaceScore(driverId: 1, raceWeekendId: 1, totalPoints: 35)
         );
         context.LineupEntries.Add(
@@ -814,7 +814,7 @@ public class ScoringServiceTests
         await service.ScoreTeamsForRaceAsync(raceWeekendId: 1);
         await service.ScoreTeamsForRaceAsync(raceWeekendId: 1);
 
-        Assert.Equal(1, await context.TeamRaceScores.CountAsync());
+        Assert.Equal(1, await context.TeamRaceWeekendScores.CountAsync());
     }
 
     #endregion

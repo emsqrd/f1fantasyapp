@@ -54,18 +54,18 @@ public class ScoringService : IScoringService
     }
 
     /// <summary>
-    /// Scores a driver's race session result.
+    /// Scores a driver's Grand Prix session result.
     /// </summary>
-    /// <param name="result">The driver's race result.</param>
-    /// <returns>The driver's point breakdown for the race.</returns>
-    public DriverSessionScore CalculateDriverRacePoints(DriverRacingResult result)
+    /// <param name="result">The driver's Grand Prix result.</param>
+    /// <returns>The driver's point breakdown for the Grand Prix.</returns>
+    public DriverSessionScore CalculateDriverGrandPrixPoints(DriverRacingResult result)
     {
         return CalculateDriverSessionPoints(
             result,
-            ScoringConstants.RacePositionPoints,
-            ScoringConstants.RaceFastestLapBonus,
-            ScoringConstants.RaceOvertakeBonus,
-            ScoringConstants.RaceDnfPenalty
+            ScoringConstants.GrandPrixPositionPoints,
+            ScoringConstants.GrandPrixFastestLapBonus,
+            ScoringConstants.GrandPrixOvertakeBonus,
+            ScoringConstants.GrandPrixDnfPenalty
         );
     }
 
@@ -141,7 +141,7 @@ public class ScoringService : IScoringService
         int? qualifyingScore =
             qualifying != null ? CalculateDriverQualifyingPoints(qualifying) : null;
         var sprintScore = sprint != null ? CalculateDriverSprintPoints(sprint) : null;
-        var grandPrixScore = grandPrix != null ? CalculateDriverRacePoints(grandPrix) : null;
+        var grandPrixScore = grandPrix != null ? CalculateDriverGrandPrixPoints(grandPrix) : null;
 
         return new DriverWeekendScore(driverId, qualifyingScore, sprintScore, grandPrixScore);
     }
@@ -168,7 +168,7 @@ public class ScoringService : IScoringService
             constructorId,
             qualifying,
             SumDriverSessions(driver1.Sprint, driver2.Sprint),
-            SumDriverSessions(driver1.Race, driver2.Race)
+            SumDriverSessions(driver1.GrandPrix, driver2.GrandPrix)
         );
     }
 
@@ -336,22 +336,22 @@ public class ScoringService : IScoringService
         List<ConstructorWeekendScore> constructorScores
     )
     {
-        _dbContext.DriverRaceScores.RemoveRange(
+        _dbContext.DriverRaceWeekendScores.RemoveRange(
             await _dbContext
-                .DriverRaceScores.Where(d => d.RaceWeekendId == raceWeekendId)
+                .DriverRaceWeekendScores.Where(d => d.RaceWeekendId == raceWeekendId)
                 .ToListAsync()
         );
-        _dbContext.ConstructorRaceScores.RemoveRange(
+        _dbContext.ConstructorRaceWeekendScores.RemoveRange(
             await _dbContext
-                .ConstructorRaceScores.Where(c => c.RaceWeekendId == raceWeekendId)
+                .ConstructorRaceWeekendScores.Where(c => c.RaceWeekendId == raceWeekendId)
                 .ToListAsync()
         );
 
-        _dbContext.DriverRaceScores.AddRange(
-            driverScores.Select(s => MapToDriverRaceScore(s, raceWeekendId))
+        _dbContext.DriverRaceWeekendScores.AddRange(
+            driverScores.Select(s => MapToDriverRaceWeekendScore(s, raceWeekendId))
         );
-        _dbContext.ConstructorRaceScores.AddRange(
-            constructorScores.Select(s => MapToConstructorRaceScore(s, raceWeekendId))
+        _dbContext.ConstructorRaceWeekendScores.AddRange(
+            constructorScores.Select(s => MapToConstructorRaceWeekendScore(s, raceWeekendId))
         );
 
         await _dbContext.SaveChangesAsync();
@@ -363,7 +363,7 @@ public class ScoringService : IScoringService
     /// <param name="score">The driver's computed weekend score.</param>
     /// <param name="raceWeekendId">The race the score belongs to.</param>
     /// <returns>The driver's race score record, ready to be saved.</returns>
-    private static DriverRaceScore MapToDriverRaceScore(
+    private static DriverRaceWeekendScore MapToDriverRaceWeekendScore(
         DriverWeekendScore score,
         int raceWeekendId
     ) =>
@@ -378,12 +378,12 @@ public class ScoringService : IScoringService
             SprintFastestLapPoints = score.Sprint?.FastestLapPoints,
             SprintPenaltyPoints = score.Sprint?.PenaltyPoints,
             SprintTotal = score.Sprint?.Total,
-            RacePositionPoints = score.Race?.PositionPoints,
-            RacePositionChangePoints = score.Race?.PositionChangePoints,
-            RaceOvertakePoints = score.Race?.OvertakePoints,
-            RaceFastestLapPoints = score.Race?.FastestLapPoints,
-            RacePenaltyPoints = score.Race?.PenaltyPoints,
-            RaceTotal = score.Race?.Total,
+            GrandPrixPositionPoints = score.GrandPrix?.PositionPoints,
+            GrandPrixPositionChangePoints = score.GrandPrix?.PositionChangePoints,
+            GrandPrixOvertakePoints = score.GrandPrix?.OvertakePoints,
+            GrandPrixFastestLapPoints = score.GrandPrix?.FastestLapPoints,
+            GrandPrixPenaltyPoints = score.GrandPrix?.PenaltyPoints,
+            GrandPrixTotal = score.GrandPrix?.Total,
             TotalPoints = score.TotalPoints,
             CalculatedAt = DateTime.UtcNow,
         };
@@ -394,7 +394,7 @@ public class ScoringService : IScoringService
     /// <param name="score">The constructor's computed weekend score.</param>
     /// <param name="raceWeekendId">The race the score belongs to.</param>
     /// <returns>The constructor's race score record, ready to be saved.</returns>
-    private static ConstructorRaceScore MapToConstructorRaceScore(
+    private static ConstructorRaceWeekendScore MapToConstructorRaceWeekendScore(
         ConstructorWeekendScore score,
         int raceWeekendId
     ) =>
@@ -409,12 +409,12 @@ public class ScoringService : IScoringService
             SprintFastestLapPoints = score.Sprint?.FastestLapPoints,
             SprintPenaltyPoints = score.Sprint?.PenaltyPoints,
             SprintTotal = score.Sprint?.Total,
-            RacePositionPoints = score.Race?.PositionPoints,
-            RacePositionChangePoints = score.Race?.PositionChangePoints,
-            RaceOvertakePoints = score.Race?.OvertakePoints,
-            RaceFastestLapPoints = score.Race?.FastestLapPoints,
-            RacePenaltyPoints = score.Race?.PenaltyPoints,
-            RaceTotal = score.Race?.Total,
+            GrandPrixPositionPoints = score.GrandPrix?.PositionPoints,
+            GrandPrixPositionChangePoints = score.GrandPrix?.PositionChangePoints,
+            GrandPrixOvertakePoints = score.GrandPrix?.OvertakePoints,
+            GrandPrixFastestLapPoints = score.GrandPrix?.FastestLapPoints,
+            GrandPrixPenaltyPoints = score.GrandPrix?.PenaltyPoints,
+            GrandPrixTotal = score.GrandPrix?.Total,
             TotalPoints = score.Total,
             CalculatedAt = DateTime.UtcNow,
         };
@@ -428,18 +428,18 @@ public class ScoringService : IScoringService
         _logger.LogInformation("Scoring teams for race {RaceId}", raceWeekendId);
 
         var driverRaceScores = await _dbContext
-            .DriverRaceScores.Where(drs => drs.RaceWeekendId == raceWeekendId)
+            .DriverRaceWeekendScores.Where(drs => drs.RaceWeekendId == raceWeekendId)
             .ToListAsync();
 
         var constructorRaceScores = await _dbContext
-            .ConstructorRaceScores.Where(crs => crs.RaceWeekendId == raceWeekendId)
+            .ConstructorRaceWeekendScores.Where(crs => crs.RaceWeekendId == raceWeekendId)
             .ToListAsync();
 
         var lineupEntries = await _dbContext
             .LineupEntries.Where(le => le.RaceWeekendId == raceWeekendId)
             .ToListAsync();
 
-        var teamScores = new List<TeamRaceScore>();
+        var teamScores = new List<TeamRaceWeekendScore>();
 
         foreach (var team in lineupEntries.GroupBy(le => le.TeamId))
         {
@@ -448,7 +448,7 @@ public class ScoringService : IScoringService
             );
 
             teamScores.Add(
-                new TeamRaceScore
+                new TeamRaceWeekendScore
                 {
                     TeamId = team.Key,
                     RaceWeekendId = raceWeekendId,
@@ -459,12 +459,12 @@ public class ScoringService : IScoringService
         }
 
         var existingTeamScores = await _dbContext
-            .TeamRaceScores.Where(trs => trs.RaceWeekendId == raceWeekendId)
+            .TeamRaceWeekendScores.Where(trs => trs.RaceWeekendId == raceWeekendId)
             .ToListAsync();
 
-        _dbContext.TeamRaceScores.RemoveRange(existingTeamScores);
+        _dbContext.TeamRaceWeekendScores.RemoveRange(existingTeamScores);
 
-        _dbContext.TeamRaceScores.AddRange(teamScores);
+        _dbContext.TeamRaceWeekendScores.AddRange(teamScores);
         await _dbContext.SaveChangesAsync();
 
         _logger.LogInformation(
@@ -483,8 +483,8 @@ public class ScoringService : IScoringService
     /// <returns>The entry's total points, with the captain multiplier applied if applicable.</returns>
     private static int GetLineupEntryPoints(
         LineupEntry entry,
-        List<DriverRaceScore> driverScores,
-        List<ConstructorRaceScore> constructorScores
+        List<DriverRaceWeekendScore> driverScores,
+        List<ConstructorRaceWeekendScore> constructorScores
     )
     {
         var points = entry.EntityType switch

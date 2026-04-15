@@ -32,18 +32,18 @@ public class ScoringConstantsTests
     [InlineData(1, 25)]
     [InlineData(10, 1)]
     [InlineData(11, 0)]
-    public void RacePositionPoints_ReturnsCorrectPoints(int position, int expectedPoints)
+    public void GrandPrixPositionPoints_ReturnsCorrectPoints(int position, int expectedPoints)
     {
         Assert.Equal(
             expectedPoints,
-            ScoringConstants.RacePositionPoints.GetValueOrDefault(position)
+            ScoringConstants.GrandPrixPositionPoints.GetValueOrDefault(position)
         );
     }
 
     [Fact]
-    public void RacePositionPoints_OutOfRangePosition_ReturnsZero()
+    public void GrandPrixPositionPoints_OutOfRangePosition_ReturnsZero()
     {
-        Assert.Equal(0, ScoringConstants.RacePositionPoints.GetValueOrDefault(0));
-        Assert.Equal(0, ScoringConstants.RacePositionPoints.GetValueOrDefault(-1));
+        Assert.Equal(0, ScoringConstants.GrandPrixPositionPoints.GetValueOrDefault(0));
+        Assert.Equal(0, ScoringConstants.GrandPrixPositionPoints.GetValueOrDefault(-1));
     }
 }
