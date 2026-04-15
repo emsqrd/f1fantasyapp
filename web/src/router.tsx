@@ -31,12 +31,13 @@ import { z } from 'zod';
 
 import { BrowseLeagues } from './components/BrowseLeagues/BrowseLeagues';
 import { JoinInvite } from './components/JoinInvite/JoinInvite';
-import type { Race } from './contracts/Race';
+import type { RaceWeekend } from './contracts/RaceWeekend';
 import type { Constructor, Driver } from './contracts/Role';
 import { getConstructors } from './services/constructorService';
 import { getDrivers } from './services/driverService';
 import { previewInvite } from './services/leagueInviteService';
-import { getRaces } from './services/raceService';
+import { getRaceWeekends } from './services/raceWeekendService';
+import { getCurrentSeason } from './services/seasonService';
 
 /**
  * Zod schema for validating league ID route parameter.
@@ -105,15 +106,16 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
     // This makes them available to all routes (both public and authenticated)
     if (context.auth.user) {
       try {
-        const [profile, team] = await Promise.all([
+        const [profile, team, currentSeason] = await Promise.all([
           userProfileService.getCurrentProfile(),
           getMyTeam(),
+          getCurrentSeason(),
         ]);
 
         // Sync team ID with TeamContext for components that need it
         context.teamContext.setMyTeamId(team?.id ?? null);
 
-        return { profile };
+        return { profile, currentSeason };
       } catch (error) {
         // Gracefully degrade if profile/team fetching fails
         // The app should still work without profile data
@@ -134,10 +136,10 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
         // Ensure TeamContext is in a known state
         context.teamContext.setMyTeamId(null);
 
-        return { profile: null };
+        return { profile: null, currentSeason: null };
       }
     }
-    return { profile: null };
+    return { profile: null, currentSeason: null };
   },
   component: () => (
     <>
@@ -564,11 +566,12 @@ const teamRoute = createRoute({
   },
   loader: async ({
     params,
+    context,
   }): Promise<{
     team: TeamType;
     activeDrivers: Driver[];
     activeConstructors: Constructor[];
-    races: Race[];
+    races: RaceWeekend[];
   }> => {
     const TEAM_ROUTE_ID = '/_authenticated/_team-required/team/$teamId';
 
@@ -582,13 +585,14 @@ const teamRoute = createRoute({
     }
 
     const { teamId } = validationResult.data;
+    const seasonId = context.currentSeason?.id;
 
     // Fetch all data in parallel
     const [team, activeDrivers, activeConstructors, races] = await Promise.all([
       getTeamById(teamId),
       getDrivers(),
       getConstructors(),
-      getRaces(),
+      seasonId !== undefined ? getRaceWeekends(seasonId) : Promise.resolve([]),
     ]);
 
     // Return 404 if team doesn't exist
@@ -632,18 +636,22 @@ const myTeamRoute = createRoute({
   staticData: {
     pageTitle: 'My Team',
   },
-  loader: async (): Promise<{
+  loader: async ({
+    context,
+  }): Promise<{
     team: TeamType;
     activeDrivers: Driver[];
     activeConstructors: Constructor[];
-    races: Race[];
+    races: RaceWeekend[];
   }> => {
+    const seasonId = context.currentSeason?.id;
+
     // Fetch all data in parallel
     const [team, activeDrivers, activeConstructors, races] = await Promise.all([
       getMyTeam(),
       getDrivers(),
       getConstructors(),
-      getRaces(),
+      seasonId !== undefined ? getRaceWeekends(seasonId) : Promise.resolve([]),
     ]);
 
     if (!team) {
@@ -732,6 +740,7 @@ export const router = createRouter({
     teamContext: undefined!,
     team: undefined!,
     profile: undefined!,
+    currentSeason: undefined!,
   },
   defaultPendingComponent: () => (
     <div role="status" className="flex min-h-screen items-center justify-center">

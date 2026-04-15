@@ -154,7 +154,7 @@ Hosted on Fly.io + Supabase (free tier).
 - `mcp__sentry__search_events` — error events (project slug: `f1-fantasy-api` or `f1-fantasy-web`, org: `emsqrd`, regionUrl: `https://us.sentry.io`)
 - `mcp__supabase__get_logs` — Postgres and API gateway logs (service: `postgres` or `api`)
 
-**Initial page load fires two concurrent requests:** `GET /api/me/profile` + `GET /api/me/team/`
+**Initial page load fires three concurrent requests:** `GET /api/me/profile` + `GET /api/me/team/` + `GET /api/seasons/current`
 
 ## Project Documentation
 

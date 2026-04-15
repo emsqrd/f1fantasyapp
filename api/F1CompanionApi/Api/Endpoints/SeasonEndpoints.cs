@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using F1CompanionApi.Api.Mappers;
 using F1CompanionApi.Domain.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,6 +16,11 @@ public static class SeasonEndpoints
             .MapGet("/", GetSeasonsAsync)
             .WithName("GetSeasons")
             .WithDescription("Get all seasons");
+
+        seasonsGroup
+            .MapGet("/current", GetCurrentSeasonAsync)
+            .WithName("GetCurrentSeason")
+            .WithDescription("Get the current active season");
 
         seasonsGroup
             .MapGet("/{id}", GetSeasonByIdAsync)
@@ -34,6 +40,27 @@ public static class SeasonEndpoints
         var seasons = await seasonService.GetSeasonsAsync();
 
         return Results.Ok(seasons);
+    }
+
+    private static async Task<IResult> GetCurrentSeasonAsync(
+        ISeasonService seasonService,
+        [FromServices] ILogger logger
+    )
+    {
+        logger.LogDebug("Fetching current season");
+
+        var season = await seasonService.GetCurrentSeasonAsync();
+
+        if (season is null)
+        {
+            logger.LogWarning("No active season found");
+            return Results.Problem(
+                detail: "No active season found",
+                statusCode: StatusCodes.Status404NotFound
+            );
+        }
+
+        return Results.Ok(season.ToResponseModel(season.Id));
     }
 
     private static async Task<IResult> GetSeasonByIdAsync(

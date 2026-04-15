@@ -2,7 +2,7 @@ import type { Circuit } from './Circuit';
 
 export type WeekendFormat = 0 | 1;
 
-export interface Race {
+export interface RaceWeekend {
   id: number;
   seasonId: number;
   round: number;

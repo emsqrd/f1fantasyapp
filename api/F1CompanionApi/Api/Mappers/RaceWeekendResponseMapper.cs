@@ -3,9 +3,9 @@ using F1CompanionApi.Data.Entities;
 
 namespace F1CompanionApi.Api.Mappers;
 
-public static class RaceResponseMapper
+public static class RaceWeekendResponseMapper
 {
-    public static IEnumerable<RaceResponse> ToResponseModel(
+    public static IEnumerable<RaceWeekendResponse> ToResponseModel(
         this IEnumerable<RaceWeekend> raceWeekends,
         int? currentRaceId
     )
@@ -13,12 +13,12 @@ public static class RaceResponseMapper
         return raceWeekends.Select(r => r.ToResponseModel(currentRaceId));
     }
 
-    public static RaceResponse ToResponseModel(
+    public static RaceWeekendResponse ToResponseModel(
         this RaceWeekend raceWeekend,
         int? currentRaceId = null
     )
     {
-        return new RaceResponse
+        return new RaceWeekendResponse
         {
             Id = raceWeekend.Id,
             SeasonId = raceWeekend.SeasonId,

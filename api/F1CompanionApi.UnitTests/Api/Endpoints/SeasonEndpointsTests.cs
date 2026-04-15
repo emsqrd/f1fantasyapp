@@ -1,5 +1,6 @@
 using F1CompanionApi.Api.Endpoints;
 using F1CompanionApi.Api.Models;
+using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -75,6 +76,51 @@ public class SeasonEndpointsTests
 
     #endregion
 
+    #region GetCurrentSeasonAsync Tests
+
+    [Fact]
+    public async Task GetCurrentSeasonAsync_ReturnsOk_WhenCurrentSeasonExists()
+    {
+        // Arrange
+        var currentSeason = new Season
+        {
+            Id = 2,
+            Year = 2026,
+            StartDate = new DateTime(2026, 3, 16, 0, 0, 0, DateTimeKind.Utc),
+            EndDate = new DateTime(2026, 12, 8, 0, 0, 0, DateTimeKind.Utc),
+        };
+
+        _mockSeasonService.Setup(x => x.GetCurrentSeasonAsync()).ReturnsAsync(currentSeason);
+
+        // Act
+        var result = await InvokeGetCurrentSeasonAsync();
+
+        // Assert
+        Assert.IsType<Ok<SeasonResponse>>(result);
+        var okResult = (Ok<SeasonResponse>)result;
+        Assert.Equal(2, okResult.Value!.Id);
+        Assert.Equal(2026, okResult.Value!.Year);
+        Assert.True(okResult.Value!.IsCurrent);
+    }
+
+    [Fact]
+    public async Task GetCurrentSeasonAsync_Returns404_WhenNoActiveSeasonExists()
+    {
+        // Arrange
+        _mockSeasonService.Setup(x => x.GetCurrentSeasonAsync()).ReturnsAsync((Season?)null);
+
+        // Act
+        var result = await InvokeGetCurrentSeasonAsync();
+
+        // Assert
+        Assert.IsType<ProblemHttpResult>(result);
+        var problemResult = (ProblemHttpResult)result;
+        Assert.Equal(StatusCodes.Status404NotFound, problemResult.StatusCode);
+        Assert.Equal("No active season found", problemResult.ProblemDetails.Detail);
+    }
+
+    #endregion
+
     #region GetSeasonByIdAsync Tests
 
     [Fact]
@@ -127,6 +173,23 @@ public class SeasonEndpointsTests
     {
         var method = typeof(SeasonEndpoints).GetMethod(
             "GetSeasonsAsync",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+        );
+
+        var task =
+            (Task<IResult>)
+                method!.Invoke(
+                    null,
+                    new object[] { _mockSeasonService.Object, _mockLogger.Object }
+                )!;
+
+        return await task;
+    }
+
+    private async Task<IResult> InvokeGetCurrentSeasonAsync()
+    {
+        var method = typeof(SeasonEndpoints).GetMethod(
+            "GetCurrentSeasonAsync",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
         );
 

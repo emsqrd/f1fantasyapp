@@ -4,6 +4,6 @@ public class DriverQualifyingResultResponse
 {
     public required int Id { get; set; }
     public required int DriverId { get; set; }
-    public required int RaceId { get; set; }
+    public required int RaceWeekendId { get; set; }
     public required int Position { get; set; }
 }

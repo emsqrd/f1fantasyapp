@@ -7,47 +7,28 @@ namespace F1CompanionApi.Domain.Services;
 
 public interface IRaceWeekendService
 {
-    Task<IEnumerable<RaceResponse>> GetRacesAsync(int? seasonId = null);
-    Task<RaceResponse?> GetRaceByIdAsync(int id);
+    Task<IEnumerable<RaceWeekendResponse>> GetRaceWeekendsBySeasonAsync(int seasonId);
+    Task<RaceWeekendResponse?> GetRaceWeekendByRoundAsync(int seasonId, int round);
+    Task<int?> GetIdByRoundAsync(int seasonId, int round);
 }
 
 public class RaceWeekendService : IRaceWeekendService
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly ILogger<RaceWeekendService> _logger;
-    private readonly ISeasonService _seasonService;
 
-    public RaceWeekendService(
-        ApplicationDbContext dbContext,
-        ILogger<RaceWeekendService> logger,
-        ISeasonService seasonService
-    )
+    public RaceWeekendService(ApplicationDbContext dbContext, ILogger<RaceWeekendService> logger)
     {
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(logger);
-        ArgumentNullException.ThrowIfNull(seasonService);
 
         _dbContext = dbContext;
         _logger = logger;
-        _seasonService = seasonService;
     }
 
-    public async Task<IEnumerable<RaceResponse>> GetRacesAsync(int? seasonId = null)
+    public async Task<IEnumerable<RaceWeekendResponse>> GetRaceWeekendsBySeasonAsync(int seasonId)
     {
-        _logger.LogDebug("Fetching races for season {SeasonId}", seasonId);
-
-        // If no seasonId provided, find the current season
-        if (seasonId is null)
-        {
-            var currentSeason = await _seasonService.GetCurrentSeasonAsync();
-            seasonId = currentSeason?.Id;
-
-            if (seasonId is null)
-            {
-                _logger.LogWarning("No current season found");
-                return [];
-            }
-        }
+        _logger.LogDebug("Fetching race weekends for season {SeasonId}", seasonId);
 
         var raceWeekends = await _dbContext
             .RaceWeekends.Where(r => r.SeasonId == seasonId)
@@ -56,7 +37,7 @@ public class RaceWeekendService : IRaceWeekendService
             .ToListAsync();
 
         _logger.LogDebug(
-            "Found {RaceCount} races for season {SeasonId}",
+            "Found {Count} race weekends for season {SeasonId}",
             raceWeekends.Count,
             seasonId
         );
@@ -67,24 +48,42 @@ public class RaceWeekendService : IRaceWeekendService
         return raceWeekends.ToResponseModel(currentRaceWeekendId);
     }
 
-    public async Task<RaceResponse?> GetRaceByIdAsync(int id)
+    public async Task<RaceWeekendResponse?> GetRaceWeekendByRoundAsync(int seasonId, int round)
     {
-        _logger.LogDebug("Fetching race {RaceId}", id);
+        _logger.LogDebug(
+            "Fetching race weekend for season {SeasonId}, round {Round}",
+            seasonId,
+            round
+        );
 
         var raceWeekend = await _dbContext
             .RaceWeekends.Include(r => r.Circuit)
-            .FirstOrDefaultAsync(r => r.Id == id);
+            .FirstOrDefaultAsync(r => r.SeasonId == seasonId && r.Round == round);
 
         if (raceWeekend is null)
             return null;
 
         var now = DateTime.UtcNow;
         var currentRaceWeekendId = await _dbContext
-            .RaceWeekends.Where(r => r.SeasonId == raceWeekend.SeasonId && r.RaceDate >= now)
+            .RaceWeekends.Where(r => r.SeasonId == seasonId && r.RaceDate >= now)
             .OrderBy(r => r.Round)
             .Select(r => (int?)r.Id)
             .FirstOrDefaultAsync();
 
         return raceWeekend.ToResponseModel(currentRaceWeekendId);
+    }
+
+    public async Task<int?> GetIdByRoundAsync(int seasonId, int round)
+    {
+        _logger.LogDebug(
+            "Resolving race weekend ID for season {SeasonId}, round {Round}",
+            seasonId,
+            round
+        );
+
+        return await _dbContext
+            .RaceWeekends.Where(r => r.SeasonId == seasonId && r.Round == round)
+            .Select(r => (int?)r.Id)
+            .FirstOrDefaultAsync();
     }
 }

@@ -2,9 +2,12 @@ using F1CompanionApi.Data.Entities;
 
 namespace F1CompanionApi.Api.Models;
 
-public class RaceResultItem
+public class DriverRacingResultResponse
 {
+    public required int Id { get; set; }
     public required int DriverId { get; set; }
+    public required int RaceWeekendId { get; set; }
+    public required SessionType SessionType { get; set; }
     public required int GridPosition { get; set; }
     public int? FinishPosition { get; set; }
     public required int Overtakes { get; set; }

@@ -13,13 +13,13 @@ public interface IRaceWeekendResultService
         int raceWeekendId,
         List<QualifyingResultItem> qualifyingItems
     );
-    Task<IEnumerable<DriverRaceResultResponse>> SubmitRaceResultsAsync(
+    Task<IEnumerable<DriverRacingResultResponse>> SubmitRaceResultsAsync(
         int raceWeekendId,
         SessionType sessionType,
-        List<RaceResultItem> raceItems
+        List<RacingResultItem> raceItems
     );
     Task<IEnumerable<DriverQualifyingResultResponse>> GetQualifyingResultsAsync(int raceWeekendId);
-    Task<IEnumerable<DriverRaceResultResponse>> GetRaceResultsAsync(
+    Task<IEnumerable<DriverRacingResultResponse>> GetRaceResultsAsync(
         int raceWeekendId,
         SessionType sessionType
     );
@@ -96,10 +96,10 @@ public class RaceWeekendResultService : IRaceWeekendResultService
     /// <param name="raceWeekendId">The ID of the race weekend to submit results for.</param>
     /// <param name="sessionType">The session type (GrandPrix or Sprint).</param>
     /// <param name="raceItems">The race result items to save.</param>
-    public async Task<IEnumerable<DriverRaceResultResponse>> SubmitRaceResultsAsync(
+    public async Task<IEnumerable<DriverRacingResultResponse>> SubmitRaceResultsAsync(
         int raceWeekendId,
         SessionType sessionType,
-        List<RaceResultItem> raceItems
+        List<RacingResultItem> raceItems
     )
     {
         _logger.LogInformation(
@@ -171,7 +171,7 @@ public class RaceWeekendResultService : IRaceWeekendResultService
     /// </summary>
     /// <param name="raceWeekendId">The ID of the race weekend to retrieve results for.</param>
     /// <param name="sessionType">The session type (GrandPrix or Sprint).</param>
-    public async Task<IEnumerable<DriverRaceResultResponse>> GetRaceResultsAsync(
+    public async Task<IEnumerable<DriverRacingResultResponse>> GetRaceResultsAsync(
         int raceWeekendId,
         SessionType sessionType
     )
@@ -212,7 +212,7 @@ public class RaceWeekendResultService : IRaceWeekendResultService
     /// Validates duplicate driverIds, fastest lap count, and FinishPosition/Status consistency.
     /// </summary>
     /// <param name="raceItems">The race result items to validate.</param>
-    private static void ValidateRaceItems(List<RaceResultItem> raceItems)
+    private static void ValidateRaceItems(List<RacingResultItem> raceItems)
     {
         var duplicates = raceItems.GroupBy(i => i.DriverId).Where(g => g.Count() > 1).ToList();
         if (duplicates.Count > 0)

@@ -64,7 +64,7 @@ public class RaceResultServiceTests
     private static QualifyingResultItem QualItem(int driverId, int position) =>
         new() { DriverId = driverId, Position = position };
 
-    private static RaceResultItem RaceItem(
+    private static RacingResultItem RaceItem(
         int driverId,
         int grid = 1,
         int? finish = 1,
@@ -331,7 +331,7 @@ public class RaceResultServiceTests
 
         var service = new RaceWeekendResultService(context, _mockLogger.Object);
 
-        var items = new List<RaceResultItem>
+        var items = new List<RacingResultItem>
         {
             new()
             {
@@ -474,7 +474,7 @@ public class RaceResultServiceTests
         var result = (await service.GetQualifyingResultsAsync(10)).ToList();
 
         Assert.Single(result);
-        Assert.Equal(10, result[0].RaceId);
+        Assert.Equal(10, result[0].RaceWeekendId);
     }
 
     #endregion

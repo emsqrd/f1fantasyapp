@@ -70,6 +70,7 @@ describe('route-guards', () => {
         },
         team: null,
         profile: null,
+        currentSeason: null,
       };
 
       await expect(() => requireAuth(context)).rejects.toThrow();
@@ -100,6 +101,7 @@ describe('route-guards', () => {
         },
         team: null,
         profile: null,
+        currentSeason: null,
       };
 
       await expect(requireAuth(context)).resolves.not.toThrow();
@@ -126,6 +128,7 @@ describe('route-guards', () => {
         },
         team: null,
         profile: null,
+        currentSeason: null,
       };
 
       try {
@@ -162,6 +165,7 @@ describe('route-guards', () => {
         },
         team: null,
         profile: null,
+        currentSeason: null,
       };
 
       await expect(() => requireTeam(context)).rejects.toThrow();
@@ -201,6 +205,7 @@ describe('route-guards', () => {
         },
         team: null,
         profile: null,
+        currentSeason: null,
       };
 
       await expect(requireTeam(context)).resolves.not.toThrow();
@@ -227,6 +232,7 @@ describe('route-guards', () => {
         },
         team: null,
         profile: null,
+        currentSeason: null,
       };
 
       // Should throw redirect because requireAuth is called first and user is not authenticated
@@ -255,6 +261,7 @@ describe('route-guards', () => {
         },
         team: null,
         profile: null,
+        currentSeason: null,
       };
 
       try {
@@ -299,6 +306,7 @@ describe('route-guards', () => {
         },
         team: null,
         profile: null,
+        currentSeason: null,
       };
 
       await expect(() => requireNoTeam(context)).rejects.toThrow();
@@ -330,6 +338,7 @@ describe('route-guards', () => {
         },
         team: null,
         profile: null,
+        currentSeason: null,
       };
 
       await expect(requireNoTeam(context)).resolves.not.toThrow();
@@ -356,6 +365,7 @@ describe('route-guards', () => {
         },
         team: null,
         profile: null,
+        currentSeason: null,
       };
 
       // Should throw redirect because requireAuth is called first and user is not authenticated
@@ -392,6 +402,7 @@ describe('route-guards', () => {
         },
         team: null,
         profile: null,
+        currentSeason: null,
       };
 
       try {

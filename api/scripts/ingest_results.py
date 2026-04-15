@@ -5,8 +5,8 @@ F1 Fantasy API.
 Usage:
     cd api/scripts
     source .venv/bin/activate
-    python3 ingest_results.py --year 2026 --round 1
-    python3 ingest_results.py --year 2026 --round 1 --env prod
+    python3 ingest_results.py --round 1
+    python3 ingest_results.py --round 1 --env prod
 """
 
 import argparse
@@ -26,9 +26,11 @@ CACHE_DIR = ".ff1_cache"
 # FastF1 status strings that mean the driver finished the race
 _CLASSIFIED_STATUSES = {"Finished"}
 
+WEEKEND_FORMAT_SPRINT = 1
 
-class RaceStatus(IntEnum):
-    """Mirrors the C# RaceStatus enum in Data/Entities/RaceStatus.cs."""
+
+class RacingStatus(IntEnum):
+    """Mirrors the C# RacingStatus enum in Data/Entities/RacingStatus.cs."""
 
     CLASSIFIED = 0
     DNF = 1
@@ -86,20 +88,30 @@ def fetch_driver_mapping(session: requests.Session, api_url: str) -> dict[str, i
     return {d["abbreviation"]: d["id"] for d in resp.json()}
 
 
-def fetch_races(session: requests.Session, api_url: str) -> list[dict]:
-    """Fetch all races from the API."""
-    resp = session.get(f"{api_url}/api/races")
+def fetch_current_season(session: requests.Session, api_url: str) -> dict:
+    """Fetch the current active season from the API."""
+    resp = session.get(f"{api_url}/api/seasons/current")
+    if resp.status_code == 404:
+        raise IngestError("No active season found")
     if resp.status_code >= 400:
-        raise ApiError("Fetch races", resp.status_code, resp.text)
+        raise ApiError("Fetch current season", resp.status_code, resp.text)
     return resp.json()
 
 
-def find_race(races: list[dict], round_number: int) -> dict:
-    """Find a race by round number."""
-    for race in races:
-        if race["round"] == round_number:
-            return race
-    raise IngestError(f"Race for round {round_number} not found in API")
+def fetch_race_weekends(session: requests.Session, api_url: str, season_id: int) -> list[dict]:
+    """Fetch all race weekends for the given season."""
+    resp = session.get(f"{api_url}/api/seasons/{season_id}/race-weekends")
+    if resp.status_code >= 400:
+        raise ApiError("Fetch race weekends", resp.status_code, resp.text)
+    return resp.json()
+
+
+def find_race_weekend(race_weekends: list[dict], round_number: int) -> dict:
+    """Find a race weekend by round number."""
+    for rw in race_weekends:
+        if rw["round"] == round_number:
+            return rw
+    raise IngestError(f"Race weekend for round {round_number} not found in API")
 
 
 def load_session(year: int, round_number: int, session_name: str):
@@ -203,22 +215,22 @@ def count_overtakes(laps) -> dict[str, int]:
     return overtakes
 
 
-def map_status(status_str) -> RaceStatus:
-    """Map a FastF1 status string to a RaceStatus enum value."""
+def map_status(status_str) -> RacingStatus:
+    """Map a FastF1 status string to a RacingStatus enum value."""
     if pd.isna(status_str) or status_str is None:
-        return RaceStatus.DNS
+        return RacingStatus.DNS
 
     status = str(status_str).strip()
 
     if status == "Disqualified":
-        return RaceStatus.DSQ
+        return RacingStatus.DSQ
 
     if status in _CLASSIFIED_STATUSES or "Lap" in status:
         # "Finished" or lapped (e.g. "+1 Lap", "+2 Laps")
-        return RaceStatus.CLASSIFIED
+        return RacingStatus.CLASSIFIED
 
     # Everything else: "Retired", mechanical failures, accidents, etc.
-    return RaceStatus.DNF
+    return RacingStatus.DNF
 
 
 def build_qualifying_payload(
@@ -272,7 +284,7 @@ def build_race_payload(
         grid = 0 if pd.isna(grid) else int(grid)
 
         finish = row.get("Position")
-        if pd.isna(finish) or status != RaceStatus.CLASSIFIED:
+        if pd.isna(finish) or status != RacingStatus.CLASSIFIED:
             finish_position = None
         else:
             finish_position = int(finish)
@@ -293,12 +305,13 @@ def build_race_payload(
 def submit_results(
     session: requests.Session,
     api_url: str,
-    race_id: int,
+    season_id: int,
+    round_number: int,
     session_type: str,
     payload: list[dict],
 ) -> None:
     """PUT results to the API endpoint."""
-    url = f"{api_url}/api/races/{race_id}/results/{session_type}"
+    url = f"{api_url}/api/seasons/{season_id}/race-weekends/{round_number}/results/{session_type}"
     resp = session.put(url, json=payload)
     if resp.status_code >= 400:
         raise ApiError(f"Submit {session_type} results", resp.status_code, resp.text)
@@ -331,7 +344,7 @@ def report_warnings(warnings: list[str], session_name: str) -> None:
         print(f"    - {w}")
 
 
-def ingest(year: int, round_number: int, env: str) -> None:
+def ingest(round_number: int, env: str) -> None:
     """Run the full import flow for a single round."""
     config = load_config(env)
 
@@ -352,18 +365,24 @@ def ingest(year: int, round_number: int, env: str) -> None:
     api_session = create_api_session(token)
     api_url = config["F1_API_URL"]
 
-    # Fetch driver mapping and race info
+    # Fetch current season to get season_id and year for FastF1
+    print("Fetching current season...")
+    current_season = fetch_current_season(api_session, api_url)
+    season_id = current_season["id"]
+    year = current_season["year"]
+    print(f"  Season: {year} (id={season_id})")
+
+    # Fetch driver mapping and race weekend info
     print("Fetching driver list...")
     driver_map = fetch_driver_mapping(api_session, api_url)
     print(f"  Found {len(driver_map)} drivers")
 
-    print("Fetching race list...")
-    races = fetch_races(api_session, api_url)
-    race = find_race(races, round_number)
-    race_id = race["id"]
-    has_sprint = race.get("hasSprint", False)
-    race_date = datetime.fromisoformat(race["raceDate"]).replace(tzinfo=timezone.utc)
-    print(f"  Race: {race['name']} (id={race_id}, hasSprint={has_sprint})")
+    print("Fetching race weekends...")
+    race_weekends = fetch_race_weekends(api_session, api_url, season_id)
+    race_weekend = find_race_weekend(race_weekends, round_number)
+    has_sprint = race_weekend.get("weekendFormat", 0) == WEEKEND_FORMAT_SPRINT
+    race_date = datetime.fromisoformat(race_weekend["raceDate"]).replace(tzinfo=timezone.utc)
+    print(f"  Race weekend: {race_weekend['name']} (round={round_number}, hasSprint={has_sprint})")
 
     if datetime.now(timezone.utc) < race_date:
         raise IngestError(f"Race has not occurred yet (scheduled {race_date.date()})")
@@ -375,7 +394,7 @@ def ingest(year: int, round_number: int, env: str) -> None:
         payload, warnings = build_qualifying_payload(quali, driver_map)
         report_warnings(warnings, "qualifying")
         if payload:
-            submit_results(api_session, api_url, race_id, "qualifying", payload)
+            submit_results(api_session, api_url, season_id, round_number, "qualifying", payload)
     else:
         print("  Skipping qualifying — session not available")
 
@@ -389,20 +408,20 @@ def ingest(year: int, round_number: int, env: str) -> None:
             payload, warnings = build_race_payload(sprint, driver_map, sprint_overtakes, sprint_fl)
             report_warnings(warnings, "sprint")
             if payload:
-                submit_results(api_session, api_url, race_id, "sprint", payload)
+                submit_results(api_session, api_url, season_id, round_number, "sprint", payload)
         else:
             print("  Skipping sprint — session not available")
 
-    # Race
+    # Grand Prix
     print(f"Loading race session (R{round_number})...")
     race_session = load_session(year, round_number, "Race")
     if race_session is not None:
         race_overtakes = count_overtakes(race_session.laps)
         race_fl = get_fastest_lap_driver(race_session.laps)
         payload, warnings = build_race_payload(race_session, driver_map, race_overtakes, race_fl)
-        report_warnings(warnings, "race")
+        report_warnings(warnings, "grand-prix")
         if payload:
-            submit_results(api_session, api_url, race_id, "race", payload)
+            submit_results(api_session, api_url, season_id, round_number, "grand-prix", payload)
     else:
         print("  Skipping race — session not available")
 
@@ -411,7 +430,6 @@ def ingest(year: int, round_number: int, env: str) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description="Import F1 results into the Fantasy API")
-    parser.add_argument("--year", type=int, default=datetime.now().year, help="Season year (default: current year)")
     parser.add_argument("--round", type=int, required=True, help="Round number")
     parser.add_argument(
         "--env",
@@ -422,7 +440,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        ingest(args.year, args.round, args.env)
+        ingest(args.round, args.env)
     except IngestError as exc:
         print(f"\nError: {exc}")
         sys.exit(1)

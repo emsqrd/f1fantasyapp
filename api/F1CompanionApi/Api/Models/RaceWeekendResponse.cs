@@ -2,7 +2,7 @@ using F1CompanionApi.Data.Entities;
 
 namespace F1CompanionApi.Api.Models;
 
-public class RaceResponse
+public class RaceWeekendResponse
 {
     public required int Id { get; set; }
     public required int SeasonId { get; set; }
