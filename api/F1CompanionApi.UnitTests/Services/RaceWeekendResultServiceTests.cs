@@ -9,11 +9,11 @@ using Moq;
 
 namespace F1CompanionApi.UnitTests.Services;
 
-public class RaceResultServiceTests
+public class RaceWeekendResultServiceTests
 {
     private readonly Mock<ILogger<RaceWeekendResultService>> _mockLogger;
 
-    public RaceResultServiceTests()
+    public RaceWeekendResultServiceTests()
     {
         _mockLogger = new Mock<ILogger<RaceWeekendResultService>>();
     }
