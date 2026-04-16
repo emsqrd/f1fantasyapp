@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+      - name: Install
+        run: npm ci
+        working-directory: web
+      - name: Format check
+        run: npm run web:format:check
+      - name: Lint
+        run: npm run web:lint
+      - name: Build
+        run: npm run web:build
+      - name: Test
+        run: npm run web:test
+
+  api:
+    name: API
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Restore tools
+        run: dotnet tool restore
+        working-directory: api
+      - name: Format check
+        run: npm run api:format:check
+      - name: Build
+        run: npm run api:build
+      - name: Test
+        run: npm run api:test

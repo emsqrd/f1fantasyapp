@@ -39,3 +39,6 @@ __pycache__/
 .ff1_cache/
 .venv/
 .pytest_cache/
+
+# Local Netlify folder
+.netlify
