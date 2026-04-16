@@ -54,7 +54,7 @@ public class RaceWeekendResultService : IRaceWeekendResultService
     )
     {
         _logger.LogInformation(
-            "Submitting {Count} qualifying results for race {RaceWeekendId}",
+            "Submitting {Count} qualifying results for race weekend {RaceWeekendId}",
             qualifyingItems.Count,
             raceWeekendId
         );
@@ -62,7 +62,7 @@ public class RaceWeekendResultService : IRaceWeekendResultService
         var race = await _dbContext.RaceWeekends.FindAsync(raceWeekendId);
 
         if (race is null)
-            throw new KeyNotFoundException($"Race {raceWeekendId} not found");
+            throw new KeyNotFoundException($"Race weekend {raceWeekendId} not found");
 
         ValidateQualifyingItems(qualifyingItems);
         await ValidateDriversExistAsync(qualifyingItems.Select(i => i.DriverId).ToList());
@@ -103,7 +103,7 @@ public class RaceWeekendResultService : IRaceWeekendResultService
     )
     {
         _logger.LogInformation(
-            "Submitting {Count} {SessionType} results for race {RaceWeekendId}",
+            "Submitting {Count} {SessionType} results for race weekend {RaceWeekendId}",
             raceItems.Count,
             sessionType,
             raceWeekendId
@@ -111,7 +111,7 @@ public class RaceWeekendResultService : IRaceWeekendResultService
 
         var race = await _dbContext.RaceWeekends.FindAsync(raceWeekendId);
         if (race is null)
-            throw new KeyNotFoundException($"Race {raceWeekendId} not found");
+            throw new KeyNotFoundException($"Race weekend {raceWeekendId} not found");
 
         if (sessionType == SessionType.Sprint && race.WeekendFormat != WeekendFormat.Sprint)
             throw new SprintNotAvailableException(raceWeekendId);
@@ -156,7 +156,10 @@ public class RaceWeekendResultService : IRaceWeekendResultService
         int raceWeekendId
     )
     {
-        _logger.LogDebug("Fetching qualifying results for race {RaceWeekendId}", raceWeekendId);
+        _logger.LogDebug(
+            "Fetching qualifying results for race weekend {RaceWeekendId}",
+            raceWeekendId
+        );
 
         var results = await _dbContext
             .DriverQualifyingResults.Where(r => r.RaceWeekendId == raceWeekendId)
@@ -177,7 +180,7 @@ public class RaceWeekendResultService : IRaceWeekendResultService
     )
     {
         _logger.LogDebug(
-            "Fetching {SessionType} results for race {RaceWeekendId}",
+            "Fetching {SessionType} results for race weekend {RaceWeekendId}",
             sessionType,
             raceWeekendId
         );
