@@ -11,13 +11,16 @@ updates:
         patterns:
           - "vite"
           - "@vitejs/*"
-      eslint:
+      eslint-core:
         patterns:
           - "eslint"
-          - "eslint-*"
           - "@eslint/*"
           - "typescript-eslint"
           - "globals"
+      eslint-plugins:
+        patterns:
+          - "eslint-plugin-*"
+          - "eslint-config-*"
       testing:
         patterns:
           - "@testing-library/*"
