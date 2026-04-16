@@ -3,6 +3,7 @@ using System;
 using F1CompanionApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace F1CompanionApi.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260412211811_ExtractCircuitEntity")]
+    partial class ExtractCircuitEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -140,7 +143,7 @@ namespace F1CompanionApi.Data.Migrations
                     b.ToTable("Constructors");
                 });
 
-            modelBuilder.Entity("F1CompanionApi.Data.Entities.ConstructorRaceWeekendScore", b =>
+            modelBuilder.Entity("F1CompanionApi.Data.Entities.ConstructorRaceScore", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -160,31 +163,31 @@ namespace F1CompanionApi.Data.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int?>("GrandPrixFastestLapPoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("GrandPrixOvertakePoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("GrandPrixPenaltyPoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("GrandPrixPositionChangePoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("GrandPrixPositionPoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("GrandPrixTotal")
-                        .HasColumnType("integer");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<int?>("QualifyingPositionPoints")
                         .HasColumnType("integer");
 
-                    b.Property<int>("RaceWeekendId")
+                    b.Property<int?>("RaceFastestLapPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RaceId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RaceOvertakePoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RacePenaltyPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RacePositionChangePoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RacePositionPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RaceTotal")
                         .HasColumnType("integer");
 
                     b.Property<int?>("SprintFastestLapPoints")
@@ -213,12 +216,12 @@ namespace F1CompanionApi.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RaceWeekendId");
+                    b.HasIndex("RaceId");
 
-                    b.HasIndex("ConstructorId", "RaceWeekendId")
+                    b.HasIndex("ConstructorId", "RaceId")
                         .IsUnique();
 
-                    b.ToTable("ConstructorRaceWeekendScores");
+                    b.ToTable("ConstructorRaceScores");
                 });
 
             modelBuilder.Entity("F1CompanionApi.Data.Entities.Driver", b =>
@@ -293,7 +296,7 @@ namespace F1CompanionApi.Data.Migrations
                     b.Property<int>("Position")
                         .HasColumnType("integer");
 
-                    b.Property<int>("RaceWeekendId")
+                    b.Property<int>("RaceId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -301,96 +304,15 @@ namespace F1CompanionApi.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RaceWeekendId");
+                    b.HasIndex("RaceId");
 
-                    b.HasIndex("DriverId", "RaceWeekendId")
+                    b.HasIndex("DriverId", "RaceId")
                         .IsUnique();
 
                     b.ToTable("DriverQualifyingResults");
                 });
 
-            modelBuilder.Entity("F1CompanionApi.Data.Entities.DriverRaceWeekendScore", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CalculatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("DriverId")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("GrandPrixFastestLapPoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("GrandPrixOvertakePoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("GrandPrixPenaltyPoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("GrandPrixPositionChangePoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("GrandPrixPositionPoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("GrandPrixTotal")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<int?>("QualifyingPositionPoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RaceWeekendId")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("SprintFastestLapPoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("SprintOvertakePoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("SprintPenaltyPoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("SprintPositionChangePoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("SprintPositionPoints")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("SprintTotal")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TotalPoints")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RaceWeekendId");
-
-                    b.HasIndex("DriverId", "RaceWeekendId")
-                        .IsUnique();
-
-                    b.ToTable("DriverRaceWeekendScores");
-                });
-
-            modelBuilder.Entity("F1CompanionApi.Data.Entities.DriverRacingResult", b =>
+            modelBuilder.Entity("F1CompanionApi.Data.Entities.DriverRaceResult", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -422,7 +344,7 @@ namespace F1CompanionApi.Data.Migrations
                     b.Property<int>("Overtakes")
                         .HasColumnType("integer");
 
-                    b.Property<int>("RaceWeekendId")
+                    b.Property<int>("RaceId")
                         .HasColumnType("integer");
 
                     b.Property<int>("SessionType")
@@ -436,12 +358,93 @@ namespace F1CompanionApi.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RaceWeekendId");
+                    b.HasIndex("RaceId");
 
-                    b.HasIndex("DriverId", "RaceWeekendId", "SessionType")
+                    b.HasIndex("DriverId", "RaceId", "SessionType")
                         .IsUnique();
 
-                    b.ToTable("DriverRacingResults");
+                    b.ToTable("DriverRaceResults");
+                });
+
+            modelBuilder.Entity("F1CompanionApi.Data.Entities.DriverRaceScore", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CalculatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DriverId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("QualifyingPositionPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RaceFastestLapPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RaceId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RaceOvertakePoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RacePenaltyPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RacePositionChangePoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RacePositionPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("RaceTotal")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SprintFastestLapPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SprintOvertakePoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SprintPenaltyPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SprintPositionChangePoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SprintPositionPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SprintTotal")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RaceId");
+
+                    b.HasIndex("DriverId", "RaceId")
+                        .IsUnique();
+
+                    b.ToTable("DriverRaceScores");
                 });
 
             modelBuilder.Entity("F1CompanionApi.Data.Entities.League", b =>
@@ -629,7 +632,7 @@ namespace F1CompanionApi.Data.Migrations
                     b.Property<bool>("IsCaptain")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("RaceWeekendId")
+                    b.Property<int>("RaceId")
                         .HasColumnType("integer");
 
                     b.Property<int>("SlotPosition")
@@ -640,15 +643,15 @@ namespace F1CompanionApi.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RaceWeekendId");
+                    b.HasIndex("RaceId");
 
-                    b.HasIndex("TeamId", "RaceWeekendId", "EntityType", "SlotPosition")
+                    b.HasIndex("TeamId", "RaceId", "EntityType", "SlotPosition")
                         .IsUnique();
 
                     b.ToTable("LineupEntries");
                 });
 
-            modelBuilder.Entity("F1CompanionApi.Data.Entities.RaceWeekend", b =>
+            modelBuilder.Entity("F1CompanionApi.Data.Entities.Race", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -664,6 +667,9 @@ namespace F1CompanionApi.Data.Migrations
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("HasSprint")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -687,9 +693,6 @@ namespace F1CompanionApi.Data.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("WeekendFormat")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CircuitId");
@@ -697,7 +700,7 @@ namespace F1CompanionApi.Data.Migrations
                     b.HasIndex("SeasonId", "Round")
                         .IsUnique();
 
-                    b.ToTable("RaceWeekends");
+                    b.ToTable("Races");
                 });
 
             modelBuilder.Entity("F1CompanionApi.Data.Entities.Season", b =>
@@ -981,7 +984,7 @@ namespace F1CompanionApi.Data.Migrations
                     b.ToTable("TeamDrivers");
                 });
 
-            modelBuilder.Entity("F1CompanionApi.Data.Entities.TeamRaceWeekendScore", b =>
+            modelBuilder.Entity("F1CompanionApi.Data.Entities.TeamRaceScore", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1001,7 +1004,7 @@ namespace F1CompanionApi.Data.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<int>("RaceWeekendId")
+                    b.Property<int>("RaceId")
                         .HasColumnType("integer");
 
                     b.Property<int>("TeamId")
@@ -1015,12 +1018,12 @@ namespace F1CompanionApi.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RaceWeekendId");
+                    b.HasIndex("RaceId");
 
-                    b.HasIndex("TeamId", "RaceWeekendId")
+                    b.HasIndex("TeamId", "RaceId")
                         .IsUnique();
 
-                    b.ToTable("TeamRaceWeekendScores");
+                    b.ToTable("TeamRaceScores");
                 });
 
             modelBuilder.Entity("F1CompanionApi.Data.Entities.UserProfile", b =>
@@ -1068,7 +1071,7 @@ namespace F1CompanionApi.Data.Migrations
                     b.ToTable("UserProfiles");
                 });
 
-            modelBuilder.Entity("F1CompanionApi.Data.Entities.ConstructorRaceWeekendScore", b =>
+            modelBuilder.Entity("F1CompanionApi.Data.Entities.ConstructorRaceScore", b =>
                 {
                     b.HasOne("F1CompanionApi.Data.Entities.Constructor", "Constructor")
                         .WithMany()
@@ -1076,15 +1079,15 @@ namespace F1CompanionApi.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("F1CompanionApi.Data.Entities.RaceWeekend", "RaceWeekend")
+                    b.HasOne("F1CompanionApi.Data.Entities.Race", "Race")
                         .WithMany()
-                        .HasForeignKey("RaceWeekendId")
+                        .HasForeignKey("RaceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Constructor");
 
-                    b.Navigation("RaceWeekend");
+                    b.Navigation("Race");
                 });
 
             modelBuilder.Entity("F1CompanionApi.Data.Entities.DriverQualifyingResult", b =>
@@ -1095,18 +1098,18 @@ namespace F1CompanionApi.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("F1CompanionApi.Data.Entities.RaceWeekend", "RaceWeekend")
+                    b.HasOne("F1CompanionApi.Data.Entities.Race", "Race")
                         .WithMany()
-                        .HasForeignKey("RaceWeekendId")
+                        .HasForeignKey("RaceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Driver");
 
-                    b.Navigation("RaceWeekend");
+                    b.Navigation("Race");
                 });
 
-            modelBuilder.Entity("F1CompanionApi.Data.Entities.DriverRaceWeekendScore", b =>
+            modelBuilder.Entity("F1CompanionApi.Data.Entities.DriverRaceResult", b =>
                 {
                     b.HasOne("F1CompanionApi.Data.Entities.Driver", "Driver")
                         .WithMany()
@@ -1114,18 +1117,18 @@ namespace F1CompanionApi.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("F1CompanionApi.Data.Entities.RaceWeekend", "RaceWeekend")
+                    b.HasOne("F1CompanionApi.Data.Entities.Race", "Race")
                         .WithMany()
-                        .HasForeignKey("RaceWeekendId")
+                        .HasForeignKey("RaceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Driver");
 
-                    b.Navigation("RaceWeekend");
+                    b.Navigation("Race");
                 });
 
-            modelBuilder.Entity("F1CompanionApi.Data.Entities.DriverRacingResult", b =>
+            modelBuilder.Entity("F1CompanionApi.Data.Entities.DriverRaceScore", b =>
                 {
                     b.HasOne("F1CompanionApi.Data.Entities.Driver", "Driver")
                         .WithMany()
@@ -1133,15 +1136,15 @@ namespace F1CompanionApi.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("F1CompanionApi.Data.Entities.RaceWeekend", "RaceWeekend")
+                    b.HasOne("F1CompanionApi.Data.Entities.Race", "Race")
                         .WithMany()
-                        .HasForeignKey("RaceWeekendId")
+                        .HasForeignKey("RaceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Driver");
 
-                    b.Navigation("RaceWeekend");
+                    b.Navigation("Race");
                 });
 
             modelBuilder.Entity("F1CompanionApi.Data.Entities.League", b =>
@@ -1253,9 +1256,9 @@ namespace F1CompanionApi.Data.Migrations
 
             modelBuilder.Entity("F1CompanionApi.Data.Entities.LineupEntry", b =>
                 {
-                    b.HasOne("F1CompanionApi.Data.Entities.RaceWeekend", "RaceWeekend")
+                    b.HasOne("F1CompanionApi.Data.Entities.Race", "Race")
                         .WithMany()
-                        .HasForeignKey("RaceWeekendId")
+                        .HasForeignKey("RaceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1265,12 +1268,12 @@ namespace F1CompanionApi.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("RaceWeekend");
+                    b.Navigation("Race");
 
                     b.Navigation("Team");
                 });
 
-            modelBuilder.Entity("F1CompanionApi.Data.Entities.RaceWeekend", b =>
+            modelBuilder.Entity("F1CompanionApi.Data.Entities.Race", b =>
                 {
                     b.HasOne("F1CompanionApi.Data.Entities.Circuit", "Circuit")
                         .WithMany()
@@ -1279,7 +1282,7 @@ namespace F1CompanionApi.Data.Migrations
                         .IsRequired();
 
                     b.HasOne("F1CompanionApi.Data.Entities.Season", "Season")
-                        .WithMany("RaceWeekends")
+                        .WithMany("Races")
                         .HasForeignKey("SeasonId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -1450,11 +1453,11 @@ namespace F1CompanionApi.Data.Migrations
                     b.Navigation("UpdatedByUser");
                 });
 
-            modelBuilder.Entity("F1CompanionApi.Data.Entities.TeamRaceWeekendScore", b =>
+            modelBuilder.Entity("F1CompanionApi.Data.Entities.TeamRaceScore", b =>
                 {
-                    b.HasOne("F1CompanionApi.Data.Entities.RaceWeekend", "RaceWeekend")
+                    b.HasOne("F1CompanionApi.Data.Entities.Race", "Race")
                         .WithMany()
-                        .HasForeignKey("RaceWeekendId")
+                        .HasForeignKey("RaceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1464,7 +1467,7 @@ namespace F1CompanionApi.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("RaceWeekend");
+                    b.Navigation("Race");
 
                     b.Navigation("Team");
                 });
@@ -1492,7 +1495,7 @@ namespace F1CompanionApi.Data.Migrations
 
             modelBuilder.Entity("F1CompanionApi.Data.Entities.Season", b =>
                 {
-                    b.Navigation("RaceWeekends");
+                    b.Navigation("Races");
 
                     b.Navigation("SeasonConstructors");
 

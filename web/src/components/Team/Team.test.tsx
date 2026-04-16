@@ -1,4 +1,4 @@
-import type { Race } from '@/contracts/Race';
+import type { RaceWeekend } from '@/contracts/RaceWeekend';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team as TeamType } from '@/contracts/Team';
 import { setCaptain } from '@/services/teamService';
@@ -120,42 +120,49 @@ describe('Team Component', () => {
     }),
   ];
 
-  const mockRaces: Race[] = [
+  const mockRaces: RaceWeekend[] = [
     {
       id: 1,
       seasonId: 1,
       round: 1,
       name: 'Bahrain Grand Prix',
-      location: 'Bahrain',
-      circuit: 'Bahrain International Circuit',
-      country: 'Bahrain',
+      circuit: {
+        id: 1,
+        name: 'Bahrain International Circuit',
+        location: 'Sakhir',
+        country: 'Bahrain',
+      },
       raceDate: '2024-03-02',
       lockDeadline: '2024-03-01T12:00:00Z',
       isCurrent: false,
+      weekendFormat: 0,
     },
     {
       id: 2,
       seasonId: 1,
       round: 2,
       name: 'Saudi Arabian Grand Prix',
-      location: 'Jeddah',
-      circuit: 'Jeddah Corniche Circuit',
-      country: 'Saudi Arabia',
+      circuit: {
+        id: 2,
+        name: 'Jeddah Corniche Circuit',
+        location: 'Jeddah',
+        country: 'Saudi Arabia',
+      },
       raceDate: '2024-03-09',
       lockDeadline: null,
       isCurrent: true,
+      weekendFormat: 0,
     },
     {
       id: 3,
       seasonId: 1,
       round: 3,
       name: 'Australian Grand Prix',
-      location: 'Melbourne',
-      circuit: 'Albert Park Circuit',
-      country: 'Australia',
+      circuit: { id: 3, name: 'Albert Park Circuit', location: 'Melbourne', country: 'Australia' },
       raceDate: '2024-03-24',
       lockDeadline: '2024-03-23T12:00:00Z',
       isCurrent: false,
+      weekendFormat: 0,
     },
   ];
 
@@ -389,22 +396,22 @@ describe('Team Component', () => {
     const FUTURE_DEADLINE_HOURS = '2026-02-24T15:30:00Z'; // 3h 30m away from 2026-02-24T12:00:00Z
     const FUTURE_DEADLINE_IMMINENT = '2026-02-24T12:00:30Z'; // 30s away from 2026-02-24T12:00:00Z
 
-    const lockedRaces: Race[] = mockRaces.map((race) => ({
+    const lockedRaces: RaceWeekend[] = mockRaces.map((race) => ({
       ...race,
       lockDeadline: race.isCurrent ? PAST_DEADLINE : race.lockDeadline,
     }));
 
-    const countdownRacesDays: Race[] = mockRaces.map((race) => ({
+    const countdownRacesDays: RaceWeekend[] = mockRaces.map((race) => ({
       ...race,
       lockDeadline: race.isCurrent ? FUTURE_DEADLINE_DAYS : race.lockDeadline,
     }));
 
-    const countdownRacesHours: Race[] = mockRaces.map((race) => ({
+    const countdownRacesHours: RaceWeekend[] = mockRaces.map((race) => ({
       ...race,
       lockDeadline: race.isCurrent ? FUTURE_DEADLINE_HOURS : race.lockDeadline,
     }));
 
-    const countdownRacesImminent: Race[] = mockRaces.map((race) => ({
+    const countdownRacesImminent: RaceWeekend[] = mockRaces.map((race) => ({
       ...race,
       lockDeadline: race.isCurrent ? FUTURE_DEADLINE_IMMINENT : race.lockDeadline,
     }));

@@ -36,7 +36,10 @@ public static class ScoringConstants
         [8] = 1,
     }.ToFrozenDictionary();
 
-    public static readonly FrozenDictionary<int, int> RacePositionPoints = new Dictionary<int, int>
+    public static readonly FrozenDictionary<int, int> GrandPrixPositionPoints = new Dictionary<
+        int,
+        int
+    >
     {
         [1] = 25,
         [2] = 18,
@@ -51,10 +54,10 @@ public static class ScoringConstants
     }.ToFrozenDictionary();
 
     public const int SprintOvertakeBonus = 1;
-    public const int RaceOvertakeBonus = 1;
+    public const int GrandPrixOvertakeBonus = 1;
     public const int SprintFastestLapBonus = 2;
-    public const int RaceFastestLapBonus = 3;
+    public const int GrandPrixFastestLapBonus = 3;
     public const int SprintDnfPenalty = -5;
-    public const int RaceDnfPenalty = -10;
+    public const int GrandPrixDnfPenalty = -10;
     public const int CaptainMultiplier = 2;
 }

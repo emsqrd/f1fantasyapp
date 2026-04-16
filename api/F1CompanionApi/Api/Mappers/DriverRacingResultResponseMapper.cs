@@ -3,22 +3,22 @@ using F1CompanionApi.Data.Entities;
 
 namespace F1CompanionApi.Api.Mappers;
 
-public static class DriverRaceResultResponseMapper
+public static class DriverRacingResultResponseMapper
 {
-    public static IEnumerable<DriverRaceResultResponse> ToResponseModel(
-        this IEnumerable<DriverRaceResult> results
+    public static IEnumerable<DriverRacingResultResponse> ToResponseModel(
+        this IEnumerable<DriverRacingResult> results
     )
     {
         return results.Select(r => r.ToResponseModel());
     }
 
-    public static DriverRaceResultResponse ToResponseModel(this DriverRaceResult result)
+    public static DriverRacingResultResponse ToResponseModel(this DriverRacingResult result)
     {
-        return new DriverRaceResultResponse
+        return new DriverRacingResultResponse
         {
             Id = result.Id,
             DriverId = result.DriverId,
-            RaceId = result.RaceId,
+            RaceWeekendId = result.RaceWeekendId,
             SessionType = result.SessionType,
             GridPosition = result.GridPosition,
             FinishPosition = result.FinishPosition,

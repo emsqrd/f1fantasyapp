@@ -169,38 +169,69 @@ BEGIN
     (season_id, (SELECT "Id" FROM "Drivers" WHERE "Abbreviation" = 'PER'), cad_id, true, false, NOW(), NOW(), NULL)
   ON CONFLICT ("SeasonId", "DriverId") DO NOTHING;
 
-  -- Insert all races for 2026 season
-  -- Sprint races: China, Miami, Canada, Great Britain, Netherlands, Singapore
-  INSERT INTO "Races"
-    ("SeasonId", "Round", "Name", "Location", "Circuit", "Country", "RaceDate", "LockDeadline", "HasSprint", "IsDeleted", "CreatedAt", "UpdatedAt", "DeletedAt")
+  -- Insert circuits for 2026 season
+  INSERT INTO "Circuits"
+    ("Name", "Location", "Country", "IsDeleted", "CreatedAt", "UpdatedAt", "DeletedAt")
   VALUES
-    (season_id, 1, 'Australian Grand Prix', 'Melbourne', 'Melbourne Grand Prix Circuit', 'Australia', '2026-03-08 04:00:00+00', '2026-03-07 05:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 2, 'Chinese Grand Prix', 'Shanghai', 'Shanghai International Circuit', 'China', '2026-03-15 07:00:00+00', '2026-03-14 07:00:00+00', true, false, NOW(), NOW(), NULL),
-    (season_id, 3, 'Japanese Grand Prix', 'Suzuka', 'Suzuka Circuit', 'Japan', '2026-03-29 05:00:00+00', '2026-03-28 06:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 4, 'Bahrain Grand Prix', 'Sakhir', 'Bahrain International Circuit', 'Bahrain', '2026-04-12 15:00:00+00', '2026-04-11 16:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 5, 'Saudi Arabian Grand Prix', 'Jeddah', 'Jeddah Corniche Circuit', 'Saudi Arabia', '2026-04-19 17:00:00+00', '2026-04-18 17:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 6, 'Miami Grand Prix', 'Miami', 'Miami International Autodrome', 'United States', '2026-05-03 20:00:00+00', '2026-05-02 20:00:00+00', true, false, NOW(), NOW(), NULL),
-    (season_id, 7, 'Canadian Grand Prix', 'Montreal', 'Circuit Gilles Villeneuve', 'Canada', '2026-05-24 20:00:00+00', '2026-05-23 20:00:00+00', true, false, NOW(), NOW(), NULL),
-    (season_id, 8, 'Monaco Grand Prix', 'Monte Carlo', 'Circuit de Monaco', 'Monaco', '2026-06-07 13:00:00+00', '2026-06-06 14:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 9, 'Spanish Grand Prix', 'Barcelona', 'Circuit de Barcelona-Catalunya', 'Spain', '2026-06-14 13:00:00+00', '2026-06-13 14:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 10, 'Austrian Grand Prix', 'Spielberg', 'Red Bull Ring', 'Austria', '2026-06-28 13:00:00+00', '2026-06-27 14:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 11, 'British Grand Prix', 'Silverstone', 'Silverstone Circuit', 'United Kingdom', '2026-07-05 14:00:00+00', '2026-07-04 15:00:00+00', true, false, NOW(), NOW(), NULL),
-    (season_id, 12, 'Belgian Grand Prix', 'Spa', 'Circuit de Spa-Francorchamps', 'Belgium', '2026-07-19 13:00:00+00', '2026-07-18 14:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 13, 'Hungarian Grand Prix', 'Budapest', 'Hungaroring', 'Hungary', '2026-07-26 13:00:00+00', '2026-07-25 14:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 14, 'Dutch Grand Prix', 'Zandvoort', 'Circuit Zandvoort', 'Netherlands', '2026-08-23 13:00:00+00', '2026-08-22 14:00:00+00', true, false, NOW(), NOW(), NULL),
-    (season_id, 15, 'Italian Grand Prix', 'Monza', 'Autodromo Nazionale di Monza', 'Italy', '2026-09-06 13:00:00+00', '2026-09-05 14:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 16, 'Madrid Grand Prix', 'Madrid', 'Madrid Street Circuit', 'Spain', '2026-09-13 13:00:00+00', '2026-09-12 14:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 17, 'Azerbaijan Grand Prix', 'Baku', 'Baku City Circuit', 'Azerbaijan', '2026-09-26 11:00:00+00', '2026-09-25 12:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 18, 'Singapore Grand Prix', 'Singapore', 'Marina Bay Street Circuit', 'Singapore', '2026-10-11 12:00:00+00', '2026-10-10 13:00:00+00', true, false, NOW(), NOW(), NULL),
-    (season_id, 19, 'United States Grand Prix', 'Austin', 'Circuit of the Americas', 'United States', '2026-10-25 20:00:00+00', '2026-10-24 21:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 20, 'Mexico City Grand Prix', 'Mexico City', 'Autódromo Hermanos Rodríguez', 'Mexico', '2026-11-01 20:00:00+00', '2026-10-31 21:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 21, 'São Paulo Grand Prix', 'São Paulo', 'Autódromo José Carlos Pace', 'Brazil', '2026-11-08 17:00:00+00', '2026-11-07 18:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 22, 'Las Vegas Grand Prix', 'Las Vegas', 'Las Vegas Street Circuit', 'United States', '2026-11-22 04:00:00+00', '2026-11-21 04:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 23, 'Qatar Grand Prix', 'Lusail', 'Lusail International Circuit', 'Qatar', '2026-11-29 16:00:00+00', '2026-11-28 18:00:00+00', false, false, NOW(), NOW(), NULL),
-    (season_id, 24, 'Abu Dhabi Grand Prix', 'Abu Dhabi', 'Yas Marina Circuit', 'United Arab Emirates', '2026-12-06 13:00:00+00', '2026-12-05 14:00:00+00', false, false, NOW(), NOW(), NULL)
+    ('Melbourne Grand Prix Circuit', 'Melbourne', 'Australia', false, NOW(), NOW(), NULL),
+    ('Shanghai International Circuit', 'Shanghai', 'China', false, NOW(), NOW(), NULL),
+    ('Suzuka Circuit', 'Suzuka', 'Japan', false, NOW(), NOW(), NULL),
+    ('Bahrain International Circuit', 'Sakhir', 'Bahrain', false, NOW(), NOW(), NULL),
+    ('Jeddah Corniche Circuit', 'Jeddah', 'Saudi Arabia', false, NOW(), NOW(), NULL),
+    ('Miami International Autodrome', 'Miami', 'United States', false, NOW(), NOW(), NULL),
+    ('Circuit Gilles Villeneuve', 'Montreal', 'Canada', false, NOW(), NOW(), NULL),
+    ('Circuit de Monaco', 'Monte Carlo', 'Monaco', false, NOW(), NOW(), NULL),
+    ('Circuit de Barcelona-Catalunya', 'Barcelona', 'Spain', false, NOW(), NOW(), NULL),
+    ('Red Bull Ring', 'Spielberg', 'Austria', false, NOW(), NOW(), NULL),
+    ('Silverstone Circuit', 'Silverstone', 'United Kingdom', false, NOW(), NOW(), NULL),
+    ('Circuit de Spa-Francorchamps', 'Spa', 'Belgium', false, NOW(), NOW(), NULL),
+    ('Hungaroring', 'Budapest', 'Hungary', false, NOW(), NOW(), NULL),
+    ('Circuit Zandvoort', 'Zandvoort', 'Netherlands', false, NOW(), NOW(), NULL),
+    ('Autodromo Nazionale di Monza', 'Monza', 'Italy', false, NOW(), NOW(), NULL),
+    ('Madrid Street Circuit', 'Madrid', 'Spain', false, NOW(), NOW(), NULL),
+    ('Baku City Circuit', 'Baku', 'Azerbaijan', false, NOW(), NOW(), NULL),
+    ('Marina Bay Street Circuit', 'Singapore', 'Singapore', false, NOW(), NOW(), NULL),
+    ('Circuit of the Americas', 'Austin', 'United States', false, NOW(), NOW(), NULL),
+    ('Autódromo Hermanos Rodríguez', 'Mexico City', 'Mexico', false, NOW(), NOW(), NULL),
+    ('Autódromo José Carlos Pace', 'São Paulo', 'Brazil', false, NOW(), NOW(), NULL),
+    ('Las Vegas Street Circuit', 'Las Vegas', 'United States', false, NOW(), NOW(), NULL),
+    ('Lusail International Circuit', 'Lusail', 'Qatar', false, NOW(), NOW(), NULL),
+    ('Yas Marina Circuit', 'Abu Dhabi', 'United Arab Emirates', false, NOW(), NOW(), NULL)
+  ON CONFLICT ("Name") DO NOTHING;
+
+  -- Insert all races for 2026 season
+  -- Sprint weekends (WeekendFormat = 1): China, Miami, Canada, Great Britain, Netherlands, Singapore
+  -- Standard weekends (WeekendFormat = 0): all others
+  INSERT INTO "RaceWeekends"
+    ("SeasonId", "Round", "Name", "CircuitId", "RaceDate", "LockDeadline", "WeekendFormat", "IsDeleted", "CreatedAt", "UpdatedAt", "DeletedAt")
+  VALUES
+    (season_id, 1, 'Australian Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Melbourne Grand Prix Circuit'), '2026-03-08 04:00:00+00', '2026-03-07 05:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 2, 'Chinese Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Shanghai International Circuit'), '2026-03-15 07:00:00+00', '2026-03-14 07:00:00+00', 1, false, NOW(), NOW(), NULL),
+    (season_id, 3, 'Japanese Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Suzuka Circuit'), '2026-03-29 05:00:00+00', '2026-03-28 06:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 4, 'Bahrain Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Bahrain International Circuit'), '2026-04-12 15:00:00+00', '2026-04-11 16:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 5, 'Saudi Arabian Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Jeddah Corniche Circuit'), '2026-04-19 17:00:00+00', '2026-04-18 17:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 6, 'Miami Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Miami International Autodrome'), '2026-05-03 20:00:00+00', '2026-05-02 20:00:00+00', 1, false, NOW(), NOW(), NULL),
+    (season_id, 7, 'Canadian Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Circuit Gilles Villeneuve'), '2026-05-24 20:00:00+00', '2026-05-23 20:00:00+00', 1, false, NOW(), NOW(), NULL),
+    (season_id, 8, 'Monaco Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Circuit de Monaco'), '2026-06-07 13:00:00+00', '2026-06-06 14:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 9, 'Spanish Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Circuit de Barcelona-Catalunya'), '2026-06-14 13:00:00+00', '2026-06-13 14:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 10, 'Austrian Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Red Bull Ring'), '2026-06-28 13:00:00+00', '2026-06-27 14:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 11, 'British Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Silverstone Circuit'), '2026-07-05 14:00:00+00', '2026-07-04 15:00:00+00', 1, false, NOW(), NOW(), NULL),
+    (season_id, 12, 'Belgian Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Circuit de Spa-Francorchamps'), '2026-07-19 13:00:00+00', '2026-07-18 14:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 13, 'Hungarian Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Hungaroring'), '2026-07-26 13:00:00+00', '2026-07-25 14:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 14, 'Dutch Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Circuit Zandvoort'), '2026-08-23 13:00:00+00', '2026-08-22 14:00:00+00', 1, false, NOW(), NOW(), NULL),
+    (season_id, 15, 'Italian Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Autodromo Nazionale di Monza'), '2026-09-06 13:00:00+00', '2026-09-05 14:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 16, 'Madrid Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Madrid Street Circuit'), '2026-09-13 13:00:00+00', '2026-09-12 14:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 17, 'Azerbaijan Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Baku City Circuit'), '2026-09-26 11:00:00+00', '2026-09-25 12:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 18, 'Singapore Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Marina Bay Street Circuit'), '2026-10-11 12:00:00+00', '2026-10-10 13:00:00+00', 1, false, NOW(), NOW(), NULL),
+    (season_id, 19, 'United States Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Circuit of the Americas'), '2026-10-25 20:00:00+00', '2026-10-24 21:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 20, 'Mexico City Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Autódromo Hermanos Rodríguez'), '2026-11-01 20:00:00+00', '2026-10-31 21:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 21, 'São Paulo Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Autódromo José Carlos Pace'), '2026-11-08 17:00:00+00', '2026-11-07 18:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 22, 'Las Vegas Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Las Vegas Street Circuit'), '2026-11-22 04:00:00+00', '2026-11-21 04:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 23, 'Qatar Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Lusail International Circuit'), '2026-11-29 16:00:00+00', '2026-11-28 18:00:00+00', 0, false, NOW(), NOW(), NULL),
+    (season_id, 24, 'Abu Dhabi Grand Prix', (SELECT "Id" FROM "Circuits" WHERE "Name" = 'Yas Marina Circuit'), '2026-12-06 13:00:00+00', '2026-12-05 14:00:00+00', 0, false, NOW(), NOW(), NULL)
   ON CONFLICT ("SeasonId", "Round") DO UPDATE SET
     "RaceDate" = EXCLUDED."RaceDate",
     "LockDeadline" = EXCLUDED."LockDeadline",
-    "HasSprint" = EXCLUDED."HasSprint",
+    "WeekendFormat" = EXCLUDED."WeekendFormat",
     "UpdatedAt" = NOW();
 END $$;

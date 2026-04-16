@@ -1,6 +1,6 @@
 namespace F1CompanionApi.Data.Entities;
 
-public enum RaceStatus
+public enum RacingStatus
 {
     Classified = 0,
     DNF = 1,

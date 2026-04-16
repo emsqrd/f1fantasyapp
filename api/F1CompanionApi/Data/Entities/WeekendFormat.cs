@@ -1,7 +1,7 @@
 namespace F1CompanionApi.Data.Entities;
 
-public enum SessionType
+public enum WeekendFormat
 {
-    GrandPrix = 0,
+    Standard = 0,
     Sprint = 1,
 }

@@ -2,11 +2,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Data.Entities;
 
-[Index(nameof(DriverId), nameof(RaceId), IsUnique = true)]
-public class DriverRaceScore : BaseEntity
+[Index(nameof(DriverId), nameof(RaceWeekendId), IsUnique = true)]
+public class DriverRaceWeekendScore : BaseEntity
 {
     public required int DriverId { get; set; }
-    public required int RaceId { get; set; }
+    public required int RaceWeekendId { get; set; }
 
     public int? QualifyingPositionPoints { get; set; }
 
@@ -17,16 +17,16 @@ public class DriverRaceScore : BaseEntity
     public int? SprintPenaltyPoints { get; set; }
     public int? SprintTotal { get; set; }
 
-    public int? RacePositionPoints { get; set; }
-    public int? RacePositionChangePoints { get; set; }
-    public int? RaceOvertakePoints { get; set; }
-    public int? RaceFastestLapPoints { get; set; }
-    public int? RacePenaltyPoints { get; set; }
-    public int? RaceTotal { get; set; }
+    public int? GrandPrixPositionPoints { get; set; }
+    public int? GrandPrixPositionChangePoints { get; set; }
+    public int? GrandPrixOvertakePoints { get; set; }
+    public int? GrandPrixFastestLapPoints { get; set; }
+    public int? GrandPrixPenaltyPoints { get; set; }
+    public int? GrandPrixTotal { get; set; }
 
     public required int TotalPoints { get; set; }
     public required DateTime CalculatedAt { get; set; }
 
     public Driver Driver { get; set; } = null!;
-    public Race Race { get; set; } = null!;
+    public RaceWeekend RaceWeekend { get; set; } = null!;
 }

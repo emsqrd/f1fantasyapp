@@ -1,4 +1,4 @@
-import type { Race } from '@/contracts/Race';
+import type { RaceWeekend } from '@/contracts/RaceWeekend';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team } from '@/contracts/Team';
 import { formatBudget } from '@/lib/utils';
@@ -16,7 +16,7 @@ interface TeamProps {
   team: Team;
   activeDrivers: Driver[];
   activeConstructors: Constructor[];
-  races: Race[];
+  races: RaceWeekend[];
   readOnly: boolean;
 }
 

@@ -7,30 +7,33 @@ using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Domain.Services;
 
-public interface IRaceResultService
+public interface IRaceWeekendResultService
 {
     Task<IEnumerable<DriverQualifyingResultResponse>> SubmitQualifyingResultsAsync(
-        int raceId,
+        int raceWeekendId,
         List<QualifyingResultItem> qualifyingItems
     );
-    Task<IEnumerable<DriverRaceResultResponse>> SubmitRaceResultsAsync(
-        int raceId,
+    Task<IEnumerable<DriverRacingResultResponse>> SubmitRaceResultsAsync(
+        int raceWeekendId,
         SessionType sessionType,
-        List<RaceResultItem> raceItems
+        List<RacingResultItem> raceItems
     );
-    Task<IEnumerable<DriverQualifyingResultResponse>> GetQualifyingResultsAsync(int raceId);
-    Task<IEnumerable<DriverRaceResultResponse>> GetRaceResultsAsync(
-        int raceId,
+    Task<IEnumerable<DriverQualifyingResultResponse>> GetQualifyingResultsAsync(int raceWeekendId);
+    Task<IEnumerable<DriverRacingResultResponse>> GetRaceResultsAsync(
+        int raceWeekendId,
         SessionType sessionType
     );
 }
 
-public class RaceResultService : IRaceResultService
+public class RaceWeekendResultService : IRaceWeekendResultService
 {
     private readonly ApplicationDbContext _dbContext;
-    private readonly ILogger<RaceResultService> _logger;
+    private readonly ILogger<RaceWeekendResultService> _logger;
 
-    public RaceResultService(ApplicationDbContext dbContext, ILogger<RaceResultService> logger)
+    public RaceWeekendResultService(
+        ApplicationDbContext dbContext,
+        ILogger<RaceWeekendResultService> logger
+    )
     {
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(logger);
@@ -43,30 +46,30 @@ public class RaceResultService : IRaceResultService
     /// Saves qualifying results for a race, replacing any previously submitted results.
     /// Can be safely rerun to apply corrections, such as position changes after a stewards' review.
     /// </summary>
-    /// <param name="raceId">The ID of the race to submit qualifying results for.</param>
+    /// <param name="raceWeekendId">The ID of the race weekend to submit qualifying results for.</param>
     /// <param name="qualifyingItems">The qualifying result items to save.</param>
     public async Task<IEnumerable<DriverQualifyingResultResponse>> SubmitQualifyingResultsAsync(
-        int raceId,
+        int raceWeekendId,
         List<QualifyingResultItem> qualifyingItems
     )
     {
         _logger.LogInformation(
-            "Submitting {Count} qualifying results for race {RaceId}",
+            "Submitting {Count} qualifying results for race weekend {RaceWeekendId}",
             qualifyingItems.Count,
-            raceId
+            raceWeekendId
         );
 
-        var race = await _dbContext.Races.FindAsync(raceId);
+        var race = await _dbContext.RaceWeekends.FindAsync(raceWeekendId);
 
         if (race is null)
-            throw new KeyNotFoundException($"Race {raceId} not found");
+            throw new KeyNotFoundException($"Race weekend {raceWeekendId} not found");
 
         ValidateQualifyingItems(qualifyingItems);
         await ValidateDriversExistAsync(qualifyingItems.Select(i => i.DriverId).ToList());
 
         // Delete any existing results so new ones can be created
         var existingQualifying = await _dbContext
-            .DriverQualifyingResults.Where(r => r.RaceId == raceId)
+            .DriverQualifyingResults.Where(r => r.RaceWeekendId == raceWeekendId)
             .ToListAsync();
         _dbContext.DriverQualifyingResults.RemoveRange(existingQualifying);
 
@@ -74,7 +77,7 @@ public class RaceResultService : IRaceResultService
             .Select(i => new DriverQualifyingResult
             {
                 DriverId = i.DriverId,
-                RaceId = raceId,
+                RaceWeekendId = raceWeekendId,
                 Position = i.Position,
                 CreatedAt = DateTime.UtcNow,
             })
@@ -90,43 +93,45 @@ public class RaceResultService : IRaceResultService
     /// Saves race or sprint results for a race, replacing any previously submitted results.
     /// Can be safely rerun to apply corrections, such as status changes after a disqualification.
     /// </summary>
-    /// <param name="raceId">The ID of the race to submit results for.</param>
-    /// <param name="sessionType">The session type (Race or Sprint).</param>
+    /// <param name="raceWeekendId">The ID of the race weekend to submit results for.</param>
+    /// <param name="sessionType">The session type (GrandPrix or Sprint).</param>
     /// <param name="raceItems">The race result items to save.</param>
-    public async Task<IEnumerable<DriverRaceResultResponse>> SubmitRaceResultsAsync(
-        int raceId,
+    public async Task<IEnumerable<DriverRacingResultResponse>> SubmitRaceResultsAsync(
+        int raceWeekendId,
         SessionType sessionType,
-        List<RaceResultItem> raceItems
+        List<RacingResultItem> raceItems
     )
     {
         _logger.LogInformation(
-            "Submitting {Count} {SessionType} results for race {RaceId}",
+            "Submitting {Count} {SessionType} results for race weekend {RaceWeekendId}",
             raceItems.Count,
             sessionType,
-            raceId
+            raceWeekendId
         );
 
-        var race = await _dbContext.Races.FindAsync(raceId);
+        var race = await _dbContext.RaceWeekends.FindAsync(raceWeekendId);
         if (race is null)
-            throw new KeyNotFoundException($"Race {raceId} not found");
+            throw new KeyNotFoundException($"Race weekend {raceWeekendId} not found");
 
-        if (sessionType == SessionType.Sprint && !race.HasSprint)
-            throw new SprintNotAvailableException(raceId);
+        if (sessionType == SessionType.Sprint && race.WeekendFormat != WeekendFormat.Sprint)
+            throw new SprintNotAvailableException(raceWeekendId);
 
         ValidateRaceItems(raceItems);
         await ValidateDriversExistAsync(raceItems.Select(i => i.DriverId).ToList());
 
         // Delete any existing results so new ones can be created
         var existingRace = await _dbContext
-            .DriverRaceResults.Where(r => r.RaceId == raceId && r.SessionType == sessionType)
+            .DriverRacingResults.Where(r =>
+                r.RaceWeekendId == raceWeekendId && r.SessionType == sessionType
+            )
             .ToListAsync();
-        _dbContext.DriverRaceResults.RemoveRange(existingRace);
+        _dbContext.DriverRacingResults.RemoveRange(existingRace);
 
         var entities = raceItems
-            .Select(i => new DriverRaceResult
+            .Select(i => new DriverRacingResult
             {
                 DriverId = i.DriverId,
-                RaceId = raceId,
+                RaceWeekendId = raceWeekendId,
                 SessionType = sessionType,
                 GridPosition = i.GridPosition,
                 FinishPosition = i.FinishPosition,
@@ -137,7 +142,7 @@ public class RaceResultService : IRaceResultService
             })
             .ToList();
 
-        _dbContext.DriverRaceResults.AddRange(entities);
+        _dbContext.DriverRacingResults.AddRange(entities);
         await _dbContext.SaveChangesAsync();
 
         return entities.ToResponseModel();
@@ -146,15 +151,18 @@ public class RaceResultService : IRaceResultService
     /// <summary>
     /// Returns all qualifying results for a race, ordered by position.
     /// </summary>
-    /// <param name="raceId">The ID of the race to retrieve qualifying results for.</param>
+    /// <param name="raceWeekendId">The ID of the race weekend to retrieve qualifying results for.</param>
     public async Task<IEnumerable<DriverQualifyingResultResponse>> GetQualifyingResultsAsync(
-        int raceId
+        int raceWeekendId
     )
     {
-        _logger.LogDebug("Fetching qualifying results for race {RaceId}", raceId);
+        _logger.LogDebug(
+            "Fetching qualifying results for race weekend {RaceWeekendId}",
+            raceWeekendId
+        );
 
         var results = await _dbContext
-            .DriverQualifyingResults.Where(r => r.RaceId == raceId)
+            .DriverQualifyingResults.Where(r => r.RaceWeekendId == raceWeekendId)
             .OrderBy(r => r.Position)
             .ToListAsync();
 
@@ -164,17 +172,23 @@ public class RaceResultService : IRaceResultService
     /// <summary>
     /// Returns all race or sprint results for a race, ordered by finish position.
     /// </summary>
-    /// <param name="raceId">The ID of the race to retrieve results for.</param>
-    /// <param name="sessionType">The session type (Race or Sprint).</param>
-    public async Task<IEnumerable<DriverRaceResultResponse>> GetRaceResultsAsync(
-        int raceId,
+    /// <param name="raceWeekendId">The ID of the race weekend to retrieve results for.</param>
+    /// <param name="sessionType">The session type (GrandPrix or Sprint).</param>
+    public async Task<IEnumerable<DriverRacingResultResponse>> GetRaceResultsAsync(
+        int raceWeekendId,
         SessionType sessionType
     )
     {
-        _logger.LogDebug("Fetching {SessionType} results for race {RaceId}", sessionType, raceId);
+        _logger.LogDebug(
+            "Fetching {SessionType} results for race weekend {RaceWeekendId}",
+            sessionType,
+            raceWeekendId
+        );
 
         var results = await _dbContext
-            .DriverRaceResults.Where(r => r.RaceId == raceId && r.SessionType == sessionType)
+            .DriverRacingResults.Where(r =>
+                r.RaceWeekendId == raceWeekendId && r.SessionType == sessionType
+            )
             .OrderBy(r => r.FinishPosition)
             .ToListAsync();
 
@@ -201,7 +215,7 @@ public class RaceResultService : IRaceResultService
     /// Validates duplicate driverIds, fastest lap count, and FinishPosition/Status consistency.
     /// </summary>
     /// <param name="raceItems">The race result items to validate.</param>
-    private static void ValidateRaceItems(List<RaceResultItem> raceItems)
+    private static void ValidateRaceItems(List<RacingResultItem> raceItems)
     {
         var duplicates = raceItems.GroupBy(i => i.DriverId).Where(g => g.Count() > 1).ToList();
         if (duplicates.Count > 0)
@@ -218,9 +232,9 @@ public class RaceResultService : IRaceResultService
         foreach (var item in raceItems)
         {
             var finishPositionRequired =
-                item.Status == RaceStatus.Classified && item.FinishPosition is null;
+                item.Status == RacingStatus.Classified && item.FinishPosition is null;
             var finishPositionForbidden =
-                item.Status != RaceStatus.Classified && item.FinishPosition is not null;
+                item.Status != RacingStatus.Classified && item.FinishPosition is not null;
 
             if (finishPositionRequired)
                 throw new ArgumentException(

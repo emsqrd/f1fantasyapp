@@ -10,12 +10,13 @@ public class ApplicationDbContext : DbContext
 
     // Add your DbSets here
     public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<Circuit> Circuits => Set<Circuit>();
     public DbSet<Constructor> Constructors => Set<Constructor>();
     public DbSet<Driver> Drivers => Set<Driver>();
     public DbSet<League> Leagues => Set<League>();
     public DbSet<LeagueInvite> LeagueInvites => Set<LeagueInvite>();
     public DbSet<LeagueTeam> LeagueTeams => Set<LeagueTeam>();
-    public DbSet<Race> Races => Set<Race>();
+    public DbSet<RaceWeekend> RaceWeekends => Set<RaceWeekend>();
     public DbSet<Season> Seasons => Set<Season>();
     public DbSet<SeasonConstructor> SeasonConstructors => Set<SeasonConstructor>();
     public DbSet<SeasonDriver> SeasonDrivers => Set<SeasonDriver>();
@@ -25,10 +26,11 @@ public class ApplicationDbContext : DbContext
     public DbSet<LineupEntry> LineupEntries => Set<LineupEntry>();
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
     public DbSet<DriverQualifyingResult> DriverQualifyingResults => Set<DriverQualifyingResult>();
-    public DbSet<DriverRaceResult> DriverRaceResults => Set<DriverRaceResult>();
-    public DbSet<TeamRaceScore> TeamRaceScores => Set<TeamRaceScore>();
-    public DbSet<DriverRaceScore> DriverRaceScores => Set<DriverRaceScore>();
-    public DbSet<ConstructorRaceScore> ConstructorRaceScores => Set<ConstructorRaceScore>();
+    public DbSet<DriverRacingResult> DriverRacingResults => Set<DriverRacingResult>();
+    public DbSet<TeamRaceWeekendScore> TeamRaceWeekendScores => Set<TeamRaceWeekendScore>();
+    public DbSet<DriverRaceWeekendScore> DriverRaceWeekendScores => Set<DriverRaceWeekendScore>();
+    public DbSet<ConstructorRaceWeekendScore> ConstructorRaceWeekendScores =>
+        Set<ConstructorRaceWeekendScore>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -83,12 +85,18 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<Race>(entity =>
+        modelBuilder.Entity<RaceWeekend>(entity =>
         {
             entity
                 .HasOne(e => e.Season)
-                .WithMany(s => s.Races)
+                .WithMany(s => s.RaceWeekends)
                 .HasForeignKey(e => e.SeasonId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity
+                .HasOne(e => e.Circuit)
+                .WithMany()
+                .HasForeignKey(e => e.CircuitId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -101,13 +109,13 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity
-                .HasOne(dqr => dqr.Race)
+                .HasOne(dqr => dqr.RaceWeekend)
                 .WithMany()
-                .HasForeignKey(dqr => dqr.RaceId)
+                .HasForeignKey(dqr => dqr.RaceWeekendId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<DriverRaceResult>(entity =>
+        modelBuilder.Entity<DriverRacingResult>(entity =>
         {
             entity
                 .HasOne(drr => drr.Driver)
@@ -116,43 +124,43 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity
-                .HasOne(drr => drr.Race)
+                .HasOne(drr => drr.RaceWeekend)
                 .WithMany()
-                .HasForeignKey(drr => drr.RaceId)
+                .HasForeignKey(drr => drr.RaceWeekendId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<TeamRaceScore>(entity =>
+        modelBuilder.Entity<TeamRaceWeekendScore>(entity =>
         {
             entity
-                .HasOne(trs => trs.Team)
+                .HasOne(trws => trws.Team)
                 .WithMany()
-                .HasForeignKey(trs => trs.TeamId)
+                .HasForeignKey(trws => trws.TeamId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity
-                .HasOne(trs => trs.Race)
+                .HasOne(trws => trws.RaceWeekend)
                 .WithMany()
-                .HasForeignKey(trs => trs.RaceId)
+                .HasForeignKey(trws => trws.RaceWeekendId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<DriverRaceScore>(entity =>
+        modelBuilder.Entity<DriverRaceWeekendScore>(entity =>
         {
             entity
-                .HasOne(drs => drs.Driver)
+                .HasOne(drws => drws.Driver)
                 .WithMany()
-                .HasForeignKey(drs => drs.DriverId)
+                .HasForeignKey(drws => drws.DriverId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity
-                .HasOne(drs => drs.Race)
+                .HasOne(drws => drws.RaceWeekend)
                 .WithMany()
-                .HasForeignKey(drs => drs.RaceId)
+                .HasForeignKey(drws => drws.RaceWeekendId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<ConstructorRaceScore>(entity =>
+        modelBuilder.Entity<ConstructorRaceWeekendScore>(entity =>
         {
             entity
                 .HasOne(crs => crs.Constructor)
@@ -161,9 +169,9 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity
-                .HasOne(crs => crs.Race)
+                .HasOne(crs => crs.RaceWeekend)
                 .WithMany()
-                .HasForeignKey(crs => crs.RaceId)
+                .HasForeignKey(crs => crs.RaceWeekendId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -270,9 +278,9 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity
-                .HasOne(le => le.Race)
+                .HasOne(le => le.RaceWeekend)
                 .WithMany()
-                .HasForeignKey(le => le.RaceId)
+                .HasForeignKey(le => le.RaceWeekendId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
