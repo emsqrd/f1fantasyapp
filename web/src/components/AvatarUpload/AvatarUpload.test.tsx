@@ -30,7 +30,7 @@ describe('AvatarUpload', () => {
     });
 
     // Mock Image constructor with full HTMLImageElement interface for Radix UI compatibility
-    global.Image = class MockImage extends EventTarget {
+    globalThis.Image = class MockImage extends EventTarget {
       onload: (() => void) | null = null;
       onerror: (() => void) | null = null;
 
@@ -275,7 +275,7 @@ describe('AvatarUpload', () => {
       const badImageUrl = 'https://example.com/broken-image.png';
 
       // Mock Image constructor to simulate load failure
-      global.Image = class MockImage extends EventTarget {
+      globalThis.Image = class MockImage extends EventTarget {
         onload: (() => void) | null = null;
         onerror: (() => void) | null = null;
 

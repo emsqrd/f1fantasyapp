@@ -5,7 +5,7 @@ import { setCaptain } from '@/services/teamService';
 import { createMockConstructor, createMockDriver, createMockTeam } from '@/test-utils';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Team } from './Team';
 
@@ -18,15 +18,6 @@ vi.mock('@sentry/react', () => ({
 vi.mock('@/services/teamService', () => ({
   setCaptain: vi.fn(),
 }));
-
-// Mock ResizeObserver for Radix UI components
-beforeAll(() => {
-  global.ResizeObserver = vi.fn().mockImplementation(() => ({
-    observe: vi.fn(),
-    unobserve: vi.fn(),
-    disconnect: vi.fn(),
-  }));
-});
 
 // Mock child components to isolate Team component testing
 const mockDriverPicker = vi.fn();
