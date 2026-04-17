@@ -16,25 +16,21 @@ public static class MeEndpoints
         meGroup
             .MapGet("/profile", GetUserProfileAsync)
             .WithName("Get User Profile")
-            .WithOpenApi()
             .WithDescription("Gets user profile");
 
         meGroup
             .MapPost("/register", RegisterUserAsync)
             .WithName("Register User")
-            .WithOpenApi()
             .WithDescription("Creates user account and profile");
 
         meGroup
             .MapPatch("/profile", UpdateUserProfileAsync)
             .WithName("Update User Profile")
-            .WithOpenApi()
             .WithDescription("Updates user profile");
 
         meGroup
             .MapGet("/leagues", GetMyLeaguesAsync)
             .WithName("Get My Leagues")
-            .WithOpenApi()
             .WithDescription("Gets leagues owned by the authenticated user");
 
         var teamGroup = meGroup.MapGroup("/team");
@@ -42,19 +38,16 @@ public static class MeEndpoints
         teamGroup
             .MapGet("/", GetMyTeamAsync)
             .WithName("Get My Team")
-            .WithOpenApi()
             .WithDescription("Get current user's team or null if none exists");
 
         teamGroup
             .MapPost("/drivers", AddDriverToTeamAsync)
             .WithName("Add Driver to Team")
-            .WithOpenApi()
             .WithDescription("Add a driver to the current user's team at a specific slot position");
 
         teamGroup
             .MapDelete("/drivers/{slotPosition}", RemoveDriverFromTeamAsync)
             .WithName("Remove Driver from Team")
-            .WithOpenApi()
             .WithDescription(
                 "Remove a driver from the current user's team at a specific slot position"
             );
@@ -62,7 +55,6 @@ public static class MeEndpoints
         teamGroup
             .MapPost("/constructors", AddConstructorToTeamAsync)
             .WithName("Add Constructor to Team")
-            .WithOpenApi()
             .WithDescription(
                 "Add a constructor to the current user's team at a specific slot position"
             );
@@ -70,7 +62,6 @@ public static class MeEndpoints
         teamGroup
             .MapDelete("/constructors/{slotPosition}", RemoveConstructorFromTeamAsync)
             .WithName("Remove Constructor from Team")
-            .WithOpenApi()
             .WithDescription(
                 "Remove a constructor from the current user's team at a specific slot position"
             );
@@ -78,7 +69,6 @@ public static class MeEndpoints
         teamGroup
             .MapPut("/captain", SetCaptainAsync)
             .WithName("Set Team Captain")
-            .WithOpenApi()
             .WithDescription(
                 "Set or clear the captain driver for the current race. Pass null driverId to deselect."
             );

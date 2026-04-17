@@ -13,13 +13,11 @@ public static class DriverEndpoints
         app.MapGet("/drivers", GetDriversAsync)
             .RequireAuthorization()
             .WithName("GetDrivers")
-            .WithOpenApi()
             .WithDescription("Retrieves a list of drivers");
 
         app.MapGet("/drivers/{id}", GetDriverByIdAsync)
             .RequireAuthorization()
             .WithName("GetDriverById")
-            .WithOpenApi()
             .WithDescription("Retrieves a specific driver by Id");
 
         return app;

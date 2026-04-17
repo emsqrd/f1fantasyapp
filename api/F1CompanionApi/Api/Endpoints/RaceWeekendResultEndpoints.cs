@@ -14,8 +14,7 @@ public static class RaceWeekendResultEndpoints
     )
     {
         var resultsGroup = app.MapGroup("/seasons/{seasonId}/race-weekends/{round}/results")
-            .RequireAuthorization()
-            .WithOpenApi();
+            .RequireAuthorization();
 
         resultsGroup
             .MapPut("/qualifying", SubmitQualifyingResultsAsync)

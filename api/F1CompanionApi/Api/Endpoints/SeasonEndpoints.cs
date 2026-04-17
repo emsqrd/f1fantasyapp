@@ -10,7 +10,7 @@ public static class SeasonEndpoints
     [ExcludeFromCodeCoverage]
     public static IEndpointRouteBuilder MapSeasonEndpoints(this IEndpointRouteBuilder app)
     {
-        var seasonsGroup = app.MapGroup("/seasons").RequireAuthorization().WithOpenApi();
+        var seasonsGroup = app.MapGroup("/seasons").RequireAuthorization();
 
         seasonsGroup
             .MapGet("/", GetSeasonsAsync)
