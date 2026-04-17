@@ -13,13 +13,11 @@ public static class ConstructorEndpoints
         app.MapGet("/constructors", GetConstructorsAsync)
             .RequireAuthorization()
             .WithName("GetConstructors")
-            .WithOpenApi()
             .WithDescription("Retrieves a list of constructors");
 
         app.MapGet("/constructors/{id}", GetConstructorByIdAsync)
             .RequireAuthorization()
             .WithName("GetConstructorById")
-            .WithOpenApi()
             .WithDescription("Retrieves a specific constructor by Id");
 
         return app;

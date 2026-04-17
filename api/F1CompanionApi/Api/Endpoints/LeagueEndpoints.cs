@@ -10,7 +10,7 @@ public static class LeagueEndpoints
     [ExcludeFromCodeCoverage]
     public static IEndpointRouteBuilder MapLeagueEndpoints(this IEndpointRouteBuilder app)
     {
-        var leaguesGroup = app.MapGroup("/leagues").WithOpenApi();
+        var leaguesGroup = app.MapGroup("/leagues");
 
         leaguesGroup
             .MapPost("/", CreateLeagueAsync)

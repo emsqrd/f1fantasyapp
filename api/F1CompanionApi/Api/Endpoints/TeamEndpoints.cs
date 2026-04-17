@@ -16,17 +16,12 @@ public static class TeamEndpoints
         app.MapPost("/teams", CreateTeamAsync)
             .RequireAuthorization()
             .WithName("CreateTeam")
-            .WithOpenApi()
             .WithDescription("Create a new team for the current user");
 
-        app.MapGet("/teams", GetTeamsAsync)
-            .WithName("GetTeams")
-            .WithOpenApi()
-            .WithDescription("Gets all teams");
+        app.MapGet("/teams", GetTeamsAsync).WithName("GetTeams").WithDescription("Gets all teams");
 
         app.MapGet("/teams/{id}", GetTeamByIdAsync)
             .WithName("GetTeamById")
-            .WithOpenApi()
             .WithDescription("Get Team By Id");
 
         return app;

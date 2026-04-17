@@ -52,7 +52,7 @@ dotnet ef migrations remove --project F1CompanionApi
 
 ### Key Patterns
 
-**Endpoints**: Private static async methods returning `IResult`, configured with `.RequireAuthorization()`, `.WithName()`, `.WithOpenApi()`, `.WithDescription()`
+**Endpoints**: Private static async methods returning `IResult`, configured with `.RequireAuthorization()`, `.WithName()`, `.WithDescription()`
 
 **Services**: Constructor-injected `ApplicationDbContext`, async operations, use `.Include()` for navigation properties, return response DTOs via mapper extension methods
 
@@ -99,7 +99,7 @@ instance.
 ### Adding a New Endpoint
 
 1. Create `{Feature}Endpoints.cs` in `Api/Endpoints/` with a static `Map{Feature}Endpoints` extension method
-2. Define private static async methods returning `IResult`, chain `.RequireAuthorization()`, `.WithName()`, `.WithOpenApi()`, `.WithDescription()`
+2. Define private static async methods returning `IResult`, chain `.RequireAuthorization()`, `.WithName()`, `.WithDescription()`
 3. Register in `Endpoints.MapEndpoints()` by chaining `.Map{Feature}Endpoints()`
 4. Add request/response DTOs in `Api/Models/`
 5. Add mapper extension method in `Api/Mappers/`

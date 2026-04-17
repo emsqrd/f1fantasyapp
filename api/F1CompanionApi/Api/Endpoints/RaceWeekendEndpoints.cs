@@ -10,8 +10,7 @@ public static class RaceWeekendEndpoints
     public static IEndpointRouteBuilder MapRaceWeekendEndpoints(this IEndpointRouteBuilder app)
     {
         var raceWeekendsGroup = app.MapGroup("/seasons/{seasonId}/race-weekends")
-            .RequireAuthorization()
-            .WithOpenApi();
+            .RequireAuthorization();
 
         raceWeekendsGroup
             .MapGet("/", GetRaceWeekendsBySeasonAsync)
