@@ -25,7 +25,7 @@ builder.WebHost.UseSentry(options =>
     }
 
     // Enable structured logging
-    options.Experimental.EnableLogs = true;
+    options.EnableLogs = true;
 
     // Performance monitoring (can be overridden via Sentry__TracesSampleRate env var)
     options.TracesSampleRate =
@@ -42,7 +42,7 @@ builder.WebHost.UseSentry(options =>
     );
 
     // Filtering callback for structured logs
-    options.Experimental.SetBeforeSendLog(log =>
+    options.SetBeforeSendLog(log =>
     {
         // Filter out trace and debug logs in production
         if (
