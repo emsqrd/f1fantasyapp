@@ -1,3 +1,4 @@
+import type { AuthContextType } from '@/contexts/AuthContext';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -13,9 +14,10 @@ vi.mock('@/hooks/useAuth', async () => {
   };
 });
 
+const mockNavigate = vi.fn();
 const mockUseSearch = vi.fn();
 vi.mock('@tanstack/react-router', () => ({
-  useNavigate: vi.fn(),
+  useNavigate: () => mockNavigate,
   useSearch: () => mockUseSearch(),
   Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
     <a href={to}>{children}</a>
@@ -23,16 +25,12 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 describe('SignUpForm', () => {
-  let mockSignUp: ReturnType<typeof vi.fn>;
-  let mockNavigate: ReturnType<typeof vi.fn>;
+  let mockSignUp: ReturnType<typeof vi.fn<AuthContextType['signUp']>>;
   let useAuth: typeof import('@/hooks/useAuth').useAuth;
-  let useNavigate: typeof import('@tanstack/react-router').useNavigate;
 
   beforeEach(async () => {
-    mockSignUp = vi.fn();
-    mockNavigate = vi.fn();
+    mockSignUp = vi.fn<AuthContextType['signUp']>();
     useAuth = (await import('@/hooks/useAuth')).useAuth;
-    useNavigate = (await import('@tanstack/react-router')).useNavigate;
     vi.mocked(useAuth).mockReturnValue({
       user: null,
       session: null,
@@ -44,7 +42,6 @@ describe('SignUpForm', () => {
       startAuthTransition: vi.fn(),
       completeAuthTransition: vi.fn(),
     });
-    vi.mocked(useNavigate).mockReturnValue(mockNavigate);
     mockUseSearch.mockReturnValue({});
   });
 

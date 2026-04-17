@@ -68,6 +68,14 @@ export function AppSidebar() {
   const avatarUrl = profile?.avatarUrl || undefined;
   const displayAvatarUrl = uploadedAvatarUrl ?? avatarUrl;
 
+  const [prevDisplayAvatarUrl, setPrevDisplayAvatarUrl] = useState(displayAvatarUrl);
+  if (displayAvatarUrl !== prevDisplayAvatarUrl) {
+    setPrevDisplayAvatarUrl(displayAvatarUrl);
+    if (displayAvatarUrl) {
+      setIsImageLoading(true);
+    }
+  }
+
   // Get current pathname for active state
   const currentPath = routerState.location.pathname;
 
@@ -130,12 +138,6 @@ export function AppSidebar() {
     closeOnMobile();
     navigate({ to: '/' });
   };
-
-  useEffect(() => {
-    if (displayAvatarUrl) {
-      setIsImageLoading(true);
-    }
-  }, [displayAvatarUrl]);
 
   // Listen for avatar update events
   useEffect(() => {

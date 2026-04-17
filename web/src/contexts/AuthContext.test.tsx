@@ -95,11 +95,11 @@ describe('AuthProvider', () => {
     user: mockUser,
   };
 
-  let mockUnsubscribe: ReturnType<typeof vi.fn>;
+  let mockUnsubscribe: ReturnType<typeof vi.fn<() => void>>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUnsubscribe = vi.fn();
+    mockUnsubscribe = vi.fn<() => void>();
 
     // Default mock setup
     vi.mocked(supabase.auth.getSession).mockResolvedValue({
