@@ -1,10 +1,10 @@
-# Use the official .NET 9 runtime as the base image for production
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+# Use the official .NET 10 runtime as the base image for production
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 EXPOSE 8080
 
-# Use the .NET 9 SDK for building the application
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+# Use the .NET 10 SDK for building the application
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy the project file and restore dependencies
@@ -20,7 +20,7 @@ RUN dotnet build "F1CompanionApi.csproj" -c Release -o /app/build
 
 # Build the EF migrations bundle
 FROM build AS migrate
-RUN dotnet tool install --global dotnet-ef \
+RUN dotnet tool install --global dotnet-ef --version 10.* \
     && /root/.dotnet/tools/dotnet-ef migrations bundle --self-contained -r linux-x64 -o /app/efbundle
 
 # Publish the application
