@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { afterEach, vi } from 'vitest';
+
+vi.stubEnv('VITE_SUPABASE_URL', 'http://localhost');
+vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'test-anon-key');
+vi.stubEnv('VITE_F1_FANTASY_API', 'http://localhost/api');
 
 // Mock ResizeObserver for Radix UI components
 class MockResizeObserver {
