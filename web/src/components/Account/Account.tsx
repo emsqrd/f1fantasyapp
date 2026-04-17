@@ -9,7 +9,7 @@ import {
 } from '@/validations/userProfileFormSchema';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getRouteApi } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -35,9 +35,16 @@ export function Account() {
 
   // Local state for profile updates (avatar changes, form submissions)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(initialProfile);
+  const [prevInitialProfile, setPrevInitialProfile] = useState(initialProfile);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const { message, announce } = useLiveRegion();
+
+  // Sync local state when loader data changes (e.g., user switches accounts)
+  if (initialProfile !== prevInitialProfile) {
+    setPrevInitialProfile(initialProfile);
+    setUserProfile(initialProfile);
+  }
 
   // Destructure with defaults for form initialization
   const { displayName = '', firstName = '', lastName = '', email = '' } = initialProfile || {};
@@ -50,25 +57,14 @@ export function Account() {
   } = useForm<UserProfileFormData>({
     resolver: zodResolver(userProfileFormSchema),
     mode: 'onBlur', // Validate on blur for better UX
-    defaultValues: {
+    // `values` re-syncs the form when loader data changes (e.g., user switches accounts)
+    values: {
       displayName,
       firstName,
       lastName,
       email,
     },
   });
-
-  // Sync local state when loader data changes (e.g., user switches accounts)
-  useEffect(() => {
-    setUserProfile(initialProfile);
-    // Reset form with new user's data
-    reset({
-      displayName: initialProfile?.displayName || '',
-      firstName: initialProfile?.firstName || '',
-      lastName: initialProfile?.lastName || '',
-      email: initialProfile?.email || '',
-    });
-  }, [initialProfile, reset]);
 
   const handleAvatarChange = async (avatarUrl: string) => {
     if (!userProfile) return;
