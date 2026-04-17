@@ -1,7 +1,7 @@
 import { useAvatarUpload } from '@/hooks/useAvatarUpload';
 import { cn } from '@/lib/utils';
 import { Camera, CircleUserIcon, Loader2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
@@ -38,11 +38,13 @@ export function AvatarUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [displayUrl, setDisplayUrl] = useState<string | undefined>(currentAvatarUrl || undefined);
+  const [prevCurrentAvatarUrl, setPrevCurrentAvatarUrl] = useState(currentAvatarUrl);
 
   // Sync displayUrl when currentAvatarUrl changes from parent
-  useEffect(() => {
+  if (currentAvatarUrl !== prevCurrentAvatarUrl) {
+    setPrevCurrentAvatarUrl(currentAvatarUrl);
     setDisplayUrl(currentAvatarUrl || undefined);
-  }, [currentAvatarUrl]);
+  }
 
   const { uploadState, uploadAvatar } = useAvatarUpload({
     userId,
