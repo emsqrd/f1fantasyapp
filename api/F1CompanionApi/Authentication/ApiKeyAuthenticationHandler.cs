@@ -32,8 +32,7 @@ public class ApiKeyAuthenticationHandler(
         if (!CryptographicOperations.FixedTimeEquals(providedKeyBytes, configuredKeyBytes))
             return Task.FromResult(AuthenticateResult.Fail("Invalid API key"));
 
-        var claims = new[] { new Claim(ClaimTypes.Role, "Admin") };
-        var identity = new ClaimsIdentity(claims, SchemeName);
+        var identity = new ClaimsIdentity(SchemeName);
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, SchemeName);
 

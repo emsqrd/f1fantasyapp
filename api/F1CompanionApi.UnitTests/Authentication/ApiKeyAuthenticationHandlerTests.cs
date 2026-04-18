@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using System.Text.Encodings.Web;
 using F1CompanionApi.Authentication;
 using Microsoft.AspNetCore.Authentication;
@@ -61,15 +60,12 @@ public class ApiKeyAuthenticationHandlerTests
     }
 
     [Fact]
-    public async Task HandleAuthenticateAsync_ValidKey_ReturnsSuccessWithAdminClaim()
+    public async Task HandleAuthenticateAsync_ValidKey_ReturnsSuccess()
     {
         var result = await AuthenticateAsync(ValidApiKey, ValidApiKey);
 
         Assert.True(result.Succeeded);
-        Assert.Contains(
-            result.Principal!.Claims,
-            c => c.Type == ClaimTypes.Role && c.Value == "Admin"
-        );
+        Assert.NotNull(result.Principal);
     }
 
     [Fact]
