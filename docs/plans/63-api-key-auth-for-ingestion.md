@@ -2,7 +2,7 @@
 
 ## Context
 
-PR #62 code review identified that the race result submission endpoints (`PUT /api/races/{raceId}/results/*`) use `.RequireAuthorization()` with no policy, meaning any authenticated Supabase user can submit/overwrite results. These endpoints should only be callable by the ingestion script.
+PR #62 code review identified that the race result submission endpoints (`PUT /api/seasons/{seasonId}/race-weekends/{round}/results/*`) use `.RequireAuthorization()` with no policy, meaning any authenticated Supabase user can submit/overwrite results. These endpoints should only be callable by the ingestion script.
 
 The current ingestion script authenticates via a Supabase email/password user. This is awkward because it's a service, not a user — it requires a bogus admin account with an email address just to satisfy Supabase's user model. A static API key is a better fit: it's the standard pattern for backend scripts and admin tooling, integrates cleanly with ASP.NET Core's multi-scheme auth, and removes the Supabase user dependency entirely.
 
@@ -64,13 +64,13 @@ cd api && dotnet test F1CompanionApi.UnitTests/F1CompanionApi.UnitTests.csproj
 
 ### Modified files
 
-**`api/F1CompanionApi/Api/Endpoints/RaceResultEndpoints.cs`**
+**`api/F1CompanionApi/Api/Endpoints/RaceWeekendResultEndpoints.cs`**
 - Split the single `resultsGroup` into two groups sharing the same route prefix:
   - `readGroup` with `.RequireAuthorization()` (default policy — JWT or API key)
   - `writeGroup` with `.RequireAuthorization("ApiKeyOnly")`
 - Handler methods (private static) unchanged
 
-Existing `RaceResultEndpointsTests.cs` invokes handler methods via reflection and doesn't test auth — no changes needed.
+Existing `RaceWeekendResultEndpointsTests.cs` invokes handler methods via reflection and doesn't test auth — no changes needed.
 
 ### Verify
 ```bash
@@ -124,7 +124,7 @@ F1_API_URL=https://f1fantasyapp.fly.dev
 | `api/F1CompanionApi/Authentication/ApiKeyAuthenticationHandler.cs` | New auth handler |
 | `api/F1CompanionApi.UnitTests/Authentication/ApiKeyAuthenticationHandlerTests.cs` | Handler tests |
 | `api/F1CompanionApi/Extensions/ServiceExtensions.cs` | Auth/policy registration |
-| `api/F1CompanionApi/Api/Endpoints/RaceResultEndpoints.cs` | Endpoint auth split |
+| `api/F1CompanionApi/Api/Endpoints/RaceWeekendResultEndpoints.cs` | Endpoint auth split |
 | `api/F1CompanionApi/appsettings.json` | Config placeholder |
 | `api/scripts/ingest_results.py` | Script simplification |
 | `api/scripts/.env.example` | Updated config template |
