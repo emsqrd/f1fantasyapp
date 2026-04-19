@@ -7,11 +7,11 @@ from unittest.mock import MagicMock, patch
 
 from ingest_results import (
     IngestError,
-    RaceStatus,
+    RacingStatus,
     build_qualifying_payload,
     build_race_payload,
     count_overtakes,
-    find_race,
+    find_race_weekend,
     get_fastest_lap_driver,
     load_session,
     map_status,
@@ -23,34 +23,34 @@ from ingest_results import (
 
 class TestMapStatus:
     def test_finished_returns_classified(self):
-        assert map_status("Finished") == RaceStatus.CLASSIFIED
+        assert map_status("Finished") == RacingStatus.CLASSIFIED
 
     def test_lapped_one_lap_returns_classified(self):
-        assert map_status("+1 Lap") == RaceStatus.CLASSIFIED
+        assert map_status("+1 Lap") == RacingStatus.CLASSIFIED
 
     def test_lapped_two_laps_returns_classified(self):
-        assert map_status("+2 Laps") == RaceStatus.CLASSIFIED
+        assert map_status("+2 Laps") == RacingStatus.CLASSIFIED
 
     def test_retired_returns_dnf(self):
-        assert map_status("Retired") == RaceStatus.DNF
+        assert map_status("Retired") == RacingStatus.DNF
 
     def test_engine_failure_returns_dnf(self):
-        assert map_status("Engine") == RaceStatus.DNF
+        assert map_status("Engine") == RacingStatus.DNF
 
     def test_accident_returns_dnf(self):
-        assert map_status("Accident") == RaceStatus.DNF
+        assert map_status("Accident") == RacingStatus.DNF
 
     def test_disqualified_returns_dsq(self):
-        assert map_status("Disqualified") == RaceStatus.DSQ
+        assert map_status("Disqualified") == RacingStatus.DSQ
 
     def test_none_returns_dns(self):
-        assert map_status(None) == RaceStatus.DNS
+        assert map_status(None) == RacingStatus.DNS
 
     def test_nan_returns_dns(self):
-        assert map_status(float("nan")) == RaceStatus.DNS
+        assert map_status(float("nan")) == RacingStatus.DNS
 
     def test_whitespace_is_stripped(self):
-        assert map_status("  Finished  ") == RaceStatus.CLASSIFIED
+        assert map_status("  Finished  ") == RacingStatus.CLASSIFIED
 
 
 # --- load_session ---
@@ -86,14 +86,14 @@ class TestFindRace:
             {"round": 1, "id": 10, "name": "Bahrain"},
             {"round": 2, "id": 20, "name": "Saudi Arabia"},
         ]
-        result = find_race(races, 2)
+        result = find_race_weekend(races, 2)
         assert result["id"] == 20
         assert result["name"] == "Saudi Arabia"
 
     def test_raises_when_not_found(self):
         races = [{"round": 1, "id": 10, "name": "Bahrain"}]
         with pytest.raises(IngestError, match="round 5 not found"):
-            find_race(races, 5)
+            find_race_weekend(races, 5)
 
 
 # --- count_overtakes ---
@@ -279,7 +279,7 @@ class TestBuildRacePayload:
             "finishPosition": 1,
             "overtakes": 3,
             "fastestLap": True,
-            "status": int(RaceStatus.CLASSIFIED),
+            "status": int(RacingStatus.CLASSIFIED),
         }
         assert warnings == []
 
@@ -312,7 +312,7 @@ class TestBuildRacePayload:
         payload, warnings = build_race_payload(session, driver_map, {})
 
         assert payload[0]["finishPosition"] is None
-        assert payload[0]["status"] == int(RaceStatus.DNF)
+        assert payload[0]["status"] == int(RacingStatus.DNF)
 
     def test_dsq_driver_has_null_finish_position(self):
         session = _make_session([
@@ -323,7 +323,7 @@ class TestBuildRacePayload:
         payload, warnings = build_race_payload(session, driver_map, {})
 
         assert payload[0]["finishPosition"] is None
-        assert payload[0]["status"] == int(RaceStatus.DSQ)
+        assert payload[0]["status"] == int(RacingStatus.DSQ)
 
     def test_lapped_driver_is_classified(self):
         session = _make_session([
@@ -334,7 +334,7 @@ class TestBuildRacePayload:
         payload, warnings = build_race_payload(session, driver_map, {})
 
         assert payload[0]["finishPosition"] == 12
-        assert payload[0]["status"] == int(RaceStatus.CLASSIFIED)
+        assert payload[0]["status"] == int(RacingStatus.CLASSIFIED)
 
     def test_skips_unknown_driver_with_warning(self):
         session = _make_session([

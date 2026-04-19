@@ -1,5 +1,7 @@
+using F1CompanionApi.Authentication;
 using F1CompanionApi.Data;
 using F1CompanionApi.Domain.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -103,7 +105,11 @@ public static class ServiceExtensions
             ?? throw new InvalidOperationException("Supabase auth URL not configured");
 
         services
-            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
             .AddJwtBearer(options =>
             {
                 options.Authority = authUrl;
@@ -120,9 +126,22 @@ public static class ServiceExtensions
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero,
                 };
-            });
+            })
+            .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
+                ApiKeyAuthenticationHandler.SchemeName,
+                _ => { }
+            );
 
-        services.AddAuthorization();
+        services
+            .AddAuthorizationBuilder()
+            .AddPolicy(
+                "ApiKeyOnly",
+                policy =>
+                {
+                    policy.AuthenticationSchemes.Add(ApiKeyAuthenticationHandler.SchemeName);
+                    policy.RequireAuthenticatedUser();
+                }
+            );
         services.AddHttpContextAccessor();
         services.AddScoped<IConstructorService, ConstructorService>();
         services.AddScoped<IDriverService, DriverService>();

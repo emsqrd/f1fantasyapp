@@ -52,32 +52,14 @@ class ApiError(IngestError):
         super().__init__(f"{action} failed ({status_code}): {body}")
 
 
-def create_api_session(token: str) -> requests.Session:
-    """Create a requests session with authorization headers."""
+def create_api_session(api_key: str) -> requests.Session:
+    """Create a requests session with API key headers."""
     session = requests.Session()
     session.headers.update({
-        "Authorization": f"Bearer {token}",
+        "X-Api-Key": api_key,
         "Content-Type": "application/json",
     })
     return session
-
-
-def authenticate(supabase_url: str, anon_key: str, email: str, password: str) -> str:
-    """Sign in to Supabase and return an access token."""
-    resp = requests.post(
-        f"{supabase_url}/auth/v1/token?grant_type=password",
-        json={"email": email, "password": password},
-        headers={
-            "apikey": anon_key,
-            "Content-Type": "application/json",
-        },
-    )
-    if resp.status_code != 200:
-        raise ApiError("Authentication", resp.status_code, resp.text)
-    token = resp.json().get("access_token")
-    if not token:
-        raise IngestError("Authentication response missing access_token")
-    return token
 
 
 def fetch_driver_mapping(session: requests.Session, api_url: str) -> dict[str, int]:
@@ -322,13 +304,7 @@ def load_config(env: str) -> dict[str, str | None]:
     """Load and validate environment config."""
     env_file = f".env.{env}"
     config = dotenv_values(env_file)
-    required_keys = [
-        "F1_SUPABASE_URL",
-        "F1_SUPABASE_ANON_KEY",
-        "F1_IMPORT_EMAIL",
-        "F1_IMPORT_PASSWORD",
-        "F1_API_URL",
-    ]
+    required_keys = ["F1_API_KEY", "F1_API_URL"]
     missing = [k for k in required_keys if not config.get(k)]
     if missing:
         raise IngestError(f"Missing keys in {env_file}: {', '.join(missing)}")
@@ -352,17 +328,7 @@ def ingest(round_number: int, env: str) -> None:
     os.makedirs(CACHE_DIR, exist_ok=True)
     fastf1.Cache.enable_cache(CACHE_DIR)
 
-    # Authenticate
-    print(f"Authenticating against {config['F1_SUPABASE_URL']}...")
-    token = authenticate(
-        config["F1_SUPABASE_URL"],
-        config["F1_SUPABASE_ANON_KEY"],
-        config["F1_IMPORT_EMAIL"],
-        config["F1_IMPORT_PASSWORD"],
-    )
-    print("  Authenticated")
-
-    api_session = create_api_session(token)
+    api_session = create_api_session(config["F1_API_KEY"])
     api_url = config["F1_API_URL"]
 
     # Fetch current season to get season_id and year for FastF1

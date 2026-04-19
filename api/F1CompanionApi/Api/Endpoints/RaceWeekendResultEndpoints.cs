@@ -18,6 +18,7 @@ public static class RaceWeekendResultEndpoints
 
         resultsGroup
             .MapPut("/qualifying", SubmitQualifyingResultsAsync)
+            .RequireAuthorization("ApiKeyOnly")
             .WithName("SubmitQualifyingResults")
             .WithDescription(
                 "Submit qualifying results for a race weekend, replacing any existing results"
@@ -30,6 +31,7 @@ public static class RaceWeekendResultEndpoints
 
         resultsGroup
             .MapPut("/sprint", SubmitSprintResultsAsync)
+            .RequireAuthorization("ApiKeyOnly")
             .WithName("SubmitSprintResults")
             .WithDescription(
                 "Submit sprint results for a race weekend, replacing any existing results"
@@ -42,6 +44,7 @@ public static class RaceWeekendResultEndpoints
 
         resultsGroup
             .MapPut("/grand-prix", SubmitGrandPrixResultsAsync)
+            .RequireAuthorization("ApiKeyOnly")
             .WithName("SubmitGrandPrixResults")
             .WithDescription(
                 "Submit Grand Prix results for a race weekend, replacing any existing results"
