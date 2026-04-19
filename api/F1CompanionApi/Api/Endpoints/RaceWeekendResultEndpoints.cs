@@ -73,12 +73,7 @@ public static class RaceWeekendResultEndpoints
             round
         );
 
-        var raceWeekendId = await RaceWeekendEndpointHelpers.ResolveRaceWeekendIdAsync(
-            raceWeekendService,
-            logger,
-            seasonId,
-            round
-        );
+        var raceWeekendId = await raceWeekendService.GetIdByRoundAsync(seasonId, round);
         if (raceWeekendId is null)
             return Results.Problem(
                 detail: "Race weekend not found",
@@ -107,12 +102,7 @@ public static class RaceWeekendResultEndpoints
             round
         );
 
-        var raceWeekendId = await RaceWeekendEndpointHelpers.ResolveRaceWeekendIdAsync(
-            raceWeekendService,
-            logger,
-            seasonId,
-            round
-        );
+        var raceWeekendId = await raceWeekendService.GetIdByRoundAsync(seasonId, round);
         if (raceWeekendId is null)
             return Results.Problem(
                 detail: "Race weekend not found",
@@ -139,12 +129,7 @@ public static class RaceWeekendResultEndpoints
             round
         );
 
-        var raceWeekendId = await RaceWeekendEndpointHelpers.ResolveRaceWeekendIdAsync(
-            raceWeekendService,
-            logger,
-            seasonId,
-            round
-        );
+        var raceWeekendId = await raceWeekendService.GetIdByRoundAsync(seasonId, round);
         if (raceWeekendId is null)
             return Results.Problem(
                 detail: "Race weekend not found",
@@ -174,12 +159,7 @@ public static class RaceWeekendResultEndpoints
             round
         );
 
-        var raceWeekendId = await RaceWeekendEndpointHelpers.ResolveRaceWeekendIdAsync(
-            raceWeekendService,
-            logger,
-            seasonId,
-            round
-        );
+        var raceWeekendId = await raceWeekendService.GetIdByRoundAsync(seasonId, round);
         if (raceWeekendId is null)
             return Results.Problem(
                 detail: "Race weekend not found",
@@ -209,12 +189,7 @@ public static class RaceWeekendResultEndpoints
             round
         );
 
-        var raceWeekendId = await RaceWeekendEndpointHelpers.ResolveRaceWeekendIdAsync(
-            raceWeekendService,
-            logger,
-            seasonId,
-            round
-        );
+        var raceWeekendId = await raceWeekendService.GetIdByRoundAsync(seasonId, round);
         if (raceWeekendId is null)
             return Results.Problem(
                 detail: "Race weekend not found",
@@ -244,12 +219,7 @@ public static class RaceWeekendResultEndpoints
             round
         );
 
-        var raceWeekendId = await RaceWeekendEndpointHelpers.ResolveRaceWeekendIdAsync(
-            raceWeekendService,
-            logger,
-            seasonId,
-            round
-        );
+        var raceWeekendId = await raceWeekendService.GetIdByRoundAsync(seasonId, round);
         if (raceWeekendId is null)
             return Results.Problem(
                 detail: "Race weekend not found",

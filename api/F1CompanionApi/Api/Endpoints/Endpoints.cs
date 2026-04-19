@@ -14,6 +14,7 @@ public static class Endpoints
             .MapMeEndpoints()
             .MapRaceWeekendEndpoints()
             .MapRaceWeekendResultEndpoints()
+            .MapRaceWeekendScoringEndpoints()
             .MapSeasonEndpoints()
             .MapTeamEndpoints();
 
