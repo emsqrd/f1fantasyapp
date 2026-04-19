@@ -7,11 +7,11 @@ from unittest.mock import MagicMock, patch
 
 from ingest_results import (
     IngestError,
-    RaceStatus,
+    RacingStatus as RaceStatus,
     build_qualifying_payload,
     build_race_payload,
     count_overtakes,
-    find_race,
+    find_race_weekend as find_race,
     get_fastest_lap_driver,
     load_session,
     map_status,

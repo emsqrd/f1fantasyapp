@@ -24,10 +24,7 @@ cp .env.example .env.prod
 
 ```ini
 # .env.local
-F1_SUPABASE_URL=http://127.0.0.1:54321
-F1_SUPABASE_ANON_KEY=<local-anon-key>
-F1_IMPORT_EMAIL=admin@local.example.com
-F1_IMPORT_PASSWORD=<local-password>
+F1_API_KEY=<local-api-key>
 F1_API_URL=http://localhost:5000
 ```
 
@@ -35,10 +32,7 @@ F1_API_URL=http://localhost:5000
 
 ```ini
 # .env.prod
-F1_SUPABASE_URL=https://cfuccajsckqzecbfyqrv.supabase.co
-F1_SUPABASE_ANON_KEY=<prod-anon-key>
-F1_IMPORT_EMAIL=admin@example.com
-F1_IMPORT_PASSWORD=<prod-password>
+F1_API_KEY=<prod-api-key>
 F1_API_URL=https://f1fantasyapp.fly.dev
 ```
 
@@ -59,11 +53,10 @@ python3 ingest_results.py --round 1 --env prod
 
 The script will:
 
-1. Authenticate with Supabase to get a JWT
-2. Fetch the current season from the API to determine the year and season ID
-3. Fetch the driver list from the API to map abbreviations to IDs
-4. Fetch race weekends to find the round and sprint status
-5. Verify the race date has passed (refuses to run for future races)
-6. Load qualifying results from FastF1 and submit them
-7. If sprint weekend: load sprint results, overtakes, and fastest lap and submit them
-8. Load race results, overtakes, and fastest lap and submit them
+1. Fetch the current season from the API to determine the year and season ID
+2. Fetch the driver list from the API to map abbreviations to IDs
+3. Fetch race weekends to find the round and sprint status
+4. Verify the race date has passed (refuses to run for future races)
+5. Load qualifying results from FastF1 and submit them
+6. If sprint weekend: load sprint results, overtakes, and fastest lap and submit them
+7. Load race results, overtakes, and fastest lap and submit them
