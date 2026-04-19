@@ -734,6 +734,49 @@ public class GlobalExceptionHandlerTests
     }
 
     [Fact]
+    public async Task TryHandleAsync_NextRoundLockedException_Returns409WithNextRoundLocked()
+    {
+        // Arrange
+        var lockedAt = new DateTime(2026, 4, 18, 13, 0, 0, DateTimeKind.Utc);
+        var ex = new NextRoundLockedException(nextRound: 5, lockedAt: lockedAt);
+
+        // Act
+        var result = await _handler.TryHandleAsync(_httpContext, ex, CancellationToken.None);
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal(StatusCodes.Status409Conflict, _httpContext.Response.StatusCode);
+
+        _mockProblemDetailsService.Verify(
+            x =>
+                x.WriteAsync(
+                    It.Is<ProblemDetailsContext>(ctx =>
+                        ctx.ProblemDetails.Status == 409
+                        && ctx.ProblemDetails.Title == "Next Round Locked"
+                        && ctx.ProblemDetails.Detail == ex.Message
+                        && ctx.ProblemDetails.Detail!.Contains("Round 5")
+                        && ctx.ProblemDetails.Detail!.Contains(lockedAt.ToString("O"))
+                        && ctx.ProblemDetails.Type == "https://httpstatuses.com/409"
+                        && ctx.Exception == null
+                    )
+                ),
+            Times.Once
+        );
+
+        _mockLogger.Verify(
+            x =>
+                x.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => true),
+                    ex,
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()
+                ),
+            Times.Once
+        );
+    }
+
+    [Fact]
     public async Task TryHandleAsync_InvalidSlotPositionException_Returns400WithInvalidSlotPosition()
     {
         // Arrange
