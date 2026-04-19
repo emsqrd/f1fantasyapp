@@ -24,13 +24,22 @@ public class ApiKeyAuthenticationHandler(
 
         var configuredKey = configuration["Authentication:ApiKey"];
         if (string.IsNullOrEmpty(configuredKey))
+        {
+            Logger.LogWarning("API key authentication failed: no key configured");
             return Task.FromResult(AuthenticateResult.Fail("API key not configured"));
+        }
 
         var providedKeyBytes = Encoding.UTF8.GetBytes(headerValue.ToString());
         var configuredKeyBytes = Encoding.UTF8.GetBytes(configuredKey);
 
         if (!CryptographicOperations.FixedTimeEquals(providedKeyBytes, configuredKeyBytes))
+        {
+            Logger.LogWarning(
+                "API key authentication failed: invalid key from {RemoteIpAddress}",
+                Request.HttpContext.Connection.RemoteIpAddress
+            );
             return Task.FromResult(AuthenticateResult.Fail("Invalid API key"));
+        }
 
         var identity = new ClaimsIdentity(SchemeName);
         var principal = new ClaimsPrincipal(identity);

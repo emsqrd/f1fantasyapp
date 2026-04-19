@@ -3,7 +3,6 @@ using F1CompanionApi.Data;
 using F1CompanionApi.Domain.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -142,14 +141,6 @@ public static class ServiceExtensions
                     policy.AuthenticationSchemes.Add(ApiKeyAuthenticationHandler.SchemeName);
                     policy.RequireAuthenticatedUser();
                 }
-            )
-            .SetDefaultPolicy(
-                new AuthorizationPolicyBuilder(
-                    JwtBearerDefaults.AuthenticationScheme,
-                    ApiKeyAuthenticationHandler.SchemeName
-                )
-                    .RequireAuthenticatedUser()
-                    .Build()
             );
         services.AddHttpContextAccessor();
         services.AddScoped<IConstructorService, ConstructorService>();
