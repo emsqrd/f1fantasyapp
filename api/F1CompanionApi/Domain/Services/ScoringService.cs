@@ -398,6 +398,7 @@ public class ScoringService : IScoringService
             GrandPrixTotal = score.GrandPrix?.Total,
             TotalPoints = score.TotalPoints,
             CalculatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
         };
 
     /// <summary>
@@ -429,6 +430,7 @@ public class ScoringService : IScoringService
             GrandPrixTotal = score.GrandPrix?.Total,
             TotalPoints = score.Total,
             CalculatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
         };
 
     /// <summary>
@@ -466,6 +468,7 @@ public class ScoringService : IScoringService
                     RaceWeekendId = raceWeekendId,
                     TotalPoints = totalPoints,
                     CalculatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
                 }
             );
         }
