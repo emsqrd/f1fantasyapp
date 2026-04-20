@@ -14,16 +14,19 @@ public static class SeasonEndpoints
 
         seasonsGroup
             .MapGet("/", GetSeasonsAsync)
+            .RequireAuthorization("JwtOrApiKey")
             .WithName("GetSeasons")
             .WithDescription("Get all seasons");
 
         seasonsGroup
             .MapGet("/current", GetCurrentSeasonAsync)
+            .RequireAuthorization("JwtOrApiKey")
             .WithName("GetCurrentSeason")
             .WithDescription("Get the current active season");
 
         seasonsGroup
             .MapGet("/{id}", GetSeasonByIdAsync)
+            .RequireAuthorization("JwtOrApiKey")
             .WithName("GetSeasonById")
             .WithDescription("Get a season by ID");
 

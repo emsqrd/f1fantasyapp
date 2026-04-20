@@ -141,6 +141,15 @@ public static class ServiceExtensions
                     policy.AuthenticationSchemes.Add(ApiKeyAuthenticationHandler.SchemeName);
                     policy.RequireAuthenticatedUser();
                 }
+            )
+            .AddPolicy(
+                "JwtOrApiKey",
+                policy =>
+                {
+                    policy.AuthenticationSchemes.Add(JwtBearerDefaults.AuthenticationScheme);
+                    policy.AuthenticationSchemes.Add(ApiKeyAuthenticationHandler.SchemeName);
+                    policy.RequireAuthenticatedUser();
+                }
             );
         services.AddHttpContextAccessor();
         services.AddScoped<IConstructorService, ConstructorService>();
