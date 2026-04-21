@@ -22,7 +22,7 @@ RUN dotnet publish "F1CompanionApi.csproj" -c Release --no-restore -o /app/publi
 # Build the EF migrations bundle
 FROM deps AS migrate
 RUN dotnet tool install --global dotnet-ef --version 10.* \
-    && /root/.dotnet/tools/dotnet-ef migrations bundle --self-contained -r linux-x64 --no-build -o /app/efbundle
+    && /root/.dotnet/tools/dotnet-ef migrations bundle --self-contained -r linux-x64 -o /app/efbundle
 
 # Final stage - create the runtime image
 FROM base AS final
