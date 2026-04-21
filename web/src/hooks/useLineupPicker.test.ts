@@ -42,65 +42,12 @@ describe('useLineupPicker', () => {
     mockRemoveFromTeam.mockResolvedValue(undefined);
   });
 
-  describe('displayLineup', () => {
-    it('pads lineup with nulls when lineup is shorter than lineupSize', () => {
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [mockItems[0], mockItems[1]],
-          lineupSize: 4,
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
-
-      expect(result.current.displayLineup).toEqual([mockItems[0], mockItems[1], null, null]);
-    });
-
-    it('returns lineup as-is when it matches lineupSize', () => {
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [mockItems[0], mockItems[1], mockItems[2], mockItems[3]],
-          lineupSize: 4,
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
-
-      expect(result.current.displayLineup).toEqual([
-        mockItems[0],
-        mockItems[1],
-        mockItems[2],
-        mockItems[3],
-      ]);
-    });
-
-    it('handles empty lineup', () => {
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [],
-          lineupSize: 4,
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
-
-      expect(result.current.displayLineup).toEqual([null, null, null, null]);
-    });
-  });
-
   describe('pool', () => {
     it('returns all items when lineup is empty', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [],
-          lineupSize: 4,
+          lineup: [null, null, null, null],
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -110,12 +57,11 @@ describe('useLineupPicker', () => {
       expect(result.current.pool).toEqual(mockItems);
     });
 
-    it('filters out items already in lineup', () => {
+    it('excludes items already in the lineup from the pool', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [mockItems[0], mockItems[2]],
-          lineupSize: 4,
+          lineup: [mockItems[0], mockItems[2], null, null],
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -130,7 +76,6 @@ describe('useLineupPicker', () => {
         useLineupPicker({
           items: mockItems.slice(0, 4),
           lineup: mockItems.slice(0, 4),
-          lineupSize: 4,
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -139,58 +84,6 @@ describe('useLineupPicker', () => {
 
       expect(result.current.pool).toEqual([]);
     });
-
-    it('keeps items in pool below maxDuplicates threshold', () => {
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [mockItems[0], null, null, null],
-          lineupSize: 4,
-          itemType: 'constructor',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-          maxDuplicates: 2,
-        }),
-      );
-
-      // Item 1 is in lineup once but maxDuplicates is 2, so it should still be in pool
-      expect(result.current.pool).toContainEqual(mockItems[0]);
-    });
-
-    it('removes items from pool at maxDuplicates threshold', () => {
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [mockItems[0], mockItems[0], null, null],
-          lineupSize: 4,
-          itemType: 'constructor',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-          maxDuplicates: 2,
-        }),
-      );
-
-      // Item 1 is in lineup twice and maxDuplicates is 2, so it should be removed from pool
-      expect(result.current.pool).not.toContainEqual(mockItems[0]);
-      // Other items should still be available
-      expect(result.current.pool).toContainEqual(mockItems[1]);
-    });
-
-    it('defaults maxDuplicates to 1 when not specified', () => {
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [mockItems[0], null, null, null],
-          lineupSize: 4,
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
-
-      // Without maxDuplicates, items used once should be excluded (default maxDuplicates=1)
-      expect(result.current.pool).not.toContainEqual(mockItems[0]);
-    });
   });
 
   describe('openPicker', () => {
@@ -198,8 +91,7 @@ describe('useLineupPicker', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [],
-          lineupSize: 4,
+          lineup: [null, null, null, null],
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -235,8 +127,7 @@ describe('useLineupPicker', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [],
-          lineupSize: 4,
+          lineup: [null, null, null, null],
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -269,8 +160,7 @@ describe('useLineupPicker', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [],
-          lineupSize: 4,
+          lineup: [null, null, null, null],
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -288,8 +178,7 @@ describe('useLineupPicker', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [],
-          lineupSize: 4,
+          lineup: [null, null, null, null],
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -307,8 +196,7 @@ describe('useLineupPicker', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [],
-          lineupSize: 4,
+          lineup: [null, null, null, null],
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -338,8 +226,7 @@ describe('useLineupPicker', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [],
-          lineupSize: 4,
+          lineup: [null, null, null, null],
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -371,8 +258,7 @@ describe('useLineupPicker', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [],
-          lineupSize: 4,
+          lineup: [null, null, null, null],
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -396,8 +282,7 @@ describe('useLineupPicker', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [],
-          lineupSize: 4,
+          lineup: [null, null, null, null],
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -421,8 +306,7 @@ describe('useLineupPicker', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [],
-          lineupSize: 4,
+          lineup: [null, null, null, null],
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -448,8 +332,7 @@ describe('useLineupPicker', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [mockItems[0]],
-          lineupSize: 4,
+          lineup: [mockItems[0], null, null, null],
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -467,8 +350,7 @@ describe('useLineupPicker', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [mockItems[0]],
-          lineupSize: 4,
+          lineup: [mockItems[0], null, null, null],
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -493,8 +375,7 @@ describe('useLineupPicker', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [mockItems[0]],
-          lineupSize: 4,
+          lineup: [mockItems[0], null, null, null],
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -526,8 +407,7 @@ describe('useLineupPicker', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [mockItems[0]],
-          lineupSize: 4,
+          lineup: [mockItems[0], null, null, null],
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -547,8 +427,7 @@ describe('useLineupPicker', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [mockItems[0]],
-          lineupSize: 4,
+          lineup: [mockItems[0], null, null, null],
           itemType: 'driver',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -576,8 +455,7 @@ describe('useLineupPicker', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [],
-          lineupSize: 4,
+          lineup: [null, null, null, null],
           itemType: 'constructor',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,
@@ -597,8 +475,7 @@ describe('useLineupPicker', () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
-          lineup: [mockItems[0]],
-          lineupSize: 4,
+          lineup: [mockItems[0], null, null, null],
           itemType: 'constructor',
           addToTeam: mockAddToTeam,
           removeFromTeam: mockRemoveFromTeam,

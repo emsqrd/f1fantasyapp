@@ -5,11 +5,9 @@ import { useMemo, useState } from 'react';
 interface UseLineupPickerOptions<T extends { id: number }> {
   items: T[];
   lineup: (T | null)[];
-  lineupSize: number;
   itemType: string;
   addToTeam: (itemId: number, position: number) => Promise<void>;
   removeFromTeam: (position: number) => Promise<void>;
-  maxDuplicates?: number;
 }
 
 /**
@@ -19,40 +17,21 @@ interface UseLineupPickerOptions<T extends { id: number }> {
 export function useLineupPicker<T extends { id: number }>({
   items,
   lineup,
-  lineupSize,
   itemType,
   addToTeam,
   removeFromTeam,
-  maxDuplicates = 1,
 }: UseLineupPickerOptions<T>) {
   const router = useRouter();
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Pad lineup with nulls to match lineupSize for empty slots
-   */
-  const displayLineup = useMemo(() => {
-    const currentLineup = lineup ?? [];
-
-    return currentLineup.length === lineupSize
-      ? currentLineup
-      : [...currentLineup, ...Array(lineupSize - currentLineup.length).fill(null)];
-  }, [lineup, lineupSize]);
-
-  /**
-   * Filter out items that have reached their maximum allowed duplicates from the available pool
-   */
   const pool = useMemo(() => {
-    const counts = new Map<number, number>();
-    displayLineup
-      .filter((item): item is T => item !== null)
-      .forEach((item) => {
-        counts.set(item.id, (counts.get(item.id) ?? 0) + 1);
-      });
-    return items.filter((item) => (counts.get(item.id) ?? 0) < maxDuplicates);
-  }, [items, displayLineup, maxDuplicates]);
+    const usedIds = new Set(
+      lineup.filter((item): item is T => item !== null).map((item) => item.id),
+    );
+    return items.filter((item) => !usedIds.has(item.id));
+  }, [items, lineup]);
 
   /**
    * Adds an item to the lineup at the specified position.
@@ -115,7 +94,6 @@ export function useLineupPicker<T extends { id: number }>({
   };
 
   return {
-    displayLineup,
     pool,
     selectedPosition,
     isPending,
