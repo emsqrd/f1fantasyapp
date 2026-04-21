@@ -14,11 +14,13 @@ public static class RaceWeekendEndpoints
 
         raceWeekendsGroup
             .MapGet("/", GetRaceWeekendsBySeasonAsync)
+            .RequireAuthorization("JwtOrApiKey")
             .WithName("GetRaceWeekendsBySeason")
             .WithDescription("Get all race weekends for a season");
 
         raceWeekendsGroup
             .MapGet("/{round}", GetRaceWeekendByRoundAsync)
+            .RequireAuthorization("JwtOrApiKey")
             .WithName("GetRaceWeekendByRound")
             .WithDescription("Get a race weekend by round number");
 
