@@ -34,7 +34,7 @@ public static class LineupEndpoints
                 statusCode: StatusCodes.Status404NotFound
             );
 
-        await lineupService.AdvanceLineupAsync(raceWeekendId.Value);
+        await lineupService.AdvanceLineupsAsync(raceWeekendId.Value);
         return Results.NoContent();
     }
 }

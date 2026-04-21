@@ -7,7 +7,7 @@ namespace F1CompanionApi.Domain.Services;
 
 public interface ILineupService
 {
-    Task AdvanceLineupAsync(int raceWeekendId);
+    Task AdvanceLineupsAsync(int raceWeekendId);
 }
 
 public class LineupService : ILineupService
@@ -32,11 +32,11 @@ public class LineupService : ILineupService
     /// is already locked.
     /// </summary>
     /// <param name="raceWeekendId">The race weekend whose lineups should be carried forward.</param>
-    public async Task AdvanceLineupAsync(int raceWeekendId)
+    public async Task AdvanceLineupsAsync(int raceWeekendId)
     {
         var current =
             await _dbContext.RaceWeekends.FindAsync(raceWeekendId)
-            ?? throw new ArgumentException($"RaceWeekend {raceWeekendId} not found");
+            ?? throw new InvalidOperationException($"RaceWeekend {raceWeekendId} not found");
 
         var nextRaceWeekend = await _dbContext.RaceWeekends.FirstOrDefaultAsync(rw =>
             rw.SeasonId == current.SeasonId && rw.Round == current.Round + 1

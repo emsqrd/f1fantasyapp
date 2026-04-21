@@ -99,7 +99,7 @@ public class LineupServiceTests
         await ctx.SaveChangesAsync();
 
         var service = CreateServiceWithContext(ctx);
-        await service.AdvanceLineupAsync(1);
+        await service.AdvanceLineupsAsync(1);
 
         var nextEntries = await ctx
             .LineupEntries.Where(le => le.RaceWeekendId == 2 && le.TeamId == 100)
@@ -142,7 +142,7 @@ public class LineupServiceTests
         await ctx.SaveChangesAsync();
 
         var service = CreateServiceWithContext(ctx);
-        await service.AdvanceLineupAsync(1);
+        await service.AdvanceLineupsAsync(1);
 
         var team100Round2 = await ctx
             .LineupEntries.Where(le => le.RaceWeekendId == 2 && le.TeamId == 100)
@@ -172,7 +172,7 @@ public class LineupServiceTests
         var service = CreateServiceWithContext(ctx);
 
         var ex = await Assert.ThrowsAsync<NextRoundLockedException>(() =>
-            service.AdvanceLineupAsync(1)
+            service.AdvanceLineupsAsync(1)
         );
         Assert.Equal(2, ex.NextRound);
         Assert.Equal(lockedAt, ex.LockedAt);
@@ -196,7 +196,7 @@ public class LineupServiceTests
 
         var service = CreateServiceWithContext(ctx);
 
-        await service.AdvanceLineupAsync(1);
+        await service.AdvanceLineupsAsync(1);
 
         var all = await ctx.LineupEntries.ToListAsync();
         Assert.Single(all);
@@ -209,7 +209,7 @@ public class LineupServiceTests
         await SeedTwoRoundsAsync(ctx, nextLockDeadline: DateTime.UtcNow.AddDays(7));
 
         var service = CreateServiceWithContext(ctx);
-        await service.AdvanceLineupAsync(1);
+        await service.AdvanceLineupsAsync(1);
 
         var round2 = await ctx.LineupEntries.Where(le => le.RaceWeekendId == 2).ToListAsync();
         Assert.Empty(round2);
@@ -232,7 +232,7 @@ public class LineupServiceTests
         await ctx.SaveChangesAsync();
 
         var service = CreateServiceWithContext(ctx);
-        await service.AdvanceLineupAsync(1);
+        await service.AdvanceLineupsAsync(1);
 
         var round2 = await ctx
             .LineupEntries.Where(le => le.RaceWeekendId == 2 && le.TeamId == 100)
@@ -241,12 +241,12 @@ public class LineupServiceTests
     }
 
     [Fact]
-    public async Task AdvanceLineupAsync_ThrowsArgumentException_WhenRaceWeekendDoesNotExist()
+    public async Task AdvanceLineupsAsync_ThrowsInvalidOperationException_WhenRaceWeekendDoesNotExist()
     {
         using var ctx = CreateInMemoryContext();
         var service = CreateServiceWithContext(ctx);
 
-        await Assert.ThrowsAsync<ArgumentException>(() => service.AdvanceLineupAsync(999));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.AdvanceLineupsAsync(999));
     }
 
     [Fact]
@@ -258,7 +258,7 @@ public class LineupServiceTests
         await ctx.SaveChangesAsync();
 
         var service = CreateServiceWithContext(ctx);
-        await service.AdvanceLineupAsync(1);
+        await service.AdvanceLineupsAsync(1);
 
         VerifyLogged(LogLevel.Information, Times.Once());
     }
@@ -270,7 +270,7 @@ public class LineupServiceTests
         await SeedTwoRoundsAsync(ctx, nextLockDeadline: DateTime.UtcNow.AddDays(7));
 
         var service = CreateServiceWithContext(ctx);
-        await service.AdvanceLineupAsync(1);
+        await service.AdvanceLineupsAsync(1);
 
         VerifyLogged(LogLevel.Information, Times.Once());
     }
@@ -287,7 +287,7 @@ public class LineupServiceTests
         await ctx.SaveChangesAsync();
 
         var service = CreateServiceWithContext(ctx);
-        await service.AdvanceLineupAsync(1);
+        await service.AdvanceLineupsAsync(1);
 
         VerifyLogged(LogLevel.Information, Times.Once());
     }

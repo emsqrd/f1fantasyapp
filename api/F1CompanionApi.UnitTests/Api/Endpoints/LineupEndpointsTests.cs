@@ -37,27 +37,27 @@ public class LineupEndpointsTests
 
         var problem = Assert.IsType<ProblemHttpResult>(result);
         Assert.Equal(StatusCodes.Status404NotFound, problem.StatusCode);
-        _mockLineupService.Verify(x => x.AdvanceLineupAsync(It.IsAny<int>()), Times.Never);
+        _mockLineupService.Verify(x => x.AdvanceLineupsAsync(It.IsAny<int>()), Times.Never);
     }
 
     [Fact]
     public async Task AdvanceLineupsAsync_ReturnsNoContent_OnSuccess()
     {
         _mockLineupService
-            .Setup(x => x.AdvanceLineupAsync(RaceWeekendId))
+            .Setup(x => x.AdvanceLineupsAsync(RaceWeekendId))
             .Returns(Task.CompletedTask);
 
         var result = await InvokeAdvanceLineupsAsync(SeasonId, Round);
 
         Assert.IsType<NoContent>(result);
-        _mockLineupService.Verify(x => x.AdvanceLineupAsync(RaceWeekendId), Times.Once);
+        _mockLineupService.Verify(x => x.AdvanceLineupsAsync(RaceWeekendId), Times.Once);
     }
 
     [Fact]
     public async Task AdvanceLineupsAsync_BubblesNextRoundLockedException()
     {
         _mockLineupService
-            .Setup(x => x.AdvanceLineupAsync(RaceWeekendId))
+            .Setup(x => x.AdvanceLineupsAsync(RaceWeekendId))
             .ThrowsAsync(new NextRoundLockedException(nextRound: 2, lockedAt: DateTime.UtcNow));
 
         await Assert.ThrowsAsync<NextRoundLockedException>(() =>
