@@ -24,7 +24,7 @@ interface ConstructorPickerProps {
   remainingBudget: number;
 }
 
-const CONSTRUCTOR_SLOTS = 4;
+const CONSTRUCTOR_SLOTS = 2;
 
 export function ConstructorPicker({
   activeConstructors,
