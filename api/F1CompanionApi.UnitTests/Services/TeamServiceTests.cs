@@ -490,7 +490,7 @@ public class TeamServiceTests
 
     [Theory]
     [InlineData(-1)]
-    [InlineData(5)]
+    [InlineData(6)]
     public async Task AddDriverToTeamAsync_InvalidSlotPosition_ThrowsInvalidOperationException(
         int slotPosition
     )
@@ -521,8 +521,8 @@ public class TeamServiceTests
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
 
-        // Add 4 drivers to fill all slots
-        for (int i = 0; i < 4; i++)
+        // Add 5 drivers to fill all slots
+        for (int i = 0; i < 5; i++)
         {
             var driver = CreateTestDriver(context, $"DR{i}", $"Driver{i}", $"Last{i}");
             await service.AddDriverToTeamAsync(team.Id, driver.Id, i, user.Id);
@@ -535,7 +535,7 @@ public class TeamServiceTests
             service.AddDriverToTeamAsync(team.Id, newDriver.Id, 0, user.Id)
         );
         Assert.Equal(team.Id, exception.TeamId);
-        Assert.Equal(4, exception.MaxSlots);
+        Assert.Equal(5, exception.MaxSlots);
         Assert.Equal("driver", exception.EntityType);
     }
 
@@ -809,7 +809,7 @@ public class TeamServiceTests
 
     [Theory]
     [InlineData(-1)]
-    [InlineData(4)]
+    [InlineData(2)]
     public async Task AddConstructorToTeamAsync_InvalidSlotPosition_ThrowsInvalidOperationException(
         int slotPosition
     )
@@ -840,8 +840,8 @@ public class TeamServiceTests
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
 
-        // Add 4 constructors to fill all slots
-        for (int i = 0; i < 4; i++)
+        // Add 2 constructors to fill all slots
+        for (int i = 0; i < 2; i++)
         {
             var constructor = CreateTestConstructor(context, $"Constructor{i}");
             await service.AddConstructorToTeamAsync(team.Id, constructor.Id, i, user.Id);
@@ -854,7 +854,7 @@ public class TeamServiceTests
             service.AddConstructorToTeamAsync(team.Id, newConstructor.Id, 0, user.Id)
         );
         Assert.Equal(team.Id, exception.TeamId);
-        Assert.Equal(4, exception.MaxSlots);
+        Assert.Equal(2, exception.MaxSlots);
         Assert.Equal("constructor", exception.EntityType);
     }
 
@@ -881,7 +881,7 @@ public class TeamServiceTests
     }
 
     [Fact]
-    public async Task AddConstructorToTeamAsync_SameConstructorTwice_Succeeds()
+    public async Task AddConstructorToTeamAsync_SameConstructorSecondAdd_ThrowsEntityAlreadyOnTeamException()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -892,36 +892,10 @@ public class TeamServiceTests
         var constructor = CreateTestConstructor(context, "Red Bull Racing");
 
         await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id);
-
-        // Act
-        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 1, user.Id);
-
-        // Assert
-        var teamConstructors = context
-            .TeamConstructors.Where(tc =>
-                tc.TeamId == team.Id && tc.ConstructorId == constructor.Id
-            )
-            .ToList();
-        Assert.Equal(2, teamConstructors.Count);
-    }
-
-    [Fact]
-    public async Task AddConstructorToTeamAsync_SameConstructorThreeTimes_ThrowsEntityAlreadyOnTeamException()
-    {
-        // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
-
-        var user = CreateTestUser(context);
-        var team = CreateTestTeam(context, user.Id);
-        var constructor = CreateTestConstructor(context, "Red Bull Racing");
-
-        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id);
-        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 1, user.Id);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<EntityAlreadyOnTeamException>(() =>
-            service.AddConstructorToTeamAsync(team.Id, constructor.Id, 2, user.Id)
+            service.AddConstructorToTeamAsync(team.Id, constructor.Id, 1, user.Id)
         );
         Assert.Equal(constructor.Id, exception.EntityId);
         Assert.Equal("constructor", exception.EntityType);
@@ -929,7 +903,7 @@ public class TeamServiceTests
     }
 
     [Fact]
-    public async Task AddConstructorToTeamAsync_TwoDifferentConstructorsEachTwice_FillsAllSlots()
+    public async Task AddConstructorToTeamAsync_TwoDifferentConstructors_FillsAllSlots()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -942,15 +916,13 @@ public class TeamServiceTests
 
         // Act
         await service.AddConstructorToTeamAsync(team.Id, constructor1.Id, 0, user.Id);
-        await service.AddConstructorToTeamAsync(team.Id, constructor1.Id, 1, user.Id);
-        await service.AddConstructorToTeamAsync(team.Id, constructor2.Id, 2, user.Id);
-        await service.AddConstructorToTeamAsync(team.Id, constructor2.Id, 3, user.Id);
+        await service.AddConstructorToTeamAsync(team.Id, constructor2.Id, 1, user.Id);
 
         // Assert
         var teamConstructors = context.TeamConstructors.Where(tc => tc.TeamId == team.Id).ToList();
-        Assert.Equal(4, teamConstructors.Count);
-        Assert.Equal(2, teamConstructors.Count(tc => tc.ConstructorId == constructor1.Id));
-        Assert.Equal(2, teamConstructors.Count(tc => tc.ConstructorId == constructor2.Id));
+        Assert.Equal(2, teamConstructors.Count);
+        Assert.Equal(1, teamConstructors.Count(tc => tc.ConstructorId == constructor1.Id));
+        Assert.Equal(1, teamConstructors.Count(tc => tc.ConstructorId == constructor2.Id));
     }
 
     [Fact]
@@ -1312,7 +1284,7 @@ public class TeamServiceTests
     }
 
     [Fact]
-    public async Task AddConstructorToTeamAsync_SameConstructorTwice_CreatesTwoLineupEntries()
+    public async Task AddConstructorToTeamAsync_TwoDifferentConstructors_CreateTwoLineupEntries()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -1320,7 +1292,8 @@ public class TeamServiceTests
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
-        var constructor = CreateTestConstructor(context, "Red Bull Racing");
+        var constructor1 = CreateTestConstructor(context, "Red Bull Racing");
+        var constructor2 = CreateTestConstructor(context, "Ferrari");
         CreateTestRace(
             context,
             raceDate: DateTime.UtcNow.AddDays(2),
@@ -1328,8 +1301,8 @@ public class TeamServiceTests
         );
 
         // Act
-        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id);
-        await service.AddConstructorToTeamAsync(team.Id, constructor.Id, 1, user.Id);
+        await service.AddConstructorToTeamAsync(team.Id, constructor1.Id, 0, user.Id);
+        await service.AddConstructorToTeamAsync(team.Id, constructor2.Id, 1, user.Id);
 
         // Assert
         Assert.Equal(2, await context.LineupEntries.CountAsync());

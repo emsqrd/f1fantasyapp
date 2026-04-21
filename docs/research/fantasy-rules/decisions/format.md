@@ -22,6 +22,6 @@ Matches the official F1 Fantasy format. The 2026 grid has 22 drivers across 11 c
 
 ## Constraints
 
-**No roster constraints — any combination of drivers and constructors is valid.**
+**Drivers and constructors must each be unique within a team** — a team cannot select the same driver or the same constructor twice.
 
-Players can pick both drivers from the same constructor, or a driver without their constructor. Budget already prevents degenerate stacking by making top-team asset concentration expensive.
+Beyond uniqueness, there are no roster constraints. Players may pick both drivers from the same constructor. Budget already prevents degenerate stacking by making top-team asset concentration expensive.
