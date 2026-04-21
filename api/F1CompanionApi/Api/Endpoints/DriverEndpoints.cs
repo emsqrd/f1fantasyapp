@@ -11,12 +11,12 @@ public static class DriverEndpoints
     public static IEndpointRouteBuilder MapDriverEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet("/drivers", GetDriversAsync)
-            .RequireAuthorization()
+            .RequireAuthorization("JwtOrApiKey")
             .WithName("GetDrivers")
             .WithDescription("Retrieves a list of drivers");
 
         app.MapGet("/drivers/{id}", GetDriverByIdAsync)
-            .RequireAuthorization()
+            .RequireAuthorization("JwtOrApiKey")
             .WithName("GetDriverById")
             .WithDescription("Retrieves a specific driver by Id");
 

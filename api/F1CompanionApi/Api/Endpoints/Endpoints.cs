@@ -11,9 +11,11 @@ public static class Endpoints
             .MapConstructorEndpoints()
             .MapDriverEndpoints()
             .MapLeagueEndpoints()
+            .MapLineupEndpoints()
             .MapMeEndpoints()
             .MapRaceWeekendEndpoints()
             .MapRaceWeekendResultEndpoints()
+            .MapRaceWeekendScoringEndpoints()
             .MapSeasonEndpoints()
             .MapTeamEndpoints();
 

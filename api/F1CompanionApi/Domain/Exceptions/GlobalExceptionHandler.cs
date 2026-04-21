@@ -134,6 +134,12 @@ public class GlobalExceptionHandler : IExceptionHandler
                 ex.Message
             ),
 
+            NextRoundLockedException ex => (
+                StatusCodes.Status409Conflict,
+                "Next Round Locked",
+                ex.Message
+            ),
+
             // Standard .NET Exceptions (order matters: most specific first)
             ArgumentNullException ex => (
                 StatusCodes.Status400BadRequest,

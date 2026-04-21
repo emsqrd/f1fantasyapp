@@ -13,6 +13,7 @@ from ingest_results import (
     count_overtakes,
     find_race_weekend,
     get_fastest_lap_driver,
+    ingest,
     load_session,
     map_status,
 )
@@ -366,3 +367,143 @@ class TestBuildRacePayload:
         payload, warnings = build_race_payload(session, driver_map, {})
 
         assert payload[0]["gridPosition"] == 0
+
+
+# --- ingest orchestration: submit → score → (advance) ---
+
+
+def _resp(status_code: int) -> MagicMock:
+    """Build a mock response with the given status code."""
+    resp = MagicMock()
+    resp.status_code = status_code
+    resp.text = ""
+    return resp
+
+
+def _captured_calls(session: MagicMock) -> list[tuple[str, str]]:
+    """Return ('METHOD', url) tuples in call order from a mocked session."""
+    out = []
+    for call in session.method_calls:
+        name = call[0]
+        if name in ("put", "post", "get"):
+            url = call[1][0] if call[1] else call[2].get("url", "")
+            out.append((name.upper(), url))
+    return out
+
+
+def _make_ingest_mocks(monkeypatch, *, has_sprint: bool, total_rounds: int, round_number: int):
+    """Patch ingest_results dependencies to drive `ingest()` through a single round.
+
+    Returns the mocked api session so tests can inspect calls and patch responses.
+    """
+    api_session = MagicMock()
+    # Default: every API call returns 204 / empty list as appropriate.
+    api_session.put.return_value = _resp(204)
+    api_session.post.return_value = _resp(204)
+
+    monkeypatch.setattr(
+        "ingest_results.load_config",
+        lambda env: {"F1_API_KEY": "k", "F1_API_URL": "http://api"},
+    )
+    monkeypatch.setattr("ingest_results.create_api_session", lambda key: api_session)
+    monkeypatch.setattr(
+        "ingest_results.fetch_current_season",
+        lambda s, u: {"id": 1, "year": 2026},
+    )
+    monkeypatch.setattr(
+        "ingest_results.fetch_driver_mapping", lambda s, u: {"VER": 10}
+    )
+    weekends = [
+        {
+            "round": r,
+            "id": 100 + r,
+            "name": f"R{r}",
+            "weekendFormat": (1 if has_sprint and r == round_number else 0),
+            "raceDate": "2020-01-01T00:00:00",
+        }
+        for r in range(1, total_rounds + 1)
+    ]
+    monkeypatch.setattr(
+        "ingest_results.fetch_race_weekends", lambda s, u, sid: weekends
+    )
+    monkeypatch.setattr("ingest_results.fastf1.Cache.enable_cache", lambda d: None)
+
+    # Stub session loaders to return mock sessions; payload builders return one driver.
+    fake_session = MagicMock()
+    fake_session.results = pd.DataFrame([{"Abbreviation": "VER"}])
+    fake_session.laps = None
+
+    def _load(year, rn, name):
+        if name == "Sprint" and not has_sprint:
+            return None
+        return fake_session
+
+    monkeypatch.setattr("ingest_results.load_session", _load)
+    monkeypatch.setattr(
+        "ingest_results.build_qualifying_payload",
+        lambda sess, dm: ([{"driverId": 10, "position": 1}], []),
+    )
+    monkeypatch.setattr(
+        "ingest_results.build_race_payload",
+        lambda sess, dm, ot, fl=None: (
+            [{"driverId": 10, "gridPosition": 1, "finishPosition": 1,
+              "overtakes": 0, "fastestLap": False, "status": 0}],
+            [],
+        ),
+    )
+    monkeypatch.setattr("ingest_results.count_overtakes", lambda laps: {})
+    monkeypatch.setattr("ingest_results.get_fastest_lap_driver", lambda laps: None)
+
+    return api_session
+
+
+class TestIngestOrchestration:
+    def test_gp_submit_then_score_then_advance_when_not_final(self, monkeypatch):
+        api_session = _make_ingest_mocks(
+            monkeypatch, has_sprint=False, total_rounds=5, round_number=1
+        )
+
+        ingest(round_number=1, env="local")
+
+        write_calls = [c for c in _captured_calls(api_session) if c[0] in ("PUT", "POST")]
+        gp_put = ("PUT", "http://api/api/seasons/1/race-weekends/1/results/grand-prix")
+        score = ("POST", "http://api/api/seasons/1/race-weekends/1/score")
+        advance = ("POST", "http://api/api/seasons/1/race-weekends/1/advance-lineups")
+        idx = write_calls.index(gp_put)
+        assert write_calls[idx + 1] == score
+        assert write_calls[idx + 2] == advance
+
+    def test_final_round_skips_advance_and_prints_message(self, monkeypatch, capsys):
+        api_session = _make_ingest_mocks(
+            monkeypatch, has_sprint=False, total_rounds=5, round_number=5
+        )
+
+        ingest(round_number=5, env="local")
+
+        write_calls = [c for c in _captured_calls(api_session) if c[0] in ("PUT", "POST")]
+        advance = ("POST", "http://api/api/seasons/1/race-weekends/5/advance-lineups")
+        assert advance not in write_calls
+        # GP score should still have been called.
+        score = ("POST", "http://api/api/seasons/1/race-weekends/5/score")
+        assert score in write_calls
+
+        captured = capsys.readouterr()
+        assert "Final round of season 1" in captured.out
+        assert "no lineups to advance" in captured.out
+
+    def test_advance_not_called_after_quali_or_sprint(self, monkeypatch):
+        api_session = _make_ingest_mocks(
+            monkeypatch, has_sprint=True, total_rounds=5, round_number=1
+        )
+
+        ingest(round_number=1, env="local")
+
+        write_calls = [c for c in _captured_calls(api_session) if c[0] in ("PUT", "POST")]
+        advance = ("POST", "http://api/api/seasons/1/race-weekends/1/advance-lineups")
+        # Advance must appear after the GP put, not after quali or sprint.
+        gp_put_idx = write_calls.index(
+            ("PUT", "http://api/api/seasons/1/race-weekends/1/results/grand-prix")
+        )
+        assert write_calls.index(advance) > gp_put_idx
+        # Exactly one advance call.
+        assert sum(1 for c in write_calls if c == advance) == 1

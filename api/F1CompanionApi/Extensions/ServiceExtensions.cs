@@ -141,12 +141,22 @@ public static class ServiceExtensions
                     policy.AuthenticationSchemes.Add(ApiKeyAuthenticationHandler.SchemeName);
                     policy.RequireAuthenticatedUser();
                 }
+            )
+            .AddPolicy(
+                "JwtOrApiKey",
+                policy =>
+                {
+                    policy.AuthenticationSchemes.Add(JwtBearerDefaults.AuthenticationScheme);
+                    policy.AuthenticationSchemes.Add(ApiKeyAuthenticationHandler.SchemeName);
+                    policy.RequireAuthenticatedUser();
+                }
             );
         services.AddHttpContextAccessor();
         services.AddScoped<IConstructorService, ConstructorService>();
         services.AddScoped<IDriverService, DriverService>();
         services.AddScoped<ILeagueService, LeagueService>();
         services.AddScoped<ILeagueInviteService, LeagueInviteService>();
+        services.AddScoped<ILineupService, LineupService>();
         services.AddScoped<IRaceWeekendResultService, RaceWeekendResultService>();
         services.AddScoped<IRaceWeekendService, RaceWeekendService>();
         services.AddScoped<ISeasonService, SeasonService>();
