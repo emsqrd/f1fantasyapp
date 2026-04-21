@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 interface UseLineupPickerOptions<T extends { id: number }> {
   items: T[];
   lineup: (T | null)[];
-  itemType: string;
+  itemType: 'driver' | 'constructor';
   addToTeam: (itemId: number, position: number) => Promise<void>;
   removeFromTeam: (position: number) => Promise<void>;
 }
