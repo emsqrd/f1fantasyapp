@@ -818,4 +818,43 @@ public class ScoringServiceTests
     }
 
     #endregion
+
+    #region ScoreRaceWeekendAsync
+
+    [Fact]
+    public async Task ScoreRaceWeekendAsync_HappyPath_ScoresEntitiesAndTeams()
+    {
+        var context = CreateInMemoryContext();
+        var service = CreateServiceWithContext(context);
+
+        context.Circuits.Add(SeedCircuit(1));
+        context.RaceWeekends.Add(SeedRace(id: 1, seasonId: 1));
+        context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 1, constructorId: 10));
+        context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 2, constructorId: 10));
+        context.DriverQualifyingResults.Add(QualResult(driverId: 1, position: 1));
+        context.DriverQualifyingResults.Add(QualResult(driverId: 2, position: 5));
+        context.DriverRacingResults.Add(RaceResult(driverId: 1, grid: 1, finish: 1));
+        context.DriverRacingResults.Add(RaceResult(driverId: 2, grid: 5, finish: 5));
+        context.LineupEntries.Add(
+            SeedLineupEntry(teamId: 1, raceWeekendId: 1, entityId: 1, LineupEntityType.Driver)
+        );
+        context.LineupEntries.Add(
+            SeedLineupEntry(
+                teamId: 1,
+                raceWeekendId: 1,
+                entityId: 10,
+                LineupEntityType.Constructor,
+                slotPosition: 2
+            )
+        );
+        await context.SaveChangesAsync();
+
+        await service.ScoreRaceWeekendAsync(raceWeekendId: 1);
+
+        Assert.Equal(2, await context.DriverRaceWeekendScores.CountAsync());
+        Assert.Equal(1, await context.ConstructorRaceWeekendScores.CountAsync());
+        Assert.Equal(1, await context.TeamRaceWeekendScores.CountAsync());
+    }
+
+    #endregion
 }

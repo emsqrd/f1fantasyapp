@@ -300,6 +300,42 @@ def submit_results(
     print(f"  {session_type.capitalize()} results submitted ({len(payload)} drivers)")
 
 
+def post_score(
+    session: requests.Session,
+    api_url: str,
+    season_id: int,
+    round_number: int,
+) -> None:
+    """POST to the scoring endpoint. Expects 204."""
+    url = f"{api_url}/api/seasons/{season_id}/race-weekends/{round_number}/score"
+    resp = session.post(url)
+    if resp.status_code >= 400:
+        raise ApiError(
+            f"Score season {season_id} round {round_number}", resp.status_code, resp.text
+        )
+    print(f"  Scored race weekend (season {season_id}, round {round_number})")
+
+
+def post_advance_lineups(
+    session: requests.Session,
+    api_url: str,
+    season_id: int,
+    round_number: int,
+) -> None:
+    """POST to the advance-lineups endpoint. Expects 204."""
+    url = f"{api_url}/api/seasons/{season_id}/race-weekends/{round_number}/advance-lineups"
+    resp = session.post(url)
+    if resp.status_code >= 400:
+        raise ApiError(
+            f"Advance lineups season {season_id} round {round_number}",
+            resp.status_code,
+            resp.text,
+        )
+    print(
+        f"  Lineups advanced (season {season_id}, round {round_number} → {round_number + 1})"
+    )
+
+
 def load_config(env: str) -> dict[str, str | None]:
     """Load and validate environment config."""
     env_file = f".env.{env}"
@@ -361,6 +397,7 @@ def ingest(round_number: int, env: str) -> None:
         report_warnings(warnings, "qualifying")
         if payload:
             submit_results(api_session, api_url, season_id, round_number, "qualifying", payload)
+            post_score(api_session, api_url, season_id, round_number)
     else:
         print("  Skipping qualifying — session not available")
 
@@ -375,6 +412,7 @@ def ingest(round_number: int, env: str) -> None:
             report_warnings(warnings, "sprint")
             if payload:
                 submit_results(api_session, api_url, season_id, round_number, "sprint", payload)
+                post_score(api_session, api_url, season_id, round_number)
         else:
             print("  Skipping sprint — session not available")
 
@@ -388,6 +426,11 @@ def ingest(round_number: int, env: str) -> None:
         report_warnings(warnings, "grand-prix")
         if payload:
             submit_results(api_session, api_url, season_id, round_number, "grand-prix", payload)
+            post_score(api_session, api_url, season_id, round_number)
+            if round_number < len(race_weekends):
+                post_advance_lineups(api_session, api_url, season_id, round_number)
+            else:
+                print(f"  Final round of season {season_id} — no lineups to advance")
     else:
         print("  Skipping race — session not available")
 

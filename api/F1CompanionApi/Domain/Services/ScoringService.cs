@@ -11,6 +11,7 @@ public interface IScoringService
 {
     Task ScoreRaceEntitiesAsync(int raceWeekendId);
     Task ScoreTeamsForRaceAsync(int raceWeekendId);
+    Task ScoreRaceWeekendAsync(int raceWeekendId);
 }
 
 public class ScoringService : IScoringService
@@ -196,6 +197,17 @@ public class ScoringService : IScoringService
             d1.FastestLapPoints + d2.FastestLapPoints,
             d1.PenaltyPoints + d2.PenaltyPoints
         );
+    }
+
+    /// <summary>
+    /// Orchestrates scoring for a race weekend: scores entities first, then teams.
+    /// Team scores are derived from entity scores, so this ordering is a domain invariant.
+    /// </summary>
+    /// <param name="raceWeekendId">The race weekend to score.</param>
+    public async Task ScoreRaceWeekendAsync(int raceWeekendId)
+    {
+        await ScoreRaceEntitiesAsync(raceWeekendId);
+        await ScoreTeamsForRaceAsync(raceWeekendId);
     }
 
     /// <summary>
@@ -386,6 +398,7 @@ public class ScoringService : IScoringService
             GrandPrixTotal = score.GrandPrix?.Total,
             TotalPoints = score.TotalPoints,
             CalculatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
         };
 
     /// <summary>
@@ -417,6 +430,7 @@ public class ScoringService : IScoringService
             GrandPrixTotal = score.GrandPrix?.Total,
             TotalPoints = score.Total,
             CalculatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
         };
 
     /// <summary>
@@ -454,6 +468,7 @@ public class ScoringService : IScoringService
                     RaceWeekendId = raceWeekendId,
                     TotalPoints = totalPoints,
                     CalculatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
                 }
             );
         }
