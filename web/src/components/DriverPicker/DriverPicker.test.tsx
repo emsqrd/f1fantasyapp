@@ -10,7 +10,6 @@ import { DriverPicker } from './DriverPicker';
 // Mock useLineupPicker hook
 vi.mock('@/hooks/useLineupPicker', () => ({
   useLineupPicker: () => ({
-    displayLineup: mockDisplayLineup,
     pool: mockPool,
     selectedPosition: mockSelectedPosition,
     isPending: mockIsPending,
@@ -23,7 +22,6 @@ vi.mock('@/hooks/useLineupPicker', () => ({
 }));
 
 // Mock data - will be set in beforeEach or individual tests
-let mockDisplayLineup: (Driver | null)[];
 let mockPool: Driver[];
 let mockSelectedPosition: number | null;
 let mockIsPending: boolean;
@@ -49,7 +47,6 @@ describe('DriverPicker', () => {
     vi.clearAllMocks();
 
     // Default state: empty lineup, all drivers in pool, picker closed
-    mockDisplayLineup = [null, null, null, null, null];
     mockPool = mockDrivers;
     mockSelectedPosition = null;
     mockIsPending = false;
@@ -71,8 +68,6 @@ describe('DriverPicker', () => {
         toTeamDriver(mockDrivers[0], 0),
         toTeamDriver(mockDrivers[1], 1),
       ];
-
-      mockDisplayLineup = [mockDrivers[0], mockDrivers[1], null, null, null];
 
       render(
         <DriverPicker
@@ -98,14 +93,6 @@ describe('DriverPicker', () => {
         toTeamDriver(mockDrivers[2], 2),
         toTeamDriver(mockDrivers[3], 3),
         toTeamDriver(mockDrivers[4], 4),
-      ];
-
-      mockDisplayLineup = [
-        mockDrivers[0],
-        mockDrivers[1],
-        mockDrivers[2],
-        mockDrivers[3],
-        mockDrivers[4],
       ];
 
       render(
@@ -148,7 +135,6 @@ describe('DriverPicker', () => {
     });
 
     it('only displays drivers not in current lineup', () => {
-      mockDisplayLineup = [mockDrivers[0], null, null, null, null];
       mockPool = [mockDrivers[1], mockDrivers[2], mockDrivers[3], mockDrivers[4]];
 
       render(
@@ -259,8 +245,6 @@ describe('DriverPicker', () => {
     });
 
     it('provides aria-label for remove buttons', () => {
-      mockDisplayLineup = [mockDrivers[0], null, null, null, null];
-
       render(
         <DriverPicker
           activeDrivers={mockDrivers}
@@ -293,8 +277,6 @@ describe('DriverPicker', () => {
         toTeamDriver(mockDrivers[0], 0),
         toTeamDriver(mockDrivers[1], 1),
       ];
-
-      mockDisplayLineup = [mockDrivers[0], mockDrivers[1], null, null];
 
       render(
         <DriverPicker
@@ -335,8 +317,6 @@ describe('DriverPicker', () => {
 
   describe('Captain', () => {
     it('shows active captain button for the driver matching captainDriverId', () => {
-      mockDisplayLineup = [mockDrivers[0], null, null, null];
-
       render(
         <DriverPicker
           activeDrivers={mockDrivers}
@@ -354,7 +334,6 @@ describe('DriverPicker', () => {
     it('calls onSetCaptain with driver id when Set as captain is clicked', async () => {
       const user = userEvent.setup();
       const onSetCaptain = vi.fn();
-      mockDisplayLineup = [mockDrivers[0], null, null, null];
 
       render(
         <DriverPicker
@@ -375,7 +354,6 @@ describe('DriverPicker', () => {
     it('calls onSetCaptain with null when active captain button is clicked', async () => {
       const user = userEvent.setup();
       const onSetCaptain = vi.fn();
-      mockDisplayLineup = [mockDrivers[0], null, null, null];
 
       render(
         <DriverPicker

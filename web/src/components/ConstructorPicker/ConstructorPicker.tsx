@@ -44,7 +44,6 @@ export function ConstructorPicker({
   }, [teamConstructors]);
 
   const {
-    displayLineup,
     pool,
     selectedPosition,
     isPending,
@@ -56,14 +55,12 @@ export function ConstructorPicker({
   } = useLineupPicker({
     items: activeConstructors,
     lineup,
-    lineupSize: CONSTRUCTOR_SLOTS,
     itemType: 'constructor',
     addToTeam: addConstructorToTeam,
     removeFromTeam: removeConstructorFromTeam,
-    maxDuplicates: 2,
   });
 
-  const filledCount = displayLineup.filter(Boolean).length;
+  const filledCount = lineup.filter(Boolean).length;
 
   return (
     <>
@@ -81,7 +78,7 @@ export function ConstructorPicker({
         </span>
       </div>
       <div className="relative grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-2">
-        {displayLineup.map((constructor, idx) => (
+        {lineup.map((constructor, idx) => (
           <ConstructorCard
             key={idx}
             constructor={constructor}
@@ -105,9 +102,7 @@ export function ConstructorPicker({
           <SheetContent className="bg-card flex h-full flex-col sm:max-w-md">
             <SheetHeader>
               <SheetTitle>Select Constructor</SheetTitle>
-              <SheetDescription>
-                Choose a constructor to add to your team (you can pick the same one twice).
-              </SheetDescription>
+              <SheetDescription>Choose a constructor to add to your team.</SheetDescription>
             </SheetHeader>
             <ScrollArea className="h-full min-h-0 flex-1 pr-4 pl-4">
               <ul className="divide-border divide-y">

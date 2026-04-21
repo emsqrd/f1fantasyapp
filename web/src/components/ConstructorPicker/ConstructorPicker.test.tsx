@@ -13,7 +13,6 @@ vi.mock('@/hooks/useLineupPicker', () => ({
 }));
 
 // Mock data - will be set in beforeEach or individual tests
-let mockDisplayLineup: (Constructor | null)[];
 let mockPool: Constructor[];
 let mockSelectedPosition: number | null;
 let mockIsPending: boolean;
@@ -58,14 +57,12 @@ describe('ConstructorPicker', () => {
     vi.clearAllMocks();
 
     // Default state: empty lineup, all constructors in pool, picker closed
-    mockDisplayLineup = [null, null];
     mockPool = mockConstructors;
     mockSelectedPosition = null;
     mockIsPending = false;
     mockError = null;
 
     mockUseLineupPicker.mockImplementation(() => ({
-      displayLineup: mockDisplayLineup,
       pool: mockPool,
       selectedPosition: mockSelectedPosition,
       isPending: mockIsPending,
@@ -94,8 +91,6 @@ describe('ConstructorPicker', () => {
     it('displays existing constructors in correct positions', () => {
       const teamConstructors: TeamConstructor[] = [toTeamConstructor(mockConstructors[0], 0)];
 
-      mockDisplayLineup = [mockConstructors[0], null];
-
       render(
         <ConstructorPicker
           activeConstructors={mockConstructors}
@@ -117,8 +112,6 @@ describe('ConstructorPicker', () => {
         toTeamConstructor(mockConstructors[0], 0),
         toTeamConstructor(mockConstructors[1], 1),
       ];
-
-      mockDisplayLineup = [mockConstructors[0], mockConstructors[1]];
 
       render(
         <ConstructorPicker
@@ -161,7 +154,6 @@ describe('ConstructorPicker', () => {
     });
 
     it('only displays constructors not in current lineup', () => {
-      mockDisplayLineup = [mockConstructors[0], null];
       mockPool = [
         mockConstructors[1],
         mockConstructors[2],
@@ -305,8 +297,6 @@ describe('ConstructorPicker', () => {
     });
 
     it('provides aria-label for remove buttons', () => {
-      mockDisplayLineup = [mockConstructors[0], null, null, null];
-
       render(
         <ConstructorPicker
           activeConstructors={mockConstructors}
@@ -318,22 +308,6 @@ describe('ConstructorPicker', () => {
 
       const removeButton = screen.getByRole('button', { name: /remove constructor/i });
       expect(removeButton).toHaveAccessibleName('Remove constructor');
-    });
-  });
-
-  describe('Duplicate Constructors', () => {
-    it('passes maxDuplicates: 2 to useLineupPicker', () => {
-      render(
-        <ConstructorPicker
-          activeConstructors={mockConstructors}
-          readOnly={false}
-          remainingBudget={100_000_000}
-        />,
-      );
-
-      expect(mockUseLineupPicker).toHaveBeenCalledWith(
-        expect.objectContaining({ maxDuplicates: 2 }),
-      );
     });
   });
 
@@ -359,8 +333,6 @@ describe('ConstructorPicker', () => {
         toTeamConstructor(mockConstructors[0], 0),
         toTeamConstructor(mockConstructors[1], 1),
       ];
-
-      mockDisplayLineup = [mockConstructors[0], mockConstructors[1], null, null];
 
       render(
         <ConstructorPicker
@@ -421,11 +393,13 @@ describe('ConstructorPicker', () => {
     });
 
     it('shows filled count in section header', () => {
-      mockDisplayLineup = [mockConstructors[0], mockConstructors[1]];
-
       render(
         <ConstructorPicker
           activeConstructors={mockConstructors}
+          teamConstructors={[
+            toTeamConstructor(mockConstructors[0], 0),
+            toTeamConstructor(mockConstructors[1], 1),
+          ]}
           readOnly={false}
           remainingBudget={100_000_000}
         />,

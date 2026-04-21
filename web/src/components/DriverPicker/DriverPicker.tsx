@@ -48,7 +48,6 @@ export function DriverPicker({
   }, [teamDrivers]);
 
   const {
-    displayLineup,
     pool,
     selectedPosition,
     isPending,
@@ -60,13 +59,12 @@ export function DriverPicker({
   } = useLineupPicker({
     items: activeDrivers,
     lineup,
-    lineupSize: DRIVER_SLOTS,
     itemType: 'driver',
     addToTeam: addDriverToTeam,
     removeFromTeam: removeDriverFromTeam,
   });
 
-  const filledCount = displayLineup.filter(Boolean).length;
+  const filledCount = lineup.filter(Boolean).length;
 
   return (
     <>
@@ -84,7 +82,7 @@ export function DriverPicker({
         </span>
       </div>
       <div className="relative grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-6">
-        {displayLineup.map((driver, idx) => (
+        {lineup.map((driver, idx) => (
           <div key={idx} className={`sm:col-span-2 ${idx === 0 ? 'sm:col-start-2' : ''}`}>
             <DriverCard
               driver={driver}
