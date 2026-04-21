@@ -58,7 +58,7 @@ describe('ConstructorPicker', () => {
     vi.clearAllMocks();
 
     // Default state: empty lineup, all constructors in pool, picker closed
-    mockDisplayLineup = [null, null, null, null];
+    mockDisplayLineup = [null, null];
     mockPool = mockConstructors;
     mockSelectedPosition = null;
     mockIsPending = false;
@@ -78,7 +78,7 @@ describe('ConstructorPicker', () => {
   });
 
   describe('Lineup Rendering', () => {
-    it('renders 4 empty constructor slots by default', () => {
+    it('renders 2 empty constructor slots by default', () => {
       render(
         <ConstructorPicker
           activeConstructors={mockConstructors}
@@ -88,16 +88,13 @@ describe('ConstructorPicker', () => {
       );
 
       const addButtons = screen.getAllByRole('button', { name: /add constructor/i });
-      expect(addButtons).toHaveLength(4);
+      expect(addButtons).toHaveLength(2);
     });
 
     it('displays existing constructors in correct positions', () => {
-      const teamConstructors: TeamConstructor[] = [
-        toTeamConstructor(mockConstructors[0], 0),
-        toTeamConstructor(mockConstructors[1], 1),
-      ];
+      const teamConstructors: TeamConstructor[] = [toTeamConstructor(mockConstructors[0], 0)];
 
-      mockDisplayLineup = [mockConstructors[0], mockConstructors[1], null, null];
+      mockDisplayLineup = [mockConstructors[0], null];
 
       render(
         <ConstructorPicker
@@ -109,27 +106,19 @@ describe('ConstructorPicker', () => {
       );
 
       expect(screen.getByText('McLaren')).toBeInTheDocument();
-      expect(screen.getByText('Ferrari')).toBeInTheDocument();
 
-      // Two filled slots, two empty
+      // One filled slot, one empty
       const addButtons = screen.getAllByRole('button', { name: /add constructor/i });
-      expect(addButtons).toHaveLength(2);
+      expect(addButtons).toHaveLength(1);
     });
 
     it('displays all constructors when lineup is full', () => {
       const teamConstructors: TeamConstructor[] = [
         toTeamConstructor(mockConstructors[0], 0),
         toTeamConstructor(mockConstructors[1], 1),
-        toTeamConstructor(mockConstructors[2], 2),
-        toTeamConstructor(mockConstructors[3], 3),
       ];
 
-      mockDisplayLineup = [
-        mockConstructors[0],
-        mockConstructors[1],
-        mockConstructors[2],
-        mockConstructors[3],
-      ];
+      mockDisplayLineup = [mockConstructors[0], mockConstructors[1]];
 
       render(
         <ConstructorPicker
@@ -142,8 +131,6 @@ describe('ConstructorPicker', () => {
 
       expect(screen.getByText('McLaren')).toBeInTheDocument();
       expect(screen.getByText('Ferrari')).toBeInTheDocument();
-      expect(screen.getByText('Red Bull Racing')).toBeInTheDocument();
-      expect(screen.getByText('Mercedes')).toBeInTheDocument();
 
       // No "Add Constructor" buttons when all slots are filled
       expect(screen.queryByRole('button', { name: /add constructor/i })).not.toBeInTheDocument();
@@ -174,7 +161,7 @@ describe('ConstructorPicker', () => {
     });
 
     it('only displays constructors not in current lineup', () => {
-      mockDisplayLineup = [mockConstructors[0], null, null, null];
+      mockDisplayLineup = [mockConstructors[0], null];
       mockPool = [
         mockConstructors[1],
         mockConstructors[2],
@@ -434,7 +421,7 @@ describe('ConstructorPicker', () => {
     });
 
     it('shows filled count in section header', () => {
-      mockDisplayLineup = [mockConstructors[0], mockConstructors[1], null, null];
+      mockDisplayLineup = [mockConstructors[0], mockConstructors[1]];
 
       render(
         <ConstructorPicker
@@ -444,7 +431,7 @@ describe('ConstructorPicker', () => {
         />,
       );
 
-      expect(screen.getByText('2 / 4')).toBeInTheDocument();
+      expect(screen.getByText('2 / 2')).toBeInTheDocument();
     });
   });
 

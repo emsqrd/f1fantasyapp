@@ -49,7 +49,7 @@ describe('DriverPicker', () => {
     vi.clearAllMocks();
 
     // Default state: empty lineup, all drivers in pool, picker closed
-    mockDisplayLineup = [null, null, null, null];
+    mockDisplayLineup = [null, null, null, null, null];
     mockPool = mockDrivers;
     mockSelectedPosition = null;
     mockIsPending = false;
@@ -57,13 +57,13 @@ describe('DriverPicker', () => {
   });
 
   describe('Lineup Rendering', () => {
-    it('renders 4 empty driver slots by default', () => {
+    it('renders 5 empty driver slots by default', () => {
       render(
         <DriverPicker activeDrivers={mockDrivers} readOnly={false} remainingBudget={100_000_000} />,
       );
 
       const addButtons = screen.getAllByRole('button', { name: /add driver/i });
-      expect(addButtons).toHaveLength(4);
+      expect(addButtons).toHaveLength(5);
     });
 
     it('displays existing drivers in correct positions', () => {
@@ -72,7 +72,7 @@ describe('DriverPicker', () => {
         toTeamDriver(mockDrivers[1], 1),
       ];
 
-      mockDisplayLineup = [mockDrivers[0], mockDrivers[1], null, null];
+      mockDisplayLineup = [mockDrivers[0], mockDrivers[1], null, null, null];
 
       render(
         <DriverPicker
@@ -86,9 +86,9 @@ describe('DriverPicker', () => {
       expect(screen.getByText('Oscar Piastri')).toBeInTheDocument();
       expect(screen.getByText('Lando Norris')).toBeInTheDocument();
 
-      // Two filled slots, two empty
+      // Two filled slots, three empty
       const addButtons = screen.getAllByRole('button', { name: /add driver/i });
-      expect(addButtons).toHaveLength(2);
+      expect(addButtons).toHaveLength(3);
     });
 
     it('displays all drivers when lineup is full', () => {
@@ -97,9 +97,16 @@ describe('DriverPicker', () => {
         toTeamDriver(mockDrivers[1], 1),
         toTeamDriver(mockDrivers[2], 2),
         toTeamDriver(mockDrivers[3], 3),
+        toTeamDriver(mockDrivers[4], 4),
       ];
 
-      mockDisplayLineup = [mockDrivers[0], mockDrivers[1], mockDrivers[2], mockDrivers[3]];
+      mockDisplayLineup = [
+        mockDrivers[0],
+        mockDrivers[1],
+        mockDrivers[2],
+        mockDrivers[3],
+        mockDrivers[4],
+      ];
 
       render(
         <DriverPicker
@@ -114,6 +121,7 @@ describe('DriverPicker', () => {
       expect(screen.getByText('Lando Norris')).toBeInTheDocument();
       expect(screen.getByText('Charles Leclerc')).toBeInTheDocument();
       expect(screen.getByText('Max Verstappen')).toBeInTheDocument();
+      expect(screen.getByText('Lewis Hamilton')).toBeInTheDocument();
 
       // No "Add Driver" buttons when all slots are filled
       expect(screen.queryByRole('button', { name: /add driver/i })).not.toBeInTheDocument();
@@ -140,7 +148,7 @@ describe('DriverPicker', () => {
     });
 
     it('only displays drivers not in current lineup', () => {
-      mockDisplayLineup = [mockDrivers[0], null, null, null];
+      mockDisplayLineup = [mockDrivers[0], null, null, null, null];
       mockPool = [mockDrivers[1], mockDrivers[2], mockDrivers[3], mockDrivers[4]];
 
       render(
@@ -251,7 +259,7 @@ describe('DriverPicker', () => {
     });
 
     it('provides aria-label for remove buttons', () => {
-      mockDisplayLineup = [mockDrivers[0], null, null, null];
+      mockDisplayLineup = [mockDrivers[0], null, null, null, null];
 
       render(
         <DriverPicker

@@ -26,7 +26,7 @@ interface DriverPickerProps {
   onSetCaptain?: (driverId: number | null) => void;
 }
 
-const DRIVER_SLOTS = 4;
+const DRIVER_SLOTS = 5;
 
 export function DriverPicker({
   activeDrivers,
@@ -83,21 +83,22 @@ export function DriverPicker({
           {filledCount} / {DRIVER_SLOTS}
         </span>
       </div>
-      <div className="relative grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="relative grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-6">
         {displayLineup.map((driver, idx) => (
-          <DriverCard
-            key={idx}
-            driver={driver}
-            onOpenPicker={() => openPicker(idx)}
-            onRemove={() => handleRemove(idx)}
-            readOnly={readOnly}
-            isCaptain={driver !== null && driver.id === captainDriverId}
-            onSetCaptain={
-              driver && onSetCaptain
-                ? () => onSetCaptain(driver.id === captainDriverId ? null : driver.id)
-                : undefined
-            }
-          />
+          <div key={idx} className={`sm:col-span-2 ${idx === 0 ? 'sm:col-start-2' : ''}`}>
+            <DriverCard
+              driver={driver}
+              onOpenPicker={() => openPicker(idx)}
+              onRemove={() => handleRemove(idx)}
+              readOnly={readOnly}
+              isCaptain={driver !== null && driver.id === captainDriverId}
+              onSetCaptain={
+                driver && onSetCaptain
+                  ? () => onSetCaptain(driver.id === captainDriverId ? null : driver.id)
+                  : undefined
+              }
+            />
+          </div>
         ))}
 
         {isPending && (
