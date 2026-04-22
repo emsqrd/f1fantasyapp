@@ -58,13 +58,23 @@ dotnet ef migrations remove --project F1CompanionApi
 
 **Entities**: `BaseEntity` provides `CreatedBy/At`, `UpdatedBy/At`, `DeletedBy/At` audit fields with `UserProfile` navigation properties
 
-## Testing
+## Unit Tests
+
+Scope: pure logic and service-level computation (e.g., scoring math). Cross-boundary concerns — routing, auth, DB constraints, EF query behavior — belong in integration tests (see below), not here.
 
 - **Framework**: xUnit + Moq
-- **Service tests**: In-memory database with unique GUID names for isolation
-- **Endpoint tests**: Reflection to invoke private static methods, mock services
 - **Naming**: `{MethodName}_{Scenario}_{ExpectedOutcome}`
-- **File structure**: Mirrors source - `F1CompanionApi.UnitTests/Services/`, `F1CompanionApi.UnitTests/Api/Endpoints/`
+- **File structure**: Mirrors source — `F1CompanionApi.UnitTests/Services/`, `F1CompanionApi.UnitTests/Api/Endpoints/`
+- **Legacy patterns in this project**: some existing tests use EF InMemory for service setup and reflection to invoke private endpoint methods. Don't extend these patterns for new tests — anything that needs a DB or exercises the HTTP pipeline belongs in integration tests.
+
+## Integration Tests
+
+Full API boot via `WebApplicationFactory<Program>` against a Testcontainers Postgres. See `F1CompanionApi.IntegrationTests/README.md` for fixture lifecycle, authentication helpers, and when to choose this layer over unit tests.
+
+- **Location**: `F1CompanionApi.IntegrationTests/`
+- **Run**: `npm run api:test:integration` from repo root (Docker Desktop required)
+- **Base class**: inherit `IntegrationTestBase` — resets the DB per test and exposes `Factory` + `WithDbAsync` helpers
+- **Auth**: prefer `factory.CreateAuthenticatedAsync()` over crafting `X-Test-User-Id` headers by hand
 
 ## Configuration
 

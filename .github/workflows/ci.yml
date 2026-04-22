@@ -52,7 +52,25 @@ jobs:
       - name: Build
         run: npm run api:build
       - name: Test
-        run: npm run api:test
+        run: npm run api:test:unit
+
+  api-integration:
+    name: API Integration
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore tools
+        run: dotnet tool restore
+        working-directory: api
+      - name: Build
+        run: npm run api:build
+      - name: Integration tests
+        run: npm run api:test:integration
 
   api-docker:
     name: API Docker
