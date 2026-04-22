@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data.Entities;
 using F1CompanionApi.IntegrationTests.Support;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.IntegrationTests.Scenarios;
@@ -32,15 +31,16 @@ public class LeagueInviteTests : IntegrationTestBase
                 IsPrivate = true,
             }
         );
-        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
         var created = await createResponse.Content.ReadFromJsonAsync<LeagueResponse>();
-        created.Should().NotBeNull();
+        Assert.NotNull(created);
 
         var details = await client.GetFromJsonAsync<LeagueDetailsResponse>(
             $"/api/leagues/{created!.Id}"
         );
-        details.Should().NotBeNull();
-        details!.Teams.Should().ContainSingle().Which.Name.Should().Be("Owner Team");
+        Assert.NotNull(details);
+        var only = Assert.Single(details!.Teams);
+        Assert.Equal("Owner Team", only.Name);
     }
 
     [Fact]
@@ -59,37 +59,40 @@ public class LeagueInviteTests : IntegrationTestBase
             "/api/leagues/",
             new CreateLeagueRequest { Name = "Private League", IsPrivate = true }
         );
-        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
         var league = await createResponse.Content.ReadFromJsonAsync<LeagueResponse>();
-        league.Should().NotBeNull();
+        Assert.NotNull(league);
 
         var inviteResponse = await ownerClient.PostAsync(
             $"/api/leagues/{league!.Id}/invite",
             content: null
         );
-        inviteResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, inviteResponse.StatusCode);
         var invite = await inviteResponse.Content.ReadFromJsonAsync<LeagueInviteTokenResponse>();
-        invite.Should().NotBeNull();
+        Assert.NotNull(invite);
 
         var preview = await friendClient.GetFromJsonAsync<LeagueInviteTokenPreviewResponse>(
             $"/api/leagues/join/{invite!.Token}/preview"
         );
-        preview.Should().NotBeNull();
-        preview!.LeagueName.Should().Be("Private League");
-        preview.CurrentTeamCount.Should().Be(1);
-        preview.IsLeagueFull.Should().BeFalse();
+        Assert.NotNull(preview);
+        Assert.Equal("Private League", preview!.LeagueName);
+        Assert.Equal(1, preview.CurrentTeamCount);
+        Assert.False(preview.IsLeagueFull);
 
         var joinResponse = await friendClient.PostAsync(
             $"/api/leagues/join/{invite.Token}",
             content: null
         );
-        joinResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, joinResponse.StatusCode);
 
         var details = await ownerClient.GetFromJsonAsync<LeagueDetailsResponse>(
             $"/api/leagues/{league.Id}"
         );
-        details.Should().NotBeNull();
-        details!.Teams.Select(t => t.Name).Should().BeEquivalentTo("Owner Team", "Friend Team");
+        Assert.NotNull(details);
+        Assert.Equal(
+            new[] { "Owner Team", "Friend Team" }.OrderBy(n => n),
+            details!.Teams.Select(t => t.Name).OrderBy(n => n)
+        );
     }
 
     [Fact]
@@ -109,18 +112,18 @@ public class LeagueInviteTests : IntegrationTestBase
             new CreateLeagueRequest { Name = "Private League", IsPrivate = true }
         );
         var league = await createResponse.Content.ReadFromJsonAsync<LeagueResponse>();
-        league.Should().NotBeNull();
+        Assert.NotNull(league);
 
         var response = await otherClient.PostAsync(
             $"/api/leagues/{league!.Id}/invite",
             content: null
         );
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
 
         var inviteCount = await WithDbAsync(async db =>
             await db.LeagueInvites.CountAsync(i => i.LeagueId == league.Id)
         );
-        inviteCount.Should().Be(0);
+        Assert.Equal(0, inviteCount);
     }
 
     [Fact]
@@ -178,13 +181,13 @@ public class LeagueInviteTests : IntegrationTestBase
             $"/api/leagues/{leagueId}/join",
             content: null
         );
-        joinResponse.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        Assert.Equal(HttpStatusCode.Conflict, joinResponse.StatusCode);
 
         var details = await ownerClient.GetFromJsonAsync<LeagueDetailsResponse>(
             $"/api/leagues/{leagueId}"
         );
-        details.Should().NotBeNull();
-        details!.Teams.Should().HaveCount(2);
+        Assert.NotNull(details);
+        Assert.Equal(2, details!.Teams.Count);
     }
 
     [Fact]
@@ -194,7 +197,7 @@ public class LeagueInviteTests : IntegrationTestBase
 
         var response = await client.GetAsync("/api/leagues/join/does-not-exist/preview");
 
-        response.IsSuccessStatusCode.Should().BeFalse();
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.False(response.IsSuccessStatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 }

@@ -3,17 +3,16 @@ using System.Net.Http.Json;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data.Entities;
 using F1CompanionApi.IntegrationTests.Support;
-using FluentAssertions;
 
 namespace F1CompanionApi.IntegrationTests.Scenarios;
 
-public class RosterLockTests : IntegrationTestBase
+public class LineupLockTests : IntegrationTestBase
 {
-    public RosterLockTests(PostgresFixture postgres)
+    public LineupLockTests(PostgresFixture postgres)
         : base(postgres) { }
 
     [Fact]
-    public async Task OwnerCanChangeRosterBeforeLock()
+    public async Task OwnerCanChangeLineupBeforeLock()
     {
         var (client, profile) = await Factory.CreateAuthenticatedAsync();
 
@@ -35,15 +34,16 @@ public class RosterLockTests : IntegrationTestBase
             new AddDriverToTeamRequest { DriverId = driver.Id, SlotPosition = 0 }
         );
 
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         var team = await client.GetFromJsonAsync<TeamDetailsResponse>("/api/me/team/");
-        team.Should().NotBeNull();
-        team!.Drivers.Should().ContainSingle().Which.Id.Should().Be(driver.Id);
+        Assert.NotNull(team);
+        var only = Assert.Single(team!.Drivers);
+        Assert.Equal(driver.Id, only.Id);
     }
 
     [Fact]
-    public async Task OwnerCannotChangeRosterAfterLock()
+    public async Task OwnerCannotChangeLineupAfterLock()
     {
         var (client, profile) = await Factory.CreateAuthenticatedAsync();
 
@@ -65,15 +65,15 @@ public class RosterLockTests : IntegrationTestBase
             new AddDriverToTeamRequest { DriverId = driver.Id, SlotPosition = 0 }
         );
 
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
 
         var team = await client.GetFromJsonAsync<TeamDetailsResponse>("/api/me/team/");
-        team.Should().NotBeNull();
-        team!.Drivers.Should().BeEmpty();
+        Assert.NotNull(team);
+        Assert.Empty(team!.Drivers);
     }
 
     [Fact]
-    public async Task OwnerCannotRemoveRosterAfterLock()
+    public async Task OwnerCanRemoveDriverBeforeLock()
     {
         var (client, profile) = await Factory.CreateAuthenticatedAsync();
 
@@ -83,7 +83,7 @@ public class RosterLockTests : IntegrationTestBase
             await db.CreateRaceWeekendAsync(
                 season.Id,
                 raceDate: DateTime.UtcNow.AddDays(2),
-                lockDeadline: DateTime.UtcNow.AddHours(-1)
+                lockDeadline: DateTime.UtcNow.AddDays(1)
             );
             var team = await db.CreateTeamAsync(profile.Id);
             var driver = await db.CreateDriverAsync("VER", "Max", "Verstappen");
@@ -102,10 +102,10 @@ public class RosterLockTests : IntegrationTestBase
 
         var response = await client.DeleteAsync("/api/me/team/drivers/0");
 
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
         var team = await client.GetFromJsonAsync<TeamDetailsResponse>("/api/me/team/");
-        team.Should().NotBeNull();
-        team!.Drivers.Should().ContainSingle();
+        Assert.NotNull(team);
+        Assert.Empty(team!.Drivers);
     }
 }

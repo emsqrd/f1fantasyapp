@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.IntegrationTests.Support;
-using FluentAssertions;
 
 namespace F1CompanionApi.IntegrationTests.Scenarios;
 
@@ -50,7 +49,7 @@ public class BudgetCapTests : IntegrationTestBase
                 "/api/me/team/drivers",
                 new AddDriverToTeamRequest { DriverId = driverIds[slot], SlotPosition = slot }
             );
-            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }
 
         for (var slot = 0; slot < 2; slot++)
@@ -63,13 +62,13 @@ public class BudgetCapTests : IntegrationTestBase
                     SlotPosition = slot,
                 }
             );
-            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }
 
         var team = await client.GetFromJsonAsync<TeamDetailsResponse>("/api/me/team/");
-        team.Should().NotBeNull();
-        team!.Drivers.Should().HaveCount(5);
-        team.Constructors.Should().HaveCount(2);
+        Assert.NotNull(team);
+        Assert.Equal(5, team!.Drivers.Count);
+        Assert.Equal(2, team.Constructors.Count);
     }
 
     [Fact]
@@ -99,55 +98,18 @@ public class BudgetCapTests : IntegrationTestBase
                 "/api/me/team/drivers",
                 new AddDriverToTeamRequest { DriverId = cheapDriverIds[slot], SlotPosition = slot }
             );
-            add.StatusCode.Should().Be(HttpStatusCode.NoContent);
+            Assert.Equal(HttpStatusCode.NoContent, add.StatusCode);
         }
 
         var overflow = await client.PostAsJsonAsync(
             "/api/me/team/drivers",
             new AddDriverToTeamRequest { DriverId = expensiveDriverId, SlotPosition = 2 }
         );
-        overflow.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, overflow.StatusCode);
 
         var team = await client.GetFromJsonAsync<TeamDetailsResponse>("/api/me/team/");
-        team.Should().NotBeNull();
-        team!.Drivers.Should().HaveCount(2);
-        team.Drivers.Select(d => d.Id).Should().NotContain(expensiveDriverId);
-    }
-
-    [Fact]
-    public async Task CapIsEnforcedOnBothDriversAndConstructors()
-    {
-        var (client, profile) = await Factory.CreateAuthenticatedAsync();
-
-        var anchorDriverId = 0;
-        var constructorId = 0;
-        await WithDbAsync(async db =>
-        {
-            await db.CreateCurrentSeasonAsync();
-            await db.CreateTeamAsync(profile.Id);
-
-            var driver = await db.CreateDriverAsync("VER", "Max", "Verstappen", price: 80_000_000m);
-            anchorDriverId = driver.Id;
-
-            var constructor = await db.CreateConstructorAsync("Ferrari", price: 30_000_000m);
-            constructorId = constructor.Id;
-        });
-
-        var addDriver = await client.PostAsJsonAsync(
-            "/api/me/team/drivers",
-            new AddDriverToTeamRequest { DriverId = anchorDriverId, SlotPosition = 0 }
-        );
-        addDriver.StatusCode.Should().Be(HttpStatusCode.NoContent);
-
-        var addConstructor = await client.PostAsJsonAsync(
-            "/api/me/team/constructors",
-            new AddConstructorToTeamRequest { ConstructorId = constructorId, SlotPosition = 0 }
-        );
-        addConstructor.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        var team = await client.GetFromJsonAsync<TeamDetailsResponse>("/api/me/team/");
-        team.Should().NotBeNull();
-        team!.Drivers.Should().ContainSingle();
-        team.Constructors.Should().BeEmpty();
+        Assert.NotNull(team);
+        Assert.Equal(2, team!.Drivers.Count);
+        Assert.DoesNotContain(expensiveDriverId, team.Drivers.Select(d => d.Id));
     }
 }

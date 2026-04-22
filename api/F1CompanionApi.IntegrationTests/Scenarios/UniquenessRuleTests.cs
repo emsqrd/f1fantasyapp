@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data.Entities;
 using F1CompanionApi.IntegrationTests.Support;
-using FluentAssertions;
 
 namespace F1CompanionApi.IntegrationTests.Scenarios;
 
@@ -21,17 +20,17 @@ public class UniquenessRuleTests : IntegrationTestBase
             "/api/teams",
             new CreateTeamRequest { Name = "First Team" }
         );
-        first.StatusCode.Should().Be(HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.Created, first.StatusCode);
 
         var second = await client.PostAsJsonAsync(
             "/api/teams",
             new CreateTeamRequest { Name = "Second Team" }
         );
-        second.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
 
         var team = await client.GetFromJsonAsync<TeamDetailsResponse>("/api/me/team/");
-        team.Should().NotBeNull();
-        team!.Name.Should().Be("First Team");
+        Assert.NotNull(team);
+        Assert.Equal("First Team", team!.Name);
     }
 
     [Fact]
@@ -64,11 +63,11 @@ public class UniquenessRuleTests : IntegrationTestBase
             "/api/me/team/drivers",
             new AddDriverToTeamRequest { DriverId = driverId, SlotPosition = 1 }
         );
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
 
         var team = await client.GetFromJsonAsync<TeamDetailsResponse>("/api/me/team/");
-        team.Should().NotBeNull();
-        team!.Drivers.Should().ContainSingle();
+        Assert.NotNull(team);
+        Assert.Single(team!.Drivers);
     }
 
     [Fact]
@@ -88,31 +87,31 @@ public class UniquenessRuleTests : IntegrationTestBase
             new CreateLeagueRequest { Name = "Private League", IsPrivate = true }
         );
         var league = await createResponse.Content.ReadFromJsonAsync<LeagueResponse>();
-        league.Should().NotBeNull();
+        Assert.NotNull(league);
 
         var inviteResponse = await ownerClient.PostAsync(
             $"/api/leagues/{league!.Id}/invite",
             content: null
         );
         var invite = await inviteResponse.Content.ReadFromJsonAsync<LeagueInviteTokenResponse>();
-        invite.Should().NotBeNull();
+        Assert.NotNull(invite);
 
         var firstJoin = await joinerClient.PostAsync(
             $"/api/leagues/join/{invite!.Token}",
             content: null
         );
-        firstJoin.StatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.Equal(HttpStatusCode.OK, firstJoin.StatusCode);
 
         var secondJoin = await joinerClient.PostAsync(
             $"/api/leagues/join/{invite.Token}",
             content: null
         );
-        secondJoin.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        Assert.Equal(HttpStatusCode.Conflict, secondJoin.StatusCode);
 
         var details = await ownerClient.GetFromJsonAsync<LeagueDetailsResponse>(
             $"/api/leagues/{league.Id}"
         );
-        details.Should().NotBeNull();
-        details!.Teams.Where(t => t.Name == "Joiner Team").Should().ContainSingle();
+        Assert.NotNull(details);
+        Assert.Single(details!.Teams, t => t.Name == "Joiner Team");
     }
 }
