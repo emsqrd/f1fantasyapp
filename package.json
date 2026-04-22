@@ -18,7 +18,9 @@
     "api:watch": "cd api && dotnet watch run --project F1CompanionApi",
     "api:format": "cd api && dotnet csharpier format . && dotnet format style --exclude **/Migrations/** && dotnet format analyzers --exclude **/Migrations/**",
     "api:format:check": "cd api && dotnet csharpier check . && dotnet format style --verify-no-changes --exclude **/Migrations/** && dotnet format analyzers --verify-no-changes --exclude **/Migrations/**",
-    "api:test": "cd api && dotnet test",
+    "api:test": "npm run api:test:unit && npm run api:test:integration",
+    "api:test:unit": "cd api && dotnet test F1CompanionApi.UnitTests/F1CompanionApi.UnitTests.csproj",
+    "api:test:integration": "cd api && dotnet test F1CompanionApi.IntegrationTests/F1CompanionApi.IntegrationTests.csproj",
     "test:all": "npm run web:test && npm run api:test",
     "prepare": "husky"
   },

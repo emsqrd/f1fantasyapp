@@ -106,6 +106,8 @@ User scenario: *once a race locks, I can no longer change my team for that race.
 
 Asserting on the subsequent GET (not just the mutation's status) makes the test about the user-visible outcome rather than the error shape.
 
+**Delete:** `api/F1CompanionApi.IntegrationTests/SmokeTests.cs`. The commit 1 smoke test existed only to give commit 1 a runnable test; once real scenarios land its "stack boots" coverage is redundant (every scenario implicitly proves it) and it would outlive its purpose.
+
 ### Commit 3 — Budget cap
 
 **New file:** `Scenarios/BudgetCapTests.cs`

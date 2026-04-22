@@ -129,13 +129,36 @@
       }
     },
     {
-      "label": "[API] Test",
+      "label": "[API] Test (Unit)",
       "type": "shell",
       "command": "dotnet test",
       "options": {
         "cwd": "${workspaceFolder}/api/F1CompanionApi.UnitTests"
       },
       "problemMatcher": ["$msCompile"],
+      "icon": {
+        "id": "beaker",
+        "color": "terminal.ansiMagenta"
+      }
+    },
+    {
+      "label": "[API] Test (Integration)",
+      "type": "shell",
+      "command": "dotnet test",
+      "options": {
+        "cwd": "${workspaceFolder}/api/F1CompanionApi.IntegrationTests"
+      },
+      "problemMatcher": ["$msCompile"],
+      "icon": {
+        "id": "beaker",
+        "color": "terminal.ansiMagenta"
+      }
+    },
+    {
+      "label": "[API] Test (All)",
+      "dependsOn": ["[API] Test (Unit)", "[API] Test (Integration)"],
+      "dependsOrder": "sequence",
+      "problemMatcher": [],
       "icon": {
         "id": "beaker",
         "color": "terminal.ansiMagenta"
