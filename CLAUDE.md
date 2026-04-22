@@ -75,6 +75,73 @@ When planning features (via plan mode or when asked to plan), organize the plan 
 - Keep commits focused. If a commit is doing too much, split it further.
 - Write the plan to `docs/plans/` when producing a full plan.
 
+## Testing Strategy
+
+Three test types, each owning failure modes only it can see. Coverage is measured in failure modes, not scenarios — overlap across layers is fine when each layer catches something the others can't.
+
+### What each layer owns
+
+**Unit tests** — pure logic, in-process, no I/O.
+
+- Own: branches, edge cases, error paths, mappings, calculations, validation rules.
+- Goal: full combinatorial coverage of logic. Millisecond feedback.
+- Dependencies: real collaborators within the process; inject clock/RNG/IDs for determinism.
+
+**Integration tests** — one or more real boundaries crossed (DB, HTTP pipeline).
+
+- Own: SQL correctness, EF config, migrations, serialization, auth/middleware, model binding, transaction behavior, endpoint contracts.
+- Prefer the HTTP seam (`WebApplicationFactory`) over calling handlers directly — covers the pipeline for free.
+- Use real Postgres via Testcontainers. **Never** EF InMemory or SQLite-for-Postgres — they diverge from prod on exactly what these tests exist to verify.
+- Isolate per test (transaction rollback or truncate). No shared fixtures.
+- Stub third parties you don't own (Supabase, Sentry). Don't stub your own code.
+
+**E2E tests** — full stack through a real browser.
+
+- Own: cross-system wiring — CORS, cookie/auth flows, deployment/config, build output, client/server contract drift, critical user journeys.
+- Keep the suite small: happy paths of core flows (sign-in, build team, join league, view scores).
+- Semantic selectors (`data-testid`, role, accessible name). Never CSS structure.
+- Seed via API/DB, not through the UI. Proper waits, never `sleep`.
+
+### Which test to reach for
+
+Ask: **"What's the smallest test that could catch this bug?"** Write that one.
+
+| Change                                                             | Primary layer           |
+| ------------------------------------------------------------------ | ----------------------- |
+| Business rule, calculation, mapping, validation                    | Unit                    |
+| New/changed SQL, EF query, migration                               | Integration (real DB)   |
+| New endpoint, auth rule, middleware, model binding                 | Integration (HTTP)      |
+| React component rendering, state, user interaction                 | Unit (component test)   |
+| Frontend routing + data fetching with mocked API                   | Frontend integration    |
+| New user-facing flow, auth/session wiring, deploy-affecting config | E2E                     |
+
+### Overlap rules
+
+Overlap is correct when each layer catches a distinct failure mode. It's waste when it doesn't.
+
+- Cover branch logic at the **lowest** layer that can see it. Don't re-walk the same matrix higher up.
+- Higher layers get **one happy path** per flow, plus one representative failure only if that interaction is load-bearing (e.g., roster-locked message, auth redirect).
+- If an integration test passes/fails in lockstep with an E2E on the same path with the same assertions, one of them is redundant — keep the faster one unless the slower one proves something the faster can't.
+
+### Anti-patterns
+
+- **In-memory DB substitutes** for code that ships on Postgres.
+- **Mocking your own code** inside an integration test, or mocking third parties inside a unit test just to mock them.
+- **1:1 test-per-method** structure — encodes implementation into the suite; every refactor becomes a rewrite.
+- **Validation/edge-case matrices in E2E** — belongs in unit.
+- **Shared mutable fixtures** ("the one big seed") — tests become order-dependent and nobody dares change the fixture.
+- **`sleep`-based waits** in async or E2E tests.
+- **Pixel-perfect screenshot diffing** as regression safety.
+- **Coverage % as a goal** — high coverage with weak assertions resists refactoring and gives false confidence.
+- **Ice-cream cone** (many E2E, few unit) — slow CI, flaky, failures are hard to localize.
+
+### Practical defaults
+
+- Backend unit tests: xUnit, no DB, no `WebApplicationFactory`, milliseconds each.
+- Backend integration tests: `WebApplicationFactory` + Testcontainers Postgres. Transaction-rollback isolation.
+- Frontend unit/component tests: Vitest + `@testing-library/react`.
+- E2E: Playwright, small suite, runs against a prod-like build. Parallel workers with isolated users.
+
 ## Git Commit Message Preferences
 
 - Do not include the "Generated with Claude Code" footer in commit messages or PR descriptions

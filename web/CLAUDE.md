@@ -142,96 +142,56 @@ function LeagueComponent() {
 - ErrorState: Page-level data fetching failures
 - ErrorBoundary: Wrap components that might throw during render
 
-### Testing Strategy
+### Frontend Test Layering
+
+See root `CLAUDE.md` `## Testing Strategy` for cross-cutting rules (unit vs integration vs E2E, anti-patterns). This section covers frontend-specific layering within the unit/component-test level.
 
 **Files:** `src/setupTests.ts`, `src/test-utils/mockFactories.ts`
 
-**Philosophy:** Test user-facing behavior, not implementation details
+**Layers — each owns its own responsibilities:**
 
-**Layered Testing Approach:**
+1. **Leaf / presentational components** (`ConstructorCard`, `DriverCard`, list items)
+   - User interactions, callback invocations, conditional rendering by props.
 
-Our codebase uses **separation of concerns** in testing - each layer tests its own responsibilities:
+2. **Hooks** (`useLineupPicker`, `useAuth`)
+   - Business logic, state management, API integration (with mocked services), error handling.
 
-1. **Leaf/Presentational Components** (ConstructorCard, DriverCard, ListItems, etc.)
-   - Test user interactions (clicks, keyboard, focus)
-   - Test callback invocations
-   - Test conditional rendering based on props
+3. **Container / parent components** (`DriverPicker`, `ConstructorPicker`)
+   - Unique transformation logic, wiring (does hook state drive UI?), composition (are callbacks wired through?), container-level accessibility (dialog roles, semantic structure).
+   - **Do not** re-test child-component behavior or hook logic already covered at layers 1 and 2.
 
-2. **Hooks** (useLineupPicker, useAuth, etc.)
-   - Test business logic and state management
-   - Test API integration (with mocked APIs)
-   - Test error handling and edge cases
+**Evaluating missing coverage:** before adding a test, check whether the behavior is already covered at a different layer. Parent components with mocked hooks are testing wiring, not duplicating hook tests.
 
-3. **Container/Parent Components** (DriverPicker, ConstructorPicker, etc.)
-   - Test **unique transformation logic** (e.g., converting props into lineup arrays)
-   - Test **integration** (does hook state correctly drive UI rendering?)
-   - Test **composition** (are callbacks wired through correctly?)
-   - Test **accessibility** at the container level (dialog roles, semantic structure)
-   - **DO NOT** re-test child component behavior or hook logic
+**Frontend-specific do-not-test list** (in addition to root anti-patterns):
 
-**When evaluating test value:**
+- Third-party library internals (React Hook Form, Radix, shadcn/ui primitives).
+- Basic UI primitives (Button, Card, Sheet) — trust the library.
+- Static JSX (headings, labels) unless position/order matters.
+- Styling / CSS classes.
+- Individual Zod schema rules — test them through form integration.
 
-- Before criticizing missing tests, check if the behavior is tested at a different layer
-- Parent components with mocked hooks are testing integration, not duplicating hook tests
-- If a component delegates all logic to hooks and presentational children, its tests should be lean and focused on wiring
-
-**Documentation & Best Practices:**
-
-- **React Testing Library**: `/testing-library/react-testing-library` - RTL best practices, query priorities, and patterns
-- **Vitest**: `/vitest-dev/vitest` - Test runner features, mocking patterns, and configuration
-- **React 19**: `/facebook/react` - React 19-specific features (new hooks, Server Components, Actions, etc.)
-- **TanStack Router**: `/tanstack/router` - Route loader testing, guard patterns, and router mocking
-
-Consult these sources when:
-
-- Implementing unfamiliar testing patterns
-- Deciding between testing approaches (e.g., when to mock, query strategies)
-- Troubleshooting test failures or flaky tests
-- Ensuring alignment with current industry standards
-
-**What to test:**
-
-- User interactions and workflows
-- Business logic specific to your component
-- Error handling and edge cases
-- Accessibility (keyboard navigation, ARIA attributes)
-
-**What NOT to test:**
-
-- Third-party library internals (React Hook Form, Radix UI, shadcn/ui primitives)
-- Basic UI primitives (Button, Card, Sheet, etc.) - trust the library
-- Static JSX rendering (headings, labels) unless testing position/order
-- Styling concerns (CSS classes)
-- Validation schema rules (test integration, not individual rules)
-
-**Testing route components:**
+**Testing route components** — mock TanStack Router hooks:
 
 ```typescript
-// Mock TanStack Router hooks
 const mockUseLoaderData = vi.fn();
 vi.mock('@tanstack/react-router', () => ({
   useLoaderData: (opts) => mockUseLoaderData(opts),
 }));
 
-// Test with different data states
-mockUseLoaderData.mockReturnValue({
-  league: { id: 1, name: 'Test League' },
-});
+mockUseLoaderData.mockReturnValue({ league: { id: 1, name: 'Test League' } });
 render(<League />);
 ```
 
-**Testing route guards:**
-Test guard functions directly, not through components:
+**Testing route guards** — call guard functions directly, not through components:
 
 ```typescript
-const context = {
-  auth: { user: null, loading: false },
-  teamContext: { hasTeam: false },
-};
+const context = { auth: { user: null, loading: false }, teamContext: { hasTeam: false } };
 await expect(requireAuth(context)).rejects.toThrow();
 ```
 
-**Mock factories:** Use `createMockTeam`, `createMockDriver` from `@/test-utils` for shared test data.
+**Mock factories:** `createMockTeam`, `createMockDriver` from `@/test-utils`.
+
+**Reference docs** (RTL, Vitest, TanStack Router testing): `/testing-library/react-testing-library`, `/vitest-dev/vitest`, `/facebook/react`, `/tanstack/router`.
 
 ### Sentry Integration
 
