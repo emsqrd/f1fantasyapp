@@ -5,8 +5,10 @@ using Testcontainers.PostgreSql;
 namespace F1CompanionApi.IntegrationTests.Support;
 
 /// <summary>
-/// Starts one Postgres container for the whole test run and applies EF migrations once
-/// against it. Shared across integration test classes via IntegrationTestCollection.
+/// Starts one Postgres container for the whole test run, applies EF migrations once,
+/// and owns a single <see cref="ApiWebApplicationFactory"/> shared across every test
+/// class in the collection. Booting the host once (instead of per-test) is a big win:
+/// each test pays only the Respawn truncate cost, not a fresh DI container build.
 /// </summary>
 public class PostgresFixture : IAsyncLifetime
 {
@@ -19,6 +21,8 @@ public class PostgresFixture : IAsyncLifetime
 
     public string ConnectionString => _container.GetConnectionString();
 
+    public ApiWebApplicationFactory Factory { get; private set; } = null!;
+
     public async Task InitializeAsync()
     {
         await _container.StartAsync();
@@ -30,10 +34,16 @@ public class PostgresFixture : IAsyncLifetime
 
         await using var dbContext = new ApplicationDbContext(options);
         await dbContext.Database.MigrateAsync();
+
+        Factory = new ApiWebApplicationFactory(ConnectionString);
     }
 
     public async Task DisposeAsync()
     {
+        if (Factory is not null)
+        {
+            await Factory.DisposeAsync();
+        }
         await _container.DisposeAsync();
     }
 }

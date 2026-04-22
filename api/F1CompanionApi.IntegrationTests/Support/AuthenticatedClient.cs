@@ -1,5 +1,7 @@
 using System.Net.Http.Headers;
+using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace F1CompanionApi.IntegrationTests.Support;
 
@@ -21,33 +23,32 @@ public static class AuthenticatedClient
         var accountId = Guid.NewGuid().ToString();
         email ??= $"user-{Guid.NewGuid():N}@test.local";
 
-        var (scope, db) = factory.CreateDbScope();
-        await using (scope as IAsyncDisposable ?? new AsyncDisposableWrapper(scope))
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var account = new Account
         {
-            var account = new Account
-            {
-                Id = accountId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                IsActive = true,
-                LastLoginAt = DateTime.UtcNow,
-            };
-            db.Accounts.Add(account);
+            Id = accountId,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            IsActive = true,
+            LastLoginAt = DateTime.UtcNow,
+        };
+        db.Accounts.Add(account);
 
-            var profile = new UserProfile
-            {
-                AccountId = accountId,
-                Email = email,
-                DisplayName = displayName,
-                CreatedAt = DateTime.UtcNow,
-            };
-            db.UserProfiles.Add(profile);
+        var profile = new UserProfile
+        {
+            AccountId = accountId,
+            Email = email,
+            DisplayName = displayName,
+            CreatedAt = DateTime.UtcNow,
+        };
+        db.UserProfiles.Add(profile);
 
-            await db.SaveChangesAsync();
+        await db.SaveChangesAsync();
 
-            var client = factory.ClientFor(accountId, email);
-            return (client, profile);
-        }
+        var client = factory.ClientFor(accountId, email);
+        return (client, profile);
     }
 
     /// <summary>
@@ -61,27 +62,14 @@ public static class AuthenticatedClient
     )
     {
         var client = factory.CreateClient();
-        client.DefaultRequestHeaders.Add(TestAuthHandler.UserIdHeader, accountId);
+        client.DefaultRequestHeaders.Add(TestJwtBearerHandler.UserIdHeader, accountId);
         if (!string.IsNullOrEmpty(email))
         {
-            client.DefaultRequestHeaders.Add(TestAuthHandler.UserEmailHeader, email);
+            client.DefaultRequestHeaders.Add(TestJwtBearerHandler.UserEmailHeader, email);
         }
         client.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/json")
         );
         return client;
-    }
-
-    private sealed class AsyncDisposableWrapper : IAsyncDisposable
-    {
-        private readonly IDisposable _inner;
-
-        public AsyncDisposableWrapper(IDisposable inner) => _inner = inner;
-
-        public ValueTask DisposeAsync()
-        {
-            _inner.Dispose();
-            return ValueTask.CompletedTask;
-        }
     }
 }

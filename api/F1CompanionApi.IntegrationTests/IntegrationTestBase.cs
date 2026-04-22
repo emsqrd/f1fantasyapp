@@ -5,32 +5,24 @@ using Microsoft.Extensions.DependencyInjection;
 namespace F1CompanionApi.IntegrationTests;
 
 /// <summary>
-/// Base class for integration tests. Owns the <see cref="ApiWebApplicationFactory"/>,
+/// Base class for integration tests. Holds a reference to the shared
+/// <see cref="ApiWebApplicationFactory"/> from <see cref="PostgresFixture"/>,
 /// resets the database before each test, and exposes helpers for seeding and asserting
 /// against persisted state.
 /// </summary>
 [Collection(IntegrationTestCollection.Name)]
 public abstract class IntegrationTestBase : IAsyncLifetime
 {
-    private readonly PostgresFixture _postgres;
-
-    protected ApiWebApplicationFactory Factory { get; private set; } = null!;
+    protected ApiWebApplicationFactory Factory { get; }
 
     protected IntegrationTestBase(PostgresFixture postgres)
     {
-        _postgres = postgres;
+        Factory = postgres.Factory;
     }
 
-    public async Task InitializeAsync()
-    {
-        Factory = new ApiWebApplicationFactory(_postgres.ConnectionString);
-        await Factory.ResetDatabaseAsync();
-    }
+    public Task InitializeAsync() => Factory.ResetDatabaseAsync();
 
-    public async Task DisposeAsync()
-    {
-        await Factory.DisposeAsync();
-    }
+    public Task DisposeAsync() => Task.CompletedTask;
 
     /// <summary>
     /// Runs the given action with a scoped <see cref="ApplicationDbContext"/>.
@@ -38,14 +30,14 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     /// </summary>
     protected async Task WithDbAsync(Func<ApplicationDbContext, Task> action)
     {
-        using var scope = Factory.Services.CreateScope();
+        await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await action(db);
     }
 
     protected async Task<T> WithDbAsync<T>(Func<ApplicationDbContext, Task<T>> action)
     {
-        using var scope = Factory.Services.CreateScope();
+        await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         return await action(db);
     }

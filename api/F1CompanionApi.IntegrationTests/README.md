@@ -2,8 +2,8 @@
 
 Integration tests that boot the real API in-process via `WebApplicationFactory<Program>`
 against a disposable Postgres container managed by [Testcontainers](https://testcontainers.com/).
-Authentication is stubbed via `TestAuthHandler` rather than hitting Supabase, so these
-are not full end-to-end tests — they cover the API as a cohesive unit (routing,
+Authentication is stubbed via `TestJwtBearerHandler` rather than hitting Supabase, so
+these are not full end-to-end tests — they cover the API as a cohesive unit (routing,
 middleware, authorization policies, EF migrations, DB constraints) against a real
 database.
 
@@ -24,16 +24,19 @@ error if it is not.
 ## Fixture lifecycle
 
 - **`PostgresFixture`** — xUnit collection fixture that starts one `postgres:16-alpine`
-  container for the whole test run and applies EF migrations once. All test classes
-  share the same container and schema via `IntegrationTestCollection`.
-- **`IntegrationTestBase`** — base class for every test class. Before each test it
-  creates a fresh `ApiWebApplicationFactory` and runs Respawn to truncate every
-  table except `__EFMigrationsHistory`. Tests start from an empty database and
-  must seed any catalog data (drivers, constructors, seasons, …) they depend on.
+  container for the whole test run, applies EF migrations once, and owns a single
+  `ApiWebApplicationFactory` shared across every test class via
+  `IntegrationTestCollection`.
+- **`IntegrationTestBase`** — base class for every test class. Holds a reference to the
+  shared factory and, before each test, runs Respawn to truncate every table except
+  `__EFMigrationsHistory`. Tests start from an empty database and must seed any catalog
+  data (drivers, constructors, seasons, …) they depend on.
 
 ## Authentication
 
-`TestAuthHandler` replaces the JWT Bearer scheme. Send requests with:
+`TestJwtBearerHandler` is swapped in for the production `JwtBearerHandler` via DI, so
+the `Bearer` scheme registration, options, and policies stay intact — only the handler
+that resolves credentials changes. Send requests with:
 
 - `X-Test-User-Id: <account-id>` — the value lands on
   `ClaimTypes.NameIdentifier`, mirroring how `SupabaseAuthService` reads a real Supabase JWT.

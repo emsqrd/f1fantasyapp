@@ -1,5 +1,4 @@
 using F1CompanionApi.Data;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -14,9 +13,9 @@ namespace F1CompanionApi.IntegrationTests.Support;
 
 /// <summary>
 /// Hosts the real API in-process against the Postgres test container.
-/// Overrides the connection string, replaces the JWT Bearer handler with
-/// <see cref="TestAuthHandler"/>, and exposes helpers for resetting mutable
-/// state between tests via Respawn.
+/// Overrides the connection string, swaps the production <see cref="JwtBearerHandler"/>
+/// for <see cref="TestJwtBearerHandler"/> via DI (leaving the auth scheme registration
+/// untouched), and exposes helpers for resetting mutable state between tests via Respawn.
 /// </summary>
 public class ApiWebApplicationFactory : WebApplicationFactory<Program>
 {
@@ -67,30 +66,10 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
                 )
             );
 
-            // Replace the JWT Bearer scheme with the test handler. The "ApiKey" scheme
-            // stays intact so scoring endpoints can be exercised with X-Api-Key.
-            services.AddTransient<TestAuthHandler>();
-            services.PostConfigureAll<AuthenticationOptions>(options =>
-            {
-                if (
-                    options.SchemeMap.TryGetValue(
-                        JwtBearerDefaults.AuthenticationScheme,
-                        out var existing
-                    )
-                )
-                {
-                    if (options.Schemes is ICollection<AuthenticationSchemeBuilder> schemes)
-                    {
-                        schemes.Remove(existing);
-                    }
-                    options.SchemeMap.Remove(JwtBearerDefaults.AuthenticationScheme);
-                }
-
-                options.AddScheme<TestAuthHandler>(
-                    JwtBearerDefaults.AuthenticationScheme,
-                    JwtBearerDefaults.AuthenticationScheme
-                );
-            });
+            // Swap the concrete JwtBearerHandler for the test stand-in. The "Bearer"
+            // scheme registration, options, policies, and the "ApiKey" scheme all stay
+            // intact — only the handler instance the framework resolves changes.
+            services.Replace(ServiceDescriptor.Transient<JwtBearerHandler, TestJwtBearerHandler>());
         });
     }
 
@@ -114,16 +93,5 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
         );
 
         await _respawner.ResetAsync(connection);
-    }
-
-    /// <summary>
-    /// Creates a scope + DbContext for tests to seed data or assert persisted state.
-    /// Dispose the returned scope when done.
-    /// </summary>
-    public (IServiceScope Scope, ApplicationDbContext DbContext) CreateDbScope()
-    {
-        var scope = Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        return (scope, db);
     }
 }

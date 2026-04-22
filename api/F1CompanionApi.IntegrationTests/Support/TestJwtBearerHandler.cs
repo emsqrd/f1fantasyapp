@@ -1,28 +1,28 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace F1CompanionApi.IntegrationTests.Support;
 
 /// <summary>
-/// Test authentication handler that replaces the JWT Bearer scheme in integration tests.
+/// Test stand-in for <see cref="JwtBearerHandler"/>. Registered in DI by replacing the
+/// concrete <c>JwtBearerHandler</c> service so the existing <c>Bearer</c> scheme stays
+/// intact (policies, defaults, options) while the actual token validation is bypassed.
 /// Reads the <c>X-Test-User-Id</c> header and builds a ClaimsPrincipal whose
 /// <see cref="ClaimTypes.NameIdentifier"/> claim mirrors what SupabaseAuthService reads
 /// from a real Supabase JWT. Requests without the header remain unauthenticated.
 /// </summary>
-public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+public class TestJwtBearerHandler(
+    IOptionsMonitor<JwtBearerOptions> options,
+    ILoggerFactory logger,
+    UrlEncoder encoder
+) : JwtBearerHandler(options, logger, encoder)
 {
     public const string UserIdHeader = "X-Test-User-Id";
     public const string UserEmailHeader = "X-Test-User-Email";
-
-    public TestAuthHandler(
-        IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger,
-        UrlEncoder encoder
-    )
-        : base(options, logger, encoder) { }
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
