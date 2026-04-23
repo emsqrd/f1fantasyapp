@@ -1,7 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
+import { E2E_EF_CONNECTION_STRING } from './fixtures/db';
+import { readSupabaseEnv } from './fixtures/supabase-env';
 
 const WEB_PORT = 5173;
+const API_PORT = 5077;
 const BASE_URL = `http://localhost:${WEB_PORT}`;
+const API_URL = `http://localhost:${API_PORT}`;
+
+const supabase = readSupabaseEnv();
 
 export default defineConfig({
   testDir: './tests',
@@ -32,6 +38,27 @@ export default defineConfig({
       timeout: 180_000,
       stdout: 'pipe',
       stderr: 'pipe',
+      env: {
+        VITE_SUPABASE_URL: supabase.apiUrl,
+        VITE_SUPABASE_ANON_KEY: supabase.anonKey,
+        VITE_F1_FANTASY_API: `${API_URL}/api`,
+      },
+    },
+    {
+      command: `dotnet publish api/F1CompanionApi/F1CompanionApi.csproj -c Release -o api/bin/e2e --nologo && dotnet api/bin/e2e/F1CompanionApi.dll`,
+      cwd: '..',
+      url: `${API_URL}/openapi/v1.json`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+      env: {
+        ASPNETCORE_URLS: API_URL,
+        ConnectionStrings__DefaultConnection: E2E_EF_CONNECTION_STRING,
+        Supabase__AuthUrl: supabase.authUrl,
+        CorsOrigins__0: BASE_URL,
+        Sentry__Dsn: '',
+      },
     },
   ],
 });
