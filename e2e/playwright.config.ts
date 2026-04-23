@@ -5,6 +5,7 @@ const BASE_URL = `http://localhost:${WEB_PORT}`;
 
 export default defineConfig({
   testDir: './tests',
+  globalSetup: './global-setup.ts',
   fullyParallel: false,
   workers: 1,
   forbidOnly: !!process.env.CI,
