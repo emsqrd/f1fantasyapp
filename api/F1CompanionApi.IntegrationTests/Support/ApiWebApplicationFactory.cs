@@ -31,6 +31,8 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // By using a fake environment called "Testing", we'e essentially opting
+        // out of dev-only behavior when tests run on a dev machine
         builder.UseEnvironment("Testing");
 
         builder.ConfigureAppConfiguration(

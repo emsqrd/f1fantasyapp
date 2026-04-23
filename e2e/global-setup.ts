@@ -80,7 +80,7 @@ async function ensureE2eDatabaseExists(): Promise<void> {
 
 function applyEfMigrations(): void {
   const result = spawnSync('dotnet', ['ef', 'database', 'update', '--project', API_PROJECT], {
-    cwd: REPO_ROOT,
+    cwd: path.join(REPO_ROOT, 'api'),
     env: {
       ...process.env,
       ConnectionStrings__DefaultConnection: E2E_EF_CONNECTION_STRING,

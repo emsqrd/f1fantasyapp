@@ -53,6 +53,7 @@ export default defineConfig({
       stdout: 'pipe',
       stderr: 'pipe',
       env: {
+        ASPNETCORE_ENVIRONMENT: 'Testing',
         ASPNETCORE_URLS: API_URL,
         ConnectionStrings__DefaultConnection: E2E_EF_CONNECTION_STRING,
         Supabase__AuthUrl: supabase.authUrl,
