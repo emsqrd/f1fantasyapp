@@ -1,9 +1,8 @@
 # E2E Tests
 
 End-to-end browser tests for the F1 Fantasy app. Runs Playwright against a
-prod-like build of the web client (Vite preview) and, from commit 3 onward, a
-prod-like build of the API (`dotnet publish -c Release`) backed by the local
-Supabase stack.
+prod-like build of the web client (Vite preview), backed by a dedicated test
+database on the local Supabase Postgres instance.
 
 ## Prerequisites
 
@@ -14,8 +13,8 @@ Supabase stack.
    cd api && supabase start
    ```
 
-   This provides Postgres (`:54322`), GoTrue auth (`:54321`), and Storage. The
-   E2E suite talks to all three; without them, the harness fails fast.
+   Provides Postgres (`:54322`), GoTrue auth (`:54321`), and Storage. The
+   E2E harness fails fast on `supabase start` not being reachable.
 
 3. **.NET SDK** with the `dotnet-ef` tool (used by global setup to apply
    migrations to the E2E database).
@@ -42,10 +41,11 @@ npm run e2e:ui          # Playwright UI for interactive debugging
   `dotnet ef database update`. Local dev state in the default `postgres` DB
   is never touched.
 - **Per-test isolation:** `fixtures/reset.ts` truncates every `public` table
-  except `__EFMigrationsHistory` before each test, restarting identity
-  sequences. Tests seed exactly what they need via fixture helpers.
-- **Seeding:** no shared `seed.sql`. Fixtures in `e2e/fixtures/` insert the
-  minimal grid, season, and race data each test requires.
+  except `__EFMigrationsHistory`, restarting identity sequences. Tests seed
+  what they need after the reset.
+- **Seeding:** no shared `seed.sql`. Each test declares its own data in
+  `beforeEach` — minimal grid, season, race — so there's no implicit state
+  shared across tests.
 
 ## Conventions
 

@@ -160,25 +160,75 @@ before — adds a backdoor to shipped code for marginal speed gain.
 Use the local Supabase Postgres instance. Two databases on the same server:
 
 - **`postgres`** (default) — already used for `npm run web:dev` / `api:watch`
-  local dev.
-- **`f1fantasy_e2e`** (new) — dedicated test DB, created once. E2E runs with
-  `ASPNETCORE_ENVIRONMENT=Testing` and `ConnectionStrings__DefaultConnection`
-  pointing at it. Dev state is never touched.
+  local dev. Also where Supabase's GoTrue (auth) and Storage services live;
+  `auth.users` and the Storage buckets are here, not in `f1fantasy_e2e`.
+- **`f1fantasy_e2e`** (new) — dedicated test DB, created once by global
+  setup. E2E runs with `ASPNETCORE_ENVIRONMENT=Testing` and
+  `ConnectionStrings__DefaultConnection` pointing at it. Dev state is never
+  touched.
 
-**Per-test reset:** Playwright global-setup runs migrations + `seed.sql` once
-per worker (populates the grid: drivers, constructors). `beforeEach` truncates
-user-scoped tables only (`Accounts`, `UserProfiles`, `Teams`, `Leagues`,
-`LeagueMemberships`, `LeagueInvites`, `TeamDriverSelections`,
-`TeamConstructorSelections`, `Seasons`, `RaceWeekends`) via direct `pg` from
-Node. Grid tables stay seeded across tests.
+**Global setup (once per run):** verify Supabase is reachable, create
+`f1fantasy_e2e` if absent, apply EF migrations via `dotnet ef database
+update`. **Does not** apply `seed.sql` or the files in
+`api/supabase/migrations/` — see exclusions below.
 
-Rationale vs. alternatives:
+**Per-test reset:** `resetDb()` truncates every `public` table except
+`__EFMigrationsHistory`, restarting identity sequences. The full schema is
+wiped between tests — grid, season, race, and user-scoped tables alike.
+Each test seeds exactly what it needs in its own `beforeEach` via fixture
+helpers (commit 4). Fast (<50ms), no shared mutable state between tests.
+
+### No shared `seed.sql` reuse
+
+Originally we planned to reuse `api/supabase/seed.sql` to pre-seed the grid
+(22 drivers, 11 constructors). That turned out to be the wrong trade:
+
+- Tests don't need 22 drivers. The minimum is whatever builds a valid team
+  and leaves a swap candidate — roughly 6 drivers / 3 constructors.
+- `seed.sql` mixes truly static data (Drivers, Constructors) with
+  time-sensitive data (`Seasons`, `RaceWeekends` at fixed 2026 calendar
+  dates). The calendar data goes stale as wall-clock time passes, and test
+  6 needs a race with `LockDeadline` relative to `NOW()` — no static seed
+  file can provide that.
+- Any test that mutates a shared seeded row (e.g., test 6's lock-deadline
+  update) bleeds into the next test unless the reset restores the full
+  seed, which negates the point of reusing a shared seed.
+- Coupling tests to `seed.sql` creates a latent trap: driver roster edits
+  for a future season would silently rot test assumptions.
+
+Per-test fixtures in `e2e/fixtures/` (commit 4) insert a minimal grid, a
+current season with pricing, and race weekends with dates relative to
+`NOW()`. Each test declares what it needs.
+
+### Raw SQL in fixtures, not test-only endpoints
+
+We considered a gated `/api/_test/seed/*` endpoint family. Rejected —
+there's no value shipping endpoints that exist only to seed test data, and
+real admin endpoints for Drivers/Constructors/Seasons will land as normal
+features later. Raw SQL in fixtures couples tests to the schema; that's
+the accepted cost. E2E runs on PR merge, so schema-breaking migrations
+surface before a change ships. Fixtures migrate to call real admin
+endpoints when those endpoints exist.
+
+### What's NOT in global setup (deliberately)
+
+- **`api/supabase/seed.sql`** — reasons above.
+- **`api/supabase/migrations/20241215000000_create_avatars_storage.sql`** —
+  creates a Storage bucket. Storage runs on the default `postgres` DB, not
+  `f1fantasy_e2e`; this migration has no effect against the e2e DB. Commit
+  8 (avatar upload) handles Storage setup separately.
+- **`api/supabase/migrations/20260108000000_create_user_profile_trigger.sql`**
+  — installs a trigger on `auth.users` (the `auth` schema exists only in
+  the default `postgres` DB). In production, this trigger auto-creates
+  `Accounts` + `UserProfiles` rows on sign-up. In E2E, the harness inserts
+  those rows manually after a Supabase sign-up (commit 3).
+
+### Rationale vs. alternatives
 - `supabase db reset` per test is ~5s × 9 tests = ~45s overhead. Truncate
   per test is <50ms.
-- A test-only `/api/_test/reset` endpoint was an option but is unnecessary
-  now that truncate from Node against the local DB is straightforward.
-- Test 6's special race weekend (future date, past lock) is created by that
-  test's own `beforeEach` after the truncate.
+- Test 6's special race weekend (future date, past lock) is created by
+  that test's own `beforeEach` after the truncate — per-test fixtures make
+  this natural.
 
 ---
 
@@ -186,27 +236,42 @@ Rationale vs. alternatives:
 
 Each commit self-contained: build + lint + tests + format green.
 
-1. **Scaffold `e2e/` package + Playwright config.** `package.json`,
-   `playwright.config.ts` with `webServer` for **prod-like builds** (not dev
-   servers): `web` runs `npm run web:build && vite preview --port 5173`, `api`
-   runs `dotnet publish -c Release` then the published DLL with
-   `ASPNETCORE_ENVIRONMENT=Testing` + e2e connection string. TypeScript setup,
-   `.gitignore`. Single smoke test (`/` loads) to prove the harness runs.
-   Aligns with root `CLAUDE.md` strategy ("runs against a prod-like build")
-   and catches build-output drift dev servers hide.
-2. **Test DB + global setup.** Script that creates `f1fantasy_e2e` on the
-   local Supabase Postgres, applies EF migrations, runs `seed.sql` to populate
-   the grid. `e2e/fixtures/reset.ts` with a Node `pg`-based truncate of
-   user-scoped tables only. Documented that `supabase start` is a prerequisite
-   (mirroring the existing dev workflow).
-3. **Local Supabase auth + `storageState`.** `global-setup.ts` creates User A
-   and User B via local GoTrue (signs up programmatically), signs each in
-   once, saves `storageState` per user. Sign-out test gets its own context.
-4. **Fixture helpers.** `e2e/fixtures/` with `seedLeague`, `seedCurrentSeason`,
-   `seedRaceWeekend({ raceDate, lockDeadline })`, `seedTeamForUser`. Most
-   call the real API via Playwright `request` fixture with the user's auth;
-   race-weekend and season seeding go direct-to-DB via `pg` since no
-   user-facing endpoint creates them. Reuses shapes from `TestDataBuilder.cs`.
+1. **Scaffold `e2e/` package + Playwright config.** (shipped)
+   `e2e/package.json`, `playwright.config.ts`, `tsconfig.json`, `.gitignore`
+   entries, and a single smoke test (`/` loads). Root `package.json` gets
+   `e2e`, `e2e:ui`, `e2e:install` scripts; VS Code tasks for `[E2E] Test`
+   and `[E2E] Test UI` land alongside the existing Web/API tasks.
+   `playwright.config.ts` wires a **web-only** `webServer` running a
+   prod-like build (`npm run web:build && vite preview --port 5173
+   --strictPort`). The API `webServer` is deferred to commit 3 — it needs
+   the e2e DB (commit 2) and the full env-var injection (Supabase keys,
+   `VITE_F1_FANTASY_API`) that commit 3 sets up. Adding a half-wired API
+   webServer earlier would leave commit 1 unable to stay independently green.
+2. **Test DB + global setup.** (shipped) `e2e/global-setup.ts` verifies
+   the local Supabase stack is reachable, creates `f1fantasy_e2e` if
+   absent, and applies EF migrations via `dotnet ef database update`.
+   `e2e/fixtures/db.ts` holds the shared `pg` pool + connection constants.
+   `e2e/fixtures/reset.ts` truncates every `public` table except
+   `__EFMigrationsHistory`. No `seed.sql` reuse (see §5). A dedicated
+   `reset.spec.ts` verifies the helper works end-to-end. `e2e/README.md`
+   documents `supabase start` as the prerequisite.
+3. **Local Supabase auth + `storageState` + API webServer.** `global-setup`
+   creates User A and User B via local GoTrue's admin API (programmatic
+   sign-up), then — because the profile-trigger migration doesn't run
+   against `f1fantasy_e2e` — manually inserts `Accounts` + `UserProfiles`
+   rows for each. Signs each user in once, saves `storageState` per user.
+   Sign-out test gets its own context. Also adds the API `webServer` to
+   `playwright.config.ts` (`dotnet publish -c Release` + run the DLL with
+   `ASPNETCORE_ENVIRONMENT=Testing` and the e2e connection string), and
+   injects `VITE_SUPABASE_*` + `VITE_F1_FANTASY_API` into the web
+   `webServer` env so the prod-like frontend talks to the local stack.
+4. **Fixture helpers.** `e2e/fixtures/` with `seedMinimalGrid`,
+   `seedCurrentSeason`, `seedRaceWeekend({ raceDate, lockDeadline })`,
+   `seedTeamForUser`, `seedLeague`. Grid/season/race helpers go direct to
+   DB via the `pg` pool (no user-facing endpoints exist to create this
+   data); team/league helpers call the real API via Playwright's `request`
+   fixture with the test user's auth. Shape references: `TestDataBuilder.cs`
+   in the integration test suite.
 5. **Auth suite (tests 1–3).** Sign in, unauth redirect, sign out. Semantic
    selectors (`data-testid`, role, accessible name) only.
 6. **Team suite (tests 4–6).** Team creation, lineup edit + captain persist,
@@ -244,11 +309,14 @@ Each commit self-contained: build + lint + tests + format green.
 
 ## Files to reuse, not duplicate
 
-- `api/supabase/seed.sql` — driver grid. Run unchanged at global setup.
 - `api/F1CompanionApi.IntegrationTests/Support/TestDataBuilder.cs` — shape
-  reference for race-weekend / season / constructor seeding.
+  reference for race-weekend / season / constructor seeding. E2E fixtures
+  don't share code with this (different language, different process), but
+  the column lists and required-field sets are the ground truth.
 - `web/src/contexts/AuthContext.tsx`, `web/src/lib/supabase.ts` — Supabase
   client + session storage-key shape for `storageState`.
+
+`api/supabase/seed.sql` is **not** reused. See §5 for the reasoning.
 
 ---
 
@@ -274,16 +342,27 @@ Calling these out so none of them are quietly decided during implementation:
 - **Current-race selector** — verified: backend returns the nearest race where
   `RaceDate >= now` (`RaceWeekendService.cs:46`). Test 6's seed must use a
   future race date with a past lock deadline to trigger the locked-UI state.
-- **Supabase Storage bucket** — the test Supabase project needs an `avatars`
-  bucket with the same RLS policies as prod. Bucket config is not in the
-  codebase; a short migration script (TS or SQL) will be added to the E2E
-  global setup to create it idempotently.
-- **Two test users** — User A and User B exist in the test Supabase project
-  for test 7. Seeded once via Supabase admin API in `global-setup.ts`, not
-  recreated per run.
-- **Grid seed (22 drivers, 11 constructors, current season)** — required by
-  every team-related test. Seeded once per test via the chosen seed mechanism
-  (see Decisions below).
+- **Supabase Storage bucket** — the `avatars` bucket lives on the default
+  `postgres` database (Storage runs against it, not `f1fantasy_e2e`).
+  Commit 8 will ensure the bucket exists — either by running the
+  `20241215000000_create_avatars_storage.sql` migration against `postgres`
+  (idempotent) or by creating it programmatically via the Storage admin
+  API at global-setup time. Bucket state is shared with dev, which is
+  tolerable: tests upload to distinct keyed paths per run.
+- **Two test users** — User A and User B live in `auth.users` on the
+  default `postgres` database (GoTrue only serves `postgres`). Seeded
+  once in `global-setup.ts` via the admin API; their `auth.users` rows
+  are **not** touched by `resetDb()` since that only wipes
+  `f1fantasy_e2e`'s public schema. However, their corresponding
+  `Accounts` + `UserProfiles` rows in `f1fantasy_e2e` **are** wiped per
+  test, so the harness re-inserts them in `beforeEach` (the profile
+  auto-trigger doesn't apply across databases).
+- **Per-test grid seed** — tests that need drivers/constructors call
+  `seedMinimalGrid()` (or similar) in their own `beforeEach` after
+  `resetDb()`. Approximate shape: ~6 drivers / ~3 constructors — enough
+  to form a valid team and leave swap candidates. Exact count confirmed
+  against `docs/research/fantasy-rules/decisions/format.md` when
+  fixtures land in commit 4.
 - **Sign-out test (#3) isolation** — does not reuse worker-wide
   `storageState`; runs in its own context so it doesn't poison siblings.
 - **Branch protection** — the "required check" update must be applied by the
@@ -301,12 +380,17 @@ Previously-open questions, now answered by inspecting the repo:
 
 - **Ephemeral DB?** Yes. `supabase start` (Docker) gives us an ephemeral
   Postgres; a dedicated `f1fantasy_e2e` DB on that instance is the E2E target.
-- **Existing seed script?** Yes — `api/supabase/seed.sql`. Reused as-is for
-  the driver grid at worker startup. EF migrations applied before it.
+- **Existing seed script?** `api/supabase/seed.sql` exists but is **not**
+  reused (see §5). Per-test fixtures replace it.
 - **Supabase in Docker?** Yes — the Supabase CLI local stack. Best practice
   for Supabase E2E at this project's scale; zero cloud dependency.
-- **Per-test reset** — truncate user-scoped tables from Node via `pg`. Grid
-  tables (Drivers, Constructors) survive. Fast (<50ms), no prod-code surface.
+- **Per-test reset** — truncate every `public` table except
+  `__EFMigrationsHistory`, restarting identity sequences. No table survives
+  between tests (including grid). Fast (<50ms), no prod-code surface.
+- **Seed-only API endpoints?** Rejected. No value shipping endpoints that
+  exist only for tests. Fixtures couple to the schema via raw SQL; the
+  coupling cost is accepted because e2e runs on PR merge and surfaces
+  migration breakage pre-merge.
 
 ## Open caveats
 
@@ -316,27 +400,44 @@ quietly decided during implementation.
 ### Verified (no action needed)
 - `enable_confirmations = false` in `config.toml` (line 176) — programmatic
   sign-up works without inbox polling. Test 4's sign-up flow works.
-- `avatars` bucket is created by
-  `api/supabase/migrations/20241215000000_create_avatars_storage.sql` — runs
-  automatically on `supabase db reset`. No manual bucket provisioning needed.
-- `20260108000000_create_user_profile_trigger.sql` creates the profile
-  auto-trigger — sign-up creates both auth user and profile row.
 - Current-race selector rule: backend picks nearest race where
   `RaceDate >= now`. Test 6 seed shape confirmed.
 
+### Verified but does NOT apply to `f1fantasy_e2e`
+These behaviors hold for `supabase db reset` against the default `postgres`
+database, but the E2E database is a separate DB on the same instance and
+does not inherit them:
+- `api/supabase/migrations/20241215000000_create_avatars_storage.sql`
+  creates the `avatars` Storage bucket. Storage runs against `postgres`,
+  so the bucket is shared with dev and exists independently of
+  `f1fantasy_e2e`. Commit 8 ensures it's present before the avatar test
+  runs.
+- `api/supabase/migrations/20260108000000_create_user_profile_trigger.sql`
+  creates a trigger on `auth.users`. The `auth` schema lives only in
+  `postgres`, so the trigger does not fire for user creation when the app
+  data (Accounts/UserProfiles) is in `f1fantasy_e2e`. The E2E harness
+  inserts those rows manually after sign-up (commit 3).
+
 ### Non-obvious decisions baked into this plan
-- **Two migration systems.** `api/supabase/migrations/` (2 files: storage
-  bucket + profile trigger) runs on `supabase db reset`. EF migrations (93
-  files in `api/F1CompanionApi/Data/Migrations/`) do NOT run on `db reset`.
-  Plan applies them via an explicit `dotnet ef database update` in
-  global-setup against the e2e DB.
+- **Two migration systems, only one applied to `f1fantasy_e2e`.** EF
+  migrations (`api/F1CompanionApi/Data/Migrations/`, many files) are
+  applied to `f1fantasy_e2e` via `dotnet ef database update` in
+  global-setup. `api/supabase/migrations/` (storage bucket + profile
+  trigger) are **not** applied — the storage migration targets Storage's
+  DB (`postgres`) and has no effect against `f1fantasy_e2e`, and the
+  profile-trigger migration depends on `auth.users` which only exists in
+  `postgres`. Commits 3 and 8 handle those concerns manually.
 - **API auto-migrate is Development-only** (`Program.cs:93-98`). Since E2E
   runs with `ASPNETCORE_ENVIRONMENT=Testing`, we do not piggyback on
   auto-migrate. Explicit migration step above stands.
-- **Test users not truncated.** User A + User B are seeded once in global
-  setup; per-test truncate spares `Accounts` and `UserProfiles` rows tied to
-  those two auth users (or re-inserts them in `beforeEach`). Test 4
-  (sign-up) creates a third, disposable user each run.
+- **Test users are partially preserved.** User A + User B's `auth.users`
+  rows in `postgres` are seeded once in global-setup and survive across
+  tests (`resetDb()` doesn't touch that DB). Their `Accounts` +
+  `UserProfiles` rows in `f1fantasy_e2e` **are** truncated per test; the
+  harness re-inserts them in `beforeEach` to keep the UUID→profile link
+  intact (no auto-trigger in e2e). Test 4's sign-up creates a disposable
+  third auth user per run — those accumulate in `auth.users` but the
+  cost is negligible at e2e's scale.
 - **Sign-out test (#3)** runs in its own context with empty `storageState` to
   avoid poisoning sibling tests.
 - **Parallel workers = 1.** Until per-worker DB isolation is added, run
