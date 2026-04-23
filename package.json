@@ -21,6 +21,9 @@
     "api:test": "npm run api:test:unit && npm run api:test:integration",
     "api:test:unit": "cd api && dotnet test F1CompanionApi.UnitTests/F1CompanionApi.UnitTests.csproj",
     "api:test:integration": "cd api && dotnet test F1CompanionApi.IntegrationTests/F1CompanionApi.IntegrationTests.csproj",
+    "e2e:install": "cd e2e && npm install && npx playwright install --with-deps chromium",
+    "e2e": "cd e2e && npm test",
+    "e2e:ui": "cd e2e && npm run test:ui",
     "test:all": "npm run web:test && npm run api:test",
     "prepare": "husky"
   },

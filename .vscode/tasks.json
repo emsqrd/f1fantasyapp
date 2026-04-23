@@ -220,6 +220,40 @@
       }
     },
     {
+      "label": "[E2E] Test",
+      "type": "shell",
+      "command": "npm test",
+      "options": {
+        "cwd": "${workspaceFolder}/e2e"
+      },
+      "problemMatcher": [],
+      "icon": {
+        "id": "beaker",
+        "color": "terminal.ansiYellow"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "[E2E] Test UI",
+      "type": "shell",
+      "command": "npm run test:ui",
+      "options": {
+        "cwd": "${workspaceFolder}/e2e"
+      },
+      "problemMatcher": [],
+      "icon": {
+        "id": "beaker",
+        "color": "terminal.ansiYellow"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
       "label": "Start All Servers",
       "dependsOn": ["[Web] Dev Server", "[API] Watch"],
       "dependsOrder": "parallel",
