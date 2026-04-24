@@ -39,8 +39,11 @@ npm run e2e:ui          # Playwright UI for interactive debugging
 - **Web + API servers:** Playwright's `webServer` block starts two processes
   before tests run — a prod-like web build served by `vite preview` on
   `:5173`, and a published-Release `dotnet` API on `:5077` wired to the
-  E2E database. Don't run `api:watch` or `web:dev` during an E2E run — the
-  ports collide.
+  E2E database. Both are configured with `reuseExistingServer: false`, so
+  if `api:watch` or `web:dev` is already bound to those ports the suite
+  fails fast with a port-in-use error instead of silently running against
+  a dev-configured server pointed at the wrong DB. Stop dev servers before
+  `npm run e2e`.
 - **Database:** `f1fantasy_e2e` on the local Supabase Postgres instance
   (`:54322`). Created by global setup on first run; EF migrations applied via
   `dotnet ef database update`. Local dev state in the default `postgres` DB
@@ -57,7 +60,9 @@ npm run e2e:ui          # Playwright UI for interactive debugging
   what they need after the reset.
 - **Seeding:** no shared `seed.sql`. Each test declares its own data in
   `beforeEach` — minimal grid, season, race — so there's no implicit state
-  shared across tests.
+  shared across tests. Helpers live in `fixtures/seed.ts` (direct-DB:
+  season, grid, race weekend), `fixtures/team.ts`, and `fixtures/league.ts`
+  (both via the real API with the user's JWT).
 
 ## Conventions
 
@@ -78,7 +83,11 @@ e2e/
 │   ├── db.ts              # pg pool + connection helpers
 │   ├── reset.ts           # Per-test truncate
 │   ├── supabase-env.ts    # Reads `supabase status -o json`
-│   └── auth.ts            # Test-user provisioning + storageState capture
+│   ├── auth.ts            # Test-user provisioning + storageState capture
+│   ├── api.ts             # Authenticated fetch helpers (JWT via GoTrue)
+│   ├── seed.ts            # Season, grid, race-weekend helpers (direct DB)
+│   ├── team.ts            # seedTeamForUser (via API)
+│   └── league.ts          # seedLeague (via API)
 ├── .auth/                 # Captured storageState JSON (gitignored)
 └── tests/
     └── *.spec.ts

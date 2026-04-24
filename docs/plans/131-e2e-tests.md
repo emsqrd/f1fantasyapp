@@ -236,7 +236,7 @@ endpoints when those endpoints exist.
 
 Each commit self-contained: build + lint + tests + format green.
 
-1. **Scaffold `e2e/` package + Playwright config.** (shipped)
+1. **Scaffold `e2e/` package + Playwright config.** (done)
    `e2e/package.json`, `playwright.config.ts`, `tsconfig.json`, `.gitignore`
    entries, and a single smoke test (`/` loads). Root `package.json` gets
    `e2e`, `e2e:ui`, `e2e:install` scripts; VS Code tasks for `[E2E] Test`
@@ -247,7 +247,7 @@ Each commit self-contained: build + lint + tests + format green.
    the e2e DB (commit 2) and the full env-var injection (Supabase keys,
    `VITE_F1_FANTASY_API`) that commit 3 sets up. Adding a half-wired API
    webServer earlier would leave commit 1 unable to stay independently green.
-2. **Test DB + global setup.** (shipped) `e2e/global-setup.ts` verifies
+2. **Test DB + global setup.** (done) `e2e/global-setup.ts` verifies
    the local Supabase stack is reachable, creates `f1fantasy_e2e` if
    absent, and applies EF migrations via `dotnet ef database update`.
    `e2e/fixtures/db.ts` holds the shared `pg` pool + connection constants.
@@ -255,7 +255,7 @@ Each commit self-contained: build + lint + tests + format green.
    `__EFMigrationsHistory`. No `seed.sql` reuse (see §5). A dedicated
    `reset.spec.ts` verifies the helper works end-to-end. `e2e/README.md`
    documents `supabase start` as the prerequisite.
-3. **Local Supabase auth + `storageState` + API webServer.** `global-setup`
+3. **Local Supabase auth + `storageState` + API webServer.** (done) `global-setup`
    creates User A and User B via local GoTrue's admin API (programmatic
    sign-up), then — because the profile-trigger migration doesn't run
    against `f1fantasy_e2e` — manually inserts `Accounts` + `UserProfiles`

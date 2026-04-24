@@ -42,14 +42,44 @@ export function getTestUser(key: TestUserKey): TestUser {
   return user;
 }
 
+const accountIdByUserKey = new Map<TestUserKey, string>();
+
+async function resolveAuthUserId(user: TestUser): Promise<string> {
+  const cached = accountIdByUserKey.get(user.key);
+  if (cached) return cached;
+
+  const env = readSupabaseEnv();
+  const id = await ensureAuthUser(env, user);
+  accountIdByUserKey.set(user.key, id);
+  return id;
+}
+
+export async function getTestUserAccountId(key: TestUserKey): Promise<string> {
+  return resolveAuthUserId(getTestUser(key));
+}
+
 export async function provisionTestUsers(webBaseUrl: string): Promise<void> {
   await mkdir(AUTH_DIR, { recursive: true });
-  const env = readSupabaseEnv();
 
   for (const user of TEST_USERS) {
-    const id = await ensureAuthUser(env, user);
+    const id = await resolveAuthUserId(user);
     await ensureAccountAndProfile(id, user);
     await captureStorageState(webBaseUrl, user);
+  }
+}
+
+/**
+ * Re-inserts Accounts + UserProfiles rows for every provisioned test user.
+ * Call after `resetDb()` in test `beforeEach` hooks — the per-test truncate
+ * wipes `f1fantasy_e2e` but leaves `auth.users` intact, so each test must
+ * relink its JWT subject to a profile row before hitting the API. Runs in
+ * the test worker process (a different process than `global-setup`), so we
+ * look up auth IDs from GoTrue rather than trusting an in-memory cache.
+ */
+export async function reseedTestUserProfiles(): Promise<void> {
+  for (const user of TEST_USERS) {
+    const id = await resolveAuthUserId(user);
+    await ensureAccountAndProfile(id, user);
   }
 }
 
