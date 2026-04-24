@@ -323,19 +323,17 @@ Each commit self-contained: build + lint + tests + format green.
    supports multiple projects natively via `project_id` scoping, so this
    is using the tool as designed rather than fighting it.
 
-   **MUST VERIFY BEFORE STARTING.** The entire pivot hinges on one
-   assumption: **the profile-creation trigger
-   (`20260108000000_create_user_profile_trigger.sql`) fires when rows
-   are inserted into `auth.users` via the GoTrue admin API.** If the
-   trigger only fires on user-initiated sign-ups (not admin-created
-   users), then `provisionTestUsers` creates auth users but no profiles
-   appear, and we're back to manual inserts — exactly the problem the
-   pivot was meant to remove. First thing in the next session: read the
-   trigger's migration, confirm it's on `INSERT` to `auth.users` with no
-   WHEN clause that filters out admin inserts. If the trigger has
-   conditions that exclude admin-API inserts, the pivot is still worth
-   doing (single-DB topology, Storage isolation, etc.) but we keep a
-   thin reseed helper.
+   **Critical assumption — verified.** The pivot's value depends on the
+   profile-creation trigger
+   (`api/supabase/migrations/20260108000000_create_user_profile_trigger.sql`)
+   firing when rows are inserted into `auth.users` via the GoTrue admin
+   API. Confirmed in both the trigger's SQL (`AFTER INSERT … FOR EACH
+   ROW`, no `WHEN` clause) and empirically in the running dev stack:
+   User A and User B were created by the e2e harness via the admin API,
+   and their `Accounts` + `UserProfiles` rows exist in the dev
+   `postgres` DB with the `DisplayName` values that only the trigger
+   function populates from `raw_user_meta_data`. Nothing else writes
+   those rows. The trigger fires for admin-API inserts. Safe to rely on.
 
    **Decisions pre-staked (don't re-litigate unless something breaks):**
    - **Ports:** shift dev's defaults by +100 → `54421/54422/54423/54424`
