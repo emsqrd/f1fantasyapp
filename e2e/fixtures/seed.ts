@@ -1,4 +1,5 @@
 import type { PoolClient } from 'pg';
+
 import { withE2eDb } from './db';
 
 export interface SeededSeason {
@@ -138,9 +139,7 @@ export interface SeedRaceWeekendOptions {
   circuitName?: string;
 }
 
-export async function seedRaceWeekend(
-  options: SeedRaceWeekendOptions,
-): Promise<SeededRaceWeekend> {
+export async function seedRaceWeekend(options: SeedRaceWeekendOptions): Promise<SeededRaceWeekend> {
   const round = options.round ?? 1;
   const name = options.name ?? `Round ${round} Grand Prix`;
   const circuitName = options.circuitName ?? `${name} Circuit`;

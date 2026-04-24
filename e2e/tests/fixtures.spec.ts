@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
+
 import { createTestUser } from '../fixtures/auth';
 import { withE2eDb } from '../fixtures/db';
+import { seedLeague } from '../fixtures/league';
 import { resetDb } from '../fixtures/reset';
 import { seedCurrentSeason, seedMinimalGrid, seedRaceWeekend } from '../fixtures/seed';
 import { seedTeamForUser } from '../fixtures/team';
-import { seedLeague } from '../fixtures/league';
 
 test.describe('fixtures', () => {
   test.beforeEach(async () => {

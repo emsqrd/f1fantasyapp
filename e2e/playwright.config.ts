@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+
 import { E2E_EF_CONNECTION_STRING } from './fixtures/db';
 import { readSupabaseEnv } from './fixtures/supabase-env';
 
@@ -45,6 +46,11 @@ export default defineConfig({
         VITE_SUPABASE_URL: supabase.apiUrl,
         VITE_SUPABASE_ANON_KEY: supabase.anonKey,
         VITE_F1_FANTASY_API: `${API_URL}/api`,
+        // Disable Sentry at build time so e2e runs don't ship events to
+        // the real project. web/.env ships a real DSN and Vite inlines
+        // env vars at build, so an explicit override here is the gate.
+        // Mirrors `Sentry__Dsn: ''` on the API webServer below.
+        VITE_SENTRY_DSN: '',
       },
     },
     {

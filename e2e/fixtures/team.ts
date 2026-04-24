@@ -1,5 +1,5 @@
-import type { TestUser } from './auth';
 import { apiFetchJson } from './api';
+import type { TestUser } from './auth';
 
 export interface SeededTeam {
   id: number;

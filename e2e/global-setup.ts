@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Client } from 'pg';
+
 import {
   E2E_EF_CONNECTION_STRING,
   SUPABASE_DB_PASSWORD,

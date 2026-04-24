@@ -54,7 +54,7 @@ npm run e2e:ui          # Playwright UI for interactive debugging
   diverge on anything other than ports / `project_id`.
 - **Web + API servers.** Playwright's `webServer` block starts two
   processes before tests run — a prod-like web build served by `vite
-  preview` on `:5273`, and a published-Release `dotnet` API on `:5177`
+preview` on `:5273`, and a published-Release `dotnet` API on `:5177`
   wired to the e2e stack. Ports are shifted by +100 from the dev
   defaults (`web:dev = 5173`, `api:watch = 5077`) so the e2e stack can
   run alongside dev servers — same rationale as the +100 Supabase port
@@ -66,12 +66,12 @@ npm run e2e:ui          # Playwright UI for interactive debugging
   rows). No pre-provisioned users, no shared `storageState`. Collision-free
   by construction: emails are `test-${randomUUID()}@e2e.local`.
 - **Per-test isolation.** `fixtures/reset.ts` truncates `auth.users
-  CASCADE` (sweeps all auth.* state), `storage.objects`, and every
-  `public.*` table except `__EFMigrationsHistory` in a single statement.
-  Storage buckets, migration-tracker tables, and Supabase internals stay
-  put. Uploaded avatar *bytes* accumulate slowly in the storage-api
-  container's Docker volume — recycle via `supabase stop && supabase
-  start` from `e2e/supabase/` if it ever matters.
+CASCADE` (sweeps all auth._ state), `storage.objects`, and every
+  `public._`table except`\_\_EFMigrationsHistory`in a single statement.
+Storage buckets, migration-tracker tables, and Supabase internals stay
+put. Uploaded avatar *bytes* accumulate slowly in the storage-api
+container's Docker volume — recycle via`supabase stop && supabase
+  start`from`e2e/supabase/` if it ever matters.
 - **Seeding.** Each test declares its own data in `beforeEach` — minimal
   grid, season, race. Helpers live in `fixtures/seed.ts` (direct-DB:
   season, grid, race weekend), `fixtures/team.ts` and `fixtures/league.ts`
@@ -79,8 +79,23 @@ npm run e2e:ui          # Playwright UI for interactive debugging
 
 ## Conventions
 
-- **Selectors:** semantic only (`data-testid`, role, accessible name).
-  Never CSS structure or `:nth-child`.
+- **Selectors (semantic-first).** Follow the Playwright / Testing Library
+  priority: `getByRole` → `getByLabel` → `getByPlaceholder` → `getByText` →
+  `getByAltText` / `getByTitle` → `getByTestId`. Testid is a last resort,
+  not a default — if the UI has an accessible name, query by it. Copy drift
+  breaking a test is a feature, not a bug: the user-visible text changed,
+  and a test should flag it.
+- **Disambiguating collisions.** When a semantic query matches more than
+  one element (e.g. two "Sign In" buttons on `/sign-in`), fix it by
+  scoping (`page.locator('form').getByRole(...)`) or by improving the
+  product's a11y (add an `aria-label` on an icon-heavy trigger). Both
+  keep tests semantic and, in the a11y case, improve the app at the same
+  time.
+- **Reach for `data-testid` only when** the target has no accessible name
+  and can't gain one (canvas elements, drag handles, decorative
+  wrappers), or the accessible name is inherently dynamic in a way that
+  would make regex-matching fragile. Document the reason inline.
+- **Never** rely on CSS structure, class names, or `:nth-child`.
 - **Waits:** Playwright's built-in `expect` polling. Never `sleep`.
 - **Scope:** this suite owns cross-system failure modes only (auth, CORS,
   Supabase wiring, deploy/config, critical user journeys). Validation

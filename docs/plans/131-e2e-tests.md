@@ -430,8 +430,58 @@ Each commit self-contained: build + lint + tests + format green.
      work if the suite gets slow.
    - CI workflow changes. Those land in commit 10.
    - Auto-starting the e2e stack from global-setup.
-6. **Auth suite (tests 1–3).** Sign in, unauth redirect, sign out. Semantic
-   selectors (`data-testid`, role, accessible name) only.
+6. **Auth suite (tests 1–3).** (done) Sign in, unauth redirect, sign out.
+   `e2e/tests/auth.spec.ts` with a per-test `resetDb()` + per-test
+   `createTestUser()` / seeded season + grid + team.
+
+   **Selector precedent set here, propagates to commits 7–9.** Follow the
+   Playwright / Testing Library priority: `getByRole` → `getByLabel` →
+   `getByPlaceholder` → `getByText` → `getByAltText` / `getByTitle` →
+   `getByTestId`. Testid is a last resort, not a default. Copy drift
+   breaking a test is a feature — the user experience changed and a test
+   should flag it. Codified in `e2e/README.md` Conventions section.
+
+   **Deviations from the original §3 wording, pre-staked for commits 7–9:**
+   - Tests 2 and 3 assert redirect to **`/`** (landing page), not `/sign-in`.
+     `requireAuth` in `web/src/lib/route-guards.ts:35` redirects to `/`, and
+     `handleSignOut` in `web/src/components/AppSidebar/AppSidebar.tsx`
+     navigates to `/`. If a future design calls for `/sign-in` as the
+     redirect target, that is a product change; tests will follow.
+   - Test 1's "dashboard shows profile + team + current season" is
+     asserted as: URL = `/leagues`, heading "My Leagues" visible,
+     `user.displayName` visible in the sidebar. The current-season
+     `year` is fetched by the root route loader but has no UI surface to
+     assert on today.
+   - Disambiguation by DOM structure, not testid, when a semantic query
+     matches multiple nodes. Example: `/sign-in` has two "Sign In"
+     buttons (header CTA + form submit) — test uses
+     `page.locator('form').getByRole('button', { name: 'Sign In' })`.
+   - Added one product a11y improvement to stabilize a dynamic
+     accessible name: `aria-label="Account menu"` on the sidebar account
+     dropdown trigger (`AppSidebar.tsx`). The previous selector had to
+     regex-match the user's `displayName`, which was data-driven but
+     fragile. aria-label gives screen-reader users a concise action
+     name *and* gives the test a stable handle.
+
+   **Tooling added alongside this commit (not in the original plan):**
+   - Prettier for the `e2e/` project: `e2e/prettier.config.js` (copy of
+     `web/prettier.config.js`), `e2e/.prettierignore`, `format` /
+     `format:check` scripts in `e2e/package.json`, and root passthroughs
+     `e2e:format` / `e2e:format:check` in `package.json`. Existing e2e
+     files were reformatted in the same commit (cosmetic only, 11 files,
+     +22/-24 lines). Needed because the per-commit "format green" rule
+     had no e2e-side tooling up to this point.
+   - **Sentry telemetry gated on the web side.** `web/.env` ships a real
+     `VITE_SENTRY_DSN` so `npm run web:dev` works out of the box, and
+     Vite inlines env vars at build time. The e2e webServer's `env`
+     block was overriding `VITE_SUPABASE_*` + `VITE_F1_FANTASY_API` but
+     not the Sentry DSN, so `npm run web:build` inside `playwright.config.ts`'s
+     webServer baked the real DSN and every e2e run since commit 3 has
+     been reporting errors (URLs like `http://localhost:5273/...`) to the
+     prod Sentry project. Fix: add `VITE_SENTRY_DSN: ''` to the web
+     webServer's `env`, mirroring the API side's `Sentry__Dsn: ''`. Kept
+     as a bullet here so future telemetry SDKs added to the app get the
+     same treatment by default.
 7. **Team suite (tests 4–6).** Team creation, lineup edit + captain persist,
    lock-deadline disabled state. Test 6 seeds a race with `RaceDate > now` and
    `LockDeadline < now`.
@@ -459,11 +509,16 @@ Each commit self-contained: build + lint + tests + format green.
 ## Critical files to modify
 
 - `e2e/` (new): `package.json`, `playwright.config.ts`, `tests/*.spec.ts`,
-  `fixtures/`, `global-setup.ts`, `README.md`
+  `fixtures/`, `global-setup.ts`, `README.md`, `prettier.config.js` +
+  `.prettierignore` (added commit 6)
 - `e2e/supabase/` (new, commit 5): `config.toml`, `migrations/` symlink to
   `api/supabase/migrations/`
 - `package.json` (root): `e2e`, `e2e:ui`, `e2e:install` scripts mirroring
-  `web:*` / `api:*`
+  `web:*` / `api:*`, plus `e2e:format` / `e2e:format:check` (added commit 6)
+- `web/src/components/AppSidebar/AppSidebar.tsx` (commit 6): one-line
+  a11y edit — `aria-label="Account menu"` on the account dropdown
+  trigger. Improves screen-reader UX and gives e2e a stable semantic
+  handle, avoiding a testid.
 - `.github/workflows/ci.yml`: add `e2e` job
 - `CLAUDE.md` (root), `api/CLAUDE.md`: cross-reference the new layer
 

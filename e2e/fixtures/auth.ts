@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { readSupabaseEnv, type SupabaseEnv } from './supabase-env';
+
+import { type SupabaseEnv, readSupabaseEnv } from './supabase-env';
 
 export interface TestUser {
   id: string;
@@ -25,9 +26,7 @@ const DEFAULT_PASSWORD = 'e2e-password';
  * Each test should create whatever users it needs; the per-test `resetDb()`
  * wipes `auth.users CASCADE` so these never leak between tests.
  */
-export async function createTestUser(
-  options: CreateTestUserOptions = {},
-): Promise<TestUser> {
+export async function createTestUser(options: CreateTestUserOptions = {}): Promise<TestUser> {
   const env = readSupabaseEnv();
   const unique = randomUUID();
   const email = `${options.emailPrefix ?? 'test'}-${unique}@e2e.local`;
@@ -58,9 +57,7 @@ async function adminCreateAuthUser(
   });
 
   if (!res.ok) {
-    throw new Error(
-      `GoTrue admin create failed (${res.status}): ${await res.text()}`,
-    );
+    throw new Error(`GoTrue admin create failed (${res.status}): ${await res.text()}`);
   }
 
   const created = (await res.json()) as { id: string };

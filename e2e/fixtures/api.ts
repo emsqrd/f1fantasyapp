@@ -75,9 +75,7 @@ export async function apiFetch(path: string, init: ApiRequestInit = {}): Promise
 export async function apiFetchJson<T>(path: string, init: ApiRequestInit = {}): Promise<T> {
   const res = await apiFetch(path, init);
   if (!res.ok) {
-    throw new Error(
-      `${init.method ?? 'GET'} ${path} failed (${res.status}): ${await res.text()}`,
-    );
+    throw new Error(`${init.method ?? 'GET'} ${path} failed (${res.status}): ${await res.text()}`);
   }
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
