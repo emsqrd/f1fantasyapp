@@ -9,7 +9,7 @@ backend suites) and a recently-landed integration suite (#130) that exercises th
 HTTP pipeline against Testcontainers Postgres with a `TestJwtBearerHandler` bypass.
 There is no browser-layer test of any kind today.
 
-This plan validates the issue's proposals against what is *actually shipped* in the
+This plan validates the issue's proposals against what is _actually shipped_ in the
 app, against the monorepo's `CLAUDE.md` testing strategy, and recommends a scoped
 suite and commit sequence.
 
@@ -33,7 +33,7 @@ What the issue proposes holds up well. Concrete checks:
 Gaps in the issue worth closing before implementation:
 
 - **Auth approach is left undecided.** The recommended "hybrid" adds a dev-only
-  backdoor to production code *and* maintains a test Supabase project. That is
+  backdoor to production code _and_ maintains a test Supabase project. That is
   more moving parts than 8 tests justify. See §4 below.
 - **Selector discipline** isn't called out. Strategy requires semantic selectors
   (`data-testid`, role, accessible name) — anti-pattern to rely on CSS structure.
@@ -50,17 +50,17 @@ Gaps in the issue worth closing before implementation:
 The 8 proposed tests cross-checked against the CLAUDE.md strategy and what the app
 actually ships:
 
-| # | Proposed test | Real in app? | Strategy fit | Verdict |
-|---|---|---|---|---|
-| 1 | Sign in → dashboard loaded | ✅ `/sign-in` email+password → `/my-team` | Happy path, load-bearing | **Keep** |
-| 2 | Unauth → redirect to sign-in | ✅ `requireAuth` route guard | "one representative failure… auth redirect" | **Keep** |
-| 3 | Sign out clears session | ✅ `AuthContext.signOut` | Load-bearing | **Keep** |
-| 4 | First-time team creation | ✅ sign-up → `/create-team` via `_no-team` guard | Golden path | **Keep** |
-| 5a | Edit lineup within budget | ✅ `/my-team` DriverPicker/ConstructorPicker + captain | Golden path | **Keep** |
-| 5b | Exceeding cap blocks submission | Client-side only (`remainingBudget` disables picks) | **Violates** "Validation/edge-case matrices in E2E — belongs in unit." Already covered at `DriverPicker.test.tsx` + `BudgetCapTests.cs` (integration). | **Cut** |
-| 6 | Past lock deadline → disabled + countdown | ✅ `Team.tsx:60-112` live countdown, `readOnly={isLocked}` | Load-bearing UI state only E2E can verify composes | **Keep** |
-| 7 | Create league → join via invite (two contexts) | ✅ `/leagues` create → invite dialog → `/join/$token` | Golden path, cross-user | **Keep** |
-| 8 | Avatar upload | ✅ `/account` → `useAvatarUpload` → Supabase Storage direct | Only E2E can prove Supabase Storage wiring | **Keep** |
+| #   | Proposed test                                  | Real in app?                                                | Strategy fit                                                                                                                                           | Verdict  |
+| --- | ---------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| 1   | Sign in → dashboard loaded                     | ✅ `/sign-in` email+password → `/my-team`                   | Happy path, load-bearing                                                                                                                               | **Keep** |
+| 2   | Unauth → redirect to sign-in                   | ✅ `requireAuth` route guard                                | "one representative failure… auth redirect"                                                                                                            | **Keep** |
+| 3   | Sign out clears session                        | ✅ `AuthContext.signOut`                                    | Load-bearing                                                                                                                                           | **Keep** |
+| 4   | First-time team creation                       | ✅ sign-up → `/create-team` via `_no-team` guard            | Golden path                                                                                                                                            | **Keep** |
+| 5a  | Edit lineup within budget                      | ✅ `/my-team` DriverPicker/ConstructorPicker + captain      | Golden path                                                                                                                                            | **Keep** |
+| 5b  | Exceeding cap blocks submission                | Client-side only (`remainingBudget` disables picks)         | **Violates** "Validation/edge-case matrices in E2E — belongs in unit." Already covered at `DriverPicker.test.tsx` + `BudgetCapTests.cs` (integration). | **Cut**  |
+| 6   | Past lock deadline → disabled + countdown      | ✅ `Team.tsx:60-112` live countdown, `readOnly={isLocked}`  | Load-bearing UI state only E2E can verify composes                                                                                                     | **Keep** |
+| 7   | Create league → join via invite (two contexts) | ✅ `/leagues` create → invite dialog → `/join/$token`       | Golden path, cross-user                                                                                                                                | **Keep** |
+| 8   | Avatar upload                                  | ✅ `/account` → `useAvatarUpload` → Supabase Storage direct | Only E2E can prove Supabase Storage wiring                                                                                                             | **Keep** |
 
 **Net:** drop test 5b. It's a validation matrix item already owned by the unit and
 integration layers.
@@ -71,15 +71,15 @@ These pass the "in production, reachable by users" bar and cover failure modes n
 other layer can see:
 
 - **A. Invite-while-unauthenticated round-trip.** `JoinInvite.tsx` preserves the
-  `/join/$token` destination through sign-in *and* through team creation. This is
+  `/join/$token` destination through sign-in _and_ through team creation. This is
   the only flow that traverses public → auth → `_no-team` → `_team-required` layers
   in one go, and the redirect preservation lives in client state — nothing below the
   browser can verify it end-to-end. **High value.**
 - **B. Captain selection persists.** `/my-team` exposes captain-setting on the
   lineup; the captain affects scoring. Server-side rule is covered in unit tests,
   but the click → persist → reload-and-see-captain flow is only visible at E2E.
-  *Only worth including if it adds a distinct UI assertion not already covered by
-  test 5a; most likely fold into test 5a rather than a separate test.*
+  _Only worth including if it adds a distinct UI assertion not already covered by
+  test 5a; most likely fold into test 5a rather than a separate test._
 
 Scenarios deliberately **not** recommended (fail the "real + reachable" or the
 strategy bar):
@@ -156,6 +156,7 @@ populating `Accounts` + `UserProfiles` in the same transaction. Tests call
 `createTestUser()` directly; no manual re-seed ceremony.
 
 Benefits:
+
 - Zero cloud dependency. No secrets in CI.
 - Same code path as prod auth — proves JWT/Supabase wiring.
 - Trigger covered end-to-end as a side effect.
@@ -195,7 +196,7 @@ Supabase internals (`supabase_*`, `_realtime`, `_analytics`, `extensions`,
 
 Fully ephemeral per-test state across auth, storage metadata, and app
 data — one helper call, zero per-test cleanup ceremony. Residual
-non-ephemeral bit: uploaded avatar *bytes* live in the storage-api
+non-ephemeral bit: uploaded avatar _bytes_ live in the storage-api
 container's Docker volume and accumulate slowly across runs; recycle via
 `supabase stop && supabase start` from `e2e/supabase/` if it ever matters.
 
@@ -271,7 +272,7 @@ Each commit self-contained: build + lint + tests + format green.
    and `[E2E] Test UI` land alongside the existing Web/API tasks.
    `playwright.config.ts` wires a **web-only** `webServer` running a
    prod-like build (`npm run web:build && vite preview --port 5173
-   --strictPort`). The API `webServer` is deferred to commit 3 — it needs
+--strictPort`). The API `webServer` is deferred to commit 3 — it needs
    the e2e DB (commit 2) and the full env-var injection (Supabase keys,
    `VITE_F1_FANTASY_API`) that commit 3 sets up. Adding a half-wired API
    webServer earlier would leave commit 1 unable to stay independently green.
@@ -312,7 +313,7 @@ Each commit self-contained: build + lint + tests + format green.
      the profile trigger + avatars bucket migrations apply to the e2e
      stack on `supabase start`.
    - Drop `ensureE2eDatabaseExists` from `global-setup.ts`; `dotnet ef
-     database update` now runs against the e2e stack's `postgres` DB.
+database update` now runs against the e2e stack's `postgres` DB.
    - Drop `reseedTestUserProfiles` and its `beforeEach` wiring. Adopt
      per-test auth-user creation: each test creates its own users via
      GoTrue admin, trigger populates `Accounts` + `UserProfiles`, test
@@ -329,7 +330,7 @@ Each commit self-contained: build + lint + tests + format green.
      `_realtime`, `_analytics`, `extensions`, `pgsodium`, `vault`)
      untouched. Fully ephemeral per-test state across auth, storage
      metadata, and app data — one helper call, zero per-test cleanup
-     ceremony. Residual non-ephemeral bit: uploaded avatar *bytes*
+     ceremony. Residual non-ephemeral bit: uploaded avatar _bytes_
      live in the storage-api container's Docker volume and accumulate
      slowly; recycle via `supabase stop && supabase start` from
      `e2e/supabase/` if it ever matters.
@@ -379,7 +380,7 @@ Each commit self-contained: build + lint + tests + format green.
    (`api/supabase/migrations/20260108000000_create_user_profile_trigger.sql`)
    firing when rows are inserted into `auth.users` via the GoTrue admin
    API. Confirmed in both the trigger's SQL (`AFTER INSERT … FOR EACH
-   ROW`, no `WHEN` clause) and empirically in the running dev stack:
+ROW`, no `WHEN` clause) and empirically in the running dev stack:
    User A and User B were created by the e2e harness via the admin API,
    and their `Accounts` + `UserProfiles` rows exist in the dev
    `postgres` DB with the `DisplayName` values that only the trigger
@@ -430,6 +431,7 @@ Each commit self-contained: build + lint + tests + format green.
      work if the suite gets slow.
    - CI workflow changes. Those land in commit 10.
    - Auto-starting the e2e stack from global-setup.
+
 6. **Auth suite (tests 1–3).** (done) Sign in, unauth redirect, sign out.
    `e2e/tests/auth.spec.ts` with a per-test `resetDb()` + per-test
    `createTestUser()` / seeded season + grid + team.
@@ -461,7 +463,7 @@ Each commit self-contained: build + lint + tests + format green.
      dropdown trigger (`AppSidebar.tsx`). The previous selector had to
      regex-match the user's `displayName`, which was data-driven but
      fragile. aria-label gives screen-reader users a concise action
-     name *and* gives the test a stable handle.
+     name _and_ gives the test a stable handle.
 
    **Tooling added alongside this commit (not in the original plan):**
    - Prettier for the `e2e/` project: `e2e/prettier.config.js` (copy of
@@ -482,10 +484,11 @@ Each commit self-contained: build + lint + tests + format green.
      webServer's `env`, mirroring the API side's `Sentry__Dsn: ''`. Kept
      as a bullet here so future telemetry SDKs added to the app get the
      same treatment by default.
-7. **Team suite (tests 4–6).** Team creation, lineup edit + captain persist,
+
+7. **Team suite (tests 4–6).** (done) Team creation, lineup edit + captain persist,
    lock-deadline disabled state. Test 6 seeds a race with `RaceDate > now` and
    `LockDeadline < now`.
-8. **League + cross-context suite (tests 7, 9).** Two browser contexts; invite
+8. **League + cross-context suite (tests 7, 9).** (done) Two browser contexts; invite
    URL round-trip; unauthenticated `/join/$token` → sign-up → create-team →
    join.
 
@@ -500,22 +503,24 @@ Each commit self-contained: build + lint + tests + format green.
    `signInAs(page, user)` helper). Non-null assertions on grid destructuring
    (`alex!`, `bruno!`) are a separate readability nit — address by adding a
    length assertion at the destructure site, not by changing the seed helper.
-9. **Avatar suite (test 8).** File upload to local Supabase Storage
+
+9. **Avatar suite (test 8).** (done) File upload to local Supabase Storage
    (`avatars` bucket, provisioned by the e2e stack's storage migration —
    no separate mirroring step needed under the commit-5 topology). Same
    promote-to-helper check as commit 8 applies here.
 10. **CI job + required check.** New `e2e` job in `.github/workflows/ci.yml`
     using `supabase/setup-cli` + `supabase start` (from `e2e/supabase/`)
     in the runner. Builds web (`web:build`) and API (`dotnet publish -c
-    Release`) before running Playwright — optionally reuses the existing
+Release`) before running Playwright — optionally reuses the existing
     `api-docker` image rather than rebuilding from source (discussed
     during implementation). Parallel with existing jobs. Uploads
     `playwright-report/` + traces on failure. Branch protection update
     is a manual step (documented in the commit message).
-11. **Docs.** Update root `CLAUDE.md` and `api/CLAUDE.md` (cross-reference the
-    new layer, mirror how #130 was documented). Add `e2e/README.md` covering
-    run/debug/extend + selector discipline + the `cd e2e/supabase &&
-    supabase start` prerequisite.
+11. **Docs.** Review `e2e/README.md` for accuracy and consistency. Identify any areas that
+    have not been documented, but should. Update root `CLAUDE.md` and `api/CLAUDE.md`
+    (cross-reference the new layer, mirror how #130 was documented). Add `e2e/README.md`
+    covering run/debug/extend + selector discipline + the `cd e2e/supabase &&
+supabase start` prerequisite.
 
 ---
 
@@ -574,7 +579,7 @@ Calling these out so none of them are quietly decided during implementation:
 - **Supabase Storage bucket** — the `avatars` bucket lives in the e2e
   stack's `postgres` DB alongside app data. The bucket migration
   (`20241215000000_create_avatars_storage.sql`) applies on `supabase
-  start` via the `e2e/supabase/migrations/` symlink. `resetDb()` clears
+start` via the `e2e/supabase/migrations/` symlink. `resetDb()` clears
   `storage.objects` per test but leaves `storage.buckets` alone, so the
   bucket is always there when commit 9 runs. Bytes in the storage-api
   Docker volume accumulate slowly across runs — tolerable.
@@ -627,24 +632,26 @@ Full audit of what the plan bakes in. Each item is surfaced so nothing is
 quietly decided during implementation.
 
 ### Verified (no action needed)
+
 - `enable_confirmations = false` in `config.toml` (line 176) — programmatic
   sign-up works without inbox polling. Test 4's sign-up flow works.
 - Current-race selector rule: backend picks nearest race where
   `RaceDate >= now`. Test 6 seed shape confirmed.
 
 ### Non-obvious decisions baked into this plan
+
 - **Two Supabase stacks, migrations shared by symlink.** `api/supabase/`
   (dev) and `e2e/supabase/` (test) run concurrently with ports shifted
   +100. `e2e/supabase/migrations` is a symlink to
   `../../api/supabase/migrations`, so both stacks apply the storage-bucket
-  + profile-trigger migrations verbatim. A `config.toml` drift check
-  (`tests/_infra/config-sync.spec.ts`) fails loudly if the two configs
-  diverge on anything other than ports + `project_id`.
+  - profile-trigger migrations verbatim. A `config.toml` drift check
+    (`tests/_infra/config-sync.spec.ts`) fails loudly if the two configs
+    diverge on anything other than ports + `project_id`.
 - **Migration ordering in global-setup.** `supabase start` applies files
   in `e2e/supabase/migrations/` against the stack's `postgres` DB on
   first boot (trigger installs with unresolved `public.*` refs —
   PL/pgSQL defers resolution to runtime). Then `dotnet ef database
-  update` creates the `public` tables in global-setup. Then tests run. A
+update` creates the `public` tables in global-setup. Then tests run. A
   future supabase migration that needs public tables at CREATE time
   (e.g., an FK from `auth.*` to `public.*`) would break this order;
   commented in `global-setup.ts`.
@@ -684,6 +691,7 @@ quietly decided during implementation.
   need to change.
 
 ### Acknowledged costs / risks
+
 - **CI boot time.** `supabase start` + container pulls in GH Actions ~60–90s
   cold. Cached between runs via `actions/cache` on Docker layers.
 - **Postgres 17 (local Supabase) vs Postgres 16 (integration tests via
@@ -691,17 +699,18 @@ quietly decided during implementation.
   this app's queries. Prod Supabase is 17 per `config.toml` comment.
 - **`cd e2e/supabase && supabase start` is a prerequisite for local
   runs.** Documented in `e2e/README.md`. Not auto-started by `npm run
-  e2e` — adds complexity and risks spurious failures on a flaky Docker
+e2e` — adds complexity and risks spurious failures on a flaky Docker
   daemon.
 - **User may pull on a branch without starting the e2e stack first.**
   The first `npm run e2e` fails fast with a clear "is supabase running?"
   error from global-setup.
 
 ### Known out-of-scope for this plan (explicitly deferred)
+
 - Parallelizing E2E workers.
 - Visual regression / screenshot diffing.
 - Performance benchmarking.
 - E2E against a deployed Fly staging environment. This plan runs prod-like
-  builds *locally* (Vite preview + published .NET DLL), which is the level
+  builds _locally_ (Vite preview + published .NET DLL), which is the level
   root `CLAUDE.md` prescribes. "Against a real Fly deploy" would be a
   separate initiative and is not in scope here.
