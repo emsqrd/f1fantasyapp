@@ -322,6 +322,63 @@ Each commit self-contained: build + lint + tests + format green.
    isolate test users + Storage buckets from dev. The Supabase CLI
    supports multiple projects natively via `project_id` scoping, so this
    is using the tool as designed rather than fighting it.
+
+   **MUST VERIFY BEFORE STARTING.** The entire pivot hinges on one
+   assumption: **the profile-creation trigger
+   (`20260108000000_create_user_profile_trigger.sql`) fires when rows
+   are inserted into `auth.users` via the GoTrue admin API.** If the
+   trigger only fires on user-initiated sign-ups (not admin-created
+   users), then `provisionTestUsers` creates auth users but no profiles
+   appear, and we're back to manual inserts — exactly the problem the
+   pivot was meant to remove. First thing in the next session: read the
+   trigger's migration, confirm it's on `INSERT` to `auth.users` with no
+   WHEN clause that filters out admin inserts. If the trigger has
+   conditions that exclude admin-API inserts, the pivot is still worth
+   doing (single-DB topology, Storage isolation, etc.) but we keep a
+   thin reseed helper.
+
+   **Decisions pre-staked (don't re-litigate unless something breaks):**
+   - **Ports:** shift dev's defaults by +100 → `54421/54422/54423/54424`
+     (API / DB / Studio / Inbucket). Lets dev and e2e stacks coexist on
+     the same machine.
+   - **Project ID:** `f1-companion-api-e2e` in `e2e/supabase/config.toml`.
+     Scopes the Docker container names.
+   - **Migration sharing:** symlink `e2e/supabase/migrations` →
+     `../api/supabase/migrations`. This is a macOS solo-dev project; no
+     Windows concern. Avoids copy-drift.
+   - **Seed file:** no `e2e/supabase/seed.sql`. Per-test fixtures still
+     own all data seeding (unchanged from §5).
+   - **Auth-user creation granularity:** per-test (not per-file,
+     not pre-provisioned). Each test creates whatever users it needs,
+     captures a JWT via the token endpoint (not via UI sign-in), tears
+     down in `afterEach` best-effort. `storageState` mechanism goes
+     away entirely. If measured runtime pushes past a few minutes
+     locally, revisit by promoting to per-file.
+   - **Test user emails:** unique per test via
+     `test-${crypto.randomUUID()}@e2e.local`. No collisions if a run
+     aborts without cleanup; accumulation in the e2e stack is negligible
+     and isolated from dev.
+   - **`supabase start` lifecycle:** manual prereq, documented in
+     `e2e/README.md`. Do **not** auto-start from global-setup in the
+     first iteration (adds complexity, risks spurious failures). Can
+     layer on later.
+
+   **Known assumptions (noted, low-risk):**
+   - Supabase CLI supports concurrent projects with distinct
+     `project_id` + ports. (Documented feature, used widely.)
+   - `supabase start` applies files in `supabase/migrations/` against
+     the stack's `postgres` DB on first boot. (Documented default.)
+   - The `avatars` bucket migration applies normally in this mode, so
+     commit 9 loses its "mirror bucket" complication.
+   - The GoTrue admin API is reachable at `${API_URL}/auth/v1/admin/*`
+     on the shifted port, same shape as today.
+
+   **Explicitly out of scope for commit 5:**
+   - Parallel Playwright workers. Still `workers: 1`. Per-worker DB
+     isolation would require per-worker DBs or stacks; separate future
+     work if the suite gets slow.
+   - CI workflow changes. Those land in commit 10.
+   - Auto-starting the e2e stack from global-setup.
 6. **Auth suite (tests 1–3).** Sign in, unauth redirect, sign out. Semantic
    selectors (`data-testid`, role, accessible name) only.
 7. **Team suite (tests 4–6).** Team creation, lineup edit + captain persist,
