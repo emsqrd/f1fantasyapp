@@ -123,6 +123,13 @@ Total: 9 tests, within the 10–15 ceiling.
 
 ## 4. Infrastructure — existing pieces to reuse
 
+> **Superseded by commit 5.** This section describes the split-DB topology
+> that commits 1–4 implemented (app data in `f1fantasy_e2e`, auth in the
+> shared dev stack's `postgres`). Commit 5 pivots to a dedicated e2e
+> Supabase stack under `e2e/supabase/`, which restores prod-faithful
+> single-DB topology. Re-read after commit 5 lands — this section will be
+> rewritten then.
+
 The repo already has the infrastructure this plan needs. This reshapes the
 commit sequence versus issue #131's original "new Supabase test project +
 docker-compose" framing:
@@ -156,6 +163,14 @@ Option B (test header in prod code) stays rejected for the same reasons as
 before — adds a backdoor to shipped code for marginal speed gain.
 
 ## 5. Database strategy — revised
+
+> **Superseded by commit 5.** See the note on §4 — commit 5 moves app
+> data out of the shared dev stack's `postgres` and into a dedicated
+> e2e Supabase stack where auth + app data share a single DB. The
+> workarounds below (`reseedTestUserProfiles`, manual `Accounts` +
+> `UserProfiles` inserts, "don't apply the profile-trigger migration")
+> go away once commit 5 ships. This section stays accurate for
+> commits 1–4 only.
 
 Use the local Supabase Postgres instance. Two databases on the same server:
 
@@ -265,32 +280,68 @@ Each commit self-contained: build + lint + tests + format green.
    `ASPNETCORE_ENVIRONMENT=Testing` and the e2e connection string), and
    injects `VITE_SUPABASE_*` + `VITE_F1_FANTASY_API` into the web
    `webServer` env so the prod-like frontend talks to the local stack.
-4. **Fixture helpers.** `e2e/fixtures/` with `seedMinimalGrid`,
+4. **Fixture helpers.** (done) `e2e/fixtures/` with `seedMinimalGrid`,
    `seedCurrentSeason`, `seedRaceWeekend({ raceDate, lockDeadline })`,
    `seedTeamForUser`, `seedLeague`. Grid/season/race helpers go direct to
    DB via the `pg` pool (no user-facing endpoints exist to create this
    data); team/league helpers call the real API via Playwright's `request`
    fixture with the test user's auth. Shape references: `TestDataBuilder.cs`
    in the integration test suite.
-5. **Auth suite (tests 1–3).** Sign in, unauth redirect, sign out. Semantic
+5. **Pivot to a dedicated e2e Supabase stack.** Replace the split-DB
+   topology (app data in `f1fantasy_e2e`, auth in `postgres` of the dev
+   stack) with a standalone Supabase CLI project at `e2e/supabase/`.
+   Prod-faithful single-DB layout: GoTrue's `auth.users` and the app's
+   `public.*` live in the same Postgres, so the profile-creation trigger
+   fires naturally and Storage policies/RLS become testable. Concretely:
+   - Add `e2e/supabase/config.toml` with `project_id = "f1-companion-api-e2e"`
+     and ports shifted so the dev and e2e stacks can coexist.
+   - Symlink `e2e/supabase/migrations/` → `api/supabase/migrations/` so
+     the profile trigger + avatars bucket migrations apply to the e2e
+     stack on `supabase start`.
+   - Drop `ensureE2eDatabaseExists` from `global-setup.ts`; `dotnet ef
+     database update` now runs against the e2e stack's `postgres` DB.
+   - Drop `reseedTestUserProfiles` and its `beforeEach` wiring. Adopt
+     per-test auth-user creation: each test (or `beforeAll` at file
+     scope, depending on what we measure) creates its own users via
+     GoTrue admin, trigger populates `Accounts` + `UserProfiles`, test
+     owns and discards its users. No shared `storageState`, no
+     pre-provisioned User A / User B constants.
+   - `e2e/README.md` prereq shifts from `cd api && supabase start` to
+     `cd e2e/supabase && supabase start`.
+   - Rewrite §4 (auth approach) and §5 (database strategy) of this plan
+     to reflect the new topology.
+
+   **Rationale.** The current split-DB topology is a custom workaround —
+   app data lives in a second DB specifically so the per-test truncate
+   doesn't nuke the user's dev data. That breaks the single-DB
+   invariant the profile trigger depends on, and forces a
+   `reseedTestUserProfiles` helper plus a `beforeEach` that every future
+   test file would have to remember. A standalone stack pays a
+   one-time setup cost (a `config.toml` + symlinked migrations) to
+   restore prod-faithful topology, eliminate the reseed ceremony, and
+   isolate test users + Storage buckets from dev. The Supabase CLI
+   supports multiple projects natively via `project_id` scoping, so this
+   is using the tool as designed rather than fighting it.
+6. **Auth suite (tests 1–3).** Sign in, unauth redirect, sign out. Semantic
    selectors (`data-testid`, role, accessible name) only.
-6. **Team suite (tests 4–6).** Team creation, lineup edit + captain persist,
+7. **Team suite (tests 4–6).** Team creation, lineup edit + captain persist,
    lock-deadline disabled state. Test 6 seeds a race with `RaceDate > now` and
    `LockDeadline < now`.
-7. **League + cross-context suite (tests 7, 9).** Two browser contexts; invite
+8. **League + cross-context suite (tests 7, 9).** Two browser contexts; invite
    URL round-trip; unauthenticated `/join/$token` → sign-up → create-team →
    join.
-8. **Avatar suite (test 8).** File upload to local Supabase Storage
-   (`avatars` bucket, mirrored via `supabase storage` CLI or a short setup
-   script in global-setup).
-9. **CI job + required check.** New `e2e` job in `.github/workflows/ci.yml`
-   using `supabase/setup-cli` + `supabase start` in the runner. Builds web
-   (`web:build`) and API (`dotnet publish -c Release`) before running
-   Playwright — optionally reuses the existing `api-docker` image rather than
-   rebuilding from source (discussed during implementation). Parallel with
-   existing jobs. Uploads `playwright-report/` + traces on failure. Branch
-   protection update is a manual step (documented in the commit message).
-10. **Docs.** Update root `CLAUDE.md` and `api/CLAUDE.md` (cross-reference the
+9. **Avatar suite (test 8).** File upload to local Supabase Storage
+   (`avatars` bucket, provisioned by the e2e stack's storage migration —
+   no separate mirroring step needed under the commit-5 topology).
+10. **CI job + required check.** New `e2e` job in `.github/workflows/ci.yml`
+    using `supabase/setup-cli` + `supabase start` (from `e2e/supabase/`)
+    in the runner. Builds web (`web:build`) and API (`dotnet publish -c
+    Release`) before running Playwright — optionally reuses the existing
+    `api-docker` image rather than rebuilding from source (discussed
+    during implementation). Parallel with existing jobs. Uploads
+    `playwright-report/` + traces on failure. Branch protection update
+    is a manual step (documented in the commit message).
+11. **Docs.** Update root `CLAUDE.md` and `api/CLAUDE.md` (cross-reference the
     new layer, mirror how #130 was documented). Add `e2e/README.md` covering
     run/debug/extend + selector discipline + the `supabase start` prerequisite.
 
