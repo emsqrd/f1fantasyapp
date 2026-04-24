@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-.NET 9 ASP.NET Core Minimal API for F1 Fantasy Sports with Supabase authentication and PostgreSQL database.
+.NET 10 ASP.NET Core Minimal API for F1 Fantasy Sports with Supabase authentication and PostgreSQL database.
 
 ## Essential Commands
 
@@ -75,6 +75,10 @@ Full API boot via `WebApplicationFactory<Program>` against a Testcontainers Post
 - **Run**: `npm run api:test:integration` from repo root (Docker Desktop required)
 - **Base class**: inherit `IntegrationTestBase` — resets the DB per test and exposes `Factory` + `WithDbAsync` helpers
 - **Auth**: prefer `factory.CreateAuthenticatedAsync()` over crafting `X-Test-User-Id` headers by hand
+
+## E2E Tests
+
+Playwright suite at `../e2e/` drives a prod-like web + API build against a dedicated local Supabase stack (`e2e/supabase/`, ports +100 from the dev stack). Owns cross-system failure modes only — CORS, cookie/auth flow, Supabase Storage wiring, critical user journeys. Validation matrices and branch logic belong in unit/integration, not here. See `../e2e/README.md` for the run prerequisite (`cd e2e/supabase && supabase start`), selector discipline, and per-test reset behavior.
 
 ## Configuration
 

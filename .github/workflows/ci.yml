@@ -88,3 +88,59 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  e2e:
+    name: E2E
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: |
+            e2e/package-lock.json
+            web/package-lock.json
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Restore dotnet tools
+        run: dotnet tool restore
+        working-directory: api
+      - name: Start E2E Supabase stack
+        run: supabase start
+        working-directory: e2e/supabase
+      - name: Install e2e deps
+        run: npm ci
+        working-directory: e2e
+      - name: Install web deps
+        run: npm ci
+        working-directory: web
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: e2e
+      - name: Run E2E tests
+        run: npm run e2e
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 14
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: e2e/test-results/
+          retention-days: 14
+      - name: Stop E2E Supabase stack
+        if: always()
+        run: supabase stop
+        working-directory: e2e/supabase

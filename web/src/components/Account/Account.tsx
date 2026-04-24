@@ -20,7 +20,7 @@ import { InlineError } from '../InlineError/InlineError';
 import { InlineSuccess } from '../InlineSuccess/InlineSuccess';
 import { LiveRegion } from '../LiveRegion/LiveRegion';
 import { LoadingButton } from '../LoadingButton/LoadingButton';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardHeader } from '../ui/card';
 
 /**
  * Get the route API for the account route to access loader data
@@ -128,7 +128,7 @@ export function Account() {
       <div className="w-full max-w-md space-y-4">
         <Card className="w-full max-w-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-2xl">Profile Information</CardTitle>
+            <h2 className="text-2xl leading-none font-semibold">Profile Information</h2>
             <AvatarUpload
               userId={user?.id || ''}
               currentAvatarUrl={userProfile?.avatarUrl || ''}
