@@ -64,7 +64,13 @@ test.describe('team', () => {
     await expect(page.getByText(`${alex.firstName} ${alex.lastName}`)).toBeVisible();
 
     // Swap Alex for Fabio in slot 0: remove, then pick from the sheet.
+    // Wait for the DELETE to settle before adding Fabio, otherwise the
+    // server's budget check for the add can still see Alex on the roster.
+    const removeResponse = page.waitForResponse(
+      (res) => /\/me\/team\/drivers\/\d+$/.test(res.url()) && res.request().method() === 'DELETE',
+    );
     await page.getByRole('button', { name: 'Remove driver' }).first().click();
+    await removeResponse;
     await expect(page.getByText(`${alex.firstName} ${alex.lastName}`)).toBeHidden();
 
     await page.getByRole('button', { name: 'Add Driver' }).click();
