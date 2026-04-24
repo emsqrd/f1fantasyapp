@@ -1,4 +1,4 @@
-import type { TestUser, TestUserKey } from './auth';
+import type { TestUser } from './auth';
 import { apiFetchJson } from './api';
 
 export interface SeededTeam {
@@ -22,7 +22,7 @@ export interface SeedTeamForUserOptions {
  * the same auth + budget path as production.
  */
 export async function seedTeamForUser(
-  user: TestUser | TestUserKey,
+  user: TestUser,
   options: SeedTeamForUserOptions = {},
 ): Promise<SeededTeam> {
   const team = await apiFetchJson<SeededTeam>('/teams', {

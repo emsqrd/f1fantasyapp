@@ -1,14 +1,15 @@
-import { getTestUser, type TestUser, type TestUserKey } from './auth';
+import type { TestUser } from './auth';
 import { readSupabaseEnv } from './supabase-env';
 
-const API_HOST = 'http://localhost:5077';
+// Matches API_PORT in playwright.config.ts — shifted +100 from api:watch's
+// default (5077) so the e2e API can run alongside a dev API.
+const API_HOST = 'http://localhost:5177';
 export const API_BASE_URL = `${API_HOST}/api`;
 
-const tokenCache = new Map<TestUserKey, string>();
+const tokenCache = new Map<string, string>();
 
-export async function getAccessToken(userOrKey: TestUser | TestUserKey): Promise<string> {
-  const user = typeof userOrKey === 'string' ? getTestUser(userOrKey) : userOrKey;
-  const cached = tokenCache.get(user.key);
+export async function getAccessToken(user: TestUser): Promise<string> {
+  const cached = tokenCache.get(user.id);
   if (cached) return cached;
 
   const env = readSupabaseEnv();
@@ -32,7 +33,7 @@ export async function getAccessToken(userOrKey: TestUser | TestUserKey): Promise
     throw new Error(`GoTrue password sign-in response missing access_token for ${user.email}.`);
   }
 
-  tokenCache.set(user.key, body.access_token);
+  tokenCache.set(user.id, body.access_token);
   return body.access_token;
 }
 
@@ -42,7 +43,7 @@ export function clearAccessTokenCache(): void {
 
 export interface ApiRequestInit extends Omit<RequestInit, 'body'> {
   body?: unknown;
-  user?: TestUser | TestUserKey;
+  user?: TestUser;
 }
 
 export async function apiFetch(path: string, init: ApiRequestInit = {}): Promise<Response> {

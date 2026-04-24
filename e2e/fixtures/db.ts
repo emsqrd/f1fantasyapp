@@ -1,11 +1,14 @@
 import { Pool, type PoolClient } from 'pg';
 
+// Connection settings for the dedicated E2E Supabase stack (e2e/supabase/).
+// Ports are shifted by +100 from the dev stack so both can run concurrently.
+// App data lives in the e2e stack's default `postgres` DB, sharing a schema
+// with GoTrue's `auth.users` — the profile-creation trigger fires naturally.
 export const SUPABASE_HOST = '127.0.0.1';
-export const SUPABASE_DB_PORT = 54322;
+export const SUPABASE_DB_PORT = 54422;
 export const SUPABASE_DB_USER = 'postgres';
 export const SUPABASE_DB_PASSWORD = 'postgres';
-
-export const E2E_DB_NAME = 'f1fantasy_e2e';
+export const E2E_DB_NAME = 'postgres';
 
 export const E2E_EF_CONNECTION_STRING = [
   `Host=${SUPABASE_HOST}`,

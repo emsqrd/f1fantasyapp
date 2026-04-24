@@ -2,8 +2,11 @@ import { defineConfig, devices } from '@playwright/test';
 import { E2E_EF_CONNECTION_STRING } from './fixtures/db';
 import { readSupabaseEnv } from './fixtures/supabase-env';
 
-const WEB_PORT = 5173;
-const API_PORT = 5077;
+// Ports shifted by +100 from the dev defaults (web:dev = 5173, api:watch =
+// 5077) so e2e webServers can run alongside dev servers — same rationale
+// as the e2e Supabase stack's +100 shift.
+const WEB_PORT = 5273;
+const API_PORT = 5177;
 const BASE_URL = `http://localhost:${WEB_PORT}`;
 const API_URL = `http://localhost:${API_PORT}`;
 

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { reseedTestUserProfiles } from '../fixtures/auth';
+import { createTestUser } from '../fixtures/auth';
 import { withE2eDb } from '../fixtures/db';
 import { resetDb } from '../fixtures/reset';
 import { seedCurrentSeason, seedMinimalGrid, seedRaceWeekend } from '../fixtures/seed';
@@ -9,7 +9,6 @@ import { seedLeague } from '../fixtures/league';
 test.describe('fixtures', () => {
   test.beforeEach(async () => {
     await resetDb();
-    await reseedTestUserProfiles();
   });
 
   test('seedCurrentSeason inserts a season spanning now', async () => {
@@ -83,6 +82,7 @@ test.describe('fixtures', () => {
   });
 
   test('seedTeamForUser creates a team and fills roster slots via the API', async () => {
+    const user = await createTestUser();
     const season = await seedCurrentSeason();
     const grid = await seedMinimalGrid({ seasonId: season.id });
     // Captain selection targets the upcoming race, so we need one.
@@ -92,7 +92,7 @@ test.describe('fixtures', () => {
       lockDeadline: new Date(Date.now() + 6 * 86_400_000),
     });
 
-    const team = await seedTeamForUser('userA', {
+    const team = await seedTeamForUser(user, {
       name: 'Alpha Squad',
       driverIds: grid.drivers.slice(0, 5).map((d) => d.id),
       constructorIds: grid.constructors.slice(0, 2).map((c) => c.id),
@@ -118,15 +118,16 @@ test.describe('fixtures', () => {
   });
 
   test('seedLeague creates a league owned by the given user', async () => {
+    const user = await createTestUser();
     // League creation requires the owner to already have a team.
     const season = await seedCurrentSeason();
     const grid = await seedMinimalGrid({ seasonId: season.id });
-    await seedTeamForUser('userA', {
+    await seedTeamForUser(user, {
       driverIds: grid.drivers.slice(0, 5).map((d) => d.id),
       constructorIds: grid.constructors.slice(0, 2).map((c) => c.id),
     });
 
-    const league = await seedLeague('userA', { name: 'Alpha Cup', isPrivate: true });
+    const league = await seedLeague(user, { name: 'Alpha Cup', isPrivate: true });
 
     expect(league.id).toBeGreaterThan(0);
     expect(league.name).toBe('Alpha Cup');

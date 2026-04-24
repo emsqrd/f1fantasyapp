@@ -1,4 +1,4 @@
-import type { TestUser, TestUserKey } from './auth';
+import type { TestUser } from './auth';
 import { apiFetchJson } from './api';
 
 export interface SeededLeague {
@@ -19,7 +19,7 @@ export interface SeedLeagueOptions {
 }
 
 export async function seedLeague(
-  owner: TestUser | TestUserKey,
+  owner: TestUser,
   options: SeedLeagueOptions = {},
 ): Promise<SeededLeague> {
   return apiFetchJson<SeededLeague>('/leagues/', {
