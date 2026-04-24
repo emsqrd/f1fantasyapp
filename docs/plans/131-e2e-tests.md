@@ -323,8 +323,8 @@ Each commit self-contained: build + lint + tests + format green.
    supports multiple projects natively via `project_id` scoping, so this
    is using the tool as designed rather than fighting it.
 
-   **Critical assumption — verified.** The pivot's value depends on the
-   profile-creation trigger
+   **Verified precondition.** The pivot depends on the profile-creation
+   trigger
    (`api/supabase/migrations/20260108000000_create_user_profile_trigger.sql`)
    firing when rows are inserted into `auth.users` via the GoTrue admin
    API. Confirmed in both the trigger's SQL (`AFTER INSERT … FOR EACH
@@ -333,7 +333,7 @@ Each commit self-contained: build + lint + tests + format green.
    and their `Accounts` + `UserProfiles` rows exist in the dev
    `postgres` DB with the `DisplayName` values that only the trigger
    function populates from `raw_user_meta_data`. Nothing else writes
-   those rows. The trigger fires for admin-API inserts. Safe to rely on.
+   those rows. The trigger fires for admin-API inserts.
 
    **Decisions pre-staked (don't re-litigate unless something breaks):**
    - **Ports:** shift dev's defaults by +100 → `54421/54422/54423/54424`
