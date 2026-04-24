@@ -488,9 +488,22 @@ Each commit self-contained: build + lint + tests + format green.
 8. **League + cross-context suite (tests 7, 9).** Two browser contexts; invite
    URL round-trip; unauthenticated `/join/$token` → sign-up → create-team →
    join.
+
+   **Promote-to-helper check (applies to commits 8 and 9).** Before writing,
+   skim `team.spec.ts` from commit 7 for patterns on their 3rd occurrence —
+   if any of these repeat here, extract to `e2e/fixtures/` in this commit,
+   don't defer: (a) driver-card scoping by name (`filter({ hasText: '...' })`
+   → `driverCard(driver)` helper), (b) relative date math for race weekends
+   (`new Date(now.getTime() + N * 86_400_000)` → `futureRaceWeekend` /
+   `lockedRaceWeekend` helpers), (c) sign-in-via-UI prelude (already 2x in
+   commit 7 — the 3rd occurrence here is the trigger; extract to a
+   `signInAs(page, user)` helper). Non-null assertions on grid destructuring
+   (`alex!`, `bruno!`) are a separate readability nit — address by adding a
+   length assertion at the destructure site, not by changing the seed helper.
 9. **Avatar suite (test 8).** File upload to local Supabase Storage
    (`avatars` bucket, provisioned by the e2e stack's storage migration —
-   no separate mirroring step needed under the commit-5 topology).
+   no separate mirroring step needed under the commit-5 topology). Same
+   promote-to-helper check as commit 8 applies here.
 10. **CI job + required check.** New `e2e` job in `.github/workflows/ci.yml`
     using `supabase/setup-cli` + `supabase start` (from `e2e/supabase/`)
     in the runner. Builds web (`web:build`) and API (`dotnet publish -c
