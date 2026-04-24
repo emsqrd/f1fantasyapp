@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 import { createTestUser } from '../fixtures/auth';
 import { resetDb } from '../fixtures/reset';
 import { seedCurrentSeason, seedMinimalGrid } from '../fixtures/seed';
+import { signInAs } from '../fixtures/session';
 import { seedTeamForUser } from '../fixtures/team';
 
 test.describe('auth', () => {
@@ -19,10 +20,7 @@ test.describe('auth', () => {
       constructorIds: grid.constructors.slice(0, 2).map((c) => c.id),
     });
 
-    await page.goto('/sign-in');
-    await page.getByLabel('Email').fill(user.email);
-    await page.getByLabel('Password').fill(user.password);
-    await page.locator('form').getByRole('button', { name: 'Sign In' }).click();
+    await signInAs(page, user);
 
     await expect(page).toHaveURL('/leagues');
     await expect(page.getByRole('heading', { name: 'My Leagues' })).toBeVisible();
@@ -46,10 +44,7 @@ test.describe('auth', () => {
       constructorIds: grid.constructors.slice(0, 2).map((c) => c.id),
     });
 
-    await page.goto('/sign-in');
-    await page.getByLabel('Email').fill(user.email);
-    await page.getByLabel('Password').fill(user.password);
-    await page.locator('form').getByRole('button', { name: 'Sign In' }).click();
+    await signInAs(page, user);
     await expect(page).toHaveURL('/leagues');
 
     await page.getByRole('button', { name: 'Account menu' }).click();

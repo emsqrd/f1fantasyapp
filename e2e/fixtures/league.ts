@@ -32,3 +32,23 @@ export async function seedLeague(
     },
   });
 }
+
+export interface SeededLeagueInvite {
+  token: string;
+  shareableUrl: string;
+}
+
+/**
+ * Creates (or re-uses) an invite for a league via the real owner-only
+ * endpoint. Use when a test needs an invite token up front without
+ * driving the owner through the invite dialog UI.
+ */
+export async function seedLeagueInvite(
+  owner: TestUser,
+  leagueId: number,
+): Promise<SeededLeagueInvite> {
+  return apiFetchJson<SeededLeagueInvite>(`/leagues/${leagueId}/invite`, {
+    method: 'POST',
+    user: owner,
+  });
+}

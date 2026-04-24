@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { createTestUser } from '../fixtures/auth';
 import { resetDb } from '../fixtures/reset';
 import { seedCurrentSeason, seedMinimalGrid, seedRaceWeekend } from '../fixtures/seed';
+import { signInAs } from '../fixtures/session';
 import { seedTeamForUser } from '../fixtures/team';
 
 test.describe('team', () => {
@@ -56,10 +57,7 @@ test.describe('team', () => {
       constructorIds: grid.constructors.slice(0, 2).map((c) => c.id),
     });
 
-    await page.goto('/sign-in');
-    await page.getByLabel('Email').fill(user.email);
-    await page.getByLabel('Password').fill(user.password);
-    await page.locator('form').getByRole('button', { name: 'Sign In' }).click();
+    await signInAs(page, user);
     await expect(page).toHaveURL('/leagues');
 
     await page.goto('/my-team');
@@ -114,10 +112,7 @@ test.describe('team', () => {
       lockDeadline: new Date(now.getTime() - 60 * 60_000),
     });
 
-    await page.goto('/sign-in');
-    await page.getByLabel('Email').fill(user.email);
-    await page.getByLabel('Password').fill(user.password);
-    await page.locator('form').getByRole('button', { name: 'Sign In' }).click();
+    await signInAs(page, user);
     await expect(page).toHaveURL('/leagues');
 
     await page.goto('/my-team');
