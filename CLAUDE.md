@@ -9,7 +9,7 @@ F1 Fantasy Sports platform where users build fantasy F1 teams, join leagues, and
 **Architecture:**
 
 ```
-React SPA (Vite) → .NET 9 Minimal API → PostgreSQL
+React SPA (Vite) → .NET 10 Minimal API → PostgreSQL
                 ↓
             Supabase Auth
 ```
@@ -17,7 +17,7 @@ React SPA (Vite) → .NET 9 Minimal API → PostgreSQL
 **Tech Stack:**
 
 - **Frontend:** React 19, TypeScript, TanStack Router, Tailwind CSS v4, shadcn/ui
-- **Backend:** .NET 9 ASP.NET Core Minimal API, Entity Framework Core
+- **Backend:** .NET 10 ASP.NET Core Minimal API, Entity Framework Core
 - **Database:** PostgreSQL
 - **Services:** Supabase (authentication), Sentry (monitoring)
 
@@ -106,14 +106,14 @@ Three test types, each owning failure modes only it can see. Coverage is measure
 
 Ask: **"What's the smallest test that could catch this bug?"** Write that one.
 
-| Change                                                             | Primary layer           |
-| ------------------------------------------------------------------ | ----------------------- |
-| Business rule, calculation, mapping, validation                    | Unit                    |
-| New/changed SQL, EF query, migration                               | Integration (real DB)   |
-| New endpoint, auth rule, middleware, model binding                 | Integration (HTTP)      |
-| React component rendering, state, user interaction                 | Unit (component test)   |
-| Frontend routing + data fetching with mocked API                   | Frontend integration    |
-| New user-facing flow, auth/session wiring, deploy-affecting config | E2E                     |
+| Change                                                             | Primary layer         |
+| ------------------------------------------------------------------ | --------------------- |
+| Business rule, calculation, mapping, validation                    | Unit                  |
+| New/changed SQL, EF query, migration                               | Integration (real DB) |
+| New endpoint, auth rule, middleware, model binding                 | Integration (HTTP)    |
+| React component rendering, state, user interaction                 | Unit (component test) |
+| Frontend routing + data fetching with mocked API                   | Frontend integration  |
+| New user-facing flow, auth/session wiring, deploy-affecting config | E2E                   |
 
 ### Overlap rules
 
@@ -149,7 +149,8 @@ Overlap is correct when each layer catches a distinct failure mode. It's waste w
 ## Repository Structure
 
 - `web/` - React/TypeScript frontend with Vite (see web/CLAUDE.md)
-- `api/` - .NET 9 ASP.NET Core API backend (see api/CLAUDE.md)
+- `api/` - .NET 10 ASP.NET Core API backend (see api/CLAUDE.md)
+- `e2e/` - Playwright browser suite against a prod-like local build (see e2e/README.md)
 
 ## Quick Start
 
@@ -168,11 +169,16 @@ npm run api:watch    # API with hot reload (preferred over api:run)
 ### Testing
 
 ```bash
-npm run test:all          # Run all tests
-npm run web:test          # Frontend tests
-npm run web:test:watch    # Frontend tests in watch mode
-npm run web:coverage      # Frontend test coverage
-npm run api:test          # Backend tests
+npm run test:all               # Frontend + backend (unit + integration). Does not run e2e.
+npm run web:test               # Frontend tests
+npm run web:test:watch         # Frontend tests in watch mode
+npm run web:coverage           # Frontend test coverage
+npm run api:test               # Backend unit + integration (Testcontainers Postgres; Docker required)
+npm run api:test:unit          # Backend unit tests only
+npm run api:test:integration   # Backend integration tests only
+npm run e2e:install            # Install Playwright deps + Chromium (run once)
+npm run e2e                    # E2E suite (requires `cd e2e/supabase && supabase start` first)
+npm run e2e:ui                 # Playwright UI mode for debugging
 ```
 
 ### Building
@@ -204,6 +210,10 @@ Open this folder in VSCode and use:
 - **Debugging** (F5)
   - "Full Stack (Web + API)" - Debug both simultaneously
 
+## Local Services Topology
+
+See `README.md` → "Local Services Topology" for the dev vs e2e stack layout, port-shift rule, and migration-sharing details. Quick recall: dev processes use Supabase `54321–54324` / web `5173` / API `5077`; e2e processes are all shifted by +100; `api/supabase/migrations/` is the source of truth and e2e symlinks to it.
+
 ## Production Infrastructure
 
 Hosted on Fly.io + Supabase (free tier).
@@ -227,6 +237,8 @@ Hosted on Fly.io + Supabase (free tier).
 
 - `web/CLAUDE.md` - Frontend architecture, patterns, and conventions
 - `api/CLAUDE.md` - Backend architecture, patterns, and conventions
+- `api/F1CompanionApi.IntegrationTests/README.md` - Backend integration test fixture + auth helpers
+- `e2e/README.md` - Playwright suite: prerequisites, architecture, selector discipline
 - `docs/research/` - Research findings and design specs
 - `docs/mockups/` - Static HTML mockups (self-contained, design tokens from `web/src/index.css`)
 - `docs/plans/` - Feature implementation plans (written during plan mode)

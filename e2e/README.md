@@ -2,8 +2,10 @@
 
 End-to-end browser tests for the F1 Fantasy app. Runs Playwright against a
 prod-like build of the web client (Vite preview), backed by a dedicated
-Supabase stack at `e2e/supabase/` that runs alongside the dev stack in
-`api/supabase/`.
+Supabase stack at `e2e/supabase/`.
+
+See root `CLAUDE.md` → "Local Services Topology" for how this stack relates
+to the dev stack and the port-shift rule.
 
 ## Prerequisites
 
@@ -14,10 +16,7 @@ Supabase stack at `e2e/supabase/` that runs alongside the dev stack in
    cd e2e/supabase && supabase start
    ```
 
-   This is a separate Supabase project from the one under `api/supabase/`
-   (dev). Both can run concurrently — every port is shifted by +100 in
-   `e2e/supabase/config.toml`. The harness fails fast if this stack isn't
-   reachable.
+   The harness fails fast if this stack isn't reachable.
 
 3. **.NET SDK** with the `dotnet-ef` tool (used by global setup to apply EF
    migrations to the e2e stack's Postgres).
@@ -39,39 +38,24 @@ npm run e2e:ui          # Playwright UI for interactive debugging
 
 ## Architecture
 
-- **Two Supabase stacks side-by-side.** `api/supabase/` is the dev stack
-  (ports `54321/54322/54323/54324`). `e2e/supabase/` is the test stack
-  (ports `54421/54422/54423/54424`). Dev work and test runs never touch the
-  same Postgres.
-- **Single DB layout.** App data (`public.*`) and GoTrue auth
-  (`auth.users`) live in the same database — prod-faithful. The
-  `handle_new_user` trigger fires on `auth.users` insert and populates
-  `Accounts` + `UserProfiles` in the same transaction.
-- **Migrations are shared via symlink.** `e2e/supabase/migrations` →
-  `../../api/supabase/migrations`. The storage-bucket + profile-trigger
-  migrations apply to both stacks verbatim. A `config.toml` drift check
-  (`tests/_infra/config-sync.spec.ts`) fails loudly if the two configs
-  diverge on anything other than ports / `project_id`.
 - **Web + API servers.** Playwright's `webServer` block starts two
   processes before tests run — a prod-like web build served by `vite
-preview` on `:5273`, and a published-Release `dotnet` API on `:5177`
-  wired to the e2e stack. Ports are shifted by +100 from the dev
-  defaults (`web:dev = 5173`, `api:watch = 5077`) so the e2e stack can
-  run alongside dev servers — same rationale as the +100 Supabase port
-  shift. `reuseExistingServer: false` guards against an earlier dev
-  process on the e2e ports silently serving tests against the wrong
+preview`, and a published-Release `dotnet` API — both wired to the e2e
+  Supabase stack. `reuseExistingServer: false` guards against an earlier
+  dev process on the e2e ports silently serving tests against the wrong
   stack.
 - **Per-test users.** Each test creates whatever users it needs via
-  `createTestUser()` (calls GoTrue admin API, trigger populates profile
-  rows). No pre-provisioned users, no shared `storageState`. Collision-free
-  by construction: emails are `test-${randomUUID()}@e2e.local`.
-- **Per-test isolation.** `fixtures/reset.ts` truncates `auth.users
-CASCADE` (sweeps all auth._ state), `storage.objects`, and every
-  `public._`table except`\_\_EFMigrationsHistory`in a single statement.
-Storage buckets, migration-tracker tables, and Supabase internals stay
-put. Uploaded avatar *bytes* accumulate slowly in the storage-api
-container's Docker volume — recycle via`supabase stop && supabase
-  start`from`e2e/supabase/` if it ever matters.
+  `createTestUser()` (calls GoTrue admin API, trigger populates
+  `Accounts` + `UserProfiles` in the same transaction). No
+  pre-provisioned users, no shared `storageState`. Collision-free by
+  construction: emails are `test-${randomUUID()}@e2e.local`.
+- **Per-test isolation.** `fixtures/reset.ts` truncates `auth.users CASCADE`
+  (sweeps all `auth.*` state), `storage.objects`, and every `public.*`
+  table except `__EFMigrationsHistory` in a single statement. Storage
+  buckets, migration-tracker tables, and Supabase internals stay put.
+  Uploaded avatar _bytes_ accumulate slowly in the storage-api container's
+  Docker volume — recycle via `supabase stop && supabase start` from
+  `e2e/supabase/` if it ever matters.
 - **Seeding.** Each test declares its own data in `beforeEach` — minimal
   grid, season, race. Helpers live in `fixtures/seed.ts` (direct-DB:
   season, grid, race weekend), `fixtures/team.ts` and `fixtures/league.ts`
@@ -103,27 +87,20 @@ container's Docker volume — recycle via`supabase stop && supabase
 
 ## Layout
 
-```
-e2e/
-├── playwright.config.ts   # Playwright configuration + web/API webServers
-├── global-setup.ts        # Verifies stack reachable + applies EF migrations
-├── supabase/              # Dedicated e2e Supabase project (ports +100)
-│   ├── config.toml        # Shifted ports; in-sync with api/supabase/config.toml
-│   └── migrations -> ../../api/supabase/migrations
-├── fixtures/
-│   ├── db.ts              # pg pool + connection constants
-│   ├── reset.ts           # Per-test truncate (auth + storage + public)
-│   ├── supabase-env.ts    # Reads `supabase status -o json` from e2e/supabase/
-│   ├── auth.ts            # createTestUser via GoTrue admin
-│   ├── api.ts             # Authenticated fetch helpers (JWT via GoTrue)
-│   ├── seed.ts            # Season, grid, race-weekend helpers (direct DB)
-│   ├── team.ts            # seedTeamForUser (via API)
-│   └── league.ts          # seedLeague (via API)
-└── tests/
-    ├── _infra/
-    │   └── config-sync.spec.ts  # config.toml drift check
-    └── *.spec.ts
-```
+Feature specs live in `tests/*.spec.ts`. Meta-tests that guard the harness
+itself (e.g. the `config.toml` drift check) live under `tests/_infra/` —
+the underscore keeps them grouped and visually distinct from user-flow
+specs. Shared helpers live in `fixtures/`.
+
+## CI
+
+The `e2e` job in `.github/workflows/ci.yml` runs the suite on every push
+and PR. Steps: `supabase/setup-cli` → `supabase start` from
+`e2e/supabase/` → `npm ci` + `npx playwright install` → `npm run e2e`.
+On failure, `playwright-report/` and `test-results/` (traces, videos,
+screenshots) are uploaded as artifacts with 14-day retention. The stack
+is stopped in an `if: always()` step. Add `e2e` to branch protection's
+required checks after the first green run.
 
 ## Escape hatch: editing an already-applied migration
 

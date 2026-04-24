@@ -1,6 +1,6 @@
 # F1 Companion API
 
-.NET 9 ASP.NET Core Minimal API for F1 Fantasy Sports application.
+.NET 10 ASP.NET Core Minimal API for F1 Fantasy Sports application.
 
 ## Features
 
@@ -14,7 +14,7 @@
 
 ### Prerequisites
 
-- .NET 9 SDK
+- .NET 10 SDK
 - PostgreSQL database
 - Sentry account (for error tracking)
 
@@ -84,7 +84,7 @@ dotnet test
 
 ## Key Technologies
 
-- .NET 9 with C# 13
+- .NET 10 with C# 14
 - ASP.NET Core Minimal APIs
 - Entity Framework Core 9 + PostgreSQL
 - Supabase (Authentication)
