@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { afterEach, vi } from 'vitest';
+import { setupServer } from 'msw/node';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 
 vi.stubEnv('VITE_SUPABASE_URL', 'http://localhost');
 vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'test-anon-key');
@@ -14,7 +15,13 @@ class MockResizeObserver {
 }
 globalThis.ResizeObserver = MockResizeObserver;
 
-// Automatically cleanup after each test
+export const server = setupServer();
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+
 afterEach(() => {
   cleanup();
+  server.resetHandlers();
 });
+
+afterAll(() => server.close());
