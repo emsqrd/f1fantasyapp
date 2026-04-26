@@ -46,7 +46,7 @@ export default defineConfig(({ mode }) => {
           '**/*.d.ts',
           'src/components/ui',
           'src/demos',
-          'src/test-utils',
+          'src/tests/**',
         ],
       },
     },

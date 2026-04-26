@@ -1,5 +1,5 @@
-import { createMockTeam } from '@/test-utils';
-import { createMockLeague } from '@/test-utils/mockFactories';
+import { createMockTeam } from '@/tests/test-utils';
+import { createMockLeague } from '@/tests/test-utils/mockFactories';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

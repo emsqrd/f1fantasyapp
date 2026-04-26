@@ -1,6 +1,7 @@
 import type { League } from '@/contracts/League';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team, TeamConstructor, TeamDriver } from '@/contracts/Team';
+import type { UserProfile } from '@/contracts/UserProfile';
 
 /**
  * Test utility: Creates a mock Driver with sensible defaults.
@@ -312,4 +313,22 @@ export function createMockLeagueList(
       ...overridesFn?.(index),
     });
   });
+}
+
+/**
+ * Test utility: Creates a mock UserProfile with sensible defaults.
+ *
+ * @example
+ * const profile = createMockUserProfile({ displayName: 'Ada Lovelace' });
+ */
+export function createMockUserProfile(overrides: Partial<UserProfile> = {}): UserProfile {
+  return {
+    id: 1,
+    email: 'test.user@example.com',
+    firstName: 'Test',
+    lastName: 'User',
+    displayName: 'Test User',
+    avatarUrl: '',
+    ...overrides,
+  };
 }

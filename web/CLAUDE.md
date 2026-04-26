@@ -146,7 +146,7 @@ function LeagueComponent() {
 
 See root `CLAUDE.md` `## Testing Strategy` for cross-cutting rules (unit vs integration vs E2E, anti-patterns). This section covers frontend-specific layering within the unit/component-test level.
 
-**Files:** `src/setupTests.ts`, `src/test-utils/mockFactories.ts`
+**Files:** `src/setupTests.ts`, `src/tests/test-utils/mockFactories.ts`
 
 **Layers — each owns its own responsibilities:**
 
@@ -189,7 +189,7 @@ const context = { auth: { user: null, loading: false }, teamContext: { hasTeam: 
 await expect(requireAuth(context)).rejects.toThrow();
 ```
 
-**Mock factories:** `createMockTeam`, `createMockDriver` from `@/test-utils`.
+**Mock factories:** `createMockTeam`, `createMockDriver` from `@/tests/test-utils`.
 
 **Reference docs** (RTL, Vitest, TanStack Router testing): `/testing-library/react-testing-library`, `/vitest-dev/vitest`, `/facebook/react`, `/tanstack/router`.
 
@@ -252,7 +252,7 @@ src/
 │   └── router-context.ts # Router context types
 ├── services/           # API service layer
 ├── validations/        # Zod schemas for forms
-├── test-utils/         # Mock factories & test helpers
+├── tests/              # Integration tests + shared test helpers (test-utils/)
 ├── router.tsx          # All route definitions
 ├── main.tsx            # App entry point (Sentry init here)
 └── InnerApp.tsx        # Router provider wrapper

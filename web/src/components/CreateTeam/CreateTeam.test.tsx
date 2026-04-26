@@ -1,6 +1,6 @@
 import { TeamProvider } from '@/contexts/TeamContext.tsx';
 import * as teamService from '@/services/teamService';
-import { createMockTeam } from '@/test-utils';
+import { createMockTeam } from '@/tests/test-utils';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type React from 'react';

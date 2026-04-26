@@ -2,7 +2,7 @@ import type { RaceWeekend } from '@/contracts/RaceWeekend';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team as TeamType } from '@/contracts/Team';
 import { setCaptain } from '@/services/teamService';
-import { createMockConstructor, createMockDriver, createMockTeam } from '@/test-utils';
+import { createMockConstructor, createMockDriver, createMockTeam } from '@/tests/test-utils';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

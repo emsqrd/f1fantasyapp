@@ -1,6 +1,6 @@
 import type { Constructor } from '@/contracts/Role';
 import { apiClient } from '@/lib/api';
-import { createMockConstructorList } from '@/test-utils/mockFactories';
+import { createMockConstructorList } from '@/tests/test-utils/mockFactories';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getConstructors } from './constructorService';
