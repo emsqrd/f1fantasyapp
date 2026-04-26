@@ -52,11 +52,12 @@ Provide the test-utils all integration tests will lean on, plus the coverage twe
 
 **Changes:**
 
-- `web/src/tests/test-utils/renderWithRouter.tsx` (new) — exports `renderWithRouter({ routes, initialEntry, auth })`:
-  - `routes` is a route tree (root + descendants). Internally builds the router via `createRouter({ routeTree, history: createMemoryHistory({ initialEntries: [initialEntry] }) })`.
+- `web/src/tests/test-utils/renderWithRouter.tsx` (new) — exports `renderWithRouter({ routeTree, initialEntry, auth })`:
+  - `routeTree` is a route tree (root + descendants). Internally builds the router via `createRouter({ routeTree, history: createMemoryHistory({ initialEntries: [initialEntry] }) })`.
   - Wraps `RouterProvider` in `AuthContext.Provider value={auth}`.
   - Returns RTL's `render(...)` result so callers can use `screen`, `findByRole`, etc.
   - `auth` is typed as `AuthContextType`. Callers supply the full shape; helper does not provide defaults — keeps the harness honest about what each test is asserting.
+  - **Note:** the harness gains a required `routerContext: Omit<RouterContext, 'auth'>` option in commit 3 once we wire production guards. Originally added without it; revised before commit 3 landed because guard wiring needs router-context auth.
 - `web/src/tests/test-utils/mockFactories.ts` — add `createMockUserProfile(overrides: Partial<UserProfile> = {}): UserProfile` returning sensible defaults aligned with the existing factory pattern. Match the `UserProfile` contract: `id`, `email`, `firstName`, `lastName`, `displayName`, `avatarUrl`.
 - `web/src/tests/test-utils/index.ts` — re-export `renderWithRouter` and `createMockUserProfile`.
 - Move pre-existing `web/src/test-utils/` → `web/src/tests/test-utils/` so `tests/` holds both the integration suite and shared helpers as siblings (otherwise `tests/` would have a single `integration/` child). Rewrites `@/test-utils` → `@/tests/test-utils` across the existing 21 import sites.
@@ -73,21 +74,28 @@ Provide the test-utils all integration tests will lean on, plus the coverage twe
 
 The `/account` flow validates the layer end-to-end. Real `Account` + real `userProfileService` + real `apiClient` + MSW + real router. No `vi.mock` of `@tanstack/react-router`, no service-module mock.
 
-**Constraint:** the `Account` component looks up loader data with `getRouteApi('/_authenticated/account')`. The test must reproduce that route ID. Cleanest approach: import `authenticatedLayoutRoute` and `accountRoute` from `web/src/router.tsx` and compose them as children of a fresh `createRootRoute()`. That guarantees the full route ID `/_authenticated/account` matches what the component asks for, and the test exercises the production loader/component/errorComponent wiring as written. (If `authenticatedLayoutRoute`'s `beforeLoad: requireAuth` blocks rendering during the test because router context isn't authenticated, fall back to defining a local pathless `createRoute({ id: '_authenticated', ... })` layout without the guard, then reuse `accountRoute`'s loader, component, and errorComponent inline. Pick whichever works; auth is a precondition at the React level via `AuthContext.Provider`, not the route-context level, per the issue.)
+**Constraint:** the `Account` component looks up loader data with `getRouteApi('/_authenticated/account')`. The test must reproduce that route ID.
+
+**Approach taken:** the production `authenticatedLayoutRoute` and `accountRoute` are not exported from `web/src/router.tsx`, so we mirror them inline. The test builds a route tree with `createRootRouteWithContext<RouterContext>()`, a pathless `_authenticated` layout that runs the **real** `requireAuth` guard, and an `account` child whose `loader`, `component`, and `errorComponent` mirror `accountRoute`. This reproduces the production wiring (guard → loader → component → errorComponent) end-to-end. Reusing the production routes directly would have required exporting them from `router.tsx` solely for tests, which has its own smell.
+
+**`renderWithRouter` extension:** the helper accepts a required `routerContext: Omit<RouterContext, 'auth'>` so `auth` flows to both the React tree (via `AuthContext.Provider`) and the router context (so guards see the same value) from a single source. Rationale: dropping the guard at the route-context level (initial plan) would have established a precedent for future flow tests to skip guard wiring entirely — exactly the kind of drift the layer is meant to catch. Wiring it here sets the right reference shape.
 
 **File:** `web/src/tests/integration/account.integration.test.tsx`
 
 **Cases:**
 
-1. **Stub success** — `server.use(http.get('http://localhost/api/me/profile', () => HttpResponse.json(createMockUserProfile({ displayName: 'Ada Lovelace' }))))`. Render with `renderWithRouter({ routes: <accountRouteTree>, initialEntry: '/account', auth: authedAuth })`. Assert `findByDisplayValue('Ada Lovelace')` (or another visible profile field) appears — proves loader → component data flow.
-2. **500 error path** — `server.use(http.get('http://localhost/api/me/profile', () => new HttpResponse(null, { status: 500 })))`. Render same harness. Assert `findByRole('heading', { name: /something went wrong/i })` appears — proves the route's `errorComponent` (ErrorFallback) renders on loader failure.
+1. **Stub success** — `` server.use(http.get(`${API_BASE}/me/profile`, () => HttpResponse.json(createMockUserProfile({ displayName: 'Ada Lovelace' })))) ``. Render with `renderWithRouter({ routeTree, initialEntry: '/account', auth: authedAuth, routerContext: baseRouterContext })`. Assert `findByDisplayValue('Ada Lovelace')` — proves guard → loader → component data flow.
+2. **500 error path** — `` server.use(http.get(`${API_BASE}/me/profile`, () => new HttpResponse(null, { status: 500 }))) ``. Render same harness. Assert `findByRole('heading', { name: /something went wrong/i })` — proves the route's `errorComponent` (ErrorFallback) renders on loader failure.
 
-**Auth value:** build a `mockAuthContext: AuthContextType` with `user`, `session` populated as `{} as User` / `{} as Session` (the test only needs the React-level precondition; apiClient reads its token from supabase, not auth context), `loading: false`, `isAuthTransitioning: false`, and the four function fields as `vi.fn()`. Reuse the pattern already in `Account.test.tsx` lines 74–84.
+**Auth value:** build an `authedAuth: AuthContextType` with `user: { id: 'user-123' } as User`, `session: {} as Session`, `loading: false`, `isAuthTransitioning: false`, and the four function fields as `vi.fn()`. The truthy `user` satisfies `requireAuth`'s `context.auth.user` check.
+
+**Router context:** build `baseRouterContext: Omit<RouterContext, 'auth'>` with a stubbed `TeamContextType` (`myTeamId: null`, `hasTeam: false`, `setMyTeamId: vi.fn()`, `refreshMyTeam: vi.fn()`) plus `team: null`, `profile: null`, `currentSeason: null`. Future tests that exercise `requireTeam` will populate `team`/`teamContext.myTeamId` accordingly.
 
 **Verification:**
 
 - `npm run web:test` — new test passes alongside the existing suite. No regressions.
-- Manually toggle the success-handler URL to a wrong path — confirm the test fails with MSW's "unhandled request" error pointing at `http://localhost/api/me/profile`. This proves strict mode is active and the assertion isn't a false positive.
+- Toggle the success-handler URL to a wrong path — confirm the test fails with MSW's "unhandled request" error pointing at `http://localhost/api/me/profile`. Proves strict mode is active and the assertion isn't a false positive.
+- Set `authedAuth.user = null` — confirm the success test fails because `requireAuth` redirects and `Account` never mounts. Proves the guard is actually executing, not silently passing.
 
 ---
 
@@ -97,22 +105,25 @@ Make the convention discoverable and give focused-iteration ergonomics for writi
 
 **Changes:**
 
-- `web/CLAUDE.md` — add a section under `### Frontend Test Layering` (or as a sibling section, "Frontend Integration Tests"):
-  - Layer location: `src/tests/integration/<flow>.integration.test.tsx`.
-  - Naming: by user flow, not by component or page.
-  - The `renderWithRouter` helper signature and a one-paragraph example.
-  - When to reach for it vs. unit vs. E2E (mirror the framing in root `CLAUDE.md` `## Testing Strategy` — don't restate the table).
-  - Auth as React-level precondition only — `AuthContext.Provider` is for component-tree auth checks; `apiClient` pulls its bearer token from `supabase.auth.getSession()`, so handlers should not assert on `Authorization`.
-  - Mock at the network layer (MSW), not at service modules.
-  - Per-test handler overrides via `server.use(...)` from the exported `server` in `setupTests.ts`.
+- `web/CLAUDE.md` — new "Frontend Integration Tests" sibling section after `### Frontend Test Layering`:
+  - Layer location: `src/tests/integration/<flow>.integration.test.tsx`. Naming by user flow, not component.
+  - Stack summary: Vitest + jsdom + MSW at the `fetch` boundary, strict mode (`onUnhandledRequest: 'error'`), handler reset per test.
+  - Reference test pointer: `account.integration.test.tsx` is the shape to copy.
+  - Route trees: `createRootRouteWithContext<RouterContext>()`, wire real guards on layouts, mirror loader/component/errorComponent inline (production routes aren't exported from `router.tsx`).
+  - Auth: passed once via `renderWithRouter`'s `auth` field, wired to both the React provider and the router context. `apiClient` pulls bearer from supabase, not auth context — handlers must not assert on `Authorization`. Defer Supabase session seeding until a test needs it.
+  - MSW conventions: build URLs from `API_BASE` exported by `setupTests.ts`. Per-test handlers via `server.use(...)`; **no shared defaults today** because strict mode forces every test to spell out its network surface. **Trigger to extract a default:** the same handler copy-pasted across 3+ tests — at that point introduce `src/mocks/{handlers,server}.ts` and override per-test.
+  - **Don't introduce per-service path constants.** Service modules already are the source of truth; strict-mode MSW catches drift loudly. A constant just adds a second place to maintain.
+  - `renderWithRouter` signature with a one-block example.
+  - Don't `vi.mock('@tanstack/react-router', ...)` or service modules — those mocks belong in the unit/component layer; mocking them here defeats the point.
+- `web/src/setupTests.ts` — export `API_BASE = 'http://localhost/api'` so handler URLs build from a single source. (Already landed alongside commit 3 because the value carried into the reference test.)
 - `web/package.json` — add `"test:integration": "vitest run src/tests/integration"`.
 - Root `package.json` — add `"web:test:integration": "cd web && npm run test:integration"`.
 
 **Verification:**
 
-- `npm run web:test:integration` — runs only the new integration test, passes.
+- `npm run web:test:integration` — runs only the integration test, passes.
 - `npm run web:test` — still picks up the integration test (Vitest's default include matches `.test.tsx`), full suite passes.
-- `npm run web:format:check` and prettier on the CLAUDE.md change — clean.
+- `npm run web:format:check` — clean.
 
 ---
 
@@ -124,17 +135,19 @@ Make the convention discoverable and give focused-iteration ergonomics for writi
 - Replacing `vi.mock()` in existing unit tests with MSW.
 - Seeding Supabase client's internal session for `Authorization`-header assertions — defer until a test needs it.
 - Fixing the root loader's three-call precondition — sidestepped by per-test minimal route trees.
+- A `src/mocks/` module with default handlers — deferred until the same handler is copy-pasted across 3+ flow tests (the trigger is documented in `web/CLAUDE.md`). Keeps the strict-mode "every test spells out its network surface" property until the boilerplate cost becomes concrete.
+- Per-service path constants (e.g. `USER_PROFILE_PATH`) — strict-mode MSW catches typos/renames loudly; service modules stay the single source of truth.
 
 ## Critical files
 
 - `web/package.json` — add msw devDep, add `test:integration` script.
-- `web/src/setupTests.ts` — extend with MSW server + lifecycle.
-- `web/src/tests/test-utils/renderWithRouter.tsx` — new harness.
+- `web/src/setupTests.ts` — extend with MSW server + lifecycle, export `API_BASE`.
+- `web/src/tests/test-utils/renderWithRouter.tsx` — new harness; takes `routeTree`, `initialEntry`, `auth`, `routerContext` (auth wired to both React provider and router context).
 - `web/src/tests/test-utils/mockFactories.ts` — add `createMockUserProfile`.
 - `web/src/tests/test-utils/index.ts` — re-export.
 - `web/vite.config.ts` — coverage exclude `src/tests/**`.
-- `web/src/tests/integration/account.integration.test.tsx` — new reference test.
-- `web/CLAUDE.md` — document the layer.
+- `web/src/tests/integration/account.integration.test.tsx` — new reference test; route tree uses `createRootRouteWithContext<RouterContext>()` and runs real `requireAuth`.
+- `web/CLAUDE.md` — document the layer (location, MSW conventions, handler-default trigger, no path constants).
 - Root `package.json` — add `web:test:integration` delegate.
 
 ## End-to-end verification
