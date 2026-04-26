@@ -12,7 +12,7 @@ The work stands up that layer using Vitest + jsdom (already in place) plus MSW a
 - **No `public/mockServiceWorker.js`** in `web/public/` (only `_redirects`, `f1_fantasy_favicon.svg`, `vite.svg`). Confirmed nothing to clean up.
 - **No `web/src/tests/` directory** yet.
 - **`web/src/setupTests.ts`** already stubs `VITE_F1_FANTASY_API` to `http://localhost/api` — MSW handlers should target that origin.
-- **`web/vite.config.ts`** already excludes `src/setupTests.ts`, `src/test-utils`, `src/main.tsx`, `src/router.tsx` from coverage. `src/tests/**` needs to be added.
+- **`web/vite.config.ts`** already excludes `src/setupTests.ts`, `src/test-utils`, `src/main.tsx`, `src/router.tsx` from coverage. The `src/test-utils` entry will be replaced by `src/tests/**` (covers both the moved helpers and the integration suite).
 - **Account component:** `web/src/components/Account/Account.tsx` reads loader data via `getRouteApi('/_authenticated/account').useLoaderData()` (lines 31–34). **Implication:** the test's route tree must produce that exact route ID — a `_authenticated` pathless layout with an `account` child — or the lookup throws. Reusing the production `accountRoute` definition is the simplest way to guarantee ID stability.
 - **`/account` route** in `web/src/router.tsx` (lines 303–328): child of `authenticatedLayoutRoute`, loader calls `userProfileService.getCurrentProfile()`, `errorComponent` wraps `ErrorFallback` (renders `"Something went wrong"` heading — usable assertion).
 - **`userProfileService.getCurrentProfile()`** (`web/src/services/userProfileService.ts`) hits `GET /me/profile` via the real `apiClient`.
@@ -52,14 +52,15 @@ Provide the test-utils all integration tests will lean on, plus the coverage twe
 
 **Changes:**
 
-- `web/src/test-utils/renderWithRouter.tsx` (new) — exports `renderWithRouter({ routes, initialEntry, auth })`:
+- `web/src/tests/test-utils/renderWithRouter.tsx` (new) — exports `renderWithRouter({ routes, initialEntry, auth })`:
   - `routes` is a route tree (root + descendants). Internally builds the router via `createRouter({ routeTree, history: createMemoryHistory({ initialEntries: [initialEntry] }) })`.
   - Wraps `RouterProvider` in `AuthContext.Provider value={auth}`.
   - Returns RTL's `render(...)` result so callers can use `screen`, `findByRole`, etc.
   - `auth` is typed as `AuthContextType`. Callers supply the full shape; helper does not provide defaults — keeps the harness honest about what each test is asserting.
-- `web/src/test-utils/mockFactories.ts` — add `createMockUserProfile(overrides: Partial<UserProfile> = {}): UserProfile` returning sensible defaults aligned with the existing factory pattern. Match the `UserProfile` contract: `id`, `email`, `firstName`, `lastName`, `displayName`, `avatarUrl`.
-- `web/src/test-utils/index.ts` — re-export `renderWithRouter` and `createMockUserProfile`.
-- `web/vite.config.ts` — add `'src/tests/**'` to `test.coverage.exclude`.
+- `web/src/tests/test-utils/mockFactories.ts` — add `createMockUserProfile(overrides: Partial<UserProfile> = {}): UserProfile` returning sensible defaults aligned with the existing factory pattern. Match the `UserProfile` contract: `id`, `email`, `firstName`, `lastName`, `displayName`, `avatarUrl`.
+- `web/src/tests/test-utils/index.ts` — re-export `renderWithRouter` and `createMockUserProfile`.
+- Move pre-existing `web/src/test-utils/` → `web/src/tests/test-utils/` so `tests/` holds both the integration suite and shared helpers as siblings (otherwise `tests/` would have a single `integration/` child). Rewrites `@/test-utils` → `@/tests/test-utils` across the existing 21 import sites.
+- `web/vite.config.ts` — replace the now-redundant `'src/test-utils'` coverage exclude with `'src/tests/**'` (covers both helpers and the integration suite).
 
 **Verification:**
 
@@ -128,9 +129,9 @@ Make the convention discoverable and give focused-iteration ergonomics for writi
 
 - `web/package.json` — add msw devDep, add `test:integration` script.
 - `web/src/setupTests.ts` — extend with MSW server + lifecycle.
-- `web/src/test-utils/renderWithRouter.tsx` — new harness.
-- `web/src/test-utils/mockFactories.ts` — add `createMockUserProfile`.
-- `web/src/test-utils/index.ts` — re-export.
+- `web/src/tests/test-utils/renderWithRouter.tsx` — new harness.
+- `web/src/tests/test-utils/mockFactories.ts` — add `createMockUserProfile`.
+- `web/src/tests/test-utils/index.ts` — re-export.
 - `web/vite.config.ts` — coverage exclude `src/tests/**`.
 - `web/src/tests/integration/account.integration.test.tsx` — new reference test.
 - `web/CLAUDE.md` — document the layer.
