@@ -146,7 +146,7 @@ function LeagueComponent() {
 
 See root `CLAUDE.md` `## Testing Strategy` for cross-cutting rules (unit vs integration vs E2E, anti-patterns). This section covers frontend-specific layering within the unit/component-test level.
 
-**Files:** `src/setupTests.ts`, `src/test-utils/mockFactories.ts`
+**Files:** `src/setupTests.ts`, `src/tests/test-utils/mockFactories.ts`
 
 **Layers — each owns its own responsibilities:**
 
@@ -170,7 +170,7 @@ See root `CLAUDE.md` `## Testing Strategy` for cross-cutting rules (unit vs inte
 - Styling / CSS classes.
 - Individual Zod schema rules — test them through form integration.
 
-**Testing route components** — mock TanStack Router hooks:
+**Testing route components at this layer** — mock TanStack Router hooks. (Integration tests exercise the real router instead — see "Frontend Integration Tests" below.)
 
 ```typescript
 const mockUseLoaderData = vi.fn();
@@ -182,16 +182,60 @@ mockUseLoaderData.mockReturnValue({ league: { id: 1, name: 'Test League' } });
 render(<League />);
 ```
 
-**Testing route guards** — call guard functions directly, not through components:
+**Unit-testing route guards** — call guard functions directly, not through components. (Integration tests cover guard wiring by mounting layouts with the real guard attached — see "Frontend Integration Tests" below.)
 
 ```typescript
 const context = { auth: { user: null, loading: false }, teamContext: { hasTeam: false } };
 await expect(requireAuth(context)).rejects.toThrow();
 ```
 
-**Mock factories:** `createMockTeam`, `createMockDriver` from `@/test-utils`.
+**Mock factories:** `createMockTeam`, `createMockDriver` from `@/tests/test-utils`.
 
 **Reference docs** (RTL, Vitest, TanStack Router testing): `/testing-library/react-testing-library`, `/vitest-dev/vitest`, `/facebook/react`, `/tanstack/router`.
+
+### Frontend Integration Tests
+
+See root `CLAUDE.md` `## Testing Strategy` for when to reach for this layer vs. unit vs. E2E. This section covers the local conventions.
+
+**Location:** `src/tests/integration/<flow>.integration.test.tsx`. Name files by user flow (`account`, `create-team`, `join-league`), not by component.
+
+**Run:** `npm run web:test:integration` (focused) or `npm run web:test` (full suite).
+
+**Stack:** Vitest + jsdom + MSW intercepting at the `fetch` boundary. Tests exercise the real router, real loaders, real components, and the real `apiClient` — only the network is mocked. The MSW server is exported from `setupTests.ts` as `server`, runs in strict mode (`onUnhandledRequest: 'error'`), and resets handlers after each test.
+
+**Reference test:** `src/tests/integration/account.integration.test.tsx`. Copy its shape for new flows.
+
+**Route trees:**
+
+- Build per-test with `createRootRouteWithContext<RouterContext>()` so production guards can read context the same way they do in `router.tsx`.
+- Wire the real guards (`requireAuth`, `requireTeam`) on layout routes — don't drop them. Auth must flow through both the React tree and the router context; `renderWithRouter` handles both from a single `auth` value.
+- Production routes in `router.tsx` are not exported, so mirror the loader / component / errorComponent inline for the route under test. Keep this mirror minimal — only what the test needs to mount.
+
+**Auth:**
+
+- Pass a complete `AuthContextType` value to `renderWithRouter`. The helper provides it to `AuthContext.Provider` (for component-tree consumers like `useAuth`) and to the router context (for guards like `requireAuth`).
+- `apiClient` reads its bearer token from `supabase.auth.getSession()`, not from `AuthContext`. With no real Supabase session in tests, no `Authorization` header is sent — handlers must not assert on it. If a future test needs a real bearer header, seed the Supabase client's session at that point; don't pre-build that machinery now.
+
+**MSW handlers:**
+
+- Build URLs from `API_BASE` exported by `setupTests.ts`: ``http.get(`${API_BASE}/me/profile`, ...)``. Don't hardcode the base.
+- Declare handlers per test via `server.use(...)`. There are no shared default handlers today, on purpose — strict mode forces every test to spell out its network surface.
+- **Trigger to extract a default:** when you find yourself copy-pasting the same handler across three or more flow tests (likely `/me/profile`, `/me/team`, `/seasons/current` once authenticated flows accumulate), introduce `src/mocks/handlers.ts` + `src/mocks/server.ts`, seed the duplicates as defaults, and let tests override per-flow with `server.use(...)`. Until that trigger fires, keep handlers per-test.
+- **Don't introduce per-service path constants** (e.g. `USER_PROFILE_PATH = '/me/profile'`). The service module is already the single source of truth for each path. Strict-mode MSW reports the exact unhandled URL on a typo or rename, so drift is caught loudly — constants would just add a second place to maintain.
+- For 4xx/5xx, use `new HttpResponse(null, { status })`. For success bodies, use `HttpResponse.json(factoryOutput)` so the response shape is typed via the factory.
+
+**`renderWithRouter` signature:** `routeTree`, `initialEntry`, `auth`, `routerContext` (the latter is `Omit<RouterContext, 'auth'>` — `auth` is wired automatically from the `auth` field).
+
+```typescript
+renderWithRouter({
+  routeTree: buildAccountRouteTree(),
+  initialEntry: '/account',
+  auth: authedAuth,
+  routerContext: { teamContext, team: null, profile: null, currentSeason: null },
+});
+```
+
+**Don't `vi.mock('@tanstack/react-router', ...)` or `vi.mock('@/services/...', ...)` in this layer.** Those mocks belong in component-level tests; mocking them here defeats the point of the layer.
 
 ### Sentry Integration
 
@@ -252,7 +296,7 @@ src/
 │   └── router-context.ts # Router context types
 ├── services/           # API service layer
 ├── validations/        # Zod schemas for forms
-├── test-utils/         # Mock factories & test helpers
+├── tests/              # Integration tests + shared test helpers (test-utils/)
 ├── router.tsx          # All route definitions
 ├── main.tsx            # App entry point (Sentry init here)
 └── InnerApp.tsx        # Router provider wrapper
@@ -310,6 +354,8 @@ src/
 4. Use `LoadingButton` for submit button with `aria-busy`
 
 ### Testing Components
+
+For unit/component-level tests (cross-flow integration goes in `src/tests/integration/` — see "Frontend Integration Tests" above).
 
 1. Create `ComponentName.test.tsx` co-located with component
 2. Use `@testing-library/react` and `@testing-library/user-event`

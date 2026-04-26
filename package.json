@@ -12,6 +12,7 @@
     "web:format:check": "cd web && npm run format:check",
     "web:test": "cd web && npm test",
     "web:test:watch": "cd web && npm run test:watch",
+    "web:test:integration": "cd web && npm run test:integration",
     "web:coverage": "cd web && npm run test:coverage",
     "api:build": "cd api && dotnet build",
     "api:run": "cd api && dotnet run --project F1CompanionApi",

@@ -1,6 +1,6 @@
 import type { Constructor } from '@/contracts/Role';
 import type { TeamConstructor } from '@/contracts/Team';
-import { createMockConstructor, createMockConstructorList } from '@/test-utils/mockFactories';
+import { createMockConstructor, createMockConstructorList } from '@/tests/test-utils/mockFactories';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

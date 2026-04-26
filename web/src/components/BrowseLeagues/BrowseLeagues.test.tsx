@@ -1,4 +1,4 @@
-import { createMockLeague } from '@/test-utils/mockFactories';
+import { createMockLeague } from '@/tests/test-utils/mockFactories';
 import * as Sentry from '@sentry/react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

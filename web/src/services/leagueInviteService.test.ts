@@ -1,7 +1,7 @@
 import type { LeagueInvite } from '@/contracts/LeagueInvite';
 import type { LeagueInvitePreviewResponse } from '@/contracts/LeagueInvitePreviewResponse';
 import { apiClient } from '@/lib/api';
-import { createMockLeague } from '@/test-utils/mockFactories';
+import { createMockLeague } from '@/tests/test-utils/mockFactories';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getOrCreateLeagueInvite, joinViaInvite, previewInvite } from './leagueInviteService';

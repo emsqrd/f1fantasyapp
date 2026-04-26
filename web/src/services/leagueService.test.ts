@@ -1,7 +1,7 @@
 import type { CreateLeagueRequest } from '@/contracts/CreateLeagueRequest';
 import type { League } from '@/contracts/League';
 import { apiClient } from '@/lib/api';
-import { createMockLeague, createMockLeagueList } from '@/test-utils/mockFactories';
+import { createMockLeague, createMockLeagueList } from '@/tests/test-utils/mockFactories';
 import type { ApiError } from '@/utils/errors';
 import * as Sentry from '@sentry/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

@@ -1,4 +1,4 @@
-import { createMockTeam } from '@/test-utils';
+import { createMockTeam } from '@/tests/test-utils';
 import type { User } from '@supabase/supabase-js';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

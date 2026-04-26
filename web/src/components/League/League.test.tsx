@@ -1,6 +1,6 @@
 import type { League as LeagueType } from '@/contracts/League';
 import type { LeagueInvite } from '@/contracts/LeagueInvite';
-import { createMockLeague } from '@/test-utils/mockFactories';
+import { createMockLeague } from '@/tests/test-utils/mockFactories';
 import { render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

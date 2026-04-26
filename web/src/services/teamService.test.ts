@@ -3,7 +3,7 @@ import type { AddDriverToTeamRequest } from '@/contracts/AddDriverToTeamRequest'
 import type { CreateTeamRequest } from '@/contracts/CreateTeamRequest';
 import type { Team } from '@/contracts/Team';
 import { apiClient } from '@/lib/api';
-import { createMockTeam } from '@/test-utils';
+import { createMockTeam } from '@/tests/test-utils';
 import type { ApiError } from '@/utils/errors';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

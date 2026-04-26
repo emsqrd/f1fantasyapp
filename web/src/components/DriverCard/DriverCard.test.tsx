@@ -1,4 +1,4 @@
-import { createMockDriver } from '@/test-utils/mockFactories';
+import { createMockDriver } from '@/tests/test-utils/mockFactories';
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';

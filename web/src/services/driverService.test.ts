@@ -1,6 +1,6 @@
 import type { Driver } from '@/contracts/Role';
 import { apiClient } from '@/lib/api';
-import { createMockDriverList } from '@/test-utils/mockFactories';
+import { createMockDriverList } from '@/tests/test-utils/mockFactories';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getDrivers } from './driverService';

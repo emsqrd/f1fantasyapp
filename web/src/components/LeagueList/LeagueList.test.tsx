@@ -1,5 +1,5 @@
 import type { League } from '@/contracts/League';
-import { createMockLeagueList } from '@/test-utils/mockFactories';
+import { createMockLeagueList } from '@/tests/test-utils/mockFactories';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
