@@ -148,19 +148,19 @@ See root `CLAUDE.md` `## Testing Strategy` for cross-cutting rules (unit vs inte
 
 **Files:** `src/setupTests.ts`, `src/tests/test-utils/mockFactories.ts`
 
-**Layers — each owns its own responsibilities:**
+**Two layers at the jsdom level:**
 
-1. **Leaf / presentational components** (`ConstructorCard`, `DriverCard`, list items)
-   - User interactions, callback invocations, conditional rendering by props.
+1. **Leaf / presentational components** (`ConstructorCard`, `DriverCard`, list items, form fields, picker components when rendered with their real children)
+   - Props in, DOM out. User interactions, callback invocations, conditional rendering by props, accessibility attributes.
+   - Do not mock children to "test wiring." If you find yourself mocking a child component or a hook the component owns, you're describing integration territory — write that test in `src/tests/integration/` against MSW instead.
 
-2. **Hooks** (`useLineupPicker`, `useAuth`)
-   - Business logic, state management, API integration (with mocked services), error handling.
+2. **Hooks** (`useLineupPicker`, `useAvatarUpload`, `useLiveRegion`)
+   - Use a direct hook test only when the hook has enough internal logic (state machine, async branches, error rollback) that testing through a consumer would mean more setup than assertions.
+   - Trivial passthroughs (`useAuth`, `useTeam`) are honestly covered by integration tests of their consumers — don't add a direct test just to assert "context returns context."
 
-3. **Container / parent components** (`DriverPicker`, `ConstructorPicker`)
-   - Unique transformation logic, wiring (does hook state drive UI?), composition (are callbacks wired through?), container-level accessibility (dialog roles, semantic structure).
-   - **Do not** re-test child-component behavior or hook logic already covered at layers 1 and 2.
+**Container / parent components are not a separate layer.** Their behavior — hook-state drives UI, callbacks wired through children, dialog roles, multi-component round-trips — belongs in the integration layer where the real hook and real children run together. Mocking a hook to assert "given hook state X, render UI Y" is shallow rendering by another name; it ties tests to implementation and doesn't catch the wiring bugs it claims to.
 
-**Evaluating missing coverage:** before adding a test, check whether the behavior is already covered at a different layer. Parent components with mocked hooks are testing wiring, not duplicating hook tests.
+**Heuristic:** if the setup is longer than the assertions, the test is probably in the wrong layer.
 
 **Frontend-specific do-not-test list** (in addition to root anti-patterns):
 
@@ -170,17 +170,7 @@ See root `CLAUDE.md` `## Testing Strategy` for cross-cutting rules (unit vs inte
 - Styling / CSS classes.
 - Individual Zod schema rules — test them through form integration.
 
-**Testing route components at this layer** — mock TanStack Router hooks. (Integration tests exercise the real router instead — see "Frontend Integration Tests" below.)
-
-```typescript
-const mockUseLoaderData = vi.fn();
-vi.mock('@tanstack/react-router', () => ({
-  useLoaderData: (opts) => mockUseLoaderData(opts),
-}));
-
-mockUseLoaderData.mockReturnValue({ league: { id: 1, name: 'Test League' } });
-render(<League />);
-```
+**Route components belong in the integration layer.** Mounting a route component with `vi.mock('@tanstack/react-router', ...)` to stub `useLoaderData`/`useNavigate` decouples the test from the very wiring (loader → component, guard → redirect) that integration tests exist to verify. Build a per-test route tree in `src/tests/integration/<flow>.integration.test.tsx` instead — see "Frontend Integration Tests" below.
 
 **Unit-testing route guards** — call guard functions directly, not through components. (Integration tests cover guard wiring by mounting layouts with the real guard attached — see "Frontend Integration Tests" below.)
 
