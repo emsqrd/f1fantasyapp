@@ -14,6 +14,7 @@ export {
   createMockLeague,
   createMockLeagueList,
   createMockTeam,
+  createMockTeamConstructor,
   createMockTeamDriver,
   createMockUserProfile,
 } from './mockFactories';

@@ -12,7 +12,7 @@ import { ConstructorPicker } from '../ConstructorPicker/ConstructorPicker';
 import { DriverPicker } from '../DriverPicker/DriverPicker';
 import { InlineError } from '../InlineError/InlineError';
 
-interface TeamProps {
+export interface TeamViewProps {
   team: Team;
   activeDrivers: Driver[];
   activeConstructors: Constructor[];
@@ -26,7 +26,7 @@ export function MyTeamRoute() {
   });
 
   return (
-    <Team
+    <TeamView
       team={team}
       activeDrivers={activeDrivers}
       activeConstructors={activeConstructors}
@@ -42,7 +42,7 @@ export function TeamRoute() {
   });
 
   return (
-    <Team
+    <TeamView
       team={team}
       activeDrivers={activeDrivers}
       activeConstructors={activeConstructors}
@@ -52,7 +52,13 @@ export function TeamRoute() {
   );
 }
 
-export function Team({ team, activeDrivers, activeConstructors, races, readOnly }: TeamProps) {
+export function TeamView({
+  team,
+  activeDrivers,
+  activeConstructors,
+  races,
+  readOnly,
+}: TeamViewProps) {
   const [captainDriverId, setCaptainDriverId] = useState<number | null>(
     team.drivers.find((d) => d.isCaptain)?.id ?? null,
   );
