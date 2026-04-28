@@ -6,35 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 F1 Fantasy Sports platform built with React 19, TypeScript, and Vite. Users build fantasy F1 teams, join leagues, and earn points based on real race performance. Uses Supabase for authentication and TanStack Router for type-safe routing.
 
-## Essential Commands
-
-```bash
-# Development
-npm run dev              # Start dev server (http://localhost:5173)
-npm run build            # Type check + production build
-npm run preview          # Preview production build
-
-# Testing
-npm test                 # Run tests once
-npm run test:watch       # Watch mode for development
-npm run test:coverage    # Generate coverage reports
-
-# Code Quality
-npm run lint             # Run ESLint
-npm run format:check     # Check Prettier formatting (enforced by pre-commit)
-npx prettier --write .   # Auto-fix formatting issues
-```
-
-## Core Technologies
-
-- **React 19** with TypeScript
-- **TanStack Router v1.144** - Type-safe routing with guards and loaders
-- **Supabase** - Authentication and backend
-- **Tailwind CSS v4** - With Vite plugin (not PostCSS)
-- **Vitest + React Testing Library** - Testing framework
-- **Zod + React Hook Form** - Form validation
-- **shadcn/ui** - UI component library (never modify directly)
-- **Sentry** - Error tracking and performance monitoring
+Run all tooling via root `npm run web:*` scripts (see root `CLAUDE.md`). `shadcn/ui` primitives in `src/components/ui/` are vendored — never modify directly.
 
 ## Architecture Patterns
 
@@ -42,21 +14,7 @@ npx prettier --write .   # Auto-fix formatting issues
 
 **File:** `src/router.tsx`
 
-TanStack Router uses **guard-based route protection** with pathless layout routes (underscore prefix). Guards live in `src/lib/route-guards.ts` and run in `beforeLoad` to redirect unauthorized access. Route loaders fetch data before rendering. Route params are validated with Zod.
-
-**Adding protected routes:**
-
-```typescript
-import { requireAuth } from '@/lib/route-guards';
-
-const myRoute = createRoute({
-  getParentRoute: () => authenticatedLayoutRoute,
-  path: 'my-route',
-  beforeLoad: requireAuth,
-  loader: async () => ({ data: await fetchData() }),
-  component: MyComponent,
-});
-```
+TanStack Router uses **guard-based route protection** with pathless layout routes (underscore prefix). Guards live in `src/lib/route-guards.ts` and run in `beforeLoad` to redirect unauthorized access. Route loaders fetch data before rendering. Route params are validated with Zod. See `router.tsx` for production examples.
 
 ### Authentication Flow
 
@@ -72,9 +30,7 @@ const myRoute = createRoute({
 **Two primary React contexts:**
 
 1. **AuthContext** - Authentication state (user, session, loading)
-2. **TeamContext** (`src/contexts/TeamContext.tsx`) - Current user's team ID for quick checks
-   - `myTeamId`, `hasTeam`, `setMyTeamId`, `refreshMyTeam`
-   - Synced by `requireTeam` guard in route loaders
+2. **TeamContext** (`src/contexts/TeamContext.tsx`) - Current user's team-id helpers and a refresh, synced by `requireTeam` in route loaders
 
 **Pattern:** Router context stores data fetched by loaders, React contexts store identity/auth state only. This prevents unnecessary re-renders.
 
@@ -88,41 +44,11 @@ Centralized `ApiClient` class handles all HTTP requests:
 - Consistent error handling with Sentry integration
 - Optional `errorContext` parameter for better error messages
 
-**Service modules** (in `src/services/`) wrap apiClient:
-
-```typescript
-// teamService.ts
-export async function getMyTeam(): Promise<Team | null>;
-export async function createTeam(data): Promise<Team>;
-
-// leagueService.ts
-export async function getMyLeagues(): Promise<League[]>;
-export async function getLeagueById(id): Promise<League | null>;
-```
-
-**Pattern:** Services return `null` on 404, throw on other errors.
+**Service modules** (in `src/services/`) wrap apiClient. **Pattern:** services return `null` on 404 and throw on other errors.
 
 ### Data Loading Pattern
 
-**Route loaders** fetch data before component renders:
-
-```typescript
-const leagueRoute = createRoute({
-  path: 'league/$leagueId',
-  loader: async ({ params }) => {
-    const league = await getLeagueById(params.leagueId);
-    if (!league) throw notFound({ routeId: ROUTE_ID });
-    return { league };
-  },
-  component: LeagueComponent,
-});
-
-// In component - no loading states needed!
-function LeagueComponent() {
-  const { league } = Route.useLoaderData();
-  return <div>{league.name}</div>;
-}
-```
+Route loaders fetch data before the component renders, so components read via `Route.useLoaderData()` without loading states. Loaders throw `notFound({ routeId })` on missing resources; the route's `errorComponent` handles the failure path.
 
 ### Error Handling
 
@@ -152,7 +78,7 @@ See root `CLAUDE.md` `## Testing Strategy` for cross-cutting rules (unit vs inte
 
 1. **Leaf / presentational components** (`ConstructorCard`, `DriverCard`, list items, form fields, picker components when rendered with their real children)
    - Props in, DOM out. User interactions, callback invocations, conditional rendering by props, accessibility attributes.
-   - Do not mock children to "test wiring." If you find yourself mocking a child component or a hook the component owns, you're describing integration territory — write that test in `src/tests/integration/` against MSW instead.
+   - Do not mock children to "test wiring." If you find yourself mocking a child component, a service module, a context, or a hook the component owns, you're describing integration territory — write that test in `src/tests/integration/` against MSW instead.
 
 2. **Hooks** (`useLineupPicker`, `useAvatarUpload`, `useLiveRegion`)
    - Use a direct hook test only when the hook has enough internal logic (state machine, async branches, error rollback) that testing through a consumer would mean more setup than assertions.
@@ -239,14 +165,6 @@ Sentry.logger.warn('API rate limit approaching', { remainingCalls: 50 });
 Sentry.logger.error('Failed to load team data', { teamId, error });
 ```
 
-**Performance tracking:**
-
-```typescript
-await Sentry.startSpan({ op: 'http.client', name: 'GET /api/teams/123' }, async () =>
-  fetch('/api/teams/123'),
-);
-```
-
 **When to capture exceptions:**
 
 - Unexpected errors in try-catch blocks
@@ -261,123 +179,6 @@ await Sentry.startSpan({ op: 'http.client', name: 'GET /api/teams/123' }, async 
 - **LiveRegion** - Screen reader announcements with `aria-live`
 - **InlineError** - Uses `role="alert"` for immediate announcement
 - **InlineSuccess** - Uses `role="status"` for polite announcement
-
-**Testing accessibility:**
-
-- Keyboard navigation (Tab, Enter, Space)
-- Screen reader support (VoiceOver on macOS: ⌘ + F5)
-- Focus indicators and ARIA attributes in tests
-
-## Project Structure
-
-```
-src/
-├── components/          # UI components (with co-located .test.tsx)
-│   ├── ui/             # shadcn/ui (NEVER modify directly)
-│   ├── auth/           # Authentication components
-│   └── [features]/     # Feature-specific components
-├── contexts/           # React contexts (AuthContext, TeamContext)
-├── contracts/          # TypeScript interfaces (data models)
-├── hooks/              # Custom hooks (useAuth, useTeam, useSlots, etc.)
-├── lib/                # Core utilities
-│   ├── api.ts          # API client
-│   ├── supabase.ts     # Supabase client
-│   ├── route-guards.ts # Auth/team guards
-│   └── router-context.ts # Router context types
-├── services/           # API service layer
-├── validations/        # Zod schemas for forms
-├── tests/              # Integration tests + shared test helpers (test-utils/)
-├── router.tsx          # All route definitions
-├── main.tsx            # App entry point (Sentry init here)
-└── InnerApp.tsx        # Router provider wrapper
-```
-
-## Key Data Models
-
-**Team:**
-
-```typescript
-{
-  id: number
-  name: string
-  ownerName: string
-  drivers: TeamDriver[]
-  constructors: TeamConstructor[]
-}
-```
-
-**League:**
-
-```typescript
-{
-  id: number;
-  name: string;
-  description: string;
-  ownerName: string;
-  isPrivate: boolean;
-}
-```
-
-## Common Tasks
-
-### Adding a New Route
-
-1. Edit `src/router.tsx`
-2. Add route to appropriate parent (use `_authenticated` layout for protected routes)
-3. Use `beforeLoad` with `requireAuth` or `requireTeam` as needed
-4. Add loader function if data is needed
-5. Create component file
-6. Add to routeTree
-
-### Making API Calls
-
-1. Create service function in `src/services/[domain]Service.ts`
-2. Use `apiClient.get/post/patch/delete` from `@/lib/api`
-3. Return `null` on 404, throw on other errors
-4. Add Sentry logging for significant events
-
-### Creating Forms
-
-1. Define Zod schema in `src/validations/[feature]Schema.ts`
-2. Use React Hook Form with `zodResolver`
-3. Display errors with `InlineError` component
-4. Use `LoadingButton` for submit button with `aria-busy`
-
-### Testing Components
-
-For unit/component-level tests (cross-flow integration goes in `src/tests/integration/` — see "Frontend Integration Tests" above).
-
-1. Create `ComponentName.test.tsx` co-located with component
-2. Use `@testing-library/react` and `@testing-library/user-event`
-3. Mock router hooks (`useLoaderData`, `useNavigate`) if needed
-4. Test user behavior, not implementation
-5. Run `npm run test:coverage` to verify coverage
-
-### Quick Test Generation Workflows
-
-**For new test files** (no existing tests):
-
-```
-Generate high-value tests for this file following our testing guidelines.
-- Keep it lean (~10-15 tests)
-- After writing tests, review for duplicate assertions or test cases
-- Run all tests to ensure they pass
-- Run the linter to ensure there are no linting errors
-- Run the build to ensure no type errors
-- Run code coverage and ensure that coverage is at an excellent level
-- Verify all tests provide high value per our testing philosophy
-```
-
-**For existing test files** (adding new tests):
-
-```
-Add tests for the new [describe feature/functionality] following our testing guidelines.
-- Review existing tests to understand current coverage and patterns
-- Add only tests for the new functionality, avoiding duplicates
-- Follow the existing test file's naming conventions and organization
-- Run tests to ensure they pass alongside existing tests
-- Verify new tests cover the added functionality
-```
 
 ## Environment Variables
 
@@ -394,13 +195,3 @@ VITE_SENTRY_DSN=your_sentry_dsn
 
 - `@/` maps to `src/` directory
 - Always use absolute imports: `import { Button } from '@/components/ui/button'`
-
-## Development Principles
-
-1. **Type Safety First** - Leverage TypeScript fully; use Zod for runtime validation
-2. **Test Behavior, Not Implementation** - Focus on what users see and do
-3. **Component Composition** - Build reusable, composable components
-4. **Separation of Concerns** - UI, business logic, and data access are separate
-5. **Accessibility First** - WCAG 2.1 Level AA compliance is mandatory
-6. **Avoid Over-Engineering** - Only make changes directly requested or clearly necessary
-7. **No Backwards-Compatibility Hacks** - Delete unused code completely
