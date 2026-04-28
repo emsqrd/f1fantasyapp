@@ -223,7 +223,24 @@ Not a migration — a coverage gap surfaced during the audit. `web/CLAUDE.md` sa
 
 This is the canonical "wiring test that catches drift between layout-route placement and guard semantics" — same class of bug as the constructor-uniqueness case that motivated #134.
 
-### Commit 8 — Extract `<AccountForm />` + delete Account.test.tsx
+### Commit 8 — Extract `AccountForm` + replace Account.test.tsx (done: `e119c49`)
+
+**Done:**
+
+- `AccountForm` extracted as a co-located second export in `Account.tsx`. `Account` is now a thin route orchestrator (loader data, profile state syncing, avatar handler, service calls); `AccountForm` is props-in/callback-out (`profile`, `onSubmit`).
+- `Account.test.tsx` rewritten end-to-end: 13 leaf-level tests against `AccountForm`, no router mocks, no service mocks. Coverage: profile data display, empty fields when no profile loaded, no-op save when nothing changed, save success + confirmation, server/generic error display, validation per field (display/first/last name required, display name max length, email format), reflects external profile updates, and prior-error clears on next save.
+- Loader/500 coverage stays in `account.integration.test.tsx`; avatar journey owned by `avatar.spec.ts`; avatar prop pass-through covered by `AvatarUpload.test.tsx`.
+- Suite: 533 → 536.
+
+**What changed vs. the original plan:**
+
+- **`AccountForm` co-located in `Account.tsx`, not extracted to its own file.** Plan called for `AccountForm.tsx`. On review, the Commit 5 reuse argument (TeamView consumed by two routes) didn't apply here — Account is the only consumer. Pulling AccountForm into a separate file would have admitted the extraction was purely for test isolation. Single file with two named exports keeps test isolation without the false reuse signal.
+- **`Account.test.tsx` retained as the file name** — same shape as Commit 5's `Team.test.tsx`. Plan's "Account.test.tsx deleted, AccountForm.test.tsx added" framing was rejected as a pointless rename when the file is now testing the form-export-of-Account.
+- **Validation scope is per-field, not per-rule-type.** Plan said "Field-level validation rules (display name required, etc.)" without committing to a count. After a review pass, settled on: required pinned on each of the 3 required fields (separate user-visible failure modes per field), max length pinned once on a representative field, email format pinned once. `trim()` skipped (library behavior). The "test once per rule type" alternative was considered and rejected — different fields with the same rule type are still distinct invariants in the schema, and the form-integration layer is the layer for pinning them per `web/CLAUDE.md`'s "Individual Zod schema rules — test them through form integration."
+- **Test names refocused on user behavior twice during the commit.** First pass dropped "Zod validation message" framing; second pass dropped `onSubmit`/`pristine`/`dirty` RHF jargon across all tests. Final names describe the contract from the user's view (`saves the user's edits and confirms success`, `requires a display name`, `caps display name at 50 characters`, etc.).
+- **Test bodies tightened during review:** dropped a `sr-only` Tailwind class filter (CSS implementation leak), removed a redundant `toHaveBeenCalledTimes(2)` assertion (covered by alert-disappears assertion), rephrased an RHF-jargon comment ("Make the form dirty again so the next submit fires" → "Edit again and save"). The remaining `onSubmit` callback assertions were kept — for a leaf component, the callback **is** the contract.
+
+---
 
 Same shape as Commit 5: extraction + test reorganization in lockstep, justified by independent design value (not test-driven).
 
