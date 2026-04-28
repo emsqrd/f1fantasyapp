@@ -62,6 +62,40 @@ test.describe('league', () => {
     await contextB.close();
   });
 
+  test('User B browses available leagues, joins User A\'s public league from the list', async ({
+    browser,
+  }) => {
+    const userA = await createTestUser({ emailPrefix: 'public-owner' });
+    const userB = await createTestUser({ emailPrefix: 'public-browser' });
+    const season = await seedCurrentSeason();
+    const grid = await seedMinimalGrid({ seasonId: season.id });
+    const constructors = grid.constructors.slice(0, 2).map((c) => c.id);
+    const drivers = grid.drivers.slice(0, 5).map((d) => d.id);
+    await seedTeamForUser(userA, { driverIds: drivers, constructorIds: constructors });
+    await seedTeamForUser(userB, { driverIds: drivers, constructorIds: constructors });
+
+    const leagueName = `Open Grid ${randomUUID().slice(0, 8)}`;
+    const league = await seedLeague(userA, { name: leagueName, isPrivate: false });
+
+    const contextB = await browser.newContext();
+    const pageB = await contextB.newPage();
+    await signInAs(pageB, userB);
+    await expect(pageB).toHaveURL('/leagues');
+
+    await pageB.goto('/browse-leagues');
+
+    await expect(pageB.getByRole('heading', { name: leagueName })).toBeVisible();
+    await pageB.getByRole('button', { name: 'Join League' }).click();
+
+    const dialog = pageB.getByRole('alertdialog');
+    await expect(dialog.getByRole('heading', { name: `Join ${leagueName}?` })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Confirm Join' }).click();
+
+    await expect(pageB).toHaveURL(new RegExp(`/league/${league.id}$`));
+    await expect(pageB.getByRole('heading', { name: leagueName })).toBeVisible();
+    await contextB.close();
+  });
+
   test('unauthenticated visitor to /join/$token signs up, creates a team, and joins', async ({
     page,
   }) => {
