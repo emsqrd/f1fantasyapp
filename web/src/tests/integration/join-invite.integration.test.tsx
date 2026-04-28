@@ -17,7 +17,7 @@ import {
 import { Outlet, createRootRouteWithContext, createRoute, notFound } from '@tanstack/react-router';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { HttpResponse, http } from 'msw';
+import { HttpResponse, delay, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 // `/join/$token` is a public top-level route — not under `_authenticated`. The
@@ -281,7 +281,7 @@ describe('Join via invite token', () => {
         }
         // Hang so the second attempt stays in-flight while we observe the
         // pre-await `setError(null)` clearing the previous alert.
-        await new Promise(() => {});
+        await delay('infinite');
         return HttpResponse.json({});
       }),
     );
@@ -311,7 +311,7 @@ describe('Join via invite token', () => {
     server.use(
       previewHandler(),
       http.post(`${API_BASE}/leagues/join/${TOKEN}`, async () => {
-        await new Promise(() => {});
+        await delay('infinite');
         return HttpResponse.json({});
       }),
     );
