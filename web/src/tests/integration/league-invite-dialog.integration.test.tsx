@@ -20,7 +20,7 @@ import { Outlet, createRootRouteWithContext, createRoute, notFound } from '@tans
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 // Mirrors the production `_authenticated → _team-required → league/$leagueId`
 // chain in `router.tsx` so the real guards and loader run against MSW. The
@@ -98,23 +98,28 @@ const inviteUrl = `${window.location.origin}/join/${INVITE_TOKEN}`;
 
 /**
  * Stubs `navigator.clipboard` for the current test and returns the spy that
- * `useClipboard` will call. Defined inline per test (after `userEvent.setup()`)
- * so the order of setup vs. user-event's own clipboard polyfill is explicit.
+ * `useClipboard` will call. Captures the property descriptor before overwriting
+ * and restores it via `onTestFinished`, so unrelated tests see whatever
+ * clipboard state the environment provided (rather than a permanently-deleted
+ * property if `userEvent` or jsdom later installs one).
  */
 function stubClipboard() {
   const writeText = vi.fn().mockResolvedValue(undefined);
+  const originalDescriptor = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
   Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
     value: { writeText },
   });
+  onTestFinished(() => {
+    if (originalDescriptor) {
+      Object.defineProperty(navigator, 'clipboard', originalDescriptor);
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (navigator as any).clipboard;
+    }
+  });
   return writeText;
 }
-
-afterEach(() => {
-  // Drop the stub so unrelated tests don't see our spy.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  delete (navigator as any).clipboard;
-});
 
 describe('Share invite dialog', () => {
   it('lazily fetches the invite when opened and renders the shareable URL', async () => {
