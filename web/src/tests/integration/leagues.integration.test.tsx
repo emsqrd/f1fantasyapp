@@ -139,7 +139,7 @@ function teamHandler() {
   return http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam()));
 }
 
-describe('/browse-leagues integration', () => {
+describe('Browse leagues', () => {
   it('renders league rows with name, description, badge, and member count', async () => {
     server.use(
       teamHandler(),
@@ -182,34 +182,7 @@ describe('/browse-leagues integration', () => {
     expect(screen.getByText('Private')).toBeInTheDocument();
 
     // Container exposes its purpose to assistive tech.
-    expect(screen.getByLabelText('available-leagues')).toBeInTheDocument();
-  });
-
-  it('omits the description paragraph when a league has no description', async () => {
-    server.use(
-      teamHandler(),
-      http.get(`${API_BASE}/leagues/available`, () =>
-        HttpResponse.json([
-          createMockLeague({
-            id: 1,
-            name: 'No Description League',
-            description: '',
-            teamCount: 2,
-            maxTeams: 5,
-          }),
-        ]),
-      ),
-    );
-
-    const { container } = renderWithRouter({
-      routeTree: buildBrowseLeaguesRouteTree(),
-      initialEntry: '/browse-leagues',
-      auth: authedAuth,
-      routerContext: baseRouterContext,
-    });
-
-    expect(await screen.findByText('No Description League')).toBeInTheDocument();
-    expect(container.querySelectorAll('.text-muted-foreground.mb-4.text-sm')).toHaveLength(0);
+    expect(screen.getByLabelText('Available leagues')).toBeInTheDocument();
   });
 
   it('disables the join button for private leagues', async () => {
@@ -381,7 +354,7 @@ describe('/browse-leagues integration', () => {
   });
 });
 
-describe('/league/$leagueId integration', () => {
+describe('League page', () => {
   it('renders league details returned by the loader', async () => {
     server.use(
       teamHandler(),

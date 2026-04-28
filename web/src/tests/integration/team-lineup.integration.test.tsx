@@ -225,7 +225,7 @@ function teamHandlers(team: Team) {
   ];
 }
 
-describe('/my-team integration', () => {
+describe('My team lineup', () => {
   it('filters constructors already in lineup out of the picker pool', async () => {
     const user = userEvent.setup();
     const team = createMockTeam({
@@ -351,7 +351,7 @@ describe('/my-team integration', () => {
   });
 });
 
-describe('/team/$teamId integration', () => {
+describe('Viewing another team', () => {
   it("renders another user's team in readOnly mode without action buttons", async () => {
     const otherTeam = createMockTeam({
       id: 2,

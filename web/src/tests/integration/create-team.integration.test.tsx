@@ -107,7 +107,7 @@ const baseRouterContext: Omit<RouterContext, 'auth' | 'teamContext'> = {
   currentSeason: null,
 };
 
-describe('/create-team integration', () => {
+describe('Create team', () => {
   it('renders the form when the requireNoTeam guard sees no existing team', async () => {
     server.use(http.get(`${API_BASE}/me/team`, () => new HttpResponse(null, { status: 404 })));
 

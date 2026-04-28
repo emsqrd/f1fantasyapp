@@ -145,7 +145,7 @@ function previewHandler(overrides: Partial<Record<string, unknown>> = {}) {
   );
 }
 
-describe('/join/$token integration', () => {
+describe('Join via invite token', () => {
   it('shows sign-in and create-account links carrying a redirect back to the invite for unauthenticated users', async () => {
     server.use(previewHandler());
 

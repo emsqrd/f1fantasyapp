@@ -75,7 +75,7 @@ const baseRouterContext: Omit<RouterContext, 'auth'> = {
   currentSeason: null,
 };
 
-describe('/account integration', () => {
+describe('Account page', () => {
   it('renders profile data fetched by the loader', async () => {
     server.use(
       http.get(`${API_BASE}/me/profile`, () =>

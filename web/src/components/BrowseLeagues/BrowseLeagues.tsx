@@ -97,7 +97,7 @@ export function BrowseLeagues() {
           <p className="text-muted-foreground text-lg">There are no available leagues to display</p>
         </div>
       ) : (
-        <div aria-label="available-leagues" className="space-y-4">
+        <div aria-label="Available leagues" className="space-y-4">
           {leagues.map((league) => {
             const isJoining = joiningLeagueId === league.id;
             const memberCount = league.teamCount;

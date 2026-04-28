@@ -141,7 +141,7 @@ afterEach(() => {
   delete (navigator as any).clipboard;
 });
 
-describe('/league/$leagueId share invite dialog integration', () => {
+describe('Share invite dialog', () => {
   it('lazily fetches the invite when opened and renders the shareable URL', async () => {
     const user = userEvent.setup();
     const inviteFetch = vi.fn(() =>
