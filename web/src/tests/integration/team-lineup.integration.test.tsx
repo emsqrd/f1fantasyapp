@@ -1,12 +1,10 @@
 import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
 import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
 import { MyTeamRoute, TeamRoute } from '@/components/Team/Team';
-import type { AuthContextType } from '@/contexts/AuthContext';
 import type { TeamContextType } from '@/contexts/TeamContext';
 import type { RaceWeekend } from '@/contracts/RaceWeekend';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team } from '@/contracts/Team';
-import { requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { getConstructors } from '@/services/constructorService';
 import { getDrivers } from '@/services/driverService';
@@ -14,15 +12,19 @@ import { getRaceWeekends } from '@/services/raceWeekendService';
 import { getMyTeam, getTeamById } from '@/services/teamService';
 import { API_BASE, server } from '@/setupTests';
 import {
+  buildAuthenticatedLayout,
+  buildTeamRequiredLayout,
+  createAuthedAuth,
+  createBaseRouterContext,
   createMockConstructor,
   createMockDriver,
   createMockTeam,
   createMockTeamConstructor,
   createMockTeamDriver,
   createMockUserProfile,
+  createTeamContext,
   renderWithRouter,
 } from '@/tests/test-utils';
-import type { Session, User } from '@supabase/supabase-js';
 import {
   Outlet,
   createRootRouteWithContext,
@@ -33,7 +35,7 @@ import {
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // Minimal route trees mirror the production `_authenticated → _team-required`
 // chain in `router.tsx` so the real guards (`requireAuth`, `requireTeam`) and
@@ -45,19 +47,8 @@ function buildMyTeamRouteTree() {
     component: () => <Outlet />,
   });
 
-  const authenticatedLayoutRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    id: '_authenticated',
-    beforeLoad: ({ context }) => requireAuth(context),
-    component: () => <Outlet />,
-  });
-
-  const teamRequiredLayoutRoute = createRoute({
-    getParentRoute: () => authenticatedLayoutRoute,
-    id: '_team-required',
-    beforeLoad: ({ context }) => requireTeam(context),
-    component: () => <Outlet />,
-  });
+  const authenticatedLayoutRoute = buildAuthenticatedLayout(rootRoute);
+  const teamRequiredLayoutRoute = buildTeamRequiredLayout(authenticatedLayoutRoute);
 
   const myTeamRoute = createRoute({
     getParentRoute: () => teamRequiredLayoutRoute,
@@ -91,19 +82,8 @@ function buildTeamByIdRouteTree() {
     component: () => <Outlet />,
   });
 
-  const authenticatedLayoutRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    id: '_authenticated',
-    beforeLoad: ({ context }) => requireAuth(context),
-    component: () => <Outlet />,
-  });
-
-  const teamRequiredLayoutRoute = createRoute({
-    getParentRoute: () => authenticatedLayoutRoute,
-    id: '_team-required',
-    beforeLoad: ({ context }) => requireTeam(context),
-    component: () => <Outlet />,
-  });
+  const authenticatedLayoutRoute = buildAuthenticatedLayout(rootRoute);
+  const teamRequiredLayoutRoute = buildTeamRequiredLayout(authenticatedLayoutRoute);
 
   const teamByIdRoute = createRoute({
     getParentRoute: () => teamRequiredLayoutRoute,
@@ -136,39 +116,22 @@ function buildTeamByIdRouteTree() {
   ]);
 }
 
-const authedAuth: AuthContextType = {
-  user: { id: 'user-123' } as User,
-  session: {} as Session,
-  loading: false,
-  isAuthTransitioning: false,
-  signIn: vi.fn(),
-  signUp: vi.fn(),
-  signOut: vi.fn(),
-  startAuthTransition: vi.fn(),
-  completeAuthTransition: vi.fn(),
-};
-
-function makeTeamContext(overrides: Partial<TeamContextType> = {}): TeamContextType {
-  return {
-    myTeamId: 1,
-    hasTeam: true,
-    setMyTeamId: vi.fn(),
-    refreshMyTeam: vi.fn(),
-    ...overrides,
-  };
+function makeRouterContext(
+  teamContextOverrides: Partial<TeamContextType> = {},
+): Omit<RouterContext, 'auth'> {
+  return createBaseRouterContext({
+    teamContext: createTeamContext({ myTeamId: 1, hasTeam: true, ...teamContextOverrides }),
+    team: createMockTeam(),
+    profile: createMockUserProfile(),
+    currentSeason: {
+      id: 1,
+      year: 2026,
+      startDate: '2026-03-01',
+      endDate: '2026-12-01',
+      isCurrent: true,
+    },
+  });
 }
-
-const baseRouterContext: Omit<RouterContext, 'auth' | 'teamContext'> = {
-  team: createMockTeam(),
-  profile: createMockUserProfile(),
-  currentSeason: {
-    id: 1,
-    year: 2026,
-    startDate: '2026-03-01',
-    endDate: '2026-12-01',
-    isCurrent: true,
-  },
-};
 
 const ferrari = createMockConstructor({ id: 10, name: 'Ferrari', price: 20_000_000 });
 const mclaren = createMockConstructor({ id: 11, name: 'McLaren', price: 18_000_000 });
@@ -237,8 +200,8 @@ describe('My team lineup', () => {
     renderWithRouter({
       routeTree: buildMyTeamRouteTree(),
       initialEntry: '/my-team',
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext: makeTeamContext() },
+      auth: createAuthedAuth(),
+      routerContext: makeRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /add constructor/i }));
@@ -260,8 +223,8 @@ describe('My team lineup', () => {
     renderWithRouter({
       routeTree: buildMyTeamRouteTree(),
       initialEntry: '/my-team',
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext: makeTeamContext() },
+      auth: createAuthedAuth(),
+      routerContext: makeRouterContext(),
     });
 
     const addButtons = await screen.findAllByRole('button', { name: /add driver/i });
@@ -281,8 +244,8 @@ describe('My team lineup', () => {
     renderWithRouter({
       routeTree: buildMyTeamRouteTree(),
       initialEntry: '/my-team',
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext: makeTeamContext() },
+      auth: createAuthedAuth(),
+      routerContext: makeRouterContext(),
     });
 
     const addButtons = await screen.findAllByRole('button', { name: /add driver/i });
@@ -312,8 +275,8 @@ describe('My team lineup', () => {
     renderWithRouter({
       routeTree: buildMyTeamRouteTree(),
       initialEntry: '/my-team',
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext: makeTeamContext() },
+      auth: createAuthedAuth(),
+      routerContext: makeRouterContext(),
     });
 
     expect(await screen.findByText('Lineup Locked')).toBeInTheDocument();
@@ -341,8 +304,8 @@ describe('My team lineup', () => {
     renderWithRouter({
       routeTree: buildMyTeamRouteTree(),
       initialEntry: '/my-team',
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext: makeTeamContext() },
+      auth: createAuthedAuth(),
+      routerContext: makeRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /set .* as captain/i }));
@@ -376,8 +339,8 @@ describe('Viewing another team', () => {
     renderWithRouter({
       routeTree: buildTeamByIdRouteTree(),
       initialEntry: '/team/2',
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext: makeTeamContext({ myTeamId: 1 }) },
+      auth: createAuthedAuth(),
+      routerContext: makeRouterContext({ myTeamId: 1 }),
     });
 
     expect(await screen.findByRole('heading', { name: "Other User's Team" })).toBeInTheDocument();

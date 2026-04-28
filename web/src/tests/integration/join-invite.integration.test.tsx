@@ -1,19 +1,24 @@
 import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
 import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
 import { JoinInvite } from '@/components/JoinInvite/JoinInvite';
-import type { AuthContextType } from '@/contexts/AuthContext';
 import type { TeamContextType } from '@/contexts/TeamContext';
 import { TeamContext } from '@/contexts/TeamContext';
 import type { RouterContext } from '@/lib/router-context';
 import { previewInvite } from '@/services/leagueInviteService';
 import { API_BASE, server } from '@/setupTests';
-import { createMockUserProfile, renderWithRouter } from '@/tests/test-utils';
-import type { Session, User } from '@supabase/supabase-js';
+import {
+  createAuthedAuth,
+  createBaseRouterContext,
+  createMockUserProfile,
+  createTeamContext,
+  createUnauthAuth,
+  renderWithRouter,
+} from '@/tests/test-utils';
 import { Outlet, createRootRouteWithContext, createRoute, notFound } from '@tanstack/react-router';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // `/join/$token` is a public top-level route — not under `_authenticated`. The
 // integration tree mirrors `joinInviteRoute` from `router.tsx` plus minimal
@@ -84,50 +89,9 @@ function buildJoinInviteRouteTree(teamContextValue: TeamContextType) {
   return rootRoute.addChildren([joinInviteRoute, signInRoute, signUpRoute, createTeamRoute]);
 }
 
-const unauthAuth: AuthContextType = {
-  user: null,
-  session: null,
-  loading: false,
-  isAuthTransitioning: false,
-  signIn: vi.fn(),
-  signUp: vi.fn(),
-  signOut: vi.fn(),
-  startAuthTransition: vi.fn(),
-  completeAuthTransition: vi.fn(),
-};
-
-const authedAuth: AuthContextType = {
-  user: { id: 'user-123' } as User,
-  session: {} as Session,
-  loading: false,
-  isAuthTransitioning: false,
-  signIn: vi.fn(),
-  signUp: vi.fn(),
-  signOut: vi.fn(),
-  startAuthTransition: vi.fn(),
-  completeAuthTransition: vi.fn(),
-};
-
-const noTeamContext: TeamContextType = {
-  myTeamId: null,
-  hasTeam: false,
-  setMyTeamId: vi.fn(),
-  refreshMyTeam: vi.fn(),
-};
-
-const withTeamContext: TeamContextType = {
-  myTeamId: 1,
-  hasTeam: true,
-  setMyTeamId: vi.fn(),
-  refreshMyTeam: vi.fn(),
-};
-
-const baseRouterContext: Omit<RouterContext, 'auth'> = {
-  teamContext: noTeamContext,
-  team: null,
-  profile: createMockUserProfile(),
-  currentSeason: null,
-};
+function makeRouterContext(teamContext: TeamContextType): Omit<RouterContext, 'auth'> {
+  return createBaseRouterContext({ teamContext, profile: createMockUserProfile() });
+}
 
 const TOKEN = 'abc-token';
 
@@ -149,11 +113,12 @@ describe('Join via invite token', () => {
   it('shows sign-in and create-account links carrying a redirect back to the invite for unauthenticated users', async () => {
     server.use(previewHandler());
 
+    const teamContext = createTeamContext();
     renderWithRouter({
-      routeTree: buildJoinInviteRouteTree(noTeamContext),
+      routeTree: buildJoinInviteRouteTree(teamContext),
       initialEntry: `/join/${TOKEN}`,
-      auth: unauthAuth,
-      routerContext: baseRouterContext,
+      auth: createUnauthAuth(),
+      routerContext: makeRouterContext(teamContext),
     });
 
     const signInLink = await screen.findByRole('link', { name: /sign in to join/i });
@@ -174,11 +139,12 @@ describe('Join via invite token', () => {
   it('shows a create-team link carrying a redirect back to the invite for authed users without a team', async () => {
     server.use(previewHandler());
 
+    const teamContext = createTeamContext();
     renderWithRouter({
-      routeTree: buildJoinInviteRouteTree(noTeamContext),
+      routeTree: buildJoinInviteRouteTree(teamContext),
       initialEntry: `/join/${TOKEN}`,
-      auth: authedAuth,
-      routerContext: baseRouterContext,
+      auth: createAuthedAuth(),
+      routerContext: makeRouterContext(teamContext),
     });
 
     const createTeamLink = await screen.findByRole('link', { name: /create team/i });
@@ -194,11 +160,12 @@ describe('Join via invite token', () => {
   it('shows the join-league button for authed users with a team', async () => {
     server.use(previewHandler());
 
+    const teamContext = createTeamContext({ myTeamId: 1, hasTeam: true });
     renderWithRouter({
-      routeTree: buildJoinInviteRouteTree(withTeamContext),
+      routeTree: buildJoinInviteRouteTree(teamContext),
       initialEntry: `/join/${TOKEN}`,
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext: withTeamContext },
+      auth: createAuthedAuth(),
+      routerContext: makeRouterContext(teamContext),
     });
 
     expect(await screen.findByRole('button', { name: /join league/i })).toBeInTheDocument();
@@ -214,11 +181,12 @@ describe('Join via invite token', () => {
       ),
     );
 
+    const teamContext = createTeamContext();
     renderWithRouter({
-      routeTree: buildJoinInviteRouteTree(noTeamContext),
+      routeTree: buildJoinInviteRouteTree(teamContext),
       initialEntry: `/join/${TOKEN}`,
-      auth: unauthAuth,
-      routerContext: baseRouterContext,
+      auth: createUnauthAuth(),
+      routerContext: makeRouterContext(teamContext),
     });
 
     expect(
@@ -229,11 +197,12 @@ describe('Join via invite token', () => {
   it('shows the league-full alert and hides action buttons when preview reports the league is full', async () => {
     server.use(previewHandler({ isLeagueFull: true }));
 
+    const teamContext = createTeamContext({ myTeamId: 1, hasTeam: true });
     renderWithRouter({
-      routeTree: buildJoinInviteRouteTree(withTeamContext),
+      routeTree: buildJoinInviteRouteTree(teamContext),
       initialEntry: `/join/${TOKEN}`,
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext: withTeamContext },
+      auth: createAuthedAuth(),
+      routerContext: makeRouterContext(teamContext),
     });
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
@@ -259,11 +228,12 @@ describe('Join via invite token', () => {
       ),
     );
 
+    const teamContext = createTeamContext({ myTeamId: 1, hasTeam: true });
     renderWithRouter({
-      routeTree: buildJoinInviteRouteTree(withTeamContext),
+      routeTree: buildJoinInviteRouteTree(teamContext),
       initialEntry: `/join/${TOKEN}`,
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext: withTeamContext },
+      auth: createAuthedAuth(),
+      routerContext: makeRouterContext(teamContext),
     });
 
     await user.click(await screen.findByRole('button', { name: /join league/i }));
@@ -282,11 +252,12 @@ describe('Join via invite token', () => {
       http.post(`${API_BASE}/leagues/join/${TOKEN}`, () => new HttpResponse(null, { status: 204 })),
     );
 
+    const teamContext = createTeamContext({ myTeamId: 1, hasTeam: true });
     renderWithRouter({
-      routeTree: buildJoinInviteRouteTree(withTeamContext),
+      routeTree: buildJoinInviteRouteTree(teamContext),
       initialEntry: `/join/${TOKEN}`,
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext: withTeamContext },
+      auth: createAuthedAuth(),
+      routerContext: makeRouterContext(teamContext),
     });
 
     await user.click(await screen.findByRole('button', { name: /join league/i }));
@@ -315,11 +286,12 @@ describe('Join via invite token', () => {
       }),
     );
 
+    const teamContext = createTeamContext({ myTeamId: 1, hasTeam: true });
     renderWithRouter({
-      routeTree: buildJoinInviteRouteTree(withTeamContext),
+      routeTree: buildJoinInviteRouteTree(teamContext),
       initialEntry: `/join/${TOKEN}`,
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext: withTeamContext },
+      auth: createAuthedAuth(),
+      routerContext: makeRouterContext(teamContext),
     });
 
     const joinButton = await screen.findByRole('button', { name: /join league/i });
@@ -344,11 +316,12 @@ describe('Join via invite token', () => {
       }),
     );
 
+    const teamContext = createTeamContext({ myTeamId: 1, hasTeam: true });
     renderWithRouter({
-      routeTree: buildJoinInviteRouteTree(withTeamContext),
+      routeTree: buildJoinInviteRouteTree(teamContext),
       initialEntry: `/join/${TOKEN}`,
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext: withTeamContext },
+      auth: createAuthedAuth(),
+      routerContext: makeRouterContext(teamContext),
     });
 
     await user.click(await screen.findByRole('button', { name: /join league/i }));

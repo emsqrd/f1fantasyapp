@@ -1,19 +1,24 @@
 import { CreateTeam } from '@/components/CreateTeam/CreateTeam';
 import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
 import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
-import type { AuthContextType } from '@/contexts/AuthContext';
 import type { TeamContextType } from '@/contexts/TeamContext';
 import { TeamContext } from '@/contexts/TeamContext';
-import { requireNoTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/setupTests';
-import { createMockTeam, renderWithRouter } from '@/tests/test-utils';
-import type { Session, User } from '@supabase/supabase-js';
+import {
+  buildNoTeamLayout,
+  buildStubRoute,
+  createAuthedAuth,
+  createBaseRouterContext,
+  createMockTeam,
+  createTeamContext,
+  renderWithRouter,
+} from '@/tests/test-utils';
 import { Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 // `/create-team` lives under the `_no-team` layout in `router.tsx`. The
@@ -33,12 +38,7 @@ function buildCreateTeamRouteTree(teamContextValue: TeamContextType) {
     ),
   });
 
-  const noTeamLayoutRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    id: '_no-team',
-    beforeLoad: ({ context }) => requireNoTeam(context),
-    component: () => <Outlet />,
-  });
+  const noTeamLayoutRoute = buildNoTeamLayout(rootRoute);
 
   const redirectSearchSchema = z.object({
     redirect: z
@@ -60,17 +60,8 @@ function buildCreateTeamRouteTree(teamContextValue: TeamContextType) {
     ),
   });
 
-  const teamByIdRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: 'team/$teamId',
-    component: () => <h1>Team Page</h1>,
-  });
-
-  const leaguesRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: 'leagues',
-    component: () => <h1>Leagues Page</h1>,
-  });
+  const teamByIdRoute = buildStubRoute(rootRoute, { path: 'team/$teamId', heading: 'Team Page' });
+  const leaguesRoute = buildStubRoute(rootRoute, { path: 'leagues', heading: 'Leagues Page' });
 
   return rootRoute.addChildren([
     noTeamLayoutRoute.addChildren([createTeamRoute]),
@@ -79,44 +70,16 @@ function buildCreateTeamRouteTree(teamContextValue: TeamContextType) {
   ]);
 }
 
-const authedAuth: AuthContextType = {
-  user: { id: 'user-123' } as User,
-  session: {} as Session,
-  loading: false,
-  isAuthTransitioning: false,
-  signIn: vi.fn(),
-  signUp: vi.fn(),
-  signOut: vi.fn(),
-  startAuthTransition: vi.fn(),
-  completeAuthTransition: vi.fn(),
-};
-
-function makeTeamContext(overrides: Partial<TeamContextType> = {}): TeamContextType {
-  return {
-    myTeamId: null,
-    hasTeam: false,
-    setMyTeamId: vi.fn(),
-    refreshMyTeam: vi.fn(),
-    ...overrides,
-  };
-}
-
-const baseRouterContext: Omit<RouterContext, 'auth' | 'teamContext'> = {
-  team: null,
-  profile: null,
-  currentSeason: null,
-};
-
 describe('Create team', () => {
   it('renders the form when the requireNoTeam guard sees no existing team', async () => {
     server.use(http.get(`${API_BASE}/me/team`, () => new HttpResponse(null, { status: 404 })));
 
-    const teamContext = makeTeamContext();
+    const teamContext = createTeamContext();
     renderWithRouter({
       routeTree: buildCreateTeamRouteTree(teamContext),
       initialEntry: '/create-team',
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext },
+      auth: createAuthedAuth(),
+      routerContext: createBaseRouterContext({ teamContext }),
     });
 
     expect(await screen.findByLabelText(/team name/i)).toBeInTheDocument();
@@ -136,12 +99,12 @@ describe('Create team', () => {
       }),
     );
 
-    const teamContext = makeTeamContext();
+    const teamContext = createTeamContext();
     renderWithRouter({
       routeTree: buildCreateTeamRouteTree(teamContext),
       initialEntry: '/create-team',
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext },
+      auth: createAuthedAuth(),
+      routerContext: createBaseRouterContext({ teamContext }),
     });
 
     await user.type(await screen.findByLabelText(/team name/i), '  My Racing Team  ');
@@ -160,12 +123,12 @@ describe('Create team', () => {
       http.post(`${API_BASE}/teams`, () => new HttpResponse(null, { status: 500 })),
     );
 
-    const teamContext = makeTeamContext();
+    const teamContext = createTeamContext();
     renderWithRouter({
       routeTree: buildCreateTeamRouteTree(teamContext),
       initialEntry: '/create-team',
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext },
+      auth: createAuthedAuth(),
+      routerContext: createBaseRouterContext({ teamContext }),
     });
 
     await user.type(await screen.findByLabelText(/team name/i), 'Team Name');
@@ -183,12 +146,12 @@ describe('Create team', () => {
     // so any unexpected POST /teams would fail the test loudly.
     server.use(http.get(`${API_BASE}/me/team`, () => new HttpResponse(null, { status: 404 })));
 
-    const teamContext = makeTeamContext();
+    const teamContext = createTeamContext();
     renderWithRouter({
       routeTree: buildCreateTeamRouteTree(teamContext),
       initialEntry: '/create-team',
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext },
+      auth: createAuthedAuth(),
+      routerContext: createBaseRouterContext({ teamContext }),
     });
 
     await user.click(await screen.findByRole('button', { name: /create team/i }));
@@ -204,12 +167,12 @@ describe('Create team', () => {
       http.post(`${API_BASE}/teams`, () => HttpResponse.json(createMockTeam({ id: 7 }))),
     );
 
-    const teamContext = makeTeamContext();
+    const teamContext = createTeamContext();
     renderWithRouter({
       routeTree: buildCreateTeamRouteTree(teamContext),
       initialEntry: '/create-team?redirect=/leagues',
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext },
+      auth: createAuthedAuth(),
+      routerContext: createBaseRouterContext({ teamContext }),
     });
 
     await user.type(await screen.findByLabelText(/team name/i), 'My Racing Team');

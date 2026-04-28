@@ -1,15 +1,23 @@
-import type { AuthContextType } from '@/contexts/AuthContext';
 import type { TeamContextType } from '@/contexts/TeamContext';
 import { TeamContext } from '@/contexts/TeamContext';
-import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/setupTests';
-import { createMockTeam, renderWithRouter } from '@/tests/test-utils';
-import type { Session, User } from '@supabase/supabase-js';
-import { Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router';
+import {
+  buildAuthenticatedLayout,
+  buildNoTeamLayout,
+  buildStubRoute,
+  buildTeamRequiredLayout,
+  createAuthedAuth,
+  createBaseRouterContext,
+  createMockTeam,
+  createTeamContext,
+  createUnauthAuth,
+  renderWithRouter,
+} from '@/tests/test-utils';
+import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
 import { screen } from '@testing-library/react';
 import { HttpResponse, http } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // Wiring tests for the production guard placement in `router.tsx`. Mirror only
 // the layout chain — `_authenticated` (requireAuth) → `_team-required`
@@ -25,50 +33,19 @@ function buildGuardRouteTree(teamContextValue: TeamContextType) {
     ),
   });
 
-  const landingRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: '/',
-    component: () => <h1>Landing Page</h1>,
-  });
-
-  const authenticatedLayoutRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    id: '_authenticated',
-    beforeLoad: ({ context }) => requireAuth(context),
-    component: () => <Outlet />,
-  });
-
-  const teamRequiredLayoutRoute = createRoute({
-    getParentRoute: () => authenticatedLayoutRoute,
-    id: '_team-required',
-    beforeLoad: ({ context }) => requireTeam(context),
-    component: () => <Outlet />,
-  });
-
-  const myTeamRoute = createRoute({
-    getParentRoute: () => teamRequiredLayoutRoute,
+  const landingRoute = buildStubRoute(rootRoute, { path: '/', heading: 'Landing Page' });
+  const authenticatedLayoutRoute = buildAuthenticatedLayout(rootRoute);
+  const teamRequiredLayoutRoute = buildTeamRequiredLayout(authenticatedLayoutRoute);
+  const myTeamRoute = buildStubRoute(teamRequiredLayoutRoute, {
     path: 'my-team',
-    component: () => <h1>My Team Page</h1>,
+    heading: 'My Team Page',
   });
-
-  const noTeamLayoutRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    id: '_no-team',
-    beforeLoad: ({ context }) => requireNoTeam(context),
-    component: () => <Outlet />,
-  });
-
-  const createTeamRoute = createRoute({
-    getParentRoute: () => noTeamLayoutRoute,
+  const noTeamLayoutRoute = buildNoTeamLayout(rootRoute);
+  const createTeamRoute = buildStubRoute(noTeamLayoutRoute, {
     path: 'create-team',
-    component: () => <h1>Create Team Page</h1>,
+    heading: 'Create Team Page',
   });
-
-  const leaguesRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: 'leagues',
-    component: () => <h1>Leagues Page</h1>,
-  });
+  const leaguesRoute = buildStubRoute(rootRoute, { path: 'leagues', heading: 'Leagues Page' });
 
   return rootRoute.addChildren([
     landingRoute,
@@ -78,54 +55,14 @@ function buildGuardRouteTree(teamContextValue: TeamContextType) {
   ]);
 }
 
-const unauthAuth: AuthContextType = {
-  user: null,
-  session: null,
-  loading: false,
-  isAuthTransitioning: false,
-  signIn: vi.fn(),
-  signUp: vi.fn(),
-  signOut: vi.fn(),
-  startAuthTransition: vi.fn(),
-  completeAuthTransition: vi.fn(),
-};
-
-const authedAuth: AuthContextType = {
-  user: { id: 'user-123' } as User,
-  session: {} as Session,
-  loading: false,
-  isAuthTransitioning: false,
-  signIn: vi.fn(),
-  signUp: vi.fn(),
-  signOut: vi.fn(),
-  startAuthTransition: vi.fn(),
-  completeAuthTransition: vi.fn(),
-};
-
-function makeTeamContext(overrides: Partial<TeamContextType> = {}): TeamContextType {
-  return {
-    myTeamId: null,
-    hasTeam: false,
-    setMyTeamId: vi.fn(),
-    refreshMyTeam: vi.fn(),
-    ...overrides,
-  };
-}
-
-const baseRouterContext: Omit<RouterContext, 'auth' | 'teamContext'> = {
-  team: null,
-  profile: null,
-  currentSeason: null,
-};
-
 describe('route guard wiring', () => {
   it('redirects unauthenticated users from /my-team to landing', async () => {
-    const teamContext = makeTeamContext();
+    const teamContext = createTeamContext();
     renderWithRouter({
       routeTree: buildGuardRouteTree(teamContext),
       initialEntry: '/my-team',
-      auth: unauthAuth,
-      routerContext: { ...baseRouterContext, teamContext },
+      auth: createUnauthAuth(),
+      routerContext: createBaseRouterContext({ teamContext }),
     });
 
     expect(await screen.findByRole('heading', { name: 'Landing Page' })).toBeInTheDocument();
@@ -135,12 +72,12 @@ describe('route guard wiring', () => {
   it('redirects authenticated users without a team from /my-team to /create-team', async () => {
     server.use(http.get(`${API_BASE}/me/team`, () => new HttpResponse(null, { status: 404 })));
 
-    const teamContext = makeTeamContext();
+    const teamContext = createTeamContext();
     renderWithRouter({
       routeTree: buildGuardRouteTree(teamContext),
       initialEntry: '/my-team',
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext },
+      auth: createAuthedAuth(),
+      routerContext: createBaseRouterContext({ teamContext }),
     });
 
     expect(await screen.findByRole('heading', { name: 'Create Team Page' })).toBeInTheDocument();
@@ -150,12 +87,12 @@ describe('route guard wiring', () => {
   it('redirects authenticated users with a team from /create-team to /leagues', async () => {
     server.use(http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam())));
 
-    const teamContext = makeTeamContext();
+    const teamContext = createTeamContext();
     renderWithRouter({
       routeTree: buildGuardRouteTree(teamContext),
       initialEntry: '/create-team',
-      auth: authedAuth,
-      routerContext: { ...baseRouterContext, teamContext },
+      auth: createAuthedAuth(),
+      routerContext: createBaseRouterContext({ teamContext }),
     });
 
     expect(await screen.findByRole('heading', { name: 'Leagues Page' })).toBeInTheDocument();

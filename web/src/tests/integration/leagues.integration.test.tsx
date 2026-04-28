@@ -2,24 +2,25 @@ import { BrowseLeagues } from '@/components/BrowseLeagues/BrowseLeagues';
 import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
 import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
 import { League } from '@/components/League/League';
-import type { AuthContextType } from '@/contexts/AuthContext';
-import type { TeamContextType } from '@/contexts/TeamContext';
-import { requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { getAvailableLeagues, getLeagueById } from '@/services/leagueService';
 import { API_BASE, server } from '@/setupTests';
 import {
+  buildAuthenticatedLayout,
+  buildTeamRequiredLayout,
+  createAuthedAuth,
+  createBaseRouterContext,
   createMockLeague,
   createMockTeam,
   createMockUserProfile,
+  createTeamContext,
   renderWithRouter,
 } from '@/tests/test-utils';
-import type { Session, User } from '@supabase/supabase-js';
 import { Outlet, createRootRouteWithContext, createRoute, notFound } from '@tanstack/react-router';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // Minimal route trees mirror the production `_authenticated → _team-required`
 // chain in `router.tsx` so the real guards (`requireAuth`, `requireTeam`) and
@@ -31,19 +32,8 @@ function buildBrowseLeaguesRouteTree() {
     component: () => <Outlet />,
   });
 
-  const authenticatedLayoutRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    id: '_authenticated',
-    beforeLoad: ({ context }) => requireAuth(context),
-    component: () => <Outlet />,
-  });
-
-  const teamRequiredLayoutRoute = createRoute({
-    getParentRoute: () => authenticatedLayoutRoute,
-    id: '_team-required',
-    beforeLoad: ({ context }) => requireTeam(context),
-    component: () => <Outlet />,
-  });
+  const authenticatedLayoutRoute = buildAuthenticatedLayout(rootRoute);
+  const teamRequiredLayoutRoute = buildTeamRequiredLayout(authenticatedLayoutRoute);
 
   const browseLeaguesRoute = createRoute({
     getParentRoute: () => teamRequiredLayoutRoute,
@@ -69,19 +59,8 @@ function buildLeagueRouteTree() {
     component: () => <Outlet />,
   });
 
-  const authenticatedLayoutRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    id: '_authenticated',
-    beforeLoad: ({ context }) => requireAuth(context),
-    component: () => <Outlet />,
-  });
-
-  const teamRequiredLayoutRoute = createRoute({
-    getParentRoute: () => authenticatedLayoutRoute,
-    id: '_team-required',
-    beforeLoad: ({ context }) => requireTeam(context),
-    component: () => <Outlet />,
-  });
+  const authenticatedLayoutRoute = buildAuthenticatedLayout(rootRoute);
+  const teamRequiredLayoutRoute = buildTeamRequiredLayout(authenticatedLayoutRoute);
 
   const leagueRoute = createRoute({
     getParentRoute: () => teamRequiredLayoutRoute,
@@ -108,31 +87,13 @@ function buildLeagueRouteTree() {
   ]);
 }
 
-const authedAuth: AuthContextType = {
-  user: { id: 'user-123' } as User,
-  session: {} as Session,
-  loading: false,
-  isAuthTransitioning: false,
-  signIn: vi.fn(),
-  signUp: vi.fn(),
-  signOut: vi.fn(),
-  startAuthTransition: vi.fn(),
-  completeAuthTransition: vi.fn(),
-};
-
-const teamContext: TeamContextType = {
-  myTeamId: 1,
-  hasTeam: true,
-  setMyTeamId: vi.fn(),
-  refreshMyTeam: vi.fn(),
-};
-
-const baseRouterContext: Omit<RouterContext, 'auth'> = {
-  teamContext,
-  team: createMockTeam(),
-  profile: createMockUserProfile(),
-  currentSeason: null,
-};
+function authedRouterContext(): Omit<RouterContext, 'auth'> {
+  return createBaseRouterContext({
+    teamContext: createTeamContext({ myTeamId: 1, hasTeam: true }),
+    team: createMockTeam(),
+    profile: createMockUserProfile(),
+  });
+}
 
 // Handler the `requireTeam` guard needs to find a team for the authed user.
 function teamHandler() {
@@ -168,8 +129,8 @@ describe('Browse leagues', () => {
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
-      auth: authedAuth,
-      routerContext: baseRouterContext,
+      auth: createAuthedAuth(),
+      routerContext: authedRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Open Grid' })).toBeInTheDocument();
@@ -196,8 +157,8 @@ describe('Browse leagues', () => {
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
-      auth: authedAuth,
-      routerContext: baseRouterContext,
+      auth: createAuthedAuth(),
+      routerContext: authedRouterContext(),
     });
 
     expect(await screen.findByRole('button', { name: /join league/i })).toBeDisabled();
@@ -216,8 +177,8 @@ describe('Browse leagues', () => {
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
-      auth: authedAuth,
-      routerContext: baseRouterContext,
+      auth: createAuthedAuth(),
+      routerContext: authedRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /join league/i }));
@@ -244,8 +205,8 @@ describe('Browse leagues', () => {
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
-      auth: authedAuth,
-      routerContext: baseRouterContext,
+      auth: createAuthedAuth(),
+      routerContext: authedRouterContext(),
     });
 
     const joinButtons = await screen.findAllByRole('button', { name: /join league/i });
@@ -270,8 +231,8 @@ describe('Browse leagues', () => {
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
-      auth: authedAuth,
-      routerContext: baseRouterContext,
+      auth: createAuthedAuth(),
+      routerContext: authedRouterContext(),
     });
 
     expect(
@@ -288,8 +249,8 @@ describe('Browse leagues', () => {
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
-      auth: authedAuth,
-      routerContext: baseRouterContext,
+      auth: createAuthedAuth(),
+      routerContext: authedRouterContext(),
     });
 
     expect(
@@ -318,8 +279,8 @@ describe('Browse leagues', () => {
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
-      auth: authedAuth,
-      routerContext: baseRouterContext,
+      auth: createAuthedAuth(),
+      routerContext: authedRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /join league/i }));
@@ -343,8 +304,8 @@ describe('Browse leagues', () => {
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
-      auth: authedAuth,
-      routerContext: baseRouterContext,
+      auth: createAuthedAuth(),
+      routerContext: authedRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /join league/i }));
@@ -366,8 +327,8 @@ describe('League page', () => {
     renderWithRouter({
       routeTree: buildLeagueRouteTree(),
       initialEntry: '/league/7',
-      auth: authedAuth,
-      routerContext: baseRouterContext,
+      auth: createAuthedAuth(),
+      routerContext: authedRouterContext(),
     });
 
     expect(
@@ -384,8 +345,8 @@ describe('League page', () => {
     renderWithRouter({
       routeTree: buildLeagueRouteTree(),
       initialEntry: '/league/123',
-      auth: authedAuth,
-      routerContext: baseRouterContext,
+      auth: createAuthedAuth(),
+      routerContext: authedRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'League Not Found' })).toBeInTheDocument();
@@ -400,8 +361,8 @@ describe('League page', () => {
     renderWithRouter({
       routeTree: buildLeagueRouteTree(),
       initialEntry: '/league/500',
-      auth: authedAuth,
-      routerContext: baseRouterContext,
+      auth: createAuthedAuth(),
+      routerContext: authedRouterContext(),
     });
 
     expect(

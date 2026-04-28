@@ -1,19 +1,21 @@
 import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
 import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
 import { League } from '@/components/League/League';
-import type { AuthContextType } from '@/contexts/AuthContext';
-import type { TeamContextType } from '@/contexts/TeamContext';
-import { requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { getLeagueById } from '@/services/leagueService';
 import { API_BASE, server } from '@/setupTests';
 import {
+  buildAuthenticatedLayout,
+  buildTeamRequiredLayout,
+  createAuthedAuth,
+  createBaseRouterContext,
   createMockLeague,
   createMockTeam,
   createMockUserProfile,
+  createTeamContext,
   renderWithRouter,
 } from '@/tests/test-utils';
-import type { Session, User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 import { Outlet, createRootRouteWithContext, createRoute, notFound } from '@tanstack/react-router';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -32,19 +34,8 @@ function buildLeagueRouteTree() {
     component: () => <Outlet />,
   });
 
-  const authenticatedLayoutRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    id: '_authenticated',
-    beforeLoad: ({ context }) => requireAuth(context),
-    component: () => <Outlet />,
-  });
-
-  const teamRequiredLayoutRoute = createRoute({
-    getParentRoute: () => authenticatedLayoutRoute,
-    id: '_team-required',
-    beforeLoad: ({ context }) => requireTeam(context),
-    component: () => <Outlet />,
-  });
+  const authenticatedLayoutRoute = buildAuthenticatedLayout(rootRoute);
+  const teamRequiredLayoutRoute = buildTeamRequiredLayout(authenticatedLayoutRoute);
 
   const leagueRoute = createRoute({
     getParentRoute: () => teamRequiredLayoutRoute,
@@ -74,33 +65,17 @@ const OWNER_ID = 1;
 const LEAGUE_ID = 7;
 const INVITE_TOKEN = 'abc123xyz';
 
-const ownerAuth: AuthContextType = {
-  user: { id: 'user-owner' } as User,
-  session: {} as Session,
-  loading: false,
-  isAuthTransitioning: false,
-  signIn: vi.fn(),
-  signUp: vi.fn(),
-  signOut: vi.fn(),
-  startAuthTransition: vi.fn(),
-  completeAuthTransition: vi.fn(),
-};
-
-const teamContext: TeamContextType = {
-  myTeamId: 1,
-  hasTeam: true,
-  setMyTeamId: vi.fn(),
-  refreshMyTeam: vi.fn(),
-};
+const ownerAuth = () => createAuthedAuth({ user: { id: 'user-owner' } as User });
 
 // Profile id matches the league's ownerId so the Invite button renders
 // (the button only shows for the owner of a private league).
-const baseRouterContext: Omit<RouterContext, 'auth'> = {
-  teamContext,
-  team: createMockTeam(),
-  profile: createMockUserProfile({ id: OWNER_ID }),
-  currentSeason: null,
-};
+function ownerRouterContext(): Omit<RouterContext, 'auth'> {
+  return createBaseRouterContext({
+    teamContext: createTeamContext({ myTeamId: 1, hasTeam: true }),
+    team: createMockTeam(),
+    profile: createMockUserProfile({ id: OWNER_ID }),
+  });
+}
 
 function teamHandler() {
   return http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam()));
@@ -162,8 +137,8 @@ describe('Share invite dialog', () => {
     renderWithRouter({
       routeTree: buildLeagueRouteTree(),
       initialEntry: `/league/${LEAGUE_ID}`,
-      auth: ownerAuth,
-      routerContext: baseRouterContext,
+      auth: ownerAuth(),
+      routerContext: ownerRouterContext(),
     });
 
     expect(inviteFetch).not.toHaveBeenCalled();
@@ -189,8 +164,8 @@ describe('Share invite dialog', () => {
     renderWithRouter({
       routeTree: buildLeagueRouteTree(),
       initialEntry: `/league/${LEAGUE_ID}`,
-      auth: ownerAuth,
-      routerContext: baseRouterContext,
+      auth: ownerAuth(),
+      routerContext: ownerRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /invite/i }));
@@ -219,8 +194,8 @@ describe('Share invite dialog', () => {
     renderWithRouter({
       routeTree: buildLeagueRouteTree(),
       initialEntry: `/league/${LEAGUE_ID}`,
-      auth: ownerAuth,
-      routerContext: baseRouterContext,
+      auth: ownerAuth(),
+      routerContext: ownerRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /invite/i }));
@@ -257,8 +232,8 @@ describe('Share invite dialog', () => {
     renderWithRouter({
       routeTree: buildLeagueRouteTree(),
       initialEntry: `/league/${LEAGUE_ID}`,
-      auth: ownerAuth,
-      routerContext: baseRouterContext,
+      auth: ownerAuth(),
+      routerContext: ownerRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /invite/i }));
@@ -288,8 +263,8 @@ describe('Share invite dialog', () => {
     renderWithRouter({
       routeTree: buildLeagueRouteTree(),
       initialEntry: `/league/${LEAGUE_ID}`,
-      auth: ownerAuth,
-      routerContext: baseRouterContext,
+      auth: ownerAuth(),
+      routerContext: ownerRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /invite/i }));
