@@ -203,17 +203,23 @@ Then trim:
 - **InlineError assertion checks the apiClient-shaped error message**, not a CreateTeam-specific string. `apiClient` throws `"POST /teams failed: Internal Server Error"` for a bare 500 with no problem-details body; `CreateTeam` shows that string verbatim. The test asserts `/internal server error/i` matches an `role="alert"` — what the user actually sees. A test that asserted "failed to create team" would have been fiction.
 - **Sign-up → create-team end-to-end journey** stays owned by `team.spec.ts`, as planned.
 
-### Commit 7 — Add route-guard wiring integration tests
+### Commit 7 — Add route-guard wiring integration tests (done)
+
+**Done:**
+
+- Added `web/src/tests/integration/route-guards.integration.test.tsx` (3 cases) mounting minimal route trees that mirror the production layout chain in `router.tsx`. Real guards run, real router runs, real `AuthContext` flows through `renderWithRouter`'s `auth` argument.
+  - Unauth → `/my-team` → landing (`/`).
+  - Auth without team → `/my-team` → `/create-team` (MSW `GET /me/team` → 404).
+  - Auth with team → `/create-team` → `/leagues` (MSW `GET /me/team` → team).
+- Each test stubs only the handler the guard's loader needs. No production code changes.
+
+**What changed vs. the original plan:**
+
+- **Plan said case 3 redirects to `/my-team`; production `requireNoTeam` redirects to `/leagues`** (`route-guards.ts:138`). Test asserts production. Same class of plan/reality drift as Commit 6's `/my-team` vs. `/team/$teamId` correction.
+
+---
 
 Not a migration — a coverage gap surfaced during the audit. `web/CLAUDE.md` says the integration layer "covers guard wiring by mounting layouts with the real guard attached," but no test does this today. `route-guards.test.ts` exercises guards as plain functions; only E2E (`auth.spec.ts:30`) proves the real-router-with-guard wiring.
-
-Add `web/src/tests/integration/route-guards.integration.test.tsx` covering three redirect cases via `renderWithRouter` against minimal route trees that mirror the production guard placement in `router.tsx`:
-
-- Unauth → `/my-team` → redirect to `/`.
-- Auth without team → `/my-team` → redirect to `/create-team` (`requireTeam` placement).
-- Auth with team → `/create-team` → redirect to `/my-team` (`requireNoTeam` placement).
-
-Each test stubs only the network handlers the guard's loader needs (e.g., `getMyTeam` returns null vs. a team object). Real guards run, real router runs, real `AuthContext` is wired through `renderWithRouter`'s `auth` argument. No new production code; no changes to `router.tsx` or `route-guards.ts`.
 
 This is the canonical "wiring test that catches drift between layout-route placement and guard semantics" — same class of bug as the constructor-uniqueness case that motivated #134.
 
