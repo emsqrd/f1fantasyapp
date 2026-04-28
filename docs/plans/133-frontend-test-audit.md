@@ -235,7 +235,19 @@ Same shape as Commit 5: extraction + test reorganization in lockstep, justified 
    - Accessibility assertions specific to form layout (label associations, error announcement).
 3. **Delete `Account.test.tsx`**. Loader/500/network-round-trip coverage already lives in `account.integration.test.tsx`. Avatar prop-passing belongs in `AvatarUpload.test.tsx` (likely already covered) — verify before deleting.
 
-### Commit 9 — Trim hook tests where integration covers the consumer
+### Commit 9 — Trim hook tests where integration covers the consumer (done: `c55f288`)
+
+**Done:**
+
+- Deleted `web/src/hooks/useAuth.test.tsx` and `web/src/hooks/useTeam.test.tsx`. Both are pure context passthroughs; the "returns context" path is exercised by Account, CreateTeam, and JoinInvite integration tests, and the only thing lost is a defensive "throws when provider missing" assertion that no production refactor would silently break.
+- Kept `useLineupPicker.test.ts`, `useAvatarUpload.test.ts`, `useLiveRegion.test.ts` per plan.
+- Suite went from 555 → 550 tests, matching the 5 deletions (2 in `useAuth.test.tsx`, 3 in `useTeam.test.tsx`).
+
+**What changed vs. the original plan:**
+
+- **`useClipboard.test.ts` kept**, contrary to the plan's framing as "trivial wrapper around `navigator.clipboard.writeText`." Reading the actual hook (67 lines): `hasCopied` state machine, `reset`, no-API fallback, write-failure rollback with Sentry capture. Integration only exercises the success path, so direct branch coverage is honest at the hook layer. The plan's premise didn't match the code.
+
+---
 
 Sequenced last because it depends on Commits 4–7's integration tests already exercising the hook consumers in production-shaped wiring.
 
