@@ -1,8 +1,9 @@
 -- ============================================================================
--- Test Data Generation for Teams in League 5
+-- Test Data Generation for Teams in a New Test League
 -- ============================================================================
--- This script creates 10 test teams with F1-themed names and adds them to league ID 5.
--- It creates all necessary dependencies: Accounts -> UserProfiles -> Teams -> LeagueTeams
+-- This script creates 10 test teams with F1-themed names, creates a new league,
+-- and adds the teams to it.
+-- It creates all necessary dependencies: Accounts -> UserProfiles -> Teams -> League -> LeagueTeams
 --
 -- Usage: Execute this script in your Supabase SQL editor or via psql
 -- Note: Account IDs are random UUIDs and cannot be used for authentication
@@ -17,22 +18,28 @@ BEGIN;
 -- Clean up existing test data (allows re-running this script)
 -- ============================================================================
 -- Delete in correct order to respect foreign key constraints
-DELETE FROM "LeagueTeams" 
-WHERE "TeamId" IN (
-  SELECT "Id" FROM "Teams" 
+DELETE FROM "LeagueTeams"
+WHERE "LeagueId" IN (
+  SELECT "Id" FROM "Leagues" WHERE "Name" = 'Paddock Pretenders'
+)
+OR "TeamId" IN (
+  SELECT "Id" FROM "Teams"
   WHERE "UserId" IN (
-    SELECT "Id" FROM "UserProfiles" 
+    SELECT "Id" FROM "UserProfiles"
     WHERE "Email" LIKE '%testteam%@f1fantasy.test'
   )
 );
 
-DELETE FROM "Teams" 
+DELETE FROM "Leagues"
+WHERE "Name" = 'Paddock Pretenders';
+
+DELETE FROM "Teams"
 WHERE "UserId" IN (
-  SELECT "Id" FROM "UserProfiles" 
+  SELECT "Id" FROM "UserProfiles"
   WHERE "Email" LIKE '%testteam%@f1fantasy.test'
 );
 
-DELETE FROM "UserProfiles" 
+DELETE FROM "UserProfiles"
 WHERE "Email" LIKE '%testteam%@f1fantasy.test';
 
 DELETE FROM "Accounts" 
@@ -121,10 +128,33 @@ FROM user_ids
 ON CONFLICT DO NOTHING;
 
 -- ============================================================================
--- Step 4: Add Teams to League 5
+-- Step 4: Create the Test League
 -- ============================================================================
--- Join all test teams to league ID 5
-WITH team_ids AS (
+-- Owned by the first test user (testteam01)
+INSERT INTO "Leagues" ("Name", "Description", "MaxTeams", "IsPrivate", "OwnerId", "CreatedBy", "CreatedAt", "UpdatedAt", "DeletedAt", "IsDeleted", "UpdatedBy", "DeletedBy")
+SELECT
+  'Paddock Pretenders' as "Name",
+  'Where wannabe team principals battle for paddock supremacy' as "Description",
+  15 as "MaxTeams",
+  false as "IsPrivate",
+  "Id" as "OwnerId",
+  "Id" as "CreatedBy",
+  NOW() as "CreatedAt",
+  NOW() as "UpdatedAt",
+  NULL as "DeletedAt",
+  false as "IsDeleted",
+  NULL as "UpdatedBy",
+  NULL as "DeletedBy"
+FROM "UserProfiles"
+WHERE "Email" = 'testteam01@f1fantasy.test';
+
+-- ============================================================================
+-- Step 5: Add Teams to the New Test League
+-- ============================================================================
+WITH new_league AS (
+  SELECT "Id" FROM "Leagues" WHERE "Name" = 'Paddock Pretenders'
+),
+team_ids AS (
   SELECT t."Id", up."Id" as "UserId"
   FROM "Teams" t
   INNER JOIN "UserProfiles" up ON t."UserId" = up."Id"
@@ -132,10 +162,10 @@ WITH team_ids AS (
 )
 INSERT INTO "LeagueTeams" ("LeagueId", "TeamId", "JoinedAt", "CreatedBy", "CreatedAt", "UpdatedAt", "DeletedAt", "IsDeleted", "UpdatedBy", "DeletedBy")
 SELECT
-  5 as "LeagueId",
-  "Id" as "TeamId",
+  (SELECT "Id" FROM new_league) as "LeagueId",
+  team_ids."Id" as "TeamId",
   NOW() as "JoinedAt",
-  "UserId" as "CreatedBy",
+  team_ids."UserId" as "CreatedBy",
   NOW() as "CreatedAt",
   NOW() as "UpdatedAt",
   NULL as "DeletedAt",
@@ -162,6 +192,9 @@ INNER JOIN "UserProfiles" up ON t."UserId" = up."Id"
 WHERE up."Email" LIKE '%testteam%@f1fantasy.test'
 ORDER BY t."Id";
 
+-- Verify the test league was created
+SELECT * FROM "Leagues" WHERE "Name" = 'Paddock Pretenders';
+
 -- Verify league memberships were created
 SELECT lt."LeagueId", lt."TeamId", t."Name", lt."JoinedAt"
 FROM "LeagueTeams" lt
@@ -170,8 +203,11 @@ INNER JOIN "UserProfiles" up ON t."UserId" = up."Id"
 WHERE up."Email" LIKE '%testteam%@f1fantasy.test'
 ORDER BY t."Name";
 
--- Count teams in league 5
-SELECT COUNT(*) as team_count FROM "LeagueTeams" WHERE "LeagueId" = 5;
+-- Count teams in the new test league
+SELECT COUNT(*) as team_count
+FROM "LeagueTeams" lt
+INNER JOIN "Leagues" l ON lt."LeagueId" = l."Id"
+WHERE l."Name" = 'Paddock Pretenders';
 
 -- ============================================================================
 -- Commit the transaction (change to ROLLBACK to undo all changes for testing)
