@@ -1,18 +1,20 @@
 import { Account } from '@/components/Account/Account';
 import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
 import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
-import type { AuthContextType } from '@/contexts/AuthContext';
-import type { TeamContextType } from '@/contexts/TeamContext';
-import { requireAuth } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { userProfileService } from '@/services/userProfileService';
 import { API_BASE, server } from '@/setupTests';
-import { createMockUserProfile, renderWithRouter } from '@/tests/test-utils';
-import type { Session, User } from '@supabase/supabase-js';
+import {
+  buildAuthenticatedLayout,
+  createAuthedAuth,
+  createBaseRouterContext,
+  createMockUserProfile,
+  renderWithRouter,
+} from '@/tests/test-utils';
 import { Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router';
 import { screen } from '@testing-library/react';
 import { HttpResponse, http } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // Minimal route tree mirroring the production `/account` shape:
 // a pathless `_authenticated` parent + `account` child produces the route id
@@ -27,12 +29,7 @@ function buildAccountRouteTree() {
     component: () => <Outlet />,
   });
 
-  const authenticatedLayoutRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    id: '_authenticated',
-    beforeLoad: ({ context }) => requireAuth(context),
-    component: () => <Outlet />,
-  });
+  const authenticatedLayoutRoute = buildAuthenticatedLayout(rootRoute);
 
   const accountRoute = createRoute({
     getParentRoute: () => authenticatedLayoutRoute,
@@ -49,33 +46,7 @@ function buildAccountRouteTree() {
   return rootRoute.addChildren([authenticatedLayoutRoute.addChildren([accountRoute])]);
 }
 
-const authedAuth: AuthContextType = {
-  user: { id: 'user-123' } as User,
-  session: {} as Session,
-  loading: false,
-  isAuthTransitioning: false,
-  signIn: vi.fn(),
-  signUp: vi.fn(),
-  signOut: vi.fn(),
-  startAuthTransition: vi.fn(),
-  completeAuthTransition: vi.fn(),
-};
-
-const teamContext: TeamContextType = {
-  myTeamId: null,
-  hasTeam: false,
-  setMyTeamId: vi.fn(),
-  refreshMyTeam: vi.fn(),
-};
-
-const baseRouterContext: Omit<RouterContext, 'auth'> = {
-  teamContext,
-  team: null,
-  profile: null,
-  currentSeason: null,
-};
-
-describe('/account integration', () => {
+describe('Account page', () => {
   it('renders profile data fetched by the loader', async () => {
     server.use(
       http.get(`${API_BASE}/me/profile`, () =>
@@ -86,8 +57,8 @@ describe('/account integration', () => {
     renderWithRouter({
       routeTree: buildAccountRouteTree(),
       initialEntry: '/account',
-      auth: authedAuth,
-      routerContext: baseRouterContext,
+      auth: createAuthedAuth(),
+      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByDisplayValue('Ada Lovelace')).toBeInTheDocument();
@@ -99,8 +70,8 @@ describe('/account integration', () => {
     renderWithRouter({
       routeTree: buildAccountRouteTree(),
       initialEntry: '/account',
-      auth: authedAuth,
-      routerContext: baseRouterContext,
+      auth: createAuthedAuth(),
+      routerContext: createBaseRouterContext(),
     });
 
     expect(
