@@ -82,12 +82,17 @@ public class ScoringServiceTests
             IsActive = isActive,
         };
 
-    private static DriverQualifyingResult QualResult(int driverId, int position) =>
+    private static DriverQualifyingResult QualResult(
+        int driverId,
+        int? position,
+        RacingStatus status = RacingStatus.Classified
+    ) =>
         new()
         {
             DriverId = driverId,
             RaceWeekendId = 1,
             Position = position,
+            Status = status,
         };
 
     private static DriverRacingResult RaceResult(
@@ -131,6 +136,18 @@ public class ScoringServiceTests
     {
         var service = CreateService();
         Assert.Equal(0, service.CalculateDriverQualifyingPoints(QualResult(1, 11)));
+    }
+
+    [Fact]
+    public void CalculateDriverQualifyingPoints_NullPosition_Returns0()
+    {
+        var service = CreateService();
+        Assert.Equal(
+            0,
+            service.CalculateDriverQualifyingPoints(
+                QualResult(1, position: null, status: RacingStatus.DSQ)
+            )
+        );
     }
 
     #endregion
