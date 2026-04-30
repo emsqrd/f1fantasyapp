@@ -15,43 +15,53 @@ from ingest_results import (
     get_fastest_lap_driver,
     ingest,
     load_session,
-    map_status,
+    map_session_status,
 )
 
 
-# --- map_status ---
+# --- map_session_status ---
 
 
-class TestMapStatus:
-    def test_finished_returns_classified(self):
-        assert map_status("Finished") == RacingStatus.CLASSIFIED
+class TestMapSessionStatus:
+    def test_integer_classified_position_is_classified(self):
+        assert map_session_status({"ClassifiedPosition": "1"}) == RacingStatus.CLASSIFIED
+        assert map_session_status({"ClassifiedPosition": "17"}) == RacingStatus.CLASSIFIED
 
-    def test_lapped_one_lap_returns_classified(self):
-        assert map_status("+1 Lap") == RacingStatus.CLASSIFIED
+    def test_d_returns_dsq(self):
+        assert map_session_status({"ClassifiedPosition": "D"}) == RacingStatus.DSQ
 
-    def test_lapped_two_laps_returns_classified(self):
-        assert map_status("+2 Laps") == RacingStatus.CLASSIFIED
+    def test_e_returns_dsq(self):
+        assert map_session_status({"ClassifiedPosition": "E"}) == RacingStatus.DSQ
 
-    def test_retired_returns_dnf(self):
-        assert map_status("Retired") == RacingStatus.DNF
+    def test_w_returns_dns(self):
+        assert map_session_status({"ClassifiedPosition": "W"}) == RacingStatus.DNS
 
-    def test_engine_failure_returns_dnf(self):
-        assert map_status("Engine") == RacingStatus.DNF
+    def test_f_returns_dns(self):
+        assert map_session_status({"ClassifiedPosition": "F"}) == RacingStatus.DNS
 
-    def test_accident_returns_dnf(self):
-        assert map_status("Accident") == RacingStatus.DNF
+    def test_r_returns_dnf(self):
+        assert map_session_status({"ClassifiedPosition": "R"}) == RacingStatus.DNF
 
-    def test_disqualified_returns_dsq(self):
-        assert map_status("Disqualified") == RacingStatus.DSQ
+    def test_n_returns_dnf(self):
+        assert map_session_status({"ClassifiedPosition": "N"}) == RacingStatus.DNF
 
-    def test_none_returns_dns(self):
-        assert map_status(None) == RacingStatus.DNS
+    def test_unknown_letter_returns_dnf(self):
+        assert map_session_status({"ClassifiedPosition": "X"}) == RacingStatus.DNF
 
-    def test_nan_returns_dns(self):
-        assert map_status(float("nan")) == RacingStatus.DNS
+    def test_qualifying_with_position_returns_classified(self):
+        assert (
+            map_session_status({"ClassifiedPosition": "", "Position": 5})
+            == RacingStatus.CLASSIFIED
+        )
+
+    def test_qualifying_with_nan_position_returns_dsq(self):
+        assert (
+            map_session_status({"ClassifiedPosition": "", "Position": float("nan")})
+            == RacingStatus.DSQ
+        )
 
     def test_whitespace_is_stripped(self):
-        assert map_status("  Finished  ") == RacingStatus.CLASSIFIED
+        assert map_session_status({"ClassifiedPosition": "  D  "}) == RacingStatus.DSQ
 
 
 # --- load_session ---
@@ -225,21 +235,29 @@ def _make_session(results_data: list[dict]) -> SimpleNamespace:
 class TestBuildQualifyingPayload:
     def test_builds_payload(self):
         session = _make_session([
-            {"Abbreviation": "VER", "Position": 1},
-            {"Abbreviation": "NOR", "Position": 2},
+            {"Abbreviation": "VER", "Position": 1, "ClassifiedPosition": ""},
+            {"Abbreviation": "NOR", "Position": 2, "ClassifiedPosition": ""},
         ])
         driver_map = {"VER": 10, "NOR": 20}
         payload, warnings = build_qualifying_payload(session, driver_map)
 
         assert len(payload) == 2
-        assert payload[0] == {"driverId": 10, "position": 1}
-        assert payload[1] == {"driverId": 20, "position": 2}
+        assert payload[0] == {
+            "driverId": 10,
+            "position": 1,
+            "status": int(RacingStatus.CLASSIFIED),
+        }
+        assert payload[1] == {
+            "driverId": 20,
+            "position": 2,
+            "status": int(RacingStatus.CLASSIFIED),
+        }
         assert warnings == []
 
     def test_skips_unknown_driver_with_warning(self):
         session = _make_session([
-            {"Abbreviation": "VER", "Position": 1},
-            {"Abbreviation": "XXX", "Position": 2},
+            {"Abbreviation": "VER", "Position": 1, "ClassifiedPosition": ""},
+            {"Abbreviation": "XXX", "Position": 2, "ClassifiedPosition": ""},
         ])
         driver_map = {"VER": 10}
         payload, warnings = build_qualifying_payload(session, driver_map)
@@ -248,16 +266,20 @@ class TestBuildQualifyingPayload:
         assert len(warnings) == 1
         assert "XXX" in warnings[0]
 
-    def test_skips_missing_position_with_warning(self):
+    def test_nan_position_emits_dsq_with_null_position(self):
         session = _make_session([
-            {"Abbreviation": "VER", "Position": float("nan")},
+            {"Abbreviation": "VER", "Position": float("nan"), "ClassifiedPosition": ""},
         ])
         driver_map = {"VER": 10}
         payload, warnings = build_qualifying_payload(session, driver_map)
 
-        assert len(payload) == 0
-        assert len(warnings) == 1
-        assert "VER" in warnings[0]
+        assert len(payload) == 1
+        assert payload[0] == {
+            "driverId": 10,
+            "position": None,
+            "status": int(RacingStatus.DSQ),
+        }
+        assert warnings == []
 
 
 # --- build_race_payload ---
@@ -266,7 +288,7 @@ class TestBuildQualifyingPayload:
 class TestBuildRacePayload:
     def test_classified_driver(self):
         session = _make_session([
-            {"Abbreviation": "VER", "Status": "Finished", "GridPosition": 1,
+            {"Abbreviation": "VER", "ClassifiedPosition": "1", "GridPosition": 1,
              "Position": 1},
         ])
         driver_map = {"VER": 10}
@@ -286,7 +308,7 @@ class TestBuildRacePayload:
 
     def test_fastest_lap_false_when_not_matching(self):
         session = _make_session([
-            {"Abbreviation": "VER", "Status": "Finished", "GridPosition": 1,
+            {"Abbreviation": "VER", "ClassifiedPosition": "1", "GridPosition": 1,
              "Position": 1},
         ])
         driver_map = {"VER": 10}
@@ -296,7 +318,7 @@ class TestBuildRacePayload:
 
     def test_fastest_lap_false_when_none(self):
         session = _make_session([
-            {"Abbreviation": "VER", "Status": "Finished", "GridPosition": 1,
+            {"Abbreviation": "VER", "ClassifiedPosition": "1", "GridPosition": 1,
              "Position": 1},
         ])
         driver_map = {"VER": 10}
@@ -306,7 +328,7 @@ class TestBuildRacePayload:
 
     def test_dnf_driver_has_null_finish_position(self):
         session = _make_session([
-            {"Abbreviation": "NOR", "Status": "Retired", "GridPosition": 3,
+            {"Abbreviation": "NOR", "ClassifiedPosition": "R", "GridPosition": 3,
              "Position": float("nan")},
         ])
         driver_map = {"NOR": 20}
@@ -317,7 +339,7 @@ class TestBuildRacePayload:
 
     def test_dsq_driver_has_null_finish_position(self):
         session = _make_session([
-            {"Abbreviation": "VER", "Status": "Disqualified", "GridPosition": 1,
+            {"Abbreviation": "VER", "ClassifiedPosition": "D", "GridPosition": 1,
              "Position": 1},
         ])
         driver_map = {"VER": 10}
@@ -326,20 +348,34 @@ class TestBuildRacePayload:
         assert payload[0]["finishPosition"] is None
         assert payload[0]["status"] == int(RacingStatus.DSQ)
 
-    def test_lapped_driver_is_classified(self):
+    def test_dns_driver_has_null_finish_position(self):
         session = _make_session([
-            {"Abbreviation": "VER", "Status": "+1 Lap", "GridPosition": 15,
-             "Position": 12},
+            {"Abbreviation": "PIA", "ClassifiedPosition": "W", "GridPosition": 0,
+             "Position": float("nan")},
         ])
-        driver_map = {"VER": 10}
+        driver_map = {"PIA": 30}
         payload, warnings = build_race_payload(session, driver_map, {})
 
-        assert payload[0]["finishPosition"] == 12
-        assert payload[0]["status"] == int(RacingStatus.CLASSIFIED)
+        assert payload[0]["finishPosition"] is None
+        assert payload[0]["status"] == int(RacingStatus.DNS)
+
+    def test_classified_position_r_with_finish_position_is_dnf(self):
+        # Regression: under the old `Status`-based mapper, a "Lapped" entry with
+        # Position=17 was stored as CLASSIFIED. The FIA `R` classification means
+        # the driver was not classified — must round-trip as DNF with null finish.
+        session = _make_session([
+            {"Abbreviation": "STR", "ClassifiedPosition": "R", "GridPosition": 14,
+             "Position": 17},
+        ])
+        driver_map = {"STR": 40}
+        payload, warnings = build_race_payload(session, driver_map, {})
+
+        assert payload[0]["finishPosition"] is None
+        assert payload[0]["status"] == int(RacingStatus.DNF)
 
     def test_skips_unknown_driver_with_warning(self):
         session = _make_session([
-            {"Abbreviation": "XXX", "Status": "Finished", "GridPosition": 1,
+            {"Abbreviation": "XXX", "ClassifiedPosition": "1", "GridPosition": 1,
              "Position": 1},
         ])
         payload, warnings = build_race_payload(session, {}, {})
@@ -350,7 +386,7 @@ class TestBuildRacePayload:
 
     def test_missing_overtakes_defaults_to_zero(self):
         session = _make_session([
-            {"Abbreviation": "VER", "Status": "Finished", "GridPosition": 1,
+            {"Abbreviation": "VER", "ClassifiedPosition": "1", "GridPosition": 1,
              "Position": 1},
         ])
         driver_map = {"VER": 10}
@@ -360,7 +396,7 @@ class TestBuildRacePayload:
 
     def test_missing_grid_position_defaults_to_zero(self):
         session = _make_session([
-            {"Abbreviation": "VER", "Status": "Finished", "GridPosition": float("nan"),
+            {"Abbreviation": "VER", "ClassifiedPosition": "1", "GridPosition": float("nan"),
              "Position": 1},
         ])
         driver_map = {"VER": 10}
@@ -441,7 +477,7 @@ def _make_ingest_mocks(monkeypatch, *, has_sprint: bool, total_rounds: int, roun
     monkeypatch.setattr("ingest_results.load_session", _load)
     monkeypatch.setattr(
         "ingest_results.build_qualifying_payload",
-        lambda sess, dm: ([{"driverId": 10, "position": 1}], []),
+        lambda sess, dm: ([{"driverId": 10, "position": 1, "status": 0}], []),
     )
     monkeypatch.setattr(
         "ingest_results.build_race_payload",

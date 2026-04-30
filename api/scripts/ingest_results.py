@@ -23,9 +23,6 @@ from dotenv import dotenv_values
 
 CACHE_DIR = ".ff1_cache"
 
-# FastF1 status strings that mean the driver finished the race
-_CLASSIFIED_STATUSES = {"Finished"}
-
 WEEKEND_FORMAT_SPRINT = 1
 
 
@@ -197,21 +194,26 @@ def count_overtakes(laps) -> dict[str, int]:
     return overtakes
 
 
-def map_status(status_str) -> RacingStatus:
-    """Map a FastF1 status string to a RacingStatus enum value."""
-    if pd.isna(status_str) or status_str is None:
-        return RacingStatus.DNS
+def map_session_status(row) -> RacingStatus:
+    """Map a FastF1 SessionResults row to a RacingStatus.
 
-    status = str(status_str).strip()
-
-    if status == "Disqualified":
-        return RacingStatus.DSQ
-
-    if status in _CLASSIFIED_STATUSES or "Lap" in status:
-        # "Finished" or lapped (e.g. "+1 Lap", "+2 Laps")
+    Reads ClassifiedPosition for grand-prix and sprint sessions (FIA's official
+    classification). Falls back to Position-NaN for qualifying, where FastF1
+    leaves ClassifiedPosition empty.
+    """
+    cp = str(row.get("ClassifiedPosition") or "").strip()
+    if cp == "":
+        return (
+            RacingStatus.CLASSIFIED
+            if not pd.isna(row.get("Position"))
+            else RacingStatus.DSQ
+        )
+    if cp.isdigit():
         return RacingStatus.CLASSIFIED
-
-    # Everything else: "Retired", mechanical failures, accidents, etc.
+    if cp in ("D", "E"):
+        return RacingStatus.DSQ
+    if cp in ("W", "F"):
+        return RacingStatus.DNS
     return RacingStatus.DNF
 
 
@@ -231,14 +233,16 @@ def build_qualifying_payload(
             warnings.append(f"Driver '{abbr}' not found in API, skipping")
             continue
 
+        status = map_session_status(row)
         position = row.get("Position")
-        if pd.isna(position):
-            warnings.append(f"Driver '{abbr}' has no qualifying position, skipping")
-            continue
+        position_value = (
+            int(position) if status == RacingStatus.CLASSIFIED else None
+        )
 
         items.append({
             "driverId": driver_id,
-            "position": int(position),
+            "position": position_value,
+            "status": int(status),
         })
     return items, warnings
 
@@ -260,7 +264,7 @@ def build_race_payload(
             warnings.append(f"Driver '{abbr}' not found in API, skipping")
             continue
 
-        status = map_status(row.get("Status", ""))
+        status = map_session_status(row)
 
         grid = row.get("GridPosition")
         grid = 0 if pd.isna(grid) else int(grid)
