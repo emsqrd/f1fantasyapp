@@ -201,7 +201,8 @@ def map_session_status(row) -> RacingStatus:
     classification). Falls back to Position-NaN for qualifying, where FastF1
     leaves ClassifiedPosition empty.
     """
-    cp = str(row.get("ClassifiedPosition") or "").strip()
+    cp_raw = row.get("ClassifiedPosition")
+    cp = "" if pd.isna(cp_raw) else str(cp_raw).strip()
     if cp == "":
         return (
             RacingStatus.CLASSIFIED
@@ -214,6 +215,12 @@ def map_session_status(row) -> RacingStatus:
         return RacingStatus.DSQ
     if cp in ("W", "F"):
         return RacingStatus.DNS
+    if cp in ("R", "N"):
+        return RacingStatus.DNF
+    print(
+        f"Warning: unknown FIA ClassifiedPosition '{cp}', bucketing as DNF",
+        file=sys.stderr,
+    )
     return RacingStatus.DNF
 
 

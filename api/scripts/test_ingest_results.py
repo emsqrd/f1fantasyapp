@@ -48,6 +48,23 @@ class TestMapSessionStatus:
     def test_unknown_letter_returns_dnf(self):
         assert map_session_status({"ClassifiedPosition": "X"}) == RacingStatus.DNF
 
+    def test_unknown_letter_warns_to_stderr(self, capsys):
+        map_session_status({"ClassifiedPosition": "X"})
+        captured = capsys.readouterr()
+        assert "unknown FIA ClassifiedPosition 'X'" in captured.err
+
+    def test_nan_classified_position_falls_through_to_position(self):
+        assert (
+            map_session_status({"ClassifiedPosition": float("nan"), "Position": 5})
+            == RacingStatus.CLASSIFIED
+        )
+        assert (
+            map_session_status(
+                {"ClassifiedPosition": float("nan"), "Position": float("nan")}
+            )
+            == RacingStatus.DSQ
+        )
+
     def test_qualifying_with_position_returns_classified(self):
         assert (
             map_session_status({"ClassifiedPosition": "", "Position": 5})
