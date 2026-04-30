@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data.Entities;
 using F1CompanionApi.IntegrationTests.Support;
+using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.IntegrationTests.Scenarios;
 
@@ -82,6 +83,14 @@ public class RaceWeekendScoringTests : IntegrationTestBase
 
         var scoreResponse = await client.PostAsync(scoreUrl, content: null);
         Assert.Equal(HttpStatusCode.NoContent, scoreResponse.StatusCode);
+
+        await WithDbAsync(async db =>
+        {
+            var constructorScored = await db.ConstructorRaceWeekendScores.AnyAsync(s =>
+                s.RaceWeekendId == race.Id
+            );
+            Assert.True(constructorScored);
+        });
 
         var getResults = await client.GetFromJsonAsync<List<DriverQualifyingResultResponse>>(
             resultsUrl
