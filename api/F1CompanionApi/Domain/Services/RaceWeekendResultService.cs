@@ -79,6 +79,7 @@ public class RaceWeekendResultService : IRaceWeekendResultService
                 DriverId = i.DriverId,
                 RaceWeekendId = raceWeekendId,
                 Position = i.Position,
+                Status = i.Status,
                 CreatedAt = DateTime.UtcNow,
             })
             .ToList();
@@ -196,7 +197,9 @@ public class RaceWeekendResultService : IRaceWeekendResultService
     }
 
     /// <summary>
-    /// Validates that no duplicate driverIds appear in the batch.
+    /// Validates that no duplicate driverIds appear in the batch and that Position
+    /// is consistent with Status: a Classified driver must have a Position; a non-Classified
+    /// driver must not.
     /// </summary>
     /// <param name="qualifyingItems">The qualifying result items to validate.</param>
     private static void ValidateQualifyingItems(List<QualifyingResultItem> qualifyingItems)
@@ -209,6 +212,23 @@ public class RaceWeekendResultService : IRaceWeekendResultService
             throw new ArgumentException(
                 $"Duplicate driverIds in batch: {string.Join(", ", duplicates.Select(g => g.Key))}"
             );
+
+        foreach (var item in qualifyingItems)
+        {
+            var positionRequired = item.Status == RacingStatus.Classified && item.Position is null;
+            var positionForbidden =
+                item.Status != RacingStatus.Classified && item.Position is not null;
+
+            if (positionRequired)
+                throw new ArgumentException(
+                    $"Driver {item.DriverId}: Position is required when Status is Classified"
+                );
+
+            if (positionForbidden)
+                throw new ArgumentException(
+                    $"Driver {item.DriverId}: Position must be null when Status is {item.Status}"
+                );
+        }
     }
 
     /// <summary>

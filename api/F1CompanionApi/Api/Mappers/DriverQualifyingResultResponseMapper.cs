@@ -20,6 +20,7 @@ public static class DriverQualifyingResultResponseMapper
             DriverId = result.DriverId,
             RaceWeekendId = result.RaceWeekendId,
             Position = result.Position,
+            Status = result.Status,
         };
     }
 }

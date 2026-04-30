@@ -61,8 +61,17 @@ public class RaceWeekendResultServiceTests
             WeekendFormat = weekendFormat,
         };
 
-    private static QualifyingResultItem QualItem(int driverId, int position) =>
-        new() { DriverId = driverId, Position = position };
+    private static QualifyingResultItem QualItem(
+        int driverId,
+        int? position,
+        RacingStatus status = RacingStatus.Classified
+    ) =>
+        new()
+        {
+            DriverId = driverId,
+            Position = position,
+            Status = status,
+        };
 
     private static RacingResultItem RaceItem(
         int driverId,
@@ -112,6 +121,7 @@ public class RaceWeekendResultServiceTests
                 DriverId = 1,
                 RaceWeekendId = 10,
                 Position = 5,
+                Status = RacingStatus.Classified,
             }
         );
         await context.SaveChangesAsync();
@@ -163,6 +173,67 @@ public class RaceWeekendResultServiceTests
 
         await Assert.ThrowsAsync<ArgumentException>(() =>
             service.SubmitQualifyingResultsAsync(10, [QualItem(99, 1)])
+        );
+    }
+
+    [Fact]
+    public async Task SubmitQualifyingResultsAsync_PersistsDsqEntry_WithNullPosition()
+    {
+        using var context = CreateInMemoryContext();
+        context.Drivers.Add(CreateDriver(1, "VER"));
+        context.Circuits.Add(CreateCircuit(10));
+        context.RaceWeekends.Add(CreateRace(10));
+        await context.SaveChangesAsync();
+
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
+
+        await service.SubmitQualifyingResultsAsync(
+            10,
+            [QualItem(1, position: null, status: RacingStatus.DSQ)]
+        );
+
+        var saved = await context.DriverQualifyingResults.SingleAsync();
+        Assert.Null(saved.Position);
+        Assert.Equal(RacingStatus.DSQ, saved.Status);
+    }
+
+    [Fact]
+    public async Task SubmitQualifyingResultsAsync_ThrowsArgumentException_WhenClassifiedHasNullPosition()
+    {
+        using var context = CreateInMemoryContext();
+        context.Drivers.Add(CreateDriver(1, "VER"));
+        context.Circuits.Add(CreateCircuit(10));
+        context.RaceWeekends.Add(CreateRace(10));
+        await context.SaveChangesAsync();
+
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.SubmitQualifyingResultsAsync(
+                10,
+                [QualItem(1, position: null, status: RacingStatus.Classified)]
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(RacingStatus.DNF)]
+    [InlineData(RacingStatus.DSQ)]
+    [InlineData(RacingStatus.DNS)]
+    public async Task SubmitQualifyingResultsAsync_ThrowsArgumentException_WhenNonClassifiedHasPosition(
+        RacingStatus status
+    )
+    {
+        using var context = CreateInMemoryContext();
+        context.Drivers.Add(CreateDriver(1, "VER"));
+        context.Circuits.Add(CreateCircuit(10));
+        context.RaceWeekends.Add(CreateRace(10));
+        await context.SaveChangesAsync();
+
+        var service = new RaceWeekendResultService(context, _mockLogger.Object);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.SubmitQualifyingResultsAsync(10, [QualItem(1, position: 5, status: status)])
         );
     }
 
@@ -430,12 +501,14 @@ public class RaceWeekendResultServiceTests
                 DriverId = 2,
                 RaceWeekendId = 10,
                 Position = 2,
+                Status = RacingStatus.Classified,
             },
             new DriverQualifyingResult
             {
                 DriverId = 1,
                 RaceWeekendId = 10,
                 Position = 1,
+                Status = RacingStatus.Classified,
             }
         );
         await context.SaveChangesAsync();
@@ -459,12 +532,14 @@ public class RaceWeekendResultServiceTests
                 DriverId = 1,
                 RaceWeekendId = 10,
                 Position = 1,
+                Status = RacingStatus.Classified,
             },
             new DriverQualifyingResult
             {
                 DriverId = 1,
                 RaceWeekendId = 11,
                 Position = 3,
+                Status = RacingStatus.Classified,
             }
         );
         await context.SaveChangesAsync();

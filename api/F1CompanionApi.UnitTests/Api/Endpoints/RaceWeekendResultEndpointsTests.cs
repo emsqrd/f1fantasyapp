@@ -38,8 +38,18 @@ public class RaceWeekendResultEndpointsTests
         // Arrange
         var items = new List<QualifyingResultItem>
         {
-            new QualifyingResultItem { DriverId = 1, Position = 1 },
-            new QualifyingResultItem { DriverId = 2, Position = 2 },
+            new QualifyingResultItem
+            {
+                DriverId = 1,
+                Position = 1,
+                Status = RacingStatus.Classified,
+            },
+            new QualifyingResultItem
+            {
+                DriverId = 2,
+                Position = 2,
+                Status = RacingStatus.Classified,
+            },
         };
         var expected = new List<DriverQualifyingResultResponse>
         {
@@ -49,6 +59,7 @@ public class RaceWeekendResultEndpointsTests
                 DriverId = 1,
                 RaceWeekendId = RaceWeekendId,
                 Position = 1,
+                Status = RacingStatus.Classified,
             },
         };
 
@@ -77,7 +88,12 @@ public class RaceWeekendResultEndpointsTests
 
         var items = new List<QualifyingResultItem>
         {
-            new QualifyingResultItem { DriverId = 1, Position = 1 },
+            new QualifyingResultItem
+            {
+                DriverId = 1,
+                Position = 1,
+                Status = RacingStatus.Classified,
+            },
         };
 
         // Act
@@ -105,6 +121,7 @@ public class RaceWeekendResultEndpointsTests
                 DriverId = 1,
                 RaceWeekendId = RaceWeekendId,
                 Position = 1,
+                Status = RacingStatus.Classified,
             },
         };
 
