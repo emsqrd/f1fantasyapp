@@ -60,3 +60,11 @@ The script will:
 5. Load qualifying results from FastF1 and submit them
 6. If sprint weekend: load sprint results, overtakes, and fastest lap and submit them
 7. Load race results, overtakes, and fastest lap and submit them
+
+## Tests
+
+```bash
+cd api/scripts
+source .venv/bin/activate
+python3 -m pytest test_ingest_results.py
+```
