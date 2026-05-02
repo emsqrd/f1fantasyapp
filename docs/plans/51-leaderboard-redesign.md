@@ -11,7 +11,7 @@ This plan implements the design at `docs/mockups/design_handoff_leaderboard_rede
 - Standings live on a new `GET /leagues/{id}/standings` endpoint (separate from `GET /leagues/{id}`).
 - Tie-break: `totalPoints DESC, weekendWins DESC, highestSingleRoundPoints DESC, teamId ASC`.
 - Session label uses **"Grand Prix"** (not "Race") even when redundant with `RaceWeekend.Name`.
-- Mobile/desktop layout swap via Tailwind responsive classes only (no JS hook); both layouts render, CSS hides one.
+- Single-DOM responsive layout: one `<ul>` of `<li>` rows using CSS Grid at every breakpoint, with `grid-template-columns` and per-cell visibility swapping at `sm` (640px). The handoff describes two layouts (table on desktop, cards on mobile), but they share enough structure that recreating them as a single tree with responsive utilities matches the visual spec without rendering rows twice. Trades modest markup density for simpler tests, no drift risk between layouts, and proper list semantics. The Move column's position swap (its own grid cell on desktop vs. inline within the team block on mobile) is handled by rendering `<PositionDelta>` in two grid positions, with `hidden sm:block` / `sm:hidden` on each — only that one element is dual-rendered, not the whole row.
 - Direct replacement of the existing `Leaderboard.tsx` — no flag, no V2-side-by-side.
 
 ## Critical files
@@ -27,9 +27,11 @@ This plan implements the design at `docs/mockups/design_handoff_leaderboard_rede
 **Backend (touched):**
 
 - `api/F1CompanionApi/Data/Entities/SessionType.cs` — add `Qualifying = 2` with an XML doc clarifying it is not a valid value for `DriverRacingResult.SessionType`.
-- `api/F1CompanionApi/Domain/Services/LeagueService.cs` — add `GetLeagueStandingsAsync(int leagueId)` to both the `ILeagueService` interface (declared at line 10 of the same file — not separate) and the class. **No constructor changes**: query Seasons and RaceWeekends directly via the existing `_dbContext` rather than injecting `ISeasonService` / `IRaceWeekendService`. Avoids touching `new LeagueService(...)` calls in `LeagueServiceTests.cs` (5 sites at lines 35, 81, 148, 168, 198 — verified). The duplicated 2-line "current season" / "current race weekend" inline query is cheaper than the test-fixture ripple from injection.
+- `api/F1CompanionApi/Domain/Services/LeagueService.cs` — add `GetLeagueStandingsAsync(int leagueId)` to both the `ILeagueService` interface (declared at line 10 of the same file — not separate) and the class. Inject `ISeasonService` and `IRaceWeekendService` rather than duplicating their queries. The "current season" predicate (`now >= s.StartDate && now <= s.EndDate`) lives in `SeasonService.GetCurrentSeasonAsync`; the "current race weekend" predicate (`r.RaceDate >= now`) lives in `RaceWeekendService`. Re-deriving either inside `LeagueService` creates drift risk if those predicates ever change (timezone handling, etc.).
+- `api/F1CompanionApi/Domain/Services/RaceWeekendService.cs` — add `Task<RaceWeekend?> GetCurrentRaceWeekendAsync(int seasonId)` to both `IRaceWeekendService` and the class. Returns the first `RaceWeekend` in `seasonId` where `RaceDate >= now`, ordered by `Round` — the entity-returning counterpart to the existing response-mapping methods. The query already exists twice inline in `RaceWeekendService` (`GetRaceWeekendsBySeasonAsync` and `GetRaceWeekendByRoundAsync`); leave those callsites untouched in this PR to keep scope tight.
 - `api/F1CompanionApi/Api/Endpoints/LeagueEndpoints.cs` — add `MapGet("/leagues/{id:int}/standings", ...)` next to the existing league routes.
-- `api/F1CompanionApi.UnitTests/Services/LeagueServiceTests.cs` — extend with standings cases (file already exists alongside the other service tests).
+- `api/F1CompanionApi.UnitTests/Services/LeagueServiceTests.cs` — extend with standings cases. Update the 5 existing `new LeagueService(...)` constructor calls (lines 35, 81, 148, 168, 198 — verified) to pass `Mock.Of<ISeasonService>()` and `Mock.Of<IRaceWeekendService>()` for tests that don't exercise standings; configured `Mock<ISeasonService>` / `Mock<IRaceWeekendService>` for tests that do.
+- `api/F1CompanionApi.UnitTests/Services/RaceWeekendServiceTests.cs` — add cases for the new `GetCurrentRaceWeekendAsync` method (file already exists alongside the other service tests).
 
 **Frontend (new):**
 
@@ -47,7 +49,7 @@ This plan implements the design at `docs/mockups/design_handoff_leaderboard_rede
 
 **Frontend (delete):**
 
-- `web/src/components/Leaderboard/Leaderboard.test.tsx` — this file mocks `@tanstack/react-router` to stub `useLoaderData`, which `web/CLAUDE.md` explicitly identifies as the wrong layer for route components. Replaced by an integration test (see Tests under Commit 4). The leaf-component test for `PositionDelta` lives next to the component as `PositionDelta.test.tsx`.
+- `web/src/components/Leaderboard/Leaderboard.test.tsx` — deleted in **commit 3**. Mocks `@tanstack/react-router` to stub `useLoaderData`, which `web/CLAUDE.md` explicitly identifies as the wrong layer for route components. Replaced by `league-loader.integration.test.tsx` (commit 3) and `leaderboard.integration.test.tsx` (commit 4). The leaf-component test for `PositionDelta` lives next to the component as `PositionDelta.test.tsx`.
 
 **Frontend (touched):**
 
@@ -92,10 +94,10 @@ Field rules:
   - `SessionType.Qualifying` → `EXISTS DriverQualifyingResult WHERE RaceWeekendId = X` (note: this enum value never appears in `DriverRacingResult`; qualifying lives in its own table)
   - `SessionType.GrandPrix` → `EXISTS DriverRacingResult WHERE RaceWeekendId = X AND SessionType = GrandPrix`
   - Pick the latest one in the weekend's chronological order that has rows. `null` if `latestScoredRound` is `null`. The user-facing label transform (`GrandPrix` → "Grand Prix") happens on the frontend.
-- `positionChange = positionAt(latestScoredRound - 1) - positionAt(latestScoredRound)`, where `positionAt(R)` sorts teams by the same tie-break using only `TeamRaceWeekendScore` rows where `Round <= R`. `null` when `latestScoredRound` is `null`, when `latestScoredRound == 1`, or when the team has no rows at round `latestScoredRound - 1` (e.g. joined late).
+- `positionChange = positionAt(latestScoredRound - 1) - positionAt(latestScoredRound)`, where `positionAt(R)` sorts teams by the same tie-break using only `TeamRaceWeekendScore` rows where `Round <= R`. `null` when `latestScoredRound` is `null`, when `latestScoredRound == 1`, or when the team has no rows at any round `<= latestScoredRound - 1` (i.e., this is the team's first-ever scoring round, e.g. joined late). A team that scored earlier but skipped the immediately prior round still gets a delta — its prior position is well-defined from its accumulated score through `latestScoredRound - 1`.
 - `standings` ordering (uses every available scoring row for the team — equivalent to `Round <= latestScoredRound`):
   1. `totalPoints` DESC (sum of `TeamRaceWeekendScore.TotalPoints` for this team across the season)
-  2. `weekendWins` DESC — count of race weekends where this team had the **strictly highest** `TeamRaceWeekendScore.TotalPoints` among the league's teams (ties at the top of a weekend → no win for anyone that weekend)
+  2. `weekendWins` DESC — count of race weekends where this team had the **strictly highest** `TeamRaceWeekendScore.TotalPoints` among the league's teams (ties at the top of a weekend → no win for anyone that weekend). Note: scoped to this league's teams, so a team in multiple leagues will have a different `weekendWins` count in each league's standings — this is correct (standings are a per-league construct), but worth being explicit since the term reads like a team property.
   3. `highestSingleRoundPoints` DESC — max `TeamRaceWeekendScore.TotalPoints` row this team has
   4. `teamId` ASC — final deterministic tiebreak
 - Standings include every team in the league, even those with zero scoring rows (`totalPoints: 0`, `weekendWins: 0`, `highestSingleRoundPoints: 0`).
@@ -178,10 +180,16 @@ export interface LeagueStandings {
 }
 
 // Display transform — backend ships the canonical enum, frontend renders.
-export const sessionTypeLabel: Record<SessionType, string> = {
+// `null` for GrandPrix is intentional: race names like "Miami Grand Prix"
+// already encode the session, so re-appending "Grand Prix" reads as redundant
+// ("After Miami Grand Prix Grand Prix"). When this returns null, the consumer
+// (e.g. the leaderboard "After" chip) should omit the session segment entirely.
+// Sprint and Qualifying always render — those carry information the race name
+// doesn't, and signal that scoring is mid-weekend.
+export const sessionTypeLabel: Record<SessionType, string | null> = {
   [SessionType.Sprint]: 'Sprint',
   [SessionType.Qualifying]: 'Qualifying',
-  [SessionType.GrandPrix]: 'Grand Prix',
+  [SessionType.GrandPrix]: null,
 };
 ```
 
@@ -191,7 +199,7 @@ Four commits, each independently passing build, lint, format, and tests.
 
 ---
 
-### Commit 1 — Branch setup + tracked planning artifacts
+### Commit 1 — Branch setup + tracked planning artifacts [DONE — 9c210f0]
 
 **Scope:** Create the working branch and commit the planning/design artifacts that exist today but aren't tracked. No source code changes; this commit just gets the supporting docs into version control before implementation begins so reviewers can see the design context for the subsequent commits.
 
@@ -226,14 +234,16 @@ Four commits, each independently passing build, lint, format, and tests.
 
 3. **Extend `LeagueService`** with `Task<LeagueStandingsResponse?> GetLeagueStandingsAsync(int leagueId)` (returns `null` for missing league → 404). Add the same signature to the existing `ILeagueService` interface (same file, line 10).
 
-   No constructor changes (see "Backend (touched)" rationale above).
+   Constructor changes: inject `ISeasonService` and `IRaceWeekendService` alongside the existing `ApplicationDbContext` and `ILogger<LeagueService>`. No new DI registration — both services are already registered. See "Backend (touched)" for the test-fixture ripple.
+
+   Add `Task<RaceWeekend?> GetCurrentRaceWeekendAsync(int seasonId)` to `IRaceWeekendService` + `RaceWeekendService` first (small precursor change in the same commit). Implementation: `_dbContext.RaceWeekends.Where(r => r.SeasonId == seasonId && r.RaceDate >= DateTime.UtcNow).OrderBy(r => r.Round).FirstOrDefaultAsync()`.
 
    Internal logic:
    - Load league with `Include(LeagueTeams).ThenInclude(Team).ThenInclude(Owner)` and project to `(teamId, teamName, ownerId, ownerName)`. Return `null` if league not found.
-   - Resolve current season inline: `var seasonId = await _dbContext.Seasons.Where(s => s.IsCurrent).Select(s => (int?)s.Id).FirstOrDefaultAsync();`. Neither `League` nor `Team` carries `SeasonId` (verified); the season context is the global active season.
-   - Load `TeamRaceWeekendScore` rows joined to `RaceWeekend` for those team ids and that season — projection: `(teamId, round, totalPoints)`. The entity has navigation property `RaceWeekend` (verified) so the LINQ shape is `_dbContext.TeamRaceWeekendScores.Where(s => teamIds.Contains(s.TeamId) && s.RaceWeekend.SeasonId == seasonId).Select(s => new { s.TeamId, s.RaceWeekend.Round, s.TotalPoints }).ToListAsync()`.
-   - Resolve current race weekend inline (mirror `RaceWeekendService.cs:45-48` semantics — first race where `RaceDate >= now`): `var currentRaceWeekend = await _dbContext.RaceWeekends.Where(r => r.SeasonId == seasonId && r.RaceDate >= DateTime.UtcNow).OrderBy(r => r.Round).FirstOrDefaultAsync();`. Take its `Round` for the response's `round` field (nullable when there is no upcoming weekend, i.e., season over).
-   - `totalRounds = await _dbContext.RaceWeekends.CountAsync(r => r.SeasonId == seasonId)`.
+   - Resolve current season: `var currentSeason = await _seasonService.GetCurrentSeasonAsync();`. Neither `League` nor `Team` carries `SeasonId` (verified); the season context is the global active season. If `currentSeason` is `null`, return a response with empty standings, `round = null`, `totalRounds = 0`, both `after*` fields `null`.
+   - Load `TeamRaceWeekendScore` rows joined to `RaceWeekend` for those team ids and that season — projection: `(teamId, round, totalPoints)`. The entity has navigation property `RaceWeekend` (verified) so the LINQ shape is `_dbContext.TeamRaceWeekendScores.Where(s => teamIds.Contains(s.TeamId) && s.RaceWeekend.SeasonId == currentSeason.Id).Select(s => new { s.TeamId, s.RaceWeekend.Round, s.TotalPoints }).ToListAsync()`.
+   - Resolve current race weekend: `var currentRaceWeekend = await _raceWeekendService.GetCurrentRaceWeekendAsync(currentSeason.Id);`. Take its `Round` for the response's `round` field (nullable when there is no upcoming weekend, i.e., season over).
+   - `totalRounds = await _dbContext.RaceWeekends.CountAsync(r => r.SeasonId == currentSeason.Id)`.
    - `latestScoredRound = max(round)` across the loaded score rows (nullable).
    - For each team, compute aggregates across all loaded rows for that team:
      - `totalPoints = sum(points)`
@@ -249,7 +259,7 @@ Four commits, each independently passing build, lint, format, and tests.
    - Returns `Results.Ok(...)` on success, `Results.NotFound()` when the service returns `null`.
    - No new DI registration needed — `LeagueService` is already wired.
 
-5. **Tests** — two layers. xUnit naming convention `{MethodName}_{Scenario}_{ExpectedOutcome}` per `api/CLAUDE.md`. Standings logic stays inside the `GetLeagueStandingsAsync` instance method; tests follow the established `LeagueServiceTests` pattern (Moq for `ILogger`, `CreateInMemoryContext()` helper, `UseInMemoryDatabase(Guid.NewGuid().ToString())` per test). This intentionally extends the legacy EF-InMemory pattern that the rest of `LeagueServiceTests` uses — the consistency tradeoff (uniform shape across all `LeagueService` tests, single future refactor target) outweighs the divergence-from-prod risk for this read-only logic, which is also covered against real Postgres in the integration layer.
+5. **Tests** — two layers. xUnit naming convention `{MethodName}_{Scenario}_{ExpectedOutcome}` per `api/CLAUDE.md`. Standings logic stays inside the `GetLeagueStandingsAsync` instance method; tests follow the established `LeagueServiceTests` pattern (Moq for `ILogger`, `CreateInMemoryContext()` helper, `UseInMemoryDatabase(Guid.NewGuid().ToString())` per test). The "current season" / "current race weekend" date predicates that would have been brittle on EF InMemory now run through `Mock<ISeasonService>` / `Mock<IRaceWeekendService>` instead — the unit tests configure deterministic returns rather than seeding date ranges. The remaining LINQ (score aggregation, league/team lookup) is straightforward enough that EF InMemory is a fair stand-in; the integration layer covers the real-Postgres translation.
 
    **`F1CompanionApi.UnitTests/Domain/Models/WeekendSessionsTests.cs`** — pure helper, no DI:
    - `[Fact] InOrder_Standard_ReturnsQualifyingThenGrandPrix`
@@ -324,13 +334,13 @@ Four commits, each independently passing build, lint, format, and tests.
      standings: LeagueStandings;
    }
    ```
-   Both components continue to use the existing `useLoaderData({ from: '...' }) as LeagueLoaderData` pattern. **The `getRouteApi` migration and removal of the duplicated interface are deferred to commit 4** — switching APIs in this commit would require simultaneously updating `Leaderboard.test.tsx`'s `vi.mock('@tanstack/react-router', ...)` to add a `getRouteApi` stub (since the current mock factory only exports `useLoaderData`/`useRouteContext`/`Link`). Doing it in commit 4 is cleaner because we're deleting that test file there anyway.
+   Both components continue to use the existing `useLoaderData({ from: '...' }) as LeagueLoaderData` pattern. The `getRouteApi` migration and removal of the duplicated interface are deferred to commit 4 (where `Leaderboard.tsx` is rewritten anyway).
 
 5. **Mock factory** — add `createMockLeagueStandings` to `web/src/tests/test-utils/mockFactories.ts` alongside the existing `createMockTeam` / `createMockDriver`. Defaults: `{ leagueId: 1, round: 1, totalRounds: 24, afterRaceName: null, afterSessionType: null, standings: [] }`. Signature accepts a `Partial<LeagueStandings>` for field-by-field overrides (mirrors the existing factories' override pattern).
 
 6. **Tests** — two changes:
 
-   **Update `web/src/components/Leaderboard/Leaderboard.test.tsx`** — the existing tests still mock `useLoaderData` and consume the `LeagueLoaderData` cast. With the interface now including `standings: LeagueStandings`, the mocked `useLoaderData` return value needs to include a `standings` field too (otherwise TypeScript fails the cast). Add `standings: createMockLeagueStandings()` to each mock invocation — that's the only change. **Do not delete this file** — it's deleted in commit 4 when its replacement integration test lands.
+   **Delete `web/src/components/Leaderboard/Leaderboard.test.tsx`** — already slated for deletion in commit 4 because it mocks `@tanstack/react-router` to stub `useLoaderData` (the wrong layer per `web/CLAUDE.md`). Doing the delete here avoids editing a soon-to-be-deleted file just to add `standings: createMockLeagueStandings()` to every mocked `useLoaderData` return so the widened `LeagueLoaderData` cast still type-checks. The loader-level coverage added below (plus the existing component-level coverage that's about to be replaced) gets us to commit 4 without a coverage gap on the temporary unchanged-UI path.
 
    **Add `web/src/tests/integration/league-loader.integration.test.tsx`** — small, loader-only integration test. Copy the shape of `src/tests/integration/account.integration.test.tsx`. Mounts the league route with MSW handlers for both `/leagues/{id}` and `/leagues/{id}/standings`. The route's `notFoundComponent` (currently defined at `router.tsx:522-528`) renders an `<h1>League Not Found</h1>` heading — the test asserts on that heading text via `getByRole('heading', { name: /league not found/i })` to confirm the not-found path was taken.
    - 404 from `/leagues/{id}` → "League Not Found" heading renders.
@@ -361,11 +371,12 @@ Four commits, each independently passing build, lint, format, and tests.
 
    - **`web/src/components/LeaderboardHeader/LeaderboardHeader.tsx`** — props: `league: League`, `standings: LeagueStandings`.
      - `<h1>` `league.name` + optional `<p>` `league.description`.
-     - Chip row with two chips, **only when `standings.round != null`**:
-       - `Round {standings.round} / {standings.totalRounds}`
-       - `After {standings.afterRaceName} {sessionTypeLabel[standings.afterSessionType]}` (uses the `sessionTypeLabel` map from the contract)
+     - Chip row, with each chip conditioned independently:
+       - "Round" chip — render when `standings.round != null`: `Round {standings.round} / {standings.totalRounds}`
+       - "After" chip — render when `standings.afterRaceName != null` (which implies `afterSessionType != null`). Format: ``After {standings.afterRaceName}`` plus, when `sessionTypeLabel[standings.afterSessionType] != null`, ` · {sessionTypeLabel[standings.afterSessionType]}`. So Sprint scored → "After Miami Grand Prix · Sprint"; Qualifying scored → "After Miami Grand Prix · Qualifying"; Grand Prix scored → "After Miami Grand Prix" (session label omitted because the race name already encodes it). The presence/absence of the session segment is itself a signal: if you see one, scoring is still mid-weekend.
+     - The two conditions diverge on purpose. After the season's final race, `round` is `null` (no upcoming weekend) but `afterRaceName` is still set — the user should still see "After Abu Dhabi Grand Prix" even though the "Round" chip is gone. Conversely, before the first scoring of a season, `round` is set but `afterRaceName` is `null`.
      - Chip row uses Tailwind `flex flex-wrap` on desktop and `-mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden` on `<sm`. No `Next` chip.
-     - Empty-scoring case (`standings.round == null`): render header with name + description only, no chip row.
+     - When both chips are hidden (preseason with no upcoming round, or somehow both `null`), render the header with name + description only — omit the chip row container entirely so there's no empty whitespace.
 
 3. **Rewrite `Leaderboard.tsx`** — switch from the cast-based `useLoaderData({ from: '...' }) as LeagueLoaderData` pattern to the typed `getRouteApi` pattern used in `Account.tsx:11,25,29`:
    ```ts
@@ -377,18 +388,34 @@ Four commits, each independently passing build, lint, format, and tests.
    Drop the local `interface LeagueLoaderData` declaration. Apply the same change to `League.tsx` (drop the interface at line 26, switch its `useLoaderData` call at line 40 to `routeApi.useLoaderData()`). Identify the viewer's own row via `useRouteContext` → `profile.id === entry.ownerId` (existing pattern).
 
    **Data flow:** the route loader (extended in commit 3) fires `getLeagueById(leagueId)` and `getLeagueStandings(leagueId)` in parallel — two HTTP calls to two endpoints, once per page load. `Leaderboard.tsx` is the only component that calls `routeApi.useLoaderData()`. It passes `league` and `standings` down to `LeaderboardHeader` as props. No component re-fetches; no `LeaderboardHeader`-side `useLoaderData()`. This keeps `LeaderboardHeader` route-agnostic (testable as a leaf with no router scaffolding) at the cost of one level of explicit prop-drilling.
-   - Render `<LeaderboardHeader />` then both layouts in the DOM:
-     - Desktop table: `<div className="hidden sm:block">` containing the 5-column CSS grid (`52px 1fr 70px 96px 36px`) per the handoff §Layouts. Header row + body rows. Each body row a `<Link>` (TanStack Router) styled as a button.
-     - Mobile cards: `<div className="sm:hidden">` containing the vertical card stack per the handoff.
+   - **Class composition:** the row's responsive utilities are dense (container chrome, hover, focus, my-row tint, my-row border, all crossing the `sm` breakpoint). Use the existing `cn()` helper from `@/lib/utils` (already used throughout the codebase — see `DriverCard.tsx`, `web/src/components/ui/*`) to compose class strings by purpose. Suggested grouping per row: `cn(rowBase, rowChrome, rowHover, rowFocus, isMyRow && rowMyTeam)` where each group is a string of related classes. Don't inline a single 200-character `className=""` — that gets unreadable fast at this density. The same applies to the `<PositionDelta>` variant classes and the header chip row.
+   - Render `<LeaderboardHeader />` then a single responsive list:
+     - **Outer container:** `<ul role="list" aria-label="Leaderboard" className="flex flex-col gap-2 sm:gap-0">`. The `gap-2` produces the card-stack spacing on mobile; `sm:gap-0` collapses it to flush rows on desktop where rows are separated by `border-b` instead.
+     - **Header row:** a sibling `<div>` *above* the `<ul>`, not a list item — it's column metadata, not a row. Visible only at `sm+` via `hidden sm:grid grid-cols-[52px_1fr_70px_96px_36px]`. Contains the column labels ("POS / TEAM / MOVE / PTS" + empty cell for chevron) per handoff styling.
+     - **Each row:** a `<li>` containing a single `<Link>` (TanStack Router) that fills the cell. The `<Link>` is the focusable/clickable element and carries the `aria-label`. The `<Link>` itself is the grid container: `grid grid-cols-[52px_1fr_96px] sm:grid-cols-[52px_1fr_70px_96px_36px]` (mobile collapses to 3 visible columns; the move and chevron cells are still in the DOM but `hidden sm:block`).
+     - **Cells, in DOM order:**
+       1. Rank — visible at both breakpoints.
+       2. Team+owner block — visible at both breakpoints. Inline `<PositionDelta>` rendered *inside* this cell with `sm:hidden` for the mobile-inline placement.
+       3. Move cell — `<PositionDelta>` rendered with `hidden sm:block` for the desktop column placement. Same `<PositionDelta>` component, two render sites; only one visible per breakpoint. (No prop-driven branching — both renders pass identical props.)
+       4. Points — visible at both breakpoints, right-aligned.
+       5. Chevron — `hidden sm:block`. Desktop only.
+     - **Container chrome (per row, applied to the `<Link>`):**
+       - Mobile: `rounded-[0.65rem] border bg-card p-3`.
+       - Desktop: `sm:rounded-none sm:border-x-0 sm:border-t-0 sm:bg-transparent sm:px-4 sm:py-3` (overrides mobile values, leaves only `border-b`).
+     - **Hover:**
+       - Desktop: `sm:hover:bg-accent`.
+       - Mobile: none. The handoff's `-translate-y-px hover:shadow-sm` lift is dropped — `:hover` on touch devices lingers after tap, and the affordance isn't strong enough to be worth the inconsistency.
+     - **Focus-visible:** `focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none` at both breakpoints.
    - Routing per row: own team → `<Link to="/my-team">`; others → `<Link to="/team/$teamId" params={{ teamId: String(entry.teamId) }}>`. The existing `beforeLoad` guard on `/team/$teamId` redirects own-team accidents to `/my-team`, so this is double-safe.
    - Numbers: `toLocaleString()` for `totalPoints`. `tabular-nums` everywhere numeric.
-   - "My team" treatment: tint + border per handoff §"My team" row treatment, both layered (this is the WCAG-passing combination). **In addition**, augment the row's `aria-label` for the viewer's row: `"Open {teamName}, your team, position {N}"`. This gives screen-reader users the same "this is you" signal that sighted users get from the visual treatment, and gives integration tests a semantic hook to assert against (instead of asserting on a CSS class — which is implementation, not behavior). Note this is a deliberate addition to the design handoff, which only specified the visual signal.
+   - "My team" treatment: tint + border per handoff §"My team" row treatment, both layered (this is the WCAG-passing combination). The handoff defines two slightly different expressions for the two layouts — apply both responsively on the single row:
+     - Tint: `bg-[color-mix(in_oklab,var(--row-highlight)_17%,var(--card))] sm:bg-[color-mix(in_oklab,var(--row-highlight)_17%,transparent)]` (mobile mixes over the card background, desktop mixes over transparent — handoff requirement).
+     - Border: mobile replaces the card border color (`border-[var(--row-highlight-border)]` overrides the default `border-border`); desktop adds the inset shadow on top of the border-bottom (`sm:shadow-[inset_0_0_0_1.5px_var(--row-highlight-border)]`).
+     **In addition**, augment the row's `aria-label` for the viewer's row: `"Open {teamName}, your team, position {N}"`. This gives screen-reader users the same "this is you" signal that sighted users get from the visual treatment, and gives integration tests a semantic hook to assert against (instead of asserting on a CSS class — which is implementation, not behavior). Note this is a deliberate addition to the design handoff, which only specified the visual signal.
    - Empty state: when `standings.standings.length === 0`, render the existing `bg-card rounded-lg p-8 text-center` "No teams in this league yet." card (preserve current behavior).
    - **Remove** the existing "You" Badge and "View" button — design specifies the row-tint-and-border treatment is the only "this is you" signal, and the whole row click-through replaces the button.
 
-4. **Tests** — two layers, per `web/CLAUDE.md`'s rules.
-
-   **Delete** `web/src/components/Leaderboard/Leaderboard.test.tsx`. It mocks `@tanstack/react-router` to stub `useLoaderData`, which `web/CLAUDE.md` calls out as the wrong layer for route components. Replaced by the integration test below.
+4. **Tests** — two layers, per `web/CLAUDE.md`'s rules. (`Leaderboard.test.tsx` was already deleted in commit 3.)
 
    **Add `web/src/components/PositionDelta/PositionDelta.test.tsx`** (leaf component, props in / DOM out):
    - Up / down / flat / null values render the right glyph and number.
@@ -401,10 +428,17 @@ Four commits, each independently passing build, lint, format, and tests.
      - Standard happy path: position, team name, owner name, formatted total (`toLocaleString`), delta glyph for up/down/flat/null all render.
      - Own row exposes a "your team" signal in its accessible name: `getByRole('button', { name: /your team, position 4/ })` resolves to the viewer's row. Other rows do not contain "your team" in their accessible name. This tests the user-perceivable signal (what a screen reader announces), not the CSS class that makes the visual treatment.
      - Own-team row link points to `/my-team`; other rows point to `/team/$teamId`.
-     - Header chips render when `round` is set; both chips hidden when `round == null`.
-     - "After" chip uses the frontend `sessionTypeLabel` map: API ships `2` (`SessionType.Qualifying`), chip renders `"Qualifying"`; API ships `0` (`SessionType.GrandPrix`), chip renders `"Grand Prix"`.
+     - Header chips are conditioned independently:
+       - Both `round` and `afterRaceName` set → both chips render.
+       - `round` set, `afterRaceName == null` (preseason / no scoring yet) → only "Round" chip renders.
+       - `round == null`, `afterRaceName` set (post-season-finale) → only "After" chip renders.
+       - Both `null` → no chip row.
+     - "After" chip session segment is conditioned on `sessionTypeLabel[afterSessionType]`:
+       - API ships `1` (`SessionType.Sprint`) → chip renders `"After {race} · Sprint"`.
+       - API ships `2` (`SessionType.Qualifying`) → chip renders `"After {race} · Qualifying"`.
+       - API ships `0` (`SessionType.GrandPrix`) → chip renders `"After {race}"` with no session segment (since `sessionTypeLabel[GrandPrix] === null`). Assert the chip text does **not** contain "Grand Prix · Grand Prix" or any duplicated session label.
      - Other rows' `aria-label` matches `"Open {teamName}, position {N}"` (own row matches `"Open {teamName}, your team, position {N}"`).
-   - **Do not** test the table-vs-card breakpoint swap with `matchMedia` mocking — both layouts render in the DOM (Tailwind class controls visibility), so unscoped queries will see both. Disambiguate via accessible names rather than `data-testid` (more idiomatic RTL): the table element gets `aria-label="Leaderboard table"` and the cards container gets `<ul aria-label="Leaderboard cards">`. Tests then use `getByRole('table', { name: 'Leaderboard table' })` and `getByRole('list', { name: 'Leaderboard cards' })`. This also benefits real screen-reader users.
+   - **Do not** test the breakpoint swap with `matchMedia` mocking. The single-DOM design renders one row tree at all viewports; the responsive utilities just restyle. The only element rendered twice is `<PositionDelta>` (mobile-inline + desktop-column), with one hidden via `display: none` per breakpoint. Tests should query by accessible name (`getByRole('list', { name: 'Leaderboard' })`, `getByRole('link', { name: /Open .* position N/ })`) and accept that the hidden duplicate `PositionDelta` exists in the DOM but isn't surfaced to AT. If a delta-specific assertion needs to disambiguate the two render sites (rare — the visible one is what AT and tests both see), filter to the one that isn't `display: none` via `.filter(el => el.offsetParent !== null)`.
 
 **Done when:**
 - `npm run web:test`, `npm run web:lint`, `npm run web:format:check`, `npm run web:build` all pass.
@@ -437,7 +471,7 @@ Frontend UI (commit 4):
 1. `npm run test:all` — full unit/integration suite green.
 2. `npm run web:dev` + `npm run api:watch`. Sign in, navigate to a league with scoring data:
    - Header shows name, description, both chips.
-   - Table renders on desktop ≥640px; cards render on mobile (resize browser to confirm swap).
+   - Layout adapts at 640px: ≥640px renders flush rows with column header, border-bottom dividers, chevron column, and `bg-accent` hover. <640px renders rounded card stack with `gap-2` spacing, no column header, no chevron, delta inline under owner name, and no hover effect. Resize browser to confirm the swap is smooth (no layout flash, no JS rerender).
    - Own row has tint + border; visible in both light and dark mode (toggle via OS).
    - Up/down/flat deltas display in the right colors.
    - Click own row → `/my-team`; click another row → `/team/$teamId`.
