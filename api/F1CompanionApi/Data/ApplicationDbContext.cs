@@ -31,6 +31,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<DriverRaceWeekendScore> DriverRaceWeekendScores => Set<DriverRaceWeekendScore>();
     public DbSet<ConstructorRaceWeekendScore> ConstructorRaceWeekendScores =>
         Set<ConstructorRaceWeekendScore>();
+    public DbSet<LeagueStanding> LeagueStandings => Set<LeagueStanding>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -172,6 +173,27 @@ public class ApplicationDbContext : DbContext
                 .HasOne(crs => crs.RaceWeekend)
                 .WithMany()
                 .HasForeignKey(crs => crs.RaceWeekendId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<LeagueStanding>(entity =>
+        {
+            entity
+                .HasOne(ls => ls.League)
+                .WithMany()
+                .HasForeignKey(ls => ls.LeagueId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity
+                .HasOne(ls => ls.Team)
+                .WithMany()
+                .HasForeignKey(ls => ls.TeamId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity
+                .HasOne(ls => ls.RaceWeekend)
+                .WithMany()
+                .HasForeignKey(ls => ls.RaceWeekendId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

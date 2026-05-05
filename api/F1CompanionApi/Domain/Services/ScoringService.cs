@@ -17,14 +17,21 @@ public interface IScoringService
 public class ScoringService : IScoringService
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly ILeagueStandingsService _standingsService;
     private readonly ILogger<ScoringService> _logger;
 
-    public ScoringService(ApplicationDbContext dbContext, ILogger<ScoringService> logger)
+    public ScoringService(
+        ApplicationDbContext dbContext,
+        ILeagueStandingsService standingsService,
+        ILogger<ScoringService> logger
+    )
     {
         ArgumentNullException.ThrowIfNull(dbContext);
+        ArgumentNullException.ThrowIfNull(standingsService);
         ArgumentNullException.ThrowIfNull(logger);
 
         _dbContext = dbContext;
+        _standingsService = standingsService;
         _logger = logger;
     }
 
@@ -208,6 +215,7 @@ public class ScoringService : IScoringService
     {
         await ScoreRaceEntitiesAsync(raceWeekendId);
         await ScoreTeamsForRaceAsync(raceWeekendId);
+        await _standingsService.UpdateStandingsForRaceWeekendAsync(raceWeekendId);
     }
 
     /// <summary>

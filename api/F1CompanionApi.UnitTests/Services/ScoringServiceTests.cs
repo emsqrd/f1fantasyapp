@@ -25,10 +25,11 @@ public class ScoringServiceTests
         return new ApplicationDbContext(options);
     }
 
-    private ScoringService CreateService() => new(CreateInMemoryContext(), _mockLogger.Object);
+    private ScoringService CreateService() =>
+        new(CreateInMemoryContext(), Mock.Of<ILeagueStandingsService>(), _mockLogger.Object);
 
     private ScoringService CreateServiceWithContext(ApplicationDbContext context) =>
-        new(context, _mockLogger.Object);
+        new(context, Mock.Of<ILeagueStandingsService>(), _mockLogger.Object);
 
     private static Circuit SeedCircuit(int id) =>
         new()
