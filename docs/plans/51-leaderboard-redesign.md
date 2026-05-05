@@ -355,32 +355,28 @@ Five commits, each independently passing build, lint, format, and tests.
    - Add `MapGet("/leagues/{id}/standings", ...)` to the `leaguesGroup` defined at line 13. Chain `.RequireAuthorization()` to match every other route in this group.
    - Returns `Results.Ok(...)` on success, `Results.NotFound()` when the service returns `null`.
 
-7. **Tests** — xUnit naming convention `{MethodName}_{Scenario}_{ExpectedOutcome}` per `api/CLAUDE.md`. Ranking-logic tests already live in `StandingsRankerTests` and writer-against-Postgres in `StandingsCalculationTests` from commit 2. The `LeagueServiceTests` here cover response-shape and read-path behavior only.
+7. **Tests** — xUnit naming convention `{MethodName}_{Scenario}_{ExpectedOutcome}` per `api/CLAUDE.md`. Ranking-logic tests already live in `StandingsRankerTests` and writer-against-Postgres in `StandingsCalculationTests` from commit 2.
+
+   `GetLeagueStandingsAsync` is heavy I/O (multi-level `Include`, latest-row lookup on `LeagueStandings`, per-session `EXISTS`-checks). Per the project testing strategy, EF-InMemory cannot honestly verify the failure modes that matter here (ordering translation, `EXISTS` semantics, Include shape) — and `api/CLAUDE.md` explicitly says not to extend the legacy EF-InMemory pattern for new tests. Branch coverage for the read path therefore lives in integration, not in `LeagueServiceTests`. The pure-arithmetic cases (`positionChange = prior - current`, null when no prior row) are folded into the integration happy path as additional assertions rather than getting their own cases — the seeded data already exercises both.
 
    **`F1CompanionApi.UnitTests/Domain/Models/WeekendSessionsTests.cs`** — pure helper, no DI:
    - `[Fact] InOrder_Standard_ReturnsQualifyingThenGrandPrix`
    - `[Fact] InOrder_Sprint_ReturnsSprintThenQualifyingThenGrandPrix`
 
-   **`F1CompanionApi.UnitTests/Services/LeagueServiceTests.cs`** — extend with `GetLeagueStandingsAsync` cases:
-   - `[Fact] GetLeagueStandingsAsync_UnknownLeague_ReturnsNull`
-   - `[Fact] GetLeagueStandingsAsync_LeagueWithNoTeams_ReturnsEmptyStandings` (also: `round` set if a current weekend exists, `afterRaceName`/`afterSessionType` null)
-   - `[Fact] GetLeagueStandingsAsync_NoStandingsRowsYet_AllTeamsZeroFilledByTeamIdAsc` — verifies the degenerate case: no `LeagueStanding` rows for the league, every league team appears at zero with `Position` 1..N by `TeamId` ASC, `after*` fields null.
-   - `[Fact] GetLeagueStandingsAsync_PositionChange_ComputedFromPersistedRows` — seeds two rounds of `LeagueStanding` rows; asserts `positionChange = priorPosition - currentPosition` per team.
-   - `[Fact] GetLeagueStandingsAsync_TeamWithNoPriorRow_PositionChangeIsNull`
-   - `[Fact] GetLeagueStandingsAsync_TeamInLeagueWithoutAnyStandingRows_AppendedAtBottomWithZeros` — seeds a league where some teams have rows and one doesn't; asserts the unscored team is last in the response with `TotalPoints = 0`, `positionChange = null`, and `Position` continuing from the scored teams' count + 1.
-   - `[Fact] GetLeagueStandingsAsync_MultipleZeroFilledTeams_OrderedByTeamIdAsc` — multiple unscored teams; assert they appear in `TeamId` ASC order at the bottom.
-   - `[Theory] GetLeagueStandingsAsync_AfterSessionType_*` — Standard vs Sprint formats × which sessions have results.
-   - `[Fact] GetLeagueStandingsAsync_BetweenWeekends_RoundAdvancesButAfterFieldsLag` — verifies the deliberate `round` (current upcoming) vs `latestScoredRound` (last with scoring) split.
-
-   Update the 5 existing `new LeagueService(...)` constructor calls (lines 35, 81, 148, 168, 198) to pass `Mock.Of<ISeasonService>()`, `Mock.Of<IRaceWeekendService>()`, and `Mock.Of<ILeagueStandingsService>()` for tests that don't exercise standings; configured mocks for tests that do.
+   **`F1CompanionApi.UnitTests/Services/LeagueServiceTests.cs`** — no new `GetLeagueStandingsAsync` cases. Update the 5 existing `new LeagueService(...)` constructor calls (lines 35, 81, 148, 168, 198) to pass `Mock.Of<ISeasonService>()`, `Mock.Of<IRaceWeekendService>()`, and `Mock.Of<ILeagueStandingsService>()` so the existing tests still compile after the constructor change.
 
    **`F1CompanionApi.IntegrationTests/Scenarios/CurrentRaceWeekendTests.cs`** — covers `RaceWeekendService.GetCurrentRaceWeekendAsync` against real Postgres. The method is a thin EF query (`Where SeasonId == X && RaceDate >= now`, `OrderBy Round`, `FirstOrDefaultAsync`), so an EF-InMemory unit test would mostly exercise the in-memory provider; integration coverage catches LINQ translation:
    - `[Fact] GetCurrentRaceWeekendAsync_ReturnsFirstUpcomingWeekendInRequestedSeason` — seeds a past round, two upcoming rounds (out of insertion order, to verify `OrderBy Round`), and an upcoming round in a different season (to verify the season filter); asserts the right weekend is returned.
 
    **`F1CompanionApi.IntegrationTests/Scenarios/LeagueStandingsTests.cs`** — `WebApplicationFactory` + Testcontainers Postgres. Inherits `IntegrationTestBase`; uses `factory.CreateAuthenticatedAsync()`. Closest reference: `Scenarios/RaceWeekendScoringTests.cs`. The unknown-league 404 test is added as a non-skipped fact; the unauthenticated and happy-path tests are added in this commit but already scaffolded under `[Fact(Skip = ...)]` in the working tree from the pre-pivot work — un-skip and finalize their assertions once the endpoint is registered:
    - `[Fact]` `GET /leagues/{id}/standings` for an unknown league → HTTP 404.
-   - `[Fact]` Seeded happy path: 1 league, 3 teams, 2 race weekends scored via `POST /score` (uses the real scoring path, so standings rows are written by the commit 2 hook). Assert ordering, positions, `positionChange`, `afterRaceName`, `afterSessionType` come back as expected from the real Postgres translation. Catches LINQ-translation drift between EF InMemory and Npgsql.
    - `[Fact]` Unauthenticated request → HTTP 401 (plain `factory.CreateClient()`).
+   - `[Fact]` Seeded happy path: 1 league, 3 teams, 2 race weekends scored via `POST /score` (uses the real scoring path, so standings rows are written by the commit 2 hook). One team's round-1 score is arranged so it has no prior-round row for the round-2 standings (e.g., joins between rounds, or simply not persisted in round 1) so the same fixture covers `positionChange` arithmetic AND the null-when-no-prior-row case. Assert ordering, positions, `positionChange` (including the null), `afterRaceName`, `afterSessionType` come back as expected from the real Postgres translation. Catches LINQ-translation drift between EF InMemory and Npgsql.
+   - `[Fact] GetLeagueStandings_LeagueWithNoTeams_ReturnsEmptyStandings` — `round` populated if a current weekend exists, `afterRaceName`/`afterSessionType` null.
+   - `[Fact] GetLeagueStandings_NoStandingsRowsYet_AllTeamsZeroFilledByTeamIdAsc` — league with teams but no `LeagueStanding` rows; every team appears at zero with `Position` 1..N by `TeamId` ASC, `after*` fields null.
+   - `[Fact] GetLeagueStandings_TeamInLeagueWithoutAnyStandingRows_AppendedAtBottomWithZeros` — some teams have rows and one doesn't; asserts the unscored team is last with `TotalPoints = 0`, `positionChange = null`, `Position` continuing from `scored.Count + 1`. Combine with the multi-unscored-teams case below if a single seed can express both: multiple unscored teams must appear in `TeamId` ASC order at the bottom.
+   - `[Theory] GetLeagueStandings_AfterSessionType_*` — kept to ~3-4 representative cases, not full combinatorial. Suggested rows: Standard with race results only → `GrandPrix`; Standard with qualifying + race → `GrandPrix`; Sprint with sprint only → `Sprint`; Sprint with all three sessions → `GrandPrix`. Verifies the `WeekendSessions.InOrder` iteration + `EXISTS`-check translation against real Postgres.
+   - `[Fact] GetLeagueStandings_BetweenWeekends_RoundAdvancesButAfterFieldsLag` — current upcoming weekend differs from the latest scored weekend; asserts `round` reflects the upcoming one while `afterRaceName` / `afterSessionType` reflect the last scored one.
 
 **Done when:**
 - `npm run api:test:unit` and `npm run api:test:integration` pass.
