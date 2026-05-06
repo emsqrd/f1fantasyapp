@@ -22,14 +22,21 @@ public interface ITeamService
 public class TeamService : ITeamService
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly IRaceWeekendService _raceWeekendService;
     private readonly ILogger<TeamService> _logger;
 
-    public TeamService(ApplicationDbContext dbContext, ILogger<TeamService> logger)
+    public TeamService(
+        ApplicationDbContext dbContext,
+        IRaceWeekendService raceWeekendService,
+        ILogger<TeamService> logger
+    )
     {
         ArgumentNullException.ThrowIfNull(dbContext);
+        ArgumentNullException.ThrowIfNull(raceWeekendService);
         ArgumentNullException.ThrowIfNull(logger);
 
         _dbContext = dbContext;
+        _raceWeekendService = raceWeekendService;
         _logger = logger;
     }
 
@@ -95,7 +102,7 @@ public class TeamService : ITeamService
             return null;
         }
 
-        var currentRaceWeekend = await GetCurrentRaceWeekendAsync();
+        var currentRaceWeekend = await _raceWeekendService.GetCurrentSeasonRaceWeekendAsync();
 
         int? captainDriverId = currentRaceWeekend is null
             ? null
@@ -593,18 +600,9 @@ public class TeamService : ITeamService
         );
     }
 
-    private async Task<RaceWeekend?> GetCurrentRaceWeekendAsync()
-    {
-        var now = DateTime.UtcNow;
-        return await _dbContext
-            .RaceWeekends.Where(r => r.RaceDate >= now)
-            .OrderBy(r => r.RaceDate)
-            .FirstOrDefaultAsync();
-    }
-
     private async Task<RaceWeekend?> GetCurrentRaceWeekendOrThrowIfLockedAsync()
     {
-        var currentRaceWeekend = await GetCurrentRaceWeekendAsync();
+        var currentRaceWeekend = await _raceWeekendService.GetCurrentSeasonRaceWeekendAsync();
 
         var now = DateTime.UtcNow;
         if (currentRaceWeekend?.LockDeadline is not null && now >= currentRaceWeekend.LockDeadline)

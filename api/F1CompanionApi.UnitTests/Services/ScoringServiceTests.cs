@@ -515,7 +515,8 @@ public class ScoringServiceTests
         var service = CreateServiceWithContext(context);
 
         context.Circuits.Add(SeedCircuit(1));
-        context.RaceWeekends.Add(SeedRace(id: 1, seasonId: 1));
+        var race = SeedRace(id: 1, seasonId: 1);
+        context.RaceWeekends.Add(race);
         // Driver 1: Q1 (10 pts), Race P1 from grid 1 (25 pts, 0 change)
         // Driver 2: Q5 (6 pts), Race P5 from grid 5 (10 pts, 0 change)
         context.DriverQualifyingResults.Add(QualResult(driverId: 1, position: 1));
@@ -524,7 +525,7 @@ public class ScoringServiceTests
         context.DriverRacingResults.Add(RaceResult(driverId: 2, grid: 5, finish: 5));
         await context.SaveChangesAsync();
 
-        await service.ScoreRaceEntitiesAsync(raceWeekendId: 1);
+        await service.ScoreRaceEntitiesAsync(race);
 
         var scores = await context.DriverRaceWeekendScores.ToListAsync();
         Assert.Equal(2, scores.Count);
@@ -550,13 +551,14 @@ public class ScoringServiceTests
         var service = CreateServiceWithContext(context);
 
         context.Circuits.Add(SeedCircuit(1));
-        context.RaceWeekends.Add(SeedRace(id: 1, seasonId: 1));
+        var race = SeedRace(id: 1, seasonId: 1);
+        context.RaceWeekends.Add(race);
         context.DriverQualifyingResults.Add(QualResult(driverId: 1, position: 1)); // 10 pts
         context.DriverRacingResults.Add(SprintResult(driverId: 1, grid: 1, finish: 1)); // 8 pts
         context.DriverRacingResults.Add(RaceResult(driverId: 1, grid: 1, finish: 1)); // 25 pts
         await context.SaveChangesAsync();
 
-        await service.ScoreRaceEntitiesAsync(raceWeekendId: 1);
+        await service.ScoreRaceEntitiesAsync(race);
 
         var score = await context.DriverRaceWeekendScores.SingleAsync();
         Assert.Equal(8, score.SprintPositionPoints);
@@ -573,7 +575,8 @@ public class ScoringServiceTests
         var service = CreateServiceWithContext(context);
 
         context.Circuits.Add(SeedCircuit(1));
-        context.RaceWeekends.Add(SeedRace(id: 1, seasonId: 1));
+        var race = SeedRace(id: 1, seasonId: 1);
+        context.RaceWeekends.Add(race);
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 3, constructorId: 10));
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 4, constructorId: 10));
         // Driver 3: Q1 (10 pts), Race P1 from grid 1 (25 pts)
@@ -584,7 +587,7 @@ public class ScoringServiceTests
         context.DriverRacingResults.Add(RaceResult(driverId: 4, grid: 5, finish: 5));
         await context.SaveChangesAsync();
 
-        await service.ScoreRaceEntitiesAsync(raceWeekendId: 1);
+        await service.ScoreRaceEntitiesAsync(race);
 
         var ctor = await context.ConstructorRaceWeekendScores.SingleAsync();
         Assert.Equal(10, ctor.ConstructorId);
@@ -601,7 +604,8 @@ public class ScoringServiceTests
         var service = CreateServiceWithContext(context);
 
         context.Circuits.Add(SeedCircuit(1));
-        context.RaceWeekends.Add(SeedRace(id: 1, seasonId: 1));
+        var race = SeedRace(id: 1, seasonId: 1);
+        context.RaceWeekends.Add(race);
         // Constructor 10 has 2 active drivers but only 1 has results
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 3, constructorId: 10, isActive: true));
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 4, constructorId: 10, isActive: true));
@@ -611,20 +615,20 @@ public class ScoringServiceTests
         await context.SaveChangesAsync();
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.ScoreRaceEntitiesAsync(raceWeekendId: 1)
+            service.ScoreRaceEntitiesAsync(race)
         );
         Assert.Contains("Constructor 10", ex.Message);
         Assert.Contains("race 1", ex.Message);
     }
 
     [Fact]
-    public async Task ScoreRaceEntitiesAsync_RaceNotFound_Throws()
+    public async Task ScoreRaceWeekendAsync_RaceNotFound_Throws()
     {
         var context = CreateInMemoryContext();
         var service = CreateServiceWithContext(context);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.ScoreRaceEntitiesAsync(raceWeekendId: 999)
+            service.ScoreRaceWeekendAsync(raceWeekendId: 999)
         );
         Assert.Contains("Race 999", ex.Message);
     }
@@ -636,7 +640,8 @@ public class ScoringServiceTests
         var service = CreateServiceWithContext(context);
 
         context.Circuits.Add(SeedCircuit(1));
-        context.RaceWeekends.Add(SeedRace(id: 1, seasonId: 1));
+        var race = SeedRace(id: 1, seasonId: 1);
+        context.RaceWeekends.Add(race);
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 1, constructorId: 10));
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 2, constructorId: 10));
         context.DriverQualifyingResults.Add(QualResult(driverId: 1, position: 1));
@@ -645,8 +650,8 @@ public class ScoringServiceTests
         context.DriverRacingResults.Add(RaceResult(driverId: 2, grid: 5, finish: 5));
         await context.SaveChangesAsync();
 
-        await service.ScoreRaceEntitiesAsync(raceWeekendId: 1);
-        await service.ScoreRaceEntitiesAsync(raceWeekendId: 1);
+        await service.ScoreRaceEntitiesAsync(race);
+        await service.ScoreRaceEntitiesAsync(race);
 
         Assert.Equal(2, await context.DriverRaceWeekendScores.CountAsync());
         Assert.Equal(1, await context.ConstructorRaceWeekendScores.CountAsync());
@@ -659,7 +664,8 @@ public class ScoringServiceTests
         var service = CreateServiceWithContext(context);
 
         context.Circuits.Add(SeedCircuit(1));
-        context.RaceWeekends.Add(SeedRace(id: 1, seasonId: 1));
+        var race = SeedRace(id: 1, seasonId: 1);
+        context.RaceWeekends.Add(race);
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 3, constructorId: 10));
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 4, constructorId: 10));
         // Driver 3: Q1 (10 pts), Sprint P1 (8 pts), Race P1 (25 pts) → 43
@@ -672,7 +678,7 @@ public class ScoringServiceTests
         context.DriverRacingResults.Add(RaceResult(driverId: 4, grid: 5, finish: 5));
         await context.SaveChangesAsync();
 
-        await service.ScoreRaceEntitiesAsync(raceWeekendId: 1);
+        await service.ScoreRaceEntitiesAsync(race);
 
         var ctor = await context.ConstructorRaceWeekendScores.SingleAsync();
         Assert.Equal(12, ctor.SprintPositionPoints); // 8 + 4
@@ -715,6 +721,7 @@ public class ScoringServiceTests
     {
         var context = CreateInMemoryContext();
         var service = CreateServiceWithContext(context);
+        var race = SeedRace();
 
         context.DriverRaceWeekendScores.Add(
             SeedDriverRaceScore(driverId: 1, raceWeekendId: 1, totalPoints: 35)
@@ -724,7 +731,7 @@ public class ScoringServiceTests
         );
         await context.SaveChangesAsync();
 
-        await service.ScoreTeamsForRaceAsync(raceWeekendId: 1);
+        await service.ScoreTeamsForRaceAsync(race);
 
         var score = await context.TeamRaceWeekendScores.SingleAsync();
         Assert.Equal(1, score.TeamId);
@@ -736,6 +743,7 @@ public class ScoringServiceTests
     {
         var context = CreateInMemoryContext();
         var service = CreateServiceWithContext(context);
+        var race = SeedRace();
 
         context.DriverRaceWeekendScores.Add(
             SeedDriverRaceScore(driverId: 1, raceWeekendId: 1, totalPoints: 35)
@@ -751,7 +759,7 @@ public class ScoringServiceTests
         );
         await context.SaveChangesAsync();
 
-        await service.ScoreTeamsForRaceAsync(raceWeekendId: 1);
+        await service.ScoreTeamsForRaceAsync(race);
 
         var score = await context.TeamRaceWeekendScores.SingleAsync();
         Assert.Equal(70, score.TotalPoints);
@@ -762,6 +770,7 @@ public class ScoringServiceTests
     {
         var context = CreateInMemoryContext();
         var service = CreateServiceWithContext(context);
+        var race = SeedRace();
 
         context.DriverRaceWeekendScores.Add(
             SeedDriverRaceScore(driverId: 1, raceWeekendId: 1, totalPoints: 35)
@@ -789,7 +798,7 @@ public class ScoringServiceTests
         );
         await context.SaveChangesAsync();
 
-        await service.ScoreTeamsForRaceAsync(raceWeekendId: 1);
+        await service.ScoreTeamsForRaceAsync(race);
 
         var scores = await context.TeamRaceWeekendScores.ToListAsync();
         Assert.Equal(2, scores.Count);
@@ -802,6 +811,7 @@ public class ScoringServiceTests
     {
         var context = CreateInMemoryContext();
         var service = CreateServiceWithContext(context);
+        var race = SeedRace();
 
         // No DriverRaceScore exists for driver 99
         context.LineupEntries.Add(
@@ -809,7 +819,7 @@ public class ScoringServiceTests
         );
         await context.SaveChangesAsync();
 
-        await service.ScoreTeamsForRaceAsync(raceWeekendId: 1);
+        await service.ScoreTeamsForRaceAsync(race);
 
         var score = await context.TeamRaceWeekendScores.SingleAsync();
         Assert.Equal(0, score.TotalPoints);
@@ -820,6 +830,7 @@ public class ScoringServiceTests
     {
         var context = CreateInMemoryContext();
         var service = CreateServiceWithContext(context);
+        var race = SeedRace();
 
         context.DriverRaceWeekendScores.Add(
             SeedDriverRaceScore(driverId: 1, raceWeekendId: 1, totalPoints: 35)
@@ -829,8 +840,8 @@ public class ScoringServiceTests
         );
         await context.SaveChangesAsync();
 
-        await service.ScoreTeamsForRaceAsync(raceWeekendId: 1);
-        await service.ScoreTeamsForRaceAsync(raceWeekendId: 1);
+        await service.ScoreTeamsForRaceAsync(race);
+        await service.ScoreTeamsForRaceAsync(race);
 
         Assert.Equal(1, await context.TeamRaceWeekendScores.CountAsync());
     }
@@ -846,7 +857,8 @@ public class ScoringServiceTests
         var service = CreateServiceWithContext(context);
 
         context.Circuits.Add(SeedCircuit(1));
-        context.RaceWeekends.Add(SeedRace(id: 1, seasonId: 1));
+        var race = SeedRace(id: 1, seasonId: 1);
+        context.RaceWeekends.Add(race);
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 1, constructorId: 10));
         context.SeasonDrivers.Add(SeedSeasonDriver(driverId: 2, constructorId: 10));
         context.DriverQualifyingResults.Add(QualResult(driverId: 1, position: 1));
@@ -872,6 +884,27 @@ public class ScoringServiceTests
         Assert.Equal(2, await context.DriverRaceWeekendScores.CountAsync());
         Assert.Equal(1, await context.ConstructorRaceWeekendScores.CountAsync());
         Assert.Equal(1, await context.TeamRaceWeekendScores.CountAsync());
+    }
+
+    [Fact]
+    public async Task ScoreRaceWeekendAsync_HappyPath_SetsScoredAtOnRaceWeekend()
+    {
+        var context = CreateInMemoryContext();
+        var service = CreateServiceWithContext(context);
+
+        context.Circuits.Add(SeedCircuit(1));
+        var race = SeedRace(id: 1, seasonId: 1);
+        context.RaceWeekends.Add(race);
+        await context.SaveChangesAsync();
+
+        var beforeUtc = DateTime.UtcNow;
+        await service.ScoreRaceWeekendAsync(raceWeekendId: 1);
+        var afterUtc = DateTime.UtcNow;
+
+        var weekend = await context.RaceWeekends.FindAsync(1);
+        Assert.NotNull(weekend);
+        Assert.NotNull(weekend!.ScoredAt);
+        Assert.InRange(weekend.ScoredAt!.Value, beforeUtc, afterUtc);
     }
 
     #endregion

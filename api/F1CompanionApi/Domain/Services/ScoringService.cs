@@ -9,8 +9,8 @@ namespace F1CompanionApi.Domain.Services;
 
 public interface IScoringService
 {
-    Task ScoreRaceEntitiesAsync(int raceWeekendId);
-    Task ScoreTeamsForRaceAsync(int raceWeekendId);
+    Task ScoreRaceEntitiesAsync(RaceWeekend weekend);
+    Task ScoreTeamsForRaceAsync(RaceWeekend weekend);
     Task ScoreRaceWeekendAsync(int raceWeekendId);
 }
 
@@ -213,45 +213,48 @@ public class ScoringService : IScoringService
     /// <param name="raceWeekendId">The race weekend to score.</param>
     public async Task ScoreRaceWeekendAsync(int raceWeekendId)
     {
-        await ScoreRaceEntitiesAsync(raceWeekendId);
-        await ScoreTeamsForRaceAsync(raceWeekendId);
-        await _standingsService.UpdateStandingsForRaceWeekendAsync(raceWeekendId);
+        var weekend =
+            await _dbContext.RaceWeekends.FindAsync(raceWeekendId)
+            ?? throw new InvalidOperationException($"Race {raceWeekendId} not found.");
+
+        await ScoreRaceEntitiesAsync(weekend);
+        await ScoreTeamsForRaceAsync(weekend);
+        await _standingsService.UpdateStandingsForRaceWeekendAsync(weekend.Id);
+
+        weekend.ScoredAt = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync();
     }
 
     /// <summary>
     /// Scores every driver and constructor for a race weekend.
     /// </summary>
-    /// <param name="raceWeekendId">The race to score.</param>
-    public async Task ScoreRaceEntitiesAsync(int raceWeekendId)
+    /// <param name="weekend">The race weekend to score.</param>
+    public async Task ScoreRaceEntitiesAsync(RaceWeekend weekend)
     {
-        _logger.LogInformation("Scoring entities for race {RaceId}", raceWeekendId);
-
-        var race =
-            await _dbContext.RaceWeekends.FindAsync(raceWeekendId)
-            ?? throw new InvalidOperationException($"Race {raceWeekendId} not found.");
+        _logger.LogInformation("Scoring entities for race {RaceId}", weekend.Id);
 
         var qualifyingResults = await _dbContext
-            .DriverQualifyingResults.Where(dqr => dqr.RaceWeekendId == raceWeekendId)
+            .DriverQualifyingResults.Where(dqr => dqr.RaceWeekendId == weekend.Id)
             .ToListAsync();
 
         var raceResults = await _dbContext
-            .DriverRacingResults.Where(drr => drr.RaceWeekendId == raceWeekendId)
+            .DriverRacingResults.Where(drr => drr.RaceWeekendId == weekend.Id)
             .ToListAsync();
 
         var seasonDrivers = await _dbContext
-            .SeasonDrivers.Where(sd => sd.SeasonId == race.SeasonId && sd.IsActive)
+            .SeasonDrivers.Where(sd => sd.SeasonId == weekend.SeasonId && sd.IsActive)
             .ToListAsync();
 
         var driverScores = ScoreDrivers(qualifyingResults, raceResults);
-        var constructorScores = ScoreConstructors(seasonDrivers, driverScores, raceWeekendId);
+        var constructorScores = ScoreConstructors(seasonDrivers, driverScores, weekend.Id);
 
-        await SaveDriverAndConstructorScores(raceWeekendId, driverScores, constructorScores);
+        await SaveDriverAndConstructorScores(weekend.Id, driverScores, constructorScores);
 
         _logger.LogInformation(
             "Scored {DriverCount} drivers and {ConstructorCount} constructors for race {RaceId}",
             driverScores.Count,
             constructorScores.Count,
-            raceWeekendId
+            weekend.Id
         );
     }
 
@@ -444,21 +447,21 @@ public class ScoringService : IScoringService
     /// <summary>
     /// Assembles and saves team scores for a race.
     /// </summary>
-    /// <param name="raceWeekendId">The race to score teams for.</param>
-    public async Task ScoreTeamsForRaceAsync(int raceWeekendId)
+    /// <param name="weekend">The race weekend to score teams for.</param>
+    public async Task ScoreTeamsForRaceAsync(RaceWeekend weekend)
     {
-        _logger.LogInformation("Scoring teams for race {RaceId}", raceWeekendId);
+        _logger.LogInformation("Scoring teams for race {RaceId}", weekend.Id);
 
         var driverRaceScores = await _dbContext
-            .DriverRaceWeekendScores.Where(drs => drs.RaceWeekendId == raceWeekendId)
+            .DriverRaceWeekendScores.Where(drs => drs.RaceWeekendId == weekend.Id)
             .ToListAsync();
 
         var constructorRaceScores = await _dbContext
-            .ConstructorRaceWeekendScores.Where(crs => crs.RaceWeekendId == raceWeekendId)
+            .ConstructorRaceWeekendScores.Where(crs => crs.RaceWeekendId == weekend.Id)
             .ToListAsync();
 
         var lineupEntries = await _dbContext
-            .LineupEntries.Where(le => le.RaceWeekendId == raceWeekendId)
+            .LineupEntries.Where(le => le.RaceWeekendId == weekend.Id)
             .ToListAsync();
 
         var teamScores = new List<TeamRaceWeekendScore>();
@@ -473,7 +476,7 @@ public class ScoringService : IScoringService
                 new TeamRaceWeekendScore
                 {
                     TeamId = team.Key,
-                    RaceWeekendId = raceWeekendId,
+                    RaceWeekendId = weekend.Id,
                     TotalPoints = totalPoints,
                     CalculatedAt = DateTime.UtcNow,
                     CreatedAt = DateTime.UtcNow,
@@ -482,7 +485,7 @@ public class ScoringService : IScoringService
         }
 
         var existingTeamScores = await _dbContext
-            .TeamRaceWeekendScores.Where(trs => trs.RaceWeekendId == raceWeekendId)
+            .TeamRaceWeekendScores.Where(trs => trs.RaceWeekendId == weekend.Id)
             .ToListAsync();
 
         _dbContext.TeamRaceWeekendScores.RemoveRange(existingTeamScores);
@@ -493,7 +496,7 @@ public class ScoringService : IScoringService
         _logger.LogInformation(
             "Scored {TeamCount} teams for race {RaceId}",
             teamScores.Count,
-            raceWeekendId
+            weekend.Id
         );
     }
 

@@ -288,6 +288,10 @@ public class RaceWeekendScoringTests : IntegrationTestBase
             Assert.Equal(1, standings[0].Position);
             Assert.Equal(2, standings[1].Position);
             Assert.True(standings[0].TotalPoints >= standings[1].TotalPoints);
+
+            var scoredWeekend = await db.RaceWeekends.FindAsync(race.Id);
+            Assert.NotNull(scoredWeekend);
+            Assert.NotNull(scoredWeekend!.ScoredAt);
         });
     }
 
