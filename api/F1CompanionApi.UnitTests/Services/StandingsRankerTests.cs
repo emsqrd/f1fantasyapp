@@ -17,7 +17,7 @@ public class StandingsRankerTests
             CreatedAt = CalculatedAt,
         };
 
-    private static LeagueStanding Prior(int leagueId, int teamId, int totalPoints) =>
+    private static TeamLeagueStanding Prior(int leagueId, int teamId, int totalPoints) =>
         new()
         {
             LeagueId = leagueId,
@@ -44,7 +44,7 @@ public class StandingsRankerTests
                 leagueId: 10,
                 raceWeekendId: 1,
                 scoresInLeague: scores,
-                priorByTeam: new Dictionary<int, LeagueStanding>(),
+                priorStandingByTeamId: new Dictionary<int, TeamLeagueStanding>(),
                 calculatedAt: CalculatedAt
             )
             .ToList();
@@ -62,7 +62,7 @@ public class StandingsRankerTests
     [Fact]
     public void Rank_WithPriorTotals_AddsPriorAndThisWeekendForCumulative()
     {
-        var priors = new Dictionary<int, LeagueStanding>
+        var priors = new Dictionary<int, TeamLeagueStanding>
         {
             [1] = Prior(leagueId: 10, teamId: 1, totalPoints: 30),
             [2] = Prior(leagueId: 10, teamId: 2, totalPoints: 50),
@@ -80,7 +80,7 @@ public class StandingsRankerTests
                 leagueId: 10,
                 raceWeekendId: 2,
                 scoresInLeague: scores,
-                priorByTeam: priors,
+                priorStandingByTeamId: priors,
                 calculatedAt: CalculatedAt
             )
             .ToList();
@@ -95,7 +95,7 @@ public class StandingsRankerTests
     [Fact]
     public void Rank_TeamWithoutPriorRow_TreatsPriorAsZero()
     {
-        var priors = new Dictionary<int, LeagueStanding>
+        var priors = new Dictionary<int, TeamLeagueStanding>
         {
             [1] = Prior(leagueId: 10, teamId: 1, totalPoints: 40),
             // team 2 has no prior — late joiner
@@ -111,7 +111,7 @@ public class StandingsRankerTests
                 leagueId: 10,
                 raceWeekendId: 2,
                 scoresInLeague: scores,
-                priorByTeam: priors,
+                priorStandingByTeamId: priors,
                 calculatedAt: CalculatedAt
             )
             .ToList();
@@ -137,7 +137,7 @@ public class StandingsRankerTests
                 leagueId: 10,
                 raceWeekendId: 1,
                 scoresInLeague: scores,
-                priorByTeam: new Dictionary<int, LeagueStanding>(),
+                priorStandingByTeamId: new Dictionary<int, TeamLeagueStanding>(),
                 calculatedAt: CalculatedAt
             )
             .ToList();

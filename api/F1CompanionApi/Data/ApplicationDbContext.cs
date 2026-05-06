@@ -31,7 +31,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<DriverRaceWeekendScore> DriverRaceWeekendScores => Set<DriverRaceWeekendScore>();
     public DbSet<ConstructorRaceWeekendScore> ConstructorRaceWeekendScores =>
         Set<ConstructorRaceWeekendScore>();
-    public DbSet<LeagueStanding> LeagueStandings => Set<LeagueStanding>();
+    public DbSet<TeamLeagueStanding> TeamLeagueStandings => Set<TeamLeagueStanding>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -176,7 +176,7 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<LeagueStanding>(entity =>
+        modelBuilder.Entity<TeamLeagueStanding>(entity =>
         {
             entity
                 .HasOne(ls => ls.League)

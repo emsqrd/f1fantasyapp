@@ -278,7 +278,7 @@ public class RaceWeekendScoringTests : IntegrationTestBase
         await WithDbAsync(async db =>
         {
             var standings = await db
-                .LeagueStandings.Where(ls => ls.LeagueId == leagueId)
+                .TeamLeagueStandings.Where(ls => ls.LeagueId == leagueId)
                 .OrderBy(ls => ls.Position)
                 .ToListAsync();
 

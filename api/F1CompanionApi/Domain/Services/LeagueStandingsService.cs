@@ -1,37 +1,49 @@
+using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
+using F1CompanionApi.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Domain.Services;
 
 public interface ILeagueStandingsService
 {
-    Task UpdateStandingsForRaceWeekendAsync(int raceWeekendId);
-    Task<IReadOnlyList<LeagueStanding>> GetStandingsAsync(int leagueId, int round);
-    Task<IReadOnlyList<LeagueStanding>> GetPriorStandingsAsync(int leagueId, int round);
+    Task UpdateLeagueStandingsForRaceWeekendAsync(int raceWeekendId);
+    Task<LeagueStandingsResponse?> GetLeagueStandingsAsync(int leagueId);
 }
 
 public class LeagueStandingsService : ILeagueStandingsService
 {
     private readonly ApplicationDbContext _dbContext;
+    private readonly ISeasonService _seasonService;
+    private readonly IRaceWeekendService _raceWeekendService;
     private readonly ILogger<LeagueStandingsService> _logger;
 
     public LeagueStandingsService(
         ApplicationDbContext dbContext,
+        ISeasonService seasonService,
+        IRaceWeekendService raceWeekendService,
         ILogger<LeagueStandingsService> logger
     )
     {
         ArgumentNullException.ThrowIfNull(dbContext);
+        ArgumentNullException.ThrowIfNull(seasonService);
+        ArgumentNullException.ThrowIfNull(raceWeekendService);
         ArgumentNullException.ThrowIfNull(logger);
 
         _dbContext = dbContext;
+        _seasonService = seasonService;
+        _raceWeekendService = raceWeekendService;
         _logger = logger;
     }
 
     /// <summary>
-    /// Updates league standings for the given race weekend.
+    /// Refreshes the leaderboards after a race weekend has been scored. Every league
+    /// containing at least one team that earned points this weekend has its leaderboard
+    /// for that round recalculated and saved.
     /// </summary>
-    public async Task UpdateStandingsForRaceWeekendAsync(int raceWeekendId)
+    /// <param name="raceWeekendId">The race weekend whose scoring has just completed.</param>
+    public async Task UpdateLeagueStandingsForRaceWeekendAsync(int raceWeekendId)
     {
         _logger.LogInformation(
             "Updating league standings for race weekend {RaceWeekendId}",
@@ -73,7 +85,7 @@ public class LeagueStandingsService : ILeagueStandingsService
         var priorStandings = priorWeekendId is null
             ? []
             : await _dbContext
-                .LeagueStandings.Where(ls =>
+                .TeamLeagueStandings.Where(ls =>
                     ls.RaceWeekendId == priorWeekendId && leagueIds.Contains(ls.LeagueId)
                 )
                 .ToListAsync();
@@ -94,20 +106,20 @@ public class LeagueStandingsService : ILeagueStandingsService
                 var scoresInLeague = thisRoundScores
                     .Where(s => teamIds.Contains(s.TeamId))
                     .ToList();
-                var priorByTeam = priorStandings
+                var priorStandingByTeamId = priorStandings
                     .Where(p => p.LeagueId == leagueId)
                     .ToDictionary(p => p.TeamId);
                 return StandingsRanker.Rank(
                     leagueId,
                     raceWeekendId,
                     scoresInLeague,
-                    priorByTeam,
+                    priorStandingByTeamId,
                     calculatedAt
                 );
             })
             .ToList();
 
-        await SaveStandingsAsync(leagueIds, raceWeekendId, newStandings);
+        await SaveLeagueStandingsAsync(leagueIds, raceWeekendId, newStandings);
 
         _logger.LogInformation(
             "Wrote {Count} league standing rows across {LeagueCount} leagues for race weekend {RaceWeekendId}",
@@ -117,25 +129,141 @@ public class LeagueStandingsService : ILeagueStandingsService
         );
     }
 
-    public async Task<IReadOnlyList<LeagueStanding>> GetStandingsAsync(int leagueId, int round)
+    /// <summary>
+    /// The current leaderboard for a league: each team's position, points earned this
+    /// season, and how that position has shifted since the previous race.
+    /// </summary>
+    /// <param name="leagueId">The league whose leaderboard is wanted.</param>
+    public async Task<LeagueStandingsResponse?> GetLeagueStandingsAsync(int leagueId)
     {
-        return await _dbContext
-            .LeagueStandings.Include(ls => ls.RaceWeekend)
-            .Include(ls => ls.Team)
-            .Where(ls => ls.LeagueId == leagueId && ls.RaceWeekend.Round == round)
-            .OrderBy(ls => ls.Position)
-            .ToListAsync();
+        _logger.LogDebug("Fetching standings for league {LeagueId}", leagueId);
+
+        var league = await _dbContext
+            .Leagues.Include(l => l.LeagueTeams)
+                .ThenInclude(lt => lt.Team)
+                    .ThenInclude(t => t.Owner)
+            .FirstOrDefaultAsync(l => l.Id == leagueId);
+
+        if (league is null)
+        {
+            _logger.LogWarning("League {LeagueId} not found", leagueId);
+            return null;
+        }
+
+        var currentSeason =
+            await _seasonService.GetCurrentSeasonAsync()
+            ?? throw new InvalidOperationException("No active season found.");
+
+        var totalRounds = await _dbContext.RaceWeekends.CountAsync(r =>
+            r.SeasonId == currentSeason.Id
+        );
+
+        var currentRaceWeekend = await _raceWeekendService.GetCurrentSeasonRaceWeekendAsync();
+
+        var latestScoredWeekend = await _dbContext
+            .TeamLeagueStandings.AsNoTracking()
+            .Where(ls => ls.LeagueId == leagueId && ls.RaceWeekend.SeasonId == currentSeason.Id)
+            .OrderByDescending(ls => ls.RaceWeekend.Round)
+            .Select(ls => ls.RaceWeekend)
+            .FirstOrDefaultAsync();
+
+        IReadOnlyList<TeamLeagueStanding> currentStandings = [];
+        IReadOnlyList<TeamLeagueStanding> priorStandings = [];
+        if (latestScoredWeekend is not null)
+        {
+            (currentStandings, priorStandings) =
+                await GetLeagueStandingsForCurrentAndPreviousRoundAsync(
+                    leagueId,
+                    latestScoredWeekend.Round
+                );
+        }
+
+        return new LeagueStandingsResponse
+        {
+            LeagueId = leagueId,
+            CurrentRound = currentRaceWeekend?.Round,
+            TotalRounds = totalRounds,
+            AfterRaceWeekendName = latestScoredWeekend?.Name,
+            AfterSessionType = latestScoredWeekend is null
+                ? null
+                : await LatestCompletedSessionAsync(latestScoredWeekend),
+            Standings = LeagueStandingsBuilder.Build(league, currentStandings, priorStandings),
+        };
     }
 
-    public Task<IReadOnlyList<LeagueStanding>> GetPriorStandingsAsync(int leagueId, int round) =>
-        round <= 1
-            ? Task.FromResult<IReadOnlyList<LeagueStanding>>(Array.Empty<LeagueStanding>())
-            : GetStandingsAsync(leagueId, round - 1);
+    /// <summary>
+    /// The league's leaderboard at a given race round paired with its leaderboard from
+    /// the round before, used to compare how each team's position has shifted between
+    /// the two races.
+    /// </summary>
+    /// <param name="leagueId">The league whose leaderboards are wanted.</param>
+    /// <param name="currentRound">The round number of the more recent leaderboard; the round before it is paired alongside.</param>
+    private async Task<(
+        IReadOnlyList<TeamLeagueStanding> CurrentRoundStandings,
+        IReadOnlyList<TeamLeagueStanding> PriorRoundStandings
+    )> GetLeagueStandingsForCurrentAndPreviousRoundAsync(int leagueId, int currentRound)
+    {
+        var rounds = new[] { currentRound, currentRound - 1 };
+        var standingsForBothRounds = await _dbContext
+            .TeamLeagueStandings.AsNoTracking()
+            .Include(ls => ls.RaceWeekend)
+            .Include(ls => ls.Team)
+            .Where(ls => ls.LeagueId == leagueId && rounds.Contains(ls.RaceWeekend.Round))
+            .OrderBy(ls => ls.Position)
+            .ToListAsync();
 
-    private async Task SaveStandingsAsync(
+        var currentRoundStandings = standingsForBothRounds
+            .Where(s => s.RaceWeekend.Round == currentRound)
+            .ToList();
+        var priorRoundStandings = standingsForBothRounds
+            .Where(s => s.RaceWeekend.Round == currentRound - 1)
+            .ToList();
+        return (currentRoundStandings, priorRoundStandings);
+    }
+
+    /// <summary>
+    /// The most recent session of a race weekend that has produced results.
+    /// </summary>
+    /// <param name="weekend">The race weekend in question.</param>
+    private async Task<SessionType?> LatestCompletedSessionAsync(RaceWeekend weekend)
+    {
+        SessionType? latest = null;
+        foreach (var session in WeekendSessions.InOrder(weekend.WeekendFormat))
+        {
+            var hasResults = session switch
+            {
+                SessionType.Qualifying => await _dbContext.DriverQualifyingResults.AnyAsync(r =>
+                    r.RaceWeekendId == weekend.Id
+                ),
+                SessionType.Sprint => await _dbContext.DriverRacingResults.AnyAsync(r =>
+                    r.RaceWeekendId == weekend.Id && r.SessionType == SessionType.Sprint
+                ),
+                SessionType.GrandPrix => await _dbContext.DriverRacingResults.AnyAsync(r =>
+                    r.RaceWeekendId == weekend.Id && r.SessionType == SessionType.GrandPrix
+                ),
+                _ => false,
+            };
+
+            if (hasResults)
+            {
+                latest = session;
+            }
+        }
+        return latest;
+    }
+
+    /// <summary>
+    /// Atomically replaces the saved leaderboard rows for a race weekend across the
+    /// given leagues. Readers see either the previous version or the new one,
+    /// never a partial mix.
+    /// </summary>
+    /// <param name="leagueIds">The leagues whose leaderboards are being updated.</param>
+    /// <param name="raceWeekendId">The race weekend whose rows are being replaced.</param>
+    /// <param name="newStandings">The fresh leaderboard rows to save.</param>
+    private async Task SaveLeagueStandingsAsync(
         IReadOnlyList<int> leagueIds,
         int raceWeekendId,
-        IReadOnlyList<LeagueStanding> newStandings
+        IReadOnlyList<TeamLeagueStanding> newStandings
     )
     {
         // Wrap delete + insert in a transaction so the save is atomic. The retry-enabled
@@ -149,21 +277,28 @@ public class LeagueStandingsService : ILeagueStandingsService
         });
     }
 
+    /// <summary>
+    /// Clears any existing leaderboard rows for this race weekend in the given leagues
+    /// and saves the fresh rows in their place.
+    /// </summary>
+    /// <param name="leagueIds">The leagues whose leaderboards are being replaced.</param>
+    /// <param name="raceWeekendId">The race weekend whose rows are being replaced.</param>
+    /// <param name="newStandings">The fresh leaderboard rows to save.</param>
     private async Task DeleteAndInsertLeagueStandingsAsync(
         IReadOnlyList<int> leagueIds,
         int raceWeekendId,
-        IReadOnlyList<LeagueStanding> newStandings
+        IReadOnlyList<TeamLeagueStanding> newStandings
     )
     {
         await _dbContext
-            .LeagueStandings.Where(ls =>
+            .TeamLeagueStandings.Where(ls =>
                 leagueIds.Contains(ls.LeagueId) && ls.RaceWeekendId == raceWeekendId
             )
             .ExecuteDeleteAsync();
 
         if (newStandings.Count > 0)
         {
-            _dbContext.LeagueStandings.AddRange(newStandings);
+            _dbContext.TeamLeagueStandings.AddRange(newStandings);
             await _dbContext.SaveChangesAsync();
         }
     }

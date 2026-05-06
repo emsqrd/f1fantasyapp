@@ -8,11 +8,11 @@ namespace F1CompanionApi.Domain.Services;
 /// </summary>
 public static class StandingsRanker
 {
-    public static IEnumerable<LeagueStanding> Rank(
+    public static IEnumerable<TeamLeagueStanding> Rank(
         int leagueId,
         int raceWeekendId,
         IReadOnlyList<TeamRaceWeekendScore> scoresInLeague,
-        IReadOnlyDictionary<int, LeagueStanding> priorByTeam,
+        IReadOnlyDictionary<int, TeamLeagueStanding> priorStandingByTeamId,
         DateTime calculatedAt
     )
     {
@@ -20,7 +20,7 @@ public static class StandingsRanker
             .Select(s => new
             {
                 s.TeamId,
-                TotalPoints = (priorByTeam.GetValueOrDefault(s.TeamId)?.TotalPoints ?? 0)
+                TotalPoints = (priorStandingByTeamId.GetValueOrDefault(s.TeamId)?.TotalPoints ?? 0)
                     + s.TotalPoints,
             })
             .OrderByDescending(r => r.TotalPoints)
@@ -28,7 +28,7 @@ public static class StandingsRanker
 
         return ranked.Select(
             (r, idx) =>
-                new LeagueStanding
+                new TeamLeagueStanding
                 {
                     LeagueId = leagueId,
                     TeamId = r.TeamId,

@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace F1CompanionApi.IntegrationTests.Scenarios;
 
 /// <summary>
-/// Exercises <see cref="ILeagueStandingsService.UpdateStandingsForRaceWeekendAsync"/> against
+/// Exercises <see cref="ILeagueStandingsService.UpdateLeagueStandingsForRaceWeekendAsync"/> against
 /// real Postgres for behaviors that depend on EF query semantics, transaction wrapping,
 /// and the delete + insert idempotency path. Pure ranking logic is covered by
 /// <c>StandingsRankerTests</c> in the unit-test project.
@@ -44,11 +44,11 @@ public class StandingsCalculationTests : IntegrationTestBase
         await WithDbAsync(async db =>
         {
             var league1 = await db
-                .LeagueStandings.Where(ls => ls.LeagueId == fixture.LeagueIds[0])
+                .TeamLeagueStandings.Where(ls => ls.LeagueId == fixture.LeagueIds[0])
                 .OrderBy(ls => ls.Position)
                 .ToListAsync();
             var league2 = await db
-                .LeagueStandings.Where(ls => ls.LeagueId == fixture.LeagueIds[1])
+                .TeamLeagueStandings.Where(ls => ls.LeagueId == fixture.LeagueIds[1])
                 .OrderBy(ls => ls.Position)
                 .ToListAsync();
 
@@ -83,7 +83,7 @@ public class StandingsCalculationTests : IntegrationTestBase
         await WithDbAsync(async db =>
         {
             var rows = await db
-                .LeagueStandings.Where(ls => ls.LeagueId == fixture.LeagueIds[0])
+                .TeamLeagueStandings.Where(ls => ls.LeagueId == fixture.LeagueIds[0])
                 .ToListAsync();
             Assert.Equal(2, rows.Count);
             Assert.Single(rows, r => r.TeamId == fixture.TeamIds[0]);
@@ -100,20 +100,8 @@ public class StandingsCalculationTests : IntegrationTestBase
 
         await WithDbAsync(async db =>
         {
-            Assert.Empty(await db.LeagueStandings.ToListAsync());
+            Assert.Empty(await db.TeamLeagueStandings.ToListAsync());
         });
-    }
-
-    [Fact]
-    public async Task GetPriorStandingsAsync_Round1_ReturnsEmpty()
-    {
-        var fixture = await SeedAsync(teamCount: 1, leagueCount: 1);
-
-        var prior = await WithStandingsServiceAsync(svc =>
-            svc.GetPriorStandingsAsync(leagueId: fixture.LeagueIds[0], round: 1)
-        );
-
-        Assert.Empty(prior);
     }
 
     private async Task<SeededFixture> SeedAsync(int teamCount, int leagueCount)
@@ -207,16 +195,7 @@ public class StandingsCalculationTests : IntegrationTestBase
     {
         await using var scope = Factory.Services.CreateAsyncScope();
         var svc = scope.ServiceProvider.GetRequiredService<ILeagueStandingsService>();
-        await svc.UpdateStandingsForRaceWeekendAsync(raceWeekendId);
-    }
-
-    private async Task<T> WithStandingsServiceAsync<T>(
-        Func<ILeagueStandingsService, Task<T>> action
-    )
-    {
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var svc = scope.ServiceProvider.GetRequiredService<ILeagueStandingsService>();
-        return await action(svc);
+        await svc.UpdateLeagueStandingsForRaceWeekendAsync(raceWeekendId);
     }
 
     private record SeededFixture(int[] TeamIds, int[] LeagueIds, int[] WeekendIds);

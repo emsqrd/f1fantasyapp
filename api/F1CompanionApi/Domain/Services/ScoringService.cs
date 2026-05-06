@@ -219,7 +219,7 @@ public class ScoringService : IScoringService
 
         await ScoreRaceEntitiesAsync(weekend);
         await ScoreTeamsForRaceAsync(weekend);
-        await _standingsService.UpdateStandingsForRaceWeekendAsync(weekend.Id);
+        await _standingsService.UpdateLeagueStandingsForRaceWeekendAsync(weekend.Id);
 
         weekend.ScoredAt = DateTime.UtcNow;
         await _dbContext.SaveChangesAsync();
