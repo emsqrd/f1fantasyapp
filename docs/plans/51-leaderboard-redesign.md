@@ -6,7 +6,7 @@ Issue #51 promotes the league leaderboard from a 2-column rank/team table into t
 
 This plan implements the design at `docs/mockups/design_handoff_leaderboard_redesign/`. Decisions reflect explicit user answers in the planning conversation:
 
-- Header chips: ship `Round X / Y` and `After {Race} {Session}` only. The `Next ...` chip is dropped (no session-start-time data exists; out of scope).
+- Header chips (commit 3 → superseded by commit 6): originally `Round X / Y` (in-progress weekend) plus `After {Race} {Session}` (last-scored anchor). Commit 6 drops **both chips** and replaces them with an uppercase **eyebrow** rendered above the league name: `ROUND N · {RACE_NAME}` anchored on the last-scored round. The `Next …` chip was never planned (no session-start-time data exists; out of scope). Total-rounds (`/ Y`) is dropped along with the round chip — the eyebrow doesn't display a round total, and no other consumer needs it.
 - `positionChange`: computed from a persisted `LeagueStandings` table. Standings rows are written by the scoring orchestrator (`ScoringService.ScoreRaceWeekendAsync` calls `LeagueStandingsService.UpdateStandingsForRaceWeekendAsync(raceWeekendId)`) after each weekend is scored; the read-side computes the delta as `priorRound.position - currentRound.position`. Reasoning: standings are read-heavy and write-rarely (tens of writes vs. potentially thousands of reads per league per season), and a future "team finishing positions across the season" view is shaped exactly like the persisted table. Recomputing on every read is the wrong asymmetry for this data.
 - Standings live on a new `GET /leagues/{id}/standings` endpoint (separate from `GET /leagues/{id}`).
 - Tie-break: `totalPoints DESC, teamId ASC`. Formal end-of-season tie-breakers (weekend wins, highest single round) are deferred to a future season-finale change — they don't surface in the leaderboard UI mid-season and only matter if a tie at #1 actually exists at season end. Building them now would be YAGNI; leaving them out simplifies the entity (two columns instead of four) and the writer (no per-round unique-winner detection).
@@ -630,6 +630,142 @@ Six commits (1, 2, 2.5, 3, 4, 5), each independently passing build, lint, format
 
 ---
 
+### Commit 6 — Drop chips; add last-scored-round eyebrow above league name
+
+**Scope:** Drop both header chips (`Round X / Y` and `After {Race} {Session}`) and replace them with an uppercase eyebrow rendered above the league name: `ROUND N · {RACE_NAME}` anchored on the last-scored round (e.g., `ROUND 7 · MIAMI GP`). Per-league semantics: round and race name both derived from the existing `latestScoredWeekend` query in `LeagueStandingsService.GetLeagueStandingsAsync`. Single source of truth, no separate "current weekend" lookup, no per-session-results probing, no total-rounds field. Backend-and-frontend; touches the API contract, the response service, the frontend contract, the header component, and the test surfaces of both. The team page is unaffected — `TeamService` still calls `RaceWeekendService.GetCurrentSeasonRaceWeekendAsync()` for its lineup-edit lock-gate and team-page header, so "current weekend" semantics for that page stay intact.
+
+**Rationale:** Under the commit-3 design, "Round 5 / 22" and "After Miami GP" sat next to each other while only four rounds had actually been scored — the round chip looked ahead at the in-progress weekend, the after chip looked back at the most recent scoring. Two anchors describing the same standings table read as confusing. The eyebrow design (per Claude design's spec, see image in conversation) collapses both anchors into a single line above the league name, sized and colored as metadata rather than as an interactive chip. The total-rounds segment (`/ Y`) is dropped — the eyebrow doesn't display it and no other consumer needs it. The plan's documented `currentRound` vs. `latestScoredRound` per-league divergence ("Data shapes" field rules) goes away — they merge into a single field.
+
+**Implementation:**
+
+1. **DTO** at `api/F1CompanionApi/Api/Models/LeagueStandingsResponse.cs`:
+   - Rename `CurrentRound` → `LastScoredRound` (still `int?`).
+   - Rename `AfterRaceWeekendName` → `LastScoredRaceWeekendName` (still `string?`); both come from the same `latestScoredWeekend` row, so they're populated together (both set or both null).
+   - Remove `AfterSessionType` (no consumer once the After-chip session segment is gone).
+   - Remove `TotalRounds` (no consumer once the round chip's `/ Y` segment is gone).
+
+2. **`LeagueStandingsService.GetLeagueStandingsAsync`** at `api/F1CompanionApi/Domain/Services/LeagueStandingsService.cs:137-192`:
+   - Delete the `_raceWeekendService.GetCurrentSeasonRaceWeekendAsync()` call (line 161) and the `currentRaceWeekend` local.
+   - Delete the `totalRounds` query (lines 157-159) and local.
+   - In the response builder, set `LastScoredRound = latestScoredWeekend?.Round` and `LastScoredRaceWeekendName = latestScoredWeekend?.Name` (the variable is already in scope from lines 163-168).
+   - Delete the `AfterRaceWeekendName` and `AfterSessionType` assignments from the response builder.
+   - Delete the private `LatestCompletedSessionAsync` method (lines 228-253) — no remaining caller.
+   - Drop the `IRaceWeekendService` constructor dependency (lines 19, 25, 31, 36) — `LeagueStandingsService` was its only consumer in this file. Constructor returns to 3 args (`ApplicationDbContext`, `ISeasonService`, `ILogger<LeagueStandingsService>`).
+
+3. **Delete `WeekendSessions` helper:**
+   - `api/F1CompanionApi/Domain/Models/WeekendSessions.cs` (entire file). Verified: only production caller was the deleted `LatestCompletedSessionAsync`.
+   - `api/F1CompanionApi.UnitTests/Domain/Models/WeekendSessionsTests.cs` (entire file).
+
+4. **Drop `SessionType.Qualifying`** at `api/F1CompanionApi/Data/Entities/SessionType.cs:7`:
+   - Verified: only production switch on `SessionType.Qualifying` was the deleted `LatestCompletedSessionAsync`. Sprint and GrandPrix remain — those are the only values written to `DriverRacingResult.SessionType`. Qualifying results live in `DriverQualifyingResult` without a SessionType column.
+   - No DB migration: this is a source-only enum extension added earlier in the branch; the int column never stored value `2`.
+
+5. **Frontend contract** at `web/src/contracts/LeagueStandings.ts`:
+   - Rename `currentRound` → `lastScoredRound` on `LeagueStandings`.
+   - Add `lastScoredRaceWeekendName: string | null` on `LeagueStandings`.
+   - Remove `totalRounds`, `afterRaceWeekendName`, `afterSessionType` from `LeagueStandings`.
+   - Rename `StandingsEntry` → `TeamLeagueStanding` to match the backend `TeamLeagueStandingResponse` per the project convention (drop the `Response` suffix; existing examples: `Team` ← `TeamResponse`, `Driver` ← `DriverResponse`, `RaceWeekend` ← `RaceWeekendResponse`, etc.). Update the `standings` array type on `LeagueStandings` to `TeamLeagueStanding[]`. Knock-on consumers in `web/src/tests/integration/leaderboard.integration.test.tsx`:
+     - `:5` — named import: `StandingsEntry` → `TeamLeagueStanding`.
+     - `:87` — rename the local `buildEntry` helper to `buildTeamLeagueStanding` for symmetry with the type it produces; update its `Partial<…>` and return type. Update every call site of `buildEntry(...)` in the test file to `buildTeamLeagueStanding(...)`.
+     - Verified via grep: only this file and `LeagueStandings.ts` itself reference `StandingsEntry`.
+   - Remove the `SessionType` const, `SessionType` type, and `sessionTypeLabel` map. Final shape: `{ leagueId, lastScoredRound, lastScoredRaceWeekendName, standings }` plus `TeamLeagueStanding`. About 22 of the file's 31 lines come out.
+
+6. **Dark-mode `--primary` override** at `web/src/index.css:56`:
+   - Change the `.dark { --primary: #1447e6 }` value to `--primary: #2b7fff` (the brighter blue already used by `--sidebar-primary` in dark mode at line 75).
+   - **Why:** today `--primary` resolves to the same `#1447e6` in both modes. On the dark `#09090b` background, `#1447e6` text contrasts at ~2.9:1 — fails WCAG AA for normal text (4.5:1). The eyebrow at 12px-semibold-desaturated would inherit that risk. Adding the dark-mode override fixes the eyebrow and incidentally fixes existing `text-primary` consumers in dark mode (hyperlinks in `router.tsx:160, 531, 626, 684, 764`; `DriverCard.tsx:33`; `empty.tsx:76` hover; loading-spinner borders).
+   - **Pattern:** mirrors how the file already pairs `--background`, `--sidebar-primary`, `--muted-foreground`, etc. — same semantic token, different concrete hex per mode. `--primary` is the inconsistent one today; this commit brings it into line.
+   - **No source changes required for the side-effect callers** — they read `var(--primary)` and pick up the new value automatically. Visual sweep needed in dark mode (every `bg-primary` button background brightens slightly, every `text-primary` hyperlink becomes more legible). Light mode is unchanged (`:root` value at line 14 stays at `#1447e6`).
+   - Computed contrast after change:
+     - Eyebrow color (70% `#2b7fff` + 30% `#9f9fa9` in oklab) on `#09090b`: ~6.0:1 ✅
+     - `text-primary` (`#2b7fff`) on `#09090b`: ~6.0:1 ✅
+   - **Scope note:** this is technically a separable improvement that could ship as its own commit / GH issue. Folding it into 51 because the eyebrow is the trigger that surfaced it; splitting would force commit 6 to ship with a known accessibility regression on the eyebrow.
+
+7. **`LeaderboardHeader`** at `web/src/components/LeaderboardHeader/LeaderboardHeader.tsx`:
+   - Drop the `sessionTypeLabel` import.
+   - Drop all chip-row infrastructure: `chipClasses`, `chipRowMobile`, `chipRowDesktop` constants and the chip-row JSX block (lines 34-57).
+   - Replace the chip block with an **eyebrow** rendered *above* the `<h1>` (i.e., as the first child of the wrapping `<div className="pb-5">`):
+     ```tsx
+     {standings.lastScoredRound != null && standings.lastScoredRaceWeekendName != null && (
+       <p className="mb-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-[color-mix(in_oklab,var(--primary)_70%,var(--muted-foreground))]">
+         Round {standings.lastScoredRound}{' '}
+         <span aria-hidden="true">·</span> {standings.lastScoredRaceWeekendName}
+       </p>
+     )}
+     ```
+   - Render copy: "Round" not "ROUND" — `uppercase` Tailwind class transforms display text. Lets future copy tweaks (e.g., "Through round") flow through without an additional CSS toggle.
+   - Element choice: `<p>`, not a heading — the eyebrow is metadata about the standings, not part of the document outline. `<h1>` for the league name stays the page's primary heading.
+   - Color: `color-mix(in oklab, var(--primary) 70%, var(--muted-foreground))` — 70% primary + 30% muted-foreground for the desaturated brand blue per design spec. Inline arbitrary value; no new CSS token (only one usage, and the recipe matches the design intent at the call site).
+   - Dot separator: middle-dot character `·` wrapped in `aria-hidden="true"` so screen readers announce "ROUND 7 MIAMI GP" without the noise of "middle dot."
+   - Both fields ship together (both set or both null) per the DTO contract; the double-guard in the conditional is defensive and free.
+
+8. **Mock factory** at `web/src/tests/test-utils/mockFactories.ts`:
+   - Update `createMockLeagueStandings` defaults: rename `currentRound` → `lastScoredRound`, add `lastScoredRaceWeekendName: null` default, drop `totalRounds` / `afterRaceWeekendName` / `afterSessionType`.
+   - Update the JSDoc example block at the top of the factory to match the new shape (e.g., `lastScoredRound: 7, lastScoredRaceWeekendName: 'Miami GP'`).
+
+9. **Backend tests** at `api/F1CompanionApi.IntegrationTests/Scenarios/LeagueStandingsTests.cs`:
+   - `GetLeagueStandings_HappyPath_OrdersByPointsAndComputesPositionChange`:
+     - Drop the `await AddRaceResultsAsync(db, w2.Id, SessionType.GrandPrix);` seeding call (line 77).
+     - Replace `Assert.Equal(2, standings.TotalRounds);` (line 95) and `Assert.Equal(SessionType.GrandPrix, standings.AfterSessionType);` (line 97) with `Assert.Equal(2, standings.LastScoredRound);`.
+     - Replace `Assert.Equal("Round Two GP", standings.AfterRaceWeekendName);` (line 96) with `Assert.Equal("Round Two GP", standings.LastScoredRaceWeekendName);`.
+   - Delete `[Theory] GetLeagueStandings_AfterSessionType_ReflectsLatestSessionWithResults` (lines 118-179) and its four `[InlineData]` rows.
+   - Delete the now-unused `AddRaceResultsAsync` and `AddQualifyingResultsAsync` helpers (lines 275-324).
+   - Add `[Fact] GetLeagueStandings_NoStandingsRows_LastScoredFieldsAreNull` — league with teams seeded but zero `TeamLeagueStanding` rows; assert both `LastScoredRound` and `LastScoredRaceWeekendName` are null and `Standings` zero-fills as today.
+   - Add `[Fact] GetLeagueStandings_LastScoredFields_ReflectHighestSeededRound` — three weekends seeded with standings rows out of insertion order; assert `LastScoredRound` is the highest `Round` and `LastScoredRaceWeekendName` is that weekend's `Name`, not the most-recently-inserted row's (verifies the `OrderByDescending(Round)` translation against real Postgres).
+
+10. **Frontend tests** at `web/src/tests/integration/leaderboard.integration.test.tsx`:
+   - Update mock standings calls throughout: `currentRound` → `lastScoredRound`; add `lastScoredRaceWeekendName`; drop `totalRounds` / `afterRaceWeekendName` / `afterSessionType` props.
+   - Drop the `SessionType` import (only used by deleted assertions).
+   - Replace the entire "Header chip variants" + "After chip session label" describe blocks (lines 209-315) with a single "Header eyebrow" describe block:
+     - Renders `ROUND {N} · {RACE_NAME}` when both `lastScoredRound` and `lastScoredRaceWeekendName` are set. Assert by accessible text content match (case-insensitive) — don't assert on CSS classes.
+     - Renders no eyebrow when both are null. Assert the league name `<h1>` is still present, and that no element with text matching `/^round \d+/i` is rendered above it.
+   - Smoke-asserts on the eyebrow text content go through `getByText(/round 7 · miami gp/i)` so the assertion exercises the user-visible string regardless of `text-transform` (the DOM text is "Round 7 · Miami GP" — uppercased only at the CSS layer).
+
+**Tests:** covered inline above. The only test-file deletion is `WeekendSessionsTests`.
+
+**Done when:**
+- `npm run api:test:unit`, `npm run api:test:integration`, `npm run api:format:check`, `npm run api:build` all pass.
+- `npm run web:test`, `npm run web:lint`, `npm run web:format:check`, `npm run web:build` all pass.
+- `curl -H "Authorization: Bearer $JWT" http://localhost:5077/api/leagues/{id}/standings | jq 'keys'` returns `["lastScoredRaceWeekendName","lastScoredRound","leagueId","standings"]` — no `currentRound`, `totalRounds`, `afterRaceWeekendName`, `afterSessionType`.
+- League page in browser (with scoring through round 7): shows the eyebrow `ROUND 7 · MIAMI GP` (uppercased, desaturated blue, semibold, tracked) above the league name. No chip row. Eyebrow reads as muted brand-blue in both light and dark mode; quick DevTools contrast check should report ≥4.5:1 against `--background` in both modes (computed expectation: ~7.0:1 light, ~6.0:1 dark after the step-6 token override).
+- Preseason / never-scored league: no eyebrow, just league name + description.
+- Dark-mode visual sweep: every existing `text-primary` consumer (hyperlinks, loading-spinner borders, DriverCard `+` glyph, etc.) renders in the brighter `#2b7fff` blue rather than the previous `#1447e6`. Should read as a contrast improvement, not a regression. `bg-primary` button backgrounds also shift slightly brighter — eyeball the most-used buttons (Sign in, Submit team, Join league) to confirm the change reads as an upgrade.
+
+**Updated response shape (supersedes the "Data shapes" section above):**
+
+```json
+{
+  "leagueId": 12,
+  "lastScoredRound": 7,
+  "lastScoredRaceWeekendName": "Miami GP",
+  "standings": [
+    {
+      "teamId": 91,
+      "teamName": "Mango Lassi Racing",
+      "ownerId": 5,
+      "ownerName": "Priya Iyer",
+      "position": 1,
+      "totalPoints": 1284,
+      "positionChange": 0
+    }
+  ]
+}
+```
+
+Field rules:
+- `lastScoredRound` = highest `RaceWeekend.Round` for which a `TeamLeagueStanding` row exists in this league (per-league, not season-level). `null` when this league has no standings rows yet (preseason, brand-new league, or a league whose teams have never scored).
+- `lastScoredRaceWeekendName` = `RaceWeekend.Name` for the same row that supplies `lastScoredRound`. Always set when `lastScoredRound` is set (single query, single source); `null` together with `lastScoredRound`.
+- `null`-pair semantics do not advance to "season finale" — a league mid-season with no scoring history reads `null` the same way preseason does. The existing zero-fill in `LeagueStandingsBuilder` keeps the standings list well-formed in both cases.
+- `positionChange` rules are unchanged: still derived from `lastScoredRound - 1` vs. `lastScoredRound` per-team, same query (`GetLeagueStandingsForCurrentAndPreviousRoundAsync`), same `LeagueStandingsBuilder.Build` zero-fill. The internal "latestScoredRound" concept now matches the response field exactly.
+
+**Eyebrow display spec (frontend):**
+- Text: rendered as `ROUND {lastScoredRound} · {lastScoredRaceWeekendName}` (uppercased via CSS); source uses mixed case (`Round 7 · Miami GP`).
+- Type: 12px (both modes), semibold, letter-spacing 0.14em.
+- Color: `color-mix(in oklab, var(--primary) 70%, var(--muted-foreground))` — desaturated brand blue. Resolves to a different mix per mode because of step 6's `--primary` override (`#1447e6` light, `#2b7fff` dark); both modes pass WCAG AA at 12px-semibold.
+- Position: above `<h1>`, inside the same wrapping `<div className="pb-5">`. Bottom margin separates eyebrow from heading.
+- Hidden when `lastScoredRound` is null.
+
+---
+
 ## Verification
 
 Branch + docs (commit 1):
@@ -678,5 +814,16 @@ Frontend UI (commit 5):
 4. Navigate to a league with **no teams**: empty-state card renders.
 5. Lighthouse / DevTools accessibility: own-row border passes WCAG 1.4.11 (3:1 against `--card`) — already validated by the design but worth a quick check post-implementation in both themes.
 6. Sentry / browser console: no new errors.
+
+Leaderboard chips → eyebrow (commit 6):
+
+1. `npm run api:test` and `npm run web:test` — green, including the new `GetLeagueStandings_NoStandingsRows_LastScoredFieldsAreNull` and `GetLeagueStandings_LastScoredFields_ReflectHighestSeededRound` facts and the rewritten "Header eyebrow" block in `leaderboard.integration.test.tsx`.
+2. `npm run api:format:check && npm run api:build && npm run web:format:check && npm run web:build` — all green. Confirms the `IRaceWeekendService` removal from `LeagueStandingsService`'s constructor and the `WeekendSessions` / `SessionType.Qualifying` deletions don't leave dangling refs.
+3. `curl -H "Authorization: Bearer $JWT" http://localhost:5077/api/leagues/{id}/standings | jq 'keys'` returns `["lastScoredRaceWeekendName","lastScoredRound","leagueId","standings"]` — no `currentRound`, `totalRounds`, `afterRaceWeekendName`, `afterSessionType`.
+4. With a league that has standings through round 7: the league page renders the eyebrow `ROUND 7 · MIAMI GP` (uppercased, desaturated brand blue, 12px desktop / 11px mobile, semibold, tracked) above the league name. No chip row. After scoring round 8 and refreshing, the eyebrow updates to `ROUND 8 · {NEXT_RACE}`.
+5. With a brand-new league (zero `TeamLeagueStanding` rows): the league page header shows no eyebrow, just name + description. Standings list zero-fills as before.
+6. Color/contrast check: in both light and dark mode, the eyebrow reads as a muted brand blue distinct from `--muted-foreground` and from `--foreground`. Eyeball it at the design's mockup; if it looks pure blue (no desaturation) the `color-mix` syntax is being parsed wrong. WCAG 1.4.3 contrast against `--background` should pass at AA in both modes — quick DevTools check (expected: ~7.0:1 light, ~6.0:1 dark).
+7. Dark-mode `--primary` override side-effect sweep: navigate to a few pages with existing `text-primary` / `bg-primary` consumers in dark mode (any page with hyperlinks, the loading spinner, DriverCard, primary CTAs). The blue should read brighter and more legible than before, not garish. If any element looks broken or off-brand, the fallback is to pick a less-saturated dark-mode value (e.g., `#3b82f6`) — but `#2b7fff` is the value `--sidebar-primary` already uses in dark mode, so any drift would be a within-codebase inconsistency, not new.
+8. Team page: navigate to `/my-team`. Header still shows the upcoming weekend (`RaceWeekendService.GetCurrentSeasonRaceWeekendAsync()` is unchanged for that path). Lock-gate behavior on lineup edits is unchanged.
 
 E2E coverage is **not** required for this issue per `CLAUDE.md`'s testing strategy — the changes are component-level UI plus a new read endpoint, both of which are covered by component/integration layers. An E2E here would just re-walk the same path with no new failure mode.
