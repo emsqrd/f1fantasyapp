@@ -161,7 +161,7 @@ describe('Share invite dialog', () => {
 
     expect(inviteFetch).not.toHaveBeenCalled();
 
-    await user.click(await screen.findByRole('button', { name: /invite/i }));
+    await user.click(await screen.findByRole('button', { name: 'Invite' }));
 
     expect(await screen.findByDisplayValue(inviteUrl)).toBeInTheDocument();
     expect(inviteFetch).toHaveBeenCalledTimes(1);
@@ -187,7 +187,7 @@ describe('Share invite dialog', () => {
       routerContext: ownerRouterContext(),
     });
 
-    await user.click(await screen.findByRole('button', { name: /invite/i }));
+    await user.click(await screen.findByRole('button', { name: 'Invite' }));
 
     expect(await screen.findByText('Failed to load invite link')).toBeInTheDocument();
     expect(screen.queryByDisplayValue(inviteUrl)).not.toBeInTheDocument();
@@ -218,7 +218,7 @@ describe('Share invite dialog', () => {
       routerContext: ownerRouterContext(),
     });
 
-    await user.click(await screen.findByRole('button', { name: /invite/i }));
+    await user.click(await screen.findByRole('button', { name: 'Invite' }));
     expect(await screen.findByDisplayValue(inviteUrl)).toBeInTheDocument();
 
     await user.keyboard('{Escape}');
@@ -226,7 +226,7 @@ describe('Share invite dialog', () => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('button', { name: /invite/i }));
+    await user.click(screen.getByRole('button', { name: 'Invite' }));
 
     expect(screen.getByDisplayValue(inviteUrl)).toBeInTheDocument();
     expect(inviteFetch).toHaveBeenCalledTimes(1);
@@ -257,7 +257,7 @@ describe('Share invite dialog', () => {
       routerContext: ownerRouterContext(),
     });
 
-    await user.click(await screen.findByRole('button', { name: /invite/i }));
+    await user.click(await screen.findByRole('button', { name: 'Invite' }));
     await screen.findByDisplayValue(inviteUrl);
 
     await user.click(screen.getByRole('button', { name: 'Copy invite link' }));
@@ -289,7 +289,7 @@ describe('Share invite dialog', () => {
       routerContext: ownerRouterContext(),
     });
 
-    await user.click(await screen.findByRole('button', { name: /invite/i }));
+    await user.click(await screen.findByRole('button', { name: 'Invite' }));
     await screen.findByDisplayValue(inviteUrl);
 
     await user.keyboard('{Escape}');

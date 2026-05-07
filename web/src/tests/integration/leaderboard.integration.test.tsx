@@ -229,7 +229,7 @@ describe('Leaderboard page', () => {
       );
 
       const heading = await screen.findByRole('heading', { name: 'Pit Wall' });
-      const eyebrow = heading.previousElementSibling;
+      const eyebrow = heading.parentElement?.previousElementSibling;
       expect(eyebrow?.textContent?.replace(/\s+/g, ' ').trim()).toMatch(/^round 7 · miami gp$/i);
     });
 
@@ -243,7 +243,7 @@ describe('Leaderboard page', () => {
       );
 
       const heading = await screen.findByRole('heading', { name: 'Pit Wall' });
-      expect(heading.previousElementSibling).toBeNull();
+      expect(heading.parentElement?.previousElementSibling).toBeNull();
     });
   });
 });

@@ -3,21 +3,14 @@ import { useClipboard } from '@/hooks/useClipboard';
 import { getOrCreateLeagueInvite } from '@/services/leagueInviteService';
 import * as Sentry from '@sentry/react';
 import { getRouteApi, useRouteContext } from '@tanstack/react-router';
-import { Check, Copy, UserPlus } from 'lucide-react';
+import { Check, Copy, Share, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
 import { AppContainer } from '../AppContainer/AppContainer';
 import { InlineError } from '../InlineError/InlineError';
 import { Leaderboard } from '../Leaderboard/Leaderboard';
 import { Button } from '../ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '../ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 
@@ -62,46 +55,54 @@ export function League() {
     }
   };
 
-  const inviteButton = displayInviteButton ? (
-    <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
-      <DialogTrigger asChild>
-        <Button className="shrink-0">
-          <UserPlus className="h-4 w-4" />
-          Invite
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Share League Invite</DialogTitle>
-          <DialogDescription>
-            Anyone who has this link will be able to join your league
-          </DialogDescription>
-        </DialogHeader>
-        {isLoading && <div>Loading invite link...</div>}
-        {error && <InlineError message={error} />}
-        {leagueInvite && (
-          <div className="flex items-center gap-2">
-            <Label htmlFor="link" className="sr-only">
-              League Invite Link
-            </Label>
-            <Input id="link" className="flex-1" value={inviteUrl} readOnly></Input>
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={() => copy(inviteUrl)}
-              aria-label={hasCopied ? 'Copied' : 'Copy invite link'}
-            >
-              {hasCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            </Button>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+  const handleOpenInvite = () => handleDialogOpen(true);
+
+  const inviteFullButton = displayInviteButton ? (
+    <Button className="shrink-0" onClick={handleOpenInvite}>
+      <UserPlus className="h-4 w-4" />
+      Invite
+    </Button>
+  ) : null;
+
+  const inviteIconButton = displayInviteButton ? (
+    <Button size="icon-sm" aria-label="Invite to league" onClick={handleOpenInvite}>
+      <Share className="h-4 w-4" />
+    </Button>
   ) : null;
 
   return (
     <AppContainer maxWidth="md">
-      <Leaderboard actions={inviteButton} />
+      <Leaderboard actions={inviteFullButton} inlineAction={inviteIconButton} />
+      {displayInviteButton && (
+        <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Share League Invite</DialogTitle>
+              <DialogDescription>
+                Anyone who has this link will be able to join your league
+              </DialogDescription>
+            </DialogHeader>
+            {isLoading && <div>Loading invite link...</div>}
+            {error && <InlineError message={error} />}
+            {leagueInvite && (
+              <div className="flex items-center gap-2">
+                <Label htmlFor="link" className="sr-only">
+                  League Invite Link
+                </Label>
+                <Input id="link" className="flex-1" value={inviteUrl} readOnly></Input>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => copy(inviteUrl)}
+                  aria-label={hasCopied ? 'Copied' : 'Copy invite link'}
+                >
+                  {hasCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
     </AppContainer>
   );
 }

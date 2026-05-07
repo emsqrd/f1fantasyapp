@@ -8,7 +8,7 @@ import type { ReactNode } from 'react';
 const routeApi = getRouteApi('/_authenticated/_team-required/league/$leagueId');
 
 const rowBase =
-  'grid w-full items-center gap-3 grid-cols-[52px_1fr_96px] sm:grid-cols-[52px_1fr_70px_96px_36px] text-left transition-colors';
+  'grid w-full items-baseline gap-3 grid-cols-[32px_1fr_52px] sm:items-center sm:grid-cols-[52px_1fr_70px_96px_36px] text-left transition-colors';
 const rowChrome =
   'rounded-[0.65rem] border bg-card p-3 sm:rounded-none sm:border-x-0 sm:border-t-0 sm:bg-transparent sm:px-4 sm:py-3';
 const rowHover = 'sm:hover:bg-accent';
@@ -18,9 +18,10 @@ const rowMyTeam =
 
 interface LeaderboardProps {
   actions?: ReactNode;
+  inlineAction?: ReactNode;
 }
 
-export function Leaderboard({ actions }: LeaderboardProps = {}) {
+export function Leaderboard({ actions, inlineAction }: LeaderboardProps = {}) {
   const { league, standings } = routeApi.useLoaderData();
   const { profile } = useRouteContext({ from: '/_authenticated' });
 
@@ -28,7 +29,12 @@ export function Leaderboard({ actions }: LeaderboardProps = {}) {
 
   return (
     <>
-      <LeaderboardHeader league={league} standings={standings} actions={actions} />
+      <LeaderboardHeader
+        league={league}
+        standings={standings}
+        actions={actions}
+        inlineAction={inlineAction}
+      />
       {entries.length === 0 ? (
         <div className="bg-card rounded-lg p-8 text-center">
           <p className="text-muted-foreground text-lg">No teams in this league yet.</p>
@@ -36,7 +42,7 @@ export function Leaderboard({ actions }: LeaderboardProps = {}) {
       ) : (
         <div className="sm:border-border sm:bg-card sm:overflow-hidden sm:rounded-[0.65rem] sm:border">
           <div
-            className="text-muted-foreground grid grid-cols-[52px_1fr_96px] items-center gap-3 px-3 pb-2 text-[11px] font-semibold tracking-wider uppercase sm:hidden"
+            className="text-muted-foreground grid grid-cols-[32px_1fr_52px] items-center gap-3 px-3 pb-2 text-[11px] font-semibold tracking-wider uppercase sm:hidden"
             aria-hidden="true"
           >
             <div className="text-center">Pos</div>
