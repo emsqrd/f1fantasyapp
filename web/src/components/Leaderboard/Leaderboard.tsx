@@ -1,4 +1,5 @@
 import type { League } from '@/contracts/League';
+import type { LeagueStandings } from '@/contracts/LeagueStandings';
 import { Link, useLoaderData, useRouteContext } from '@tanstack/react-router';
 
 import { Badge } from '../ui/badge';
@@ -7,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 
 interface LeagueLoaderData {
   league: League;
+  standings: LeagueStandings;
 }
 
 export function Leaderboard() {

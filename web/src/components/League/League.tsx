@@ -1,5 +1,6 @@
 import type { League as LeagueType } from '@/contracts/League';
 import type { LeagueInvite } from '@/contracts/LeagueInvite';
+import type { LeagueStandings } from '@/contracts/LeagueStandings';
 import { useClipboard } from '@/hooks/useClipboard';
 import { getOrCreateLeagueInvite } from '@/services/leagueInviteService';
 import * as Sentry from '@sentry/react';
@@ -25,6 +26,7 @@ import { Label } from '../ui/label';
 // Type for the route's loader data
 interface LeagueLoaderData {
   league: LeagueType;
+  standings: LeagueStandings;
 }
 
 export function League() {
@@ -81,7 +83,7 @@ export function League() {
           {displayInviteButton && (
             <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="flex-shrink-0">
+                <Button className="shrink-0">
                   <UserPlus className="h-4 w-4" />
                   Invite
                 </Button>

@@ -14,6 +14,7 @@ import type { UserProfile } from '@/contracts/UserProfile';
 import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
+import { getLeagueStandings } from '@/services/standingsService';
 import { getMyTeam, getTeamById } from '@/services/teamService';
 import { userProfileService } from '@/services/userProfileService';
 import * as Sentry from '@sentry/react';
@@ -501,14 +502,18 @@ const leagueRoute = createRoute({
     }
 
     const { leagueId } = validationResult.data;
-    const league = await getLeagueById(leagueId);
+    const [league, standings] = await Promise.all([
+      getLeagueById(leagueId),
+      getLeagueStandings(leagueId),
+    ]);
 
-    // Return 404 if league doesn't exist
-    if (!league) {
+    // Return 404 if either resource is missing — the two endpoints should agree,
+    // but a defensive check here prevents a runtime crash inside the component.
+    if (!league || !standings) {
       throw notFound({ routeId: LEAGUE_ROUTE_ID });
     }
 
-    return { league };
+    return { league, standings };
   },
   component: League,
   pendingComponent: () => (
