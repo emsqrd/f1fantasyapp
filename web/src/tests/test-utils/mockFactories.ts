@@ -324,11 +324,10 @@ export function createMockLeagueList(
  * const standings = createMockLeagueStandings();
  *
  * @example
- * // Mid-season after a Sprint
+ * // Mid-season
  * const standings = createMockLeagueStandings({
- *   currentRound: 7,
- *   afterRaceWeekendName: 'Miami Grand Prix',
- *   afterSessionType: SessionType.Sprint,
+ *   lastScoredRound: 7,
+ *   lastScoredRaceWeekendName: 'Miami GP',
  *   standings: [...],
  * });
  */
@@ -337,10 +336,8 @@ export function createMockLeagueStandings(
 ): LeagueStandings {
   return {
     leagueId: 1,
-    currentRound: 1,
-    totalRounds: 24,
-    afterRaceWeekendName: null,
-    afterSessionType: null,
+    lastScoredRound: null,
+    lastScoredRaceWeekendName: null,
     standings: [],
     ...overrides,
   };

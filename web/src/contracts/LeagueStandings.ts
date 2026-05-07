@@ -1,4 +1,4 @@
-export interface StandingsEntry {
+export interface TeamLeagueStanding {
   teamId: number;
   teamName: string;
   ownerId: number;
@@ -8,24 +8,9 @@ export interface StandingsEntry {
   positionChange: number | null;
 }
 
-export const SessionType = {
-  GrandPrix: 0,
-  Sprint: 1,
-  Qualifying: 2,
-} as const;
-export type SessionType = (typeof SessionType)[keyof typeof SessionType];
-
 export interface LeagueStandings {
   leagueId: number;
-  currentRound: number | null;
-  totalRounds: number;
-  afterRaceWeekendName: string | null;
-  afterSessionType: SessionType | null;
-  standings: StandingsEntry[];
+  lastScoredRound: number | null;
+  lastScoredRaceWeekendName: string | null;
+  standings: TeamLeagueStanding[];
 }
-
-export const sessionTypeLabel: Record<SessionType, string | null> = {
-  [SessionType.Sprint]: 'Sprint',
-  [SessionType.Qualifying]: 'Qualifying',
-  [SessionType.GrandPrix]: null,
-};

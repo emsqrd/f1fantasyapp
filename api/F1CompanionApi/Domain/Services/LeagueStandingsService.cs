@@ -1,7 +1,6 @@
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
-using F1CompanionApi.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace F1CompanionApi.Domain.Services;
@@ -16,24 +15,20 @@ public class LeagueStandingsService : ILeagueStandingsService
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly ISeasonService _seasonService;
-    private readonly IRaceWeekendService _raceWeekendService;
     private readonly ILogger<LeagueStandingsService> _logger;
 
     public LeagueStandingsService(
         ApplicationDbContext dbContext,
         ISeasonService seasonService,
-        IRaceWeekendService raceWeekendService,
         ILogger<LeagueStandingsService> logger
     )
     {
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(seasonService);
-        ArgumentNullException.ThrowIfNull(raceWeekendService);
         ArgumentNullException.ThrowIfNull(logger);
 
         _dbContext = dbContext;
         _seasonService = seasonService;
-        _raceWeekendService = raceWeekendService;
         _logger = logger;
     }
 
@@ -154,12 +149,6 @@ public class LeagueStandingsService : ILeagueStandingsService
             await _seasonService.GetCurrentSeasonAsync()
             ?? throw new InvalidOperationException("No active season found.");
 
-        var totalRounds = await _dbContext.RaceWeekends.CountAsync(r =>
-            r.SeasonId == currentSeason.Id
-        );
-
-        var currentRaceWeekend = await _raceWeekendService.GetCurrentSeasonRaceWeekendAsync();
-
         var latestScoredWeekend = await _dbContext
             .TeamLeagueStandings.AsNoTracking()
             .Where(ls => ls.LeagueId == leagueId && ls.RaceWeekend.SeasonId == currentSeason.Id)
@@ -181,12 +170,8 @@ public class LeagueStandingsService : ILeagueStandingsService
         return new LeagueStandingsResponse
         {
             LeagueId = leagueId,
-            CurrentRound = currentRaceWeekend?.Round,
-            TotalRounds = totalRounds,
-            AfterRaceWeekendName = latestScoredWeekend?.Name,
-            AfterSessionType = latestScoredWeekend is null
-                ? null
-                : await LatestCompletedSessionAsync(latestScoredWeekend),
+            LastScoredRound = latestScoredWeekend?.Round,
+            LastScoredRaceWeekendName = latestScoredWeekend?.Name,
             Standings = LeagueStandingsBuilder.Build(league, currentStandings, priorStandings),
         };
     }
@@ -219,37 +204,6 @@ public class LeagueStandingsService : ILeagueStandingsService
             .Where(s => s.RaceWeekend.Round == currentRound - 1)
             .ToList();
         return (currentRoundStandings, priorRoundStandings);
-    }
-
-    /// <summary>
-    /// The most recent session of a race weekend that has produced results.
-    /// </summary>
-    /// <param name="weekend">The race weekend in question.</param>
-    private async Task<SessionType?> LatestCompletedSessionAsync(RaceWeekend weekend)
-    {
-        SessionType? latest = null;
-        foreach (var session in WeekendSessions.InOrder(weekend.WeekendFormat))
-        {
-            var hasResults = session switch
-            {
-                SessionType.Qualifying => await _dbContext.DriverQualifyingResults.AnyAsync(r =>
-                    r.RaceWeekendId == weekend.Id
-                ),
-                SessionType.Sprint => await _dbContext.DriverRacingResults.AnyAsync(r =>
-                    r.RaceWeekendId == weekend.Id && r.SessionType == SessionType.Sprint
-                ),
-                SessionType.GrandPrix => await _dbContext.DriverRacingResults.AnyAsync(r =>
-                    r.RaceWeekendId == weekend.Id && r.SessionType == SessionType.GrandPrix
-                ),
-                _ => false,
-            };
-
-            if (hasResults)
-            {
-                latest = session;
-            }
-        }
-        return latest;
     }
 
     /// <summary>

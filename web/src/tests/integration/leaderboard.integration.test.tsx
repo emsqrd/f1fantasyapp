@@ -1,8 +1,7 @@
 import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
 import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
 import { League } from '@/components/League/League';
-import { SessionType } from '@/contracts/LeagueStandings';
-import type { LeagueStandings, StandingsEntry } from '@/contracts/LeagueStandings';
+import type { LeagueStandings, TeamLeagueStanding } from '@/contracts/LeagueStandings';
 import type { RouterContext } from '@/lib/router-context';
 import { getLeagueById } from '@/services/leagueService';
 import { getLeagueStandings } from '@/services/standingsService';
@@ -84,7 +83,7 @@ function renderLeaguePage(standings: LeagueStandings) {
   });
 }
 
-function buildEntry(overrides: Partial<StandingsEntry> = {}): StandingsEntry {
+function buildTeamLeagueStanding(overrides: Partial<TeamLeagueStanding> = {}): TeamLeagueStanding {
   return {
     teamId: 1,
     teamName: 'Test Team',
@@ -108,11 +107,10 @@ describe('Leaderboard page', () => {
   it('renders one row per standings entry with team name, owner, points, and delta glyphs', async () => {
     renderLeaguePage(
       createMockLeagueStandings({
-        currentRound: 7,
-        afterRaceWeekendName: 'Miami Grand Prix',
-        afterSessionType: SessionType.GrandPrix,
+        lastScoredRound: 7,
+        lastScoredRaceWeekendName: 'Miami Grand Prix',
         standings: [
-          buildEntry({
+          buildTeamLeagueStanding({
             teamId: 10,
             teamName: 'Lightning McQueen',
             ownerId: 1,
@@ -121,7 +119,7 @@ describe('Leaderboard page', () => {
             totalPoints: 1234,
             positionChange: 2,
           }),
-          buildEntry({
+          buildTeamLeagueStanding({
             teamId: 11,
             teamName: 'Banana Boat',
             ownerId: 2,
@@ -130,7 +128,7 @@ describe('Leaderboard page', () => {
             totalPoints: 999,
             positionChange: -1,
           }),
-          buildEntry({
+          buildTeamLeagueStanding({
             teamId: 12,
             teamName: 'Status Quo',
             ownerId: 3,
@@ -139,7 +137,7 @@ describe('Leaderboard page', () => {
             totalPoints: 500,
             positionChange: 0,
           }),
-          buildEntry({
+          buildTeamLeagueStanding({
             teamId: 13,
             teamName: 'New Entry',
             ownerId: 4,
@@ -173,9 +171,19 @@ describe('Leaderboard page', () => {
     renderLeaguePage(
       createMockLeagueStandings({
         standings: [
-          buildEntry({ teamId: 10, ownerId: 1, position: 1, teamName: 'Other Team' }),
-          buildEntry({ teamId: 11, ownerId: VIEWER_ID, position: 2, teamName: 'My Team' }),
-          buildEntry({ teamId: 12, ownerId: 3, position: 3, teamName: 'Another Team' }),
+          buildTeamLeagueStanding({ teamId: 10, ownerId: 1, position: 1, teamName: 'Other Team' }),
+          buildTeamLeagueStanding({
+            teamId: 11,
+            ownerId: VIEWER_ID,
+            position: 2,
+            teamName: 'My Team',
+          }),
+          buildTeamLeagueStanding({
+            teamId: 12,
+            ownerId: 3,
+            position: 3,
+            teamName: 'Another Team',
+          }),
         ],
       }),
     );
@@ -192,8 +200,13 @@ describe('Leaderboard page', () => {
     renderLeaguePage(
       createMockLeagueStandings({
         standings: [
-          buildEntry({ teamId: 10, ownerId: 1, position: 1, teamName: 'Other Team' }),
-          buildEntry({ teamId: 11, ownerId: VIEWER_ID, position: 2, teamName: 'My Team' }),
+          buildTeamLeagueStanding({ teamId: 10, ownerId: 1, position: 1, teamName: 'Other Team' }),
+          buildTeamLeagueStanding({
+            teamId: 11,
+            ownerId: VIEWER_ID,
+            position: 2,
+            teamName: 'My Team',
+          }),
         ],
       }),
     );
@@ -205,115 +218,32 @@ describe('Leaderboard page', () => {
     expect(otherLink).toHaveAttribute('href', '/team/10');
   });
 
-  describe('header chip conditioning', () => {
-    it('renders both chips when currentRound and afterRaceWeekendName are set', async () => {
+  describe('header eyebrow', () => {
+    it('renders "Round {N} · {RACE_NAME}" when both lastScoredRound and lastScoredRaceWeekendName are set', async () => {
       renderLeaguePage(
         createMockLeagueStandings({
-          currentRound: 7,
-          totalRounds: 24,
-          afterRaceWeekendName: 'Miami Grand Prix',
-          afterSessionType: SessionType.Sprint,
-          standings: [buildEntry()],
+          lastScoredRound: 7,
+          lastScoredRaceWeekendName: 'Miami GP',
+          standings: [buildTeamLeagueStanding()],
         }),
       );
 
-      expect(await screen.findByText(/Round 7/)).toBeInTheDocument();
-      expect(screen.getByText(/Miami Grand Prix/)).toBeInTheDocument();
+      const heading = await screen.findByRole('heading', { name: 'Pit Wall' });
+      const eyebrow = heading.previousElementSibling;
+      expect(eyebrow?.textContent?.replace(/\s+/g, ' ').trim()).toMatch(/^round 7 · miami gp$/i);
     });
 
-    it('renders only the Round chip when afterRaceWeekendName is null', async () => {
+    it('renders no eyebrow when both fields are null', async () => {
       renderLeaguePage(
         createMockLeagueStandings({
-          currentRound: 1,
-          totalRounds: 24,
-          afterRaceWeekendName: null,
-          afterSessionType: null,
-          standings: [buildEntry()],
+          lastScoredRound: null,
+          lastScoredRaceWeekendName: null,
+          standings: [buildTeamLeagueStanding()],
         }),
       );
 
-      expect(await screen.findByText(/Round 1/)).toBeInTheDocument();
-      expect(screen.queryByText(/After/)).not.toBeInTheDocument();
-    });
-
-    it('renders only the After chip when currentRound is null (post-finale)', async () => {
-      renderLeaguePage(
-        createMockLeagueStandings({
-          currentRound: null,
-          totalRounds: 24,
-          afterRaceWeekendName: 'Abu Dhabi Grand Prix',
-          afterSessionType: SessionType.GrandPrix,
-          standings: [buildEntry()],
-        }),
-      );
-
-      expect(await screen.findByText(/Abu Dhabi Grand Prix/)).toBeInTheDocument();
-      expect(screen.queryByText(/Round/)).not.toBeInTheDocument();
-    });
-
-    it('omits the chip row entirely when both currentRound and afterRaceWeekendName are null', async () => {
-      renderLeaguePage(
-        createMockLeagueStandings({
-          currentRound: null,
-          totalRounds: 24,
-          afterRaceWeekendName: null,
-          afterSessionType: null,
-          standings: [buildEntry()],
-        }),
-      );
-
-      expect(await screen.findByRole('heading', { name: 'Pit Wall' })).toBeInTheDocument();
-      expect(screen.queryByText(/Round/)).not.toBeInTheDocument();
-      expect(screen.queryByText(/After/)).not.toBeInTheDocument();
-    });
-  });
-
-  describe('after-chip session segment', () => {
-    it('appends "· Sprint" when afterSessionType is Sprint', async () => {
-      renderLeaguePage(
-        createMockLeagueStandings({
-          currentRound: 7,
-          afterRaceWeekendName: 'Miami Grand Prix',
-          afterSessionType: SessionType.Sprint,
-          standings: [buildEntry()],
-        }),
-      );
-
-      const chip = (await screen.findByText(/Miami Grand Prix/)).closest('span');
-      expect(chip).not.toBeNull();
-      expect(chip).toHaveTextContent(/After\s*Miami Grand Prix\s*·\s*Sprint/);
-    });
-
-    it('appends "· Qualifying" when afterSessionType is Qualifying', async () => {
-      renderLeaguePage(
-        createMockLeagueStandings({
-          currentRound: 7,
-          afterRaceWeekendName: 'Miami Grand Prix',
-          afterSessionType: SessionType.Qualifying,
-          standings: [buildEntry()],
-        }),
-      );
-
-      const chip = (await screen.findByText(/Miami Grand Prix/)).closest('span');
-      expect(chip).not.toBeNull();
-      expect(chip).toHaveTextContent(/After\s*Miami Grand Prix\s*·\s*Qualifying/);
-    });
-
-    it('omits the session segment when afterSessionType is GrandPrix', async () => {
-      renderLeaguePage(
-        createMockLeagueStandings({
-          currentRound: 7,
-          afterRaceWeekendName: 'Miami Grand Prix',
-          afterSessionType: SessionType.GrandPrix,
-          standings: [buildEntry()],
-        }),
-      );
-
-      const chip = (await screen.findByText(/Miami Grand Prix/)).closest('span');
-      expect(chip).not.toBeNull();
-      expect(chip).toHaveTextContent(/After\s*Miami Grand Prix/);
-      expect(chip?.textContent ?? '').not.toMatch(/Grand Prix\s*·\s*Grand Prix/);
-      expect(chip?.textContent ?? '').not.toMatch(/·/);
+      const heading = await screen.findByRole('heading', { name: 'Pit Wall' });
+      expect(heading.previousElementSibling).toBeNull();
     });
   });
 });

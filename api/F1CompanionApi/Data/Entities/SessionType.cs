@@ -4,5 +4,4 @@ public enum SessionType
 {
     GrandPrix = 0,
     Sprint = 1,
-    Qualifying = 2,
 }

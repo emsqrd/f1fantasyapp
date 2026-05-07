@@ -73,8 +73,6 @@ public class LeagueStandingsTests : IntegrationTestBase
                 Standing(league.Id, team3.Id, w2.Id, position: 2, totalPoints: 90),
                 Standing(league.Id, team2.Id, w2.Id, position: 3, totalPoints: 60)
             );
-            // Add a finished GP race result to materialize afterSessionType.
-            await AddRaceResultsAsync(db, w2.Id, SessionType.GrandPrix);
             await db.SaveChangesAsync();
 
             return new
@@ -92,9 +90,8 @@ public class LeagueStandingsTests : IntegrationTestBase
 
         Assert.NotNull(standings);
         Assert.Equal(seed.LeagueId, standings!.LeagueId);
-        Assert.Equal(2, standings.TotalRounds);
-        Assert.Equal("Round Two GP", standings.AfterRaceWeekendName);
-        Assert.Equal(SessionType.GrandPrix, standings.AfterSessionType);
+        Assert.Equal(2, standings.LastScoredRound);
+        Assert.Equal("Round Two GP", standings.LastScoredRaceWeekendName);
 
         var ordered = standings.Standings;
         Assert.Equal(3, ordered.Count);
@@ -115,58 +112,19 @@ public class LeagueStandingsTests : IntegrationTestBase
         Assert.Equal(-2, ordered[2].PositionChange);
     }
 
-    [Theory]
-    [InlineData(WeekendFormat.Standard, false, false, true, SessionType.GrandPrix)]
-    [InlineData(WeekendFormat.Standard, false, true, true, SessionType.GrandPrix)]
-    [InlineData(WeekendFormat.Sprint, true, false, false, SessionType.Sprint)]
-    [InlineData(WeekendFormat.Sprint, true, true, true, SessionType.GrandPrix)]
-    public async Task GetLeagueStandings_AfterSessionType_ReflectsLatestSessionWithResults(
-        WeekendFormat format,
-        bool hasSprint,
-        bool hasQualifying,
-        bool hasGrandPrix,
-        SessionType expected
-    )
+    [Fact]
+    public async Task GetLeagueStandings_NoStandingsRows_LastScoredFieldsAreNull()
     {
         var (client, ownerProfile) = await Factory.CreateAuthenticatedAsync();
 
         var seed = await SeedAsync(async db =>
         {
-            var season = await db.CreateCurrentSeasonAsync();
-            var weekend = new RaceWeekend
-            {
-                SeasonId = season.Id,
-                Round = 1,
-                Name = "Test GP",
-                CircuitId = (await db.CreateCircuitAsync()).Id,
-                RaceDate = DateTime.UtcNow.AddDays(2),
-                WeekendFormat = format,
-            };
-            db.RaceWeekends.Add(weekend);
-            await db.SaveChangesAsync();
+            await db.CreateCurrentSeasonAsync();
 
-            var league = await CreateLeagueAsync(db, ownerProfile.Id, "Format League");
+            var league = await CreateLeagueAsync(db, ownerProfile.Id, "Empty League");
             var team = await db.CreateTeamAsync(ownerProfile.Id, "Team Alpha");
             await JoinTeamsAsync(db, league.Id, ownerProfile.Id, team.Id);
 
-            db.TeamLeagueStandings.Add(
-                Standing(league.Id, team.Id, weekend.Id, position: 1, totalPoints: 30)
-            );
-
-            if (hasSprint)
-            {
-                await AddRaceResultsAsync(db, weekend.Id, SessionType.Sprint);
-            }
-            if (hasQualifying)
-            {
-                await AddQualifyingResultsAsync(db, weekend.Id);
-            }
-            if (hasGrandPrix)
-            {
-                await AddRaceResultsAsync(db, weekend.Id, SessionType.GrandPrix);
-            }
-
-            await db.SaveChangesAsync();
             return new { LeagueId = league.Id };
         });
 
@@ -175,7 +133,65 @@ public class LeagueStandingsTests : IntegrationTestBase
         );
 
         Assert.NotNull(standings);
-        Assert.Equal(expected, standings!.AfterSessionType);
+        Assert.Null(standings!.LastScoredRound);
+        Assert.Null(standings.LastScoredRaceWeekendName);
+
+        // Zero-fill: every league team gets a row with 0 points.
+        Assert.Single(standings.Standings);
+        Assert.Equal(0, standings.Standings[0].TotalPoints);
+    }
+
+    [Fact]
+    public async Task GetLeagueStandings_LastScoredFields_ReflectHighestSeededRound()
+    {
+        var (client, ownerProfile) = await Factory.CreateAuthenticatedAsync();
+
+        var seed = await SeedAsync(async db =>
+        {
+            var season = await db.CreateCurrentSeasonAsync();
+
+            var league = await CreateLeagueAsync(db, ownerProfile.Id, "Multi-Round League");
+            var team = await db.CreateTeamAsync(ownerProfile.Id, "Team Alpha");
+            await JoinTeamsAsync(db, league.Id, ownerProfile.Id, team.Id);
+
+            var w1 = await db.CreateRaceWeekendAsync(
+                season.Id,
+                raceDate: DateTime.UtcNow.AddDays(-21),
+                round: 1,
+                name: "Round One GP"
+            );
+            var w3 = await db.CreateRaceWeekendAsync(
+                season.Id,
+                raceDate: DateTime.UtcNow.AddDays(-7),
+                round: 3,
+                name: "Round Three GP"
+            );
+            var w2 = await db.CreateRaceWeekendAsync(
+                season.Id,
+                raceDate: DateTime.UtcNow.AddDays(-14),
+                round: 2,
+                name: "Round Two GP"
+            );
+
+            // Insert out of round order — round 3 first, round 1 last — so the test
+            // verifies OrderByDescending(Round) rather than insertion order.
+            db.TeamLeagueStandings.AddRange(
+                Standing(league.Id, team.Id, w3.Id, position: 1, totalPoints: 90),
+                Standing(league.Id, team.Id, w2.Id, position: 1, totalPoints: 60),
+                Standing(league.Id, team.Id, w1.Id, position: 1, totalPoints: 30)
+            );
+            await db.SaveChangesAsync();
+
+            return new { LeagueId = league.Id };
+        });
+
+        var standings = await client.GetFromJsonAsync<LeagueStandingsResponse>(
+            $"/api/leagues/{seed.LeagueId}/standings"
+        );
+
+        Assert.NotNull(standings);
+        Assert.Equal(3, standings!.LastScoredRound);
+        Assert.Equal("Round Three GP", standings.LastScoredRaceWeekendName);
     }
 
     private async Task<T> SeedAsync<T>(Func<F1CompanionApi.Data.ApplicationDbContext, Task<T>> seed)
@@ -271,55 +287,4 @@ public class LeagueStandingsTests : IntegrationTestBase
             CalculatedAt = DateTime.UtcNow,
             CreatedAt = DateTime.UtcNow,
         };
-
-    private static async Task AddRaceResultsAsync(
-        F1CompanionApi.Data.ApplicationDbContext db,
-        int raceWeekendId,
-        SessionType sessionType
-    )
-    {
-        var driver = await db.CreateDriverAsync(
-            abbreviation: $"D{Guid.NewGuid():N}"[..3].ToUpperInvariant(),
-            firstName: "Race",
-            lastName: "Driver"
-        );
-        db.DriverRacingResults.Add(
-            new DriverRacingResult
-            {
-                DriverId = driver.Id,
-                RaceWeekendId = raceWeekendId,
-                SessionType = sessionType,
-                FinishPosition = 1,
-                GridPosition = 1,
-                Overtakes = 0,
-                FastestLap = false,
-                Status = RacingStatus.Classified,
-                CreatedAt = DateTime.UtcNow,
-            }
-        );
-        await db.SaveChangesAsync();
-    }
-
-    private static async Task AddQualifyingResultsAsync(
-        F1CompanionApi.Data.ApplicationDbContext db,
-        int raceWeekendId
-    )
-    {
-        var driver = await db.CreateDriverAsync(
-            abbreviation: $"Q{Guid.NewGuid():N}"[..3].ToUpperInvariant(),
-            firstName: "Qual",
-            lastName: "Driver"
-        );
-        db.DriverQualifyingResults.Add(
-            new DriverQualifyingResult
-            {
-                DriverId = driver.Id,
-                RaceWeekendId = raceWeekendId,
-                Position = 1,
-                Status = RacingStatus.Classified,
-                CreatedAt = DateTime.UtcNow,
-            }
-        );
-        await db.SaveChangesAsync();
-    }
 }
