@@ -3,6 +3,7 @@ import { PositionDelta } from '@/components/PositionDelta/PositionDelta';
 import { cn } from '@/lib/utils';
 import { Link, getRouteApi, useRouteContext } from '@tanstack/react-router';
 import { ChevronRightIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 const routeApi = getRouteApi('/_authenticated/_team-required/league/$leagueId');
 
@@ -15,7 +16,11 @@ const rowFocus = 'focus-visible:ring-ring focus-visible:ring-2 focus-visible:out
 const rowMyTeam =
   'border-[var(--row-highlight-border)] bg-[color-mix(in_oklab,var(--row-highlight)_17%,var(--card))] sm:bg-[color-mix(in_oklab,var(--row-highlight)_17%,transparent)] sm:shadow-[inset_0_0_0_1.5px_var(--row-highlight-border)]';
 
-export function Leaderboard() {
+interface LeaderboardProps {
+  actions?: ReactNode;
+}
+
+export function Leaderboard({ actions }: LeaderboardProps = {}) {
   const { league, standings } = routeApi.useLoaderData();
   const { profile } = useRouteContext({ from: '/_authenticated' });
 
@@ -23,13 +28,21 @@ export function Leaderboard() {
 
   return (
     <>
-      <LeaderboardHeader league={league} standings={standings} />
+      <LeaderboardHeader league={league} standings={standings} actions={actions} />
       {entries.length === 0 ? (
         <div className="bg-card rounded-lg p-8 text-center">
           <p className="text-muted-foreground text-lg">No teams in this league yet.</p>
         </div>
       ) : (
         <div className="sm:border-border sm:bg-card sm:overflow-hidden sm:rounded-[0.65rem] sm:border">
+          <div
+            className="text-muted-foreground grid grid-cols-[52px_1fr_96px] items-center gap-3 px-3 pb-2 text-[11px] font-semibold tracking-wider uppercase sm:hidden"
+            aria-hidden="true"
+          >
+            <div className="text-center">Pos</div>
+            <div>Team</div>
+            <div className="text-right">Pts</div>
+          </div>
           <div
             className="text-muted-foreground bg-secondary border-border hidden grid-cols-[52px_1fr_70px_96px_36px] items-center gap-3 border-b px-4 py-2.5 text-[11px] font-semibold tracking-wider uppercase sm:grid"
             aria-hidden="true"
@@ -55,12 +68,7 @@ export function Leaderboard() {
               const linkContent = (
                 <>
                   <div className="flex items-center justify-center">
-                    <span
-                      className={cn(
-                        'font-mono text-[16px] font-semibold tabular-nums',
-                        entry.position <= 3 ? 'text-foreground' : 'text-muted-foreground',
-                      )}
-                    >
+                    <span className="text-foreground font-mono text-[16px] font-semibold tabular-nums">
                       {entry.position}
                     </span>
                   </div>
