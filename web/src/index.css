@@ -36,6 +36,13 @@
   --sidebar-accent-foreground: #18181b;
   --sidebar-border: #e4e4e7;
   --sidebar-ring: #a1a1a1;
+
+  --row-highlight: oklch(60% 0.13 250);
+  --row-highlight-border: oklch(78% 0.09 250);
+
+  --delta-up-fg: #16a34a;
+  --delta-down-fg: #dc2626;
+  --delta-flat-fg: #71717a;
 }
 
 .dark {
@@ -71,6 +78,13 @@
   --sidebar-accent-foreground: #fafafa;
   --sidebar-border: #ffffff1a;
   --sidebar-ring: #525252;
+
+  --row-highlight: var(--primary);
+  --row-highlight-border: color-mix(in oklab, var(--primary) 55%, transparent);
+
+  --delta-up-fg: #4ade80;
+  --delta-down-fg: #f87171;
+  --delta-flat-fg: #9f9fa9;
 }
 
 body {
