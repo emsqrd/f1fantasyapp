@@ -109,7 +109,8 @@ public static class TestDataBuilder
         DateTime? lockDeadline = null,
         int round = 1,
         int? circuitId = null,
-        string name = "Test Grand Prix"
+        string name = "Test Grand Prix",
+        DateTime? scoredAt = null
     )
     {
         if (circuitId is null)
@@ -126,6 +127,7 @@ public static class TestDataBuilder
             CircuitId = circuitId.Value,
             RaceDate = raceDate,
             LockDeadline = lockDeadline,
+            ScoredAt = scoredAt,
         };
         db.RaceWeekends.Add(race);
         await db.SaveChangesAsync();

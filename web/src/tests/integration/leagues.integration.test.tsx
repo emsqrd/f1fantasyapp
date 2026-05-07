@@ -4,6 +4,7 @@ import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
 import { League } from '@/components/League/League';
 import type { RouterContext } from '@/lib/router-context';
 import { getAvailableLeagues, getLeagueById } from '@/services/leagueService';
+import { getLeagueStandings } from '@/services/standingsService';
 import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
@@ -11,6 +12,7 @@ import {
   createAuthedAuth,
   createBaseRouterContext,
   createMockLeague,
+  createMockLeagueStandings,
   createMockTeam,
   createMockUserProfile,
   createTeamContext,
@@ -67,11 +69,15 @@ function buildLeagueRouteTree() {
     path: 'league/$leagueId',
     loader: async ({ params }) => {
       const leagueId = Number(params.leagueId);
-      const league = await getLeagueById(leagueId);
-      if (!league) {
-        throw notFound({ routeId: '/_authenticated/_team-required/league/$leagueId' });
+      const ROUTE_ID = '/_authenticated/_team-required/league/$leagueId';
+      const [league, standings] = await Promise.all([
+        getLeagueById(leagueId),
+        getLeagueStandings(leagueId),
+      ]);
+      if (!league || !standings) {
+        throw notFound({ routeId: ROUTE_ID });
       }
-      return { league };
+      return { league, standings };
     },
     component: League,
     notFoundComponent: () => <h1>League Not Found</h1>,
@@ -322,6 +328,9 @@ describe('League page', () => {
       http.get(`${API_BASE}/leagues/7`, () =>
         HttpResponse.json(createMockLeague({ id: 7, name: 'COTA Champions' })),
       ),
+      http.get(`${API_BASE}/leagues/7/standings`, () =>
+        HttpResponse.json(createMockLeagueStandings({ leagueId: 7 })),
+      ),
     );
 
     renderWithRouter({
@@ -332,7 +341,7 @@ describe('League page', () => {
     });
 
     expect(
-      await screen.findByRole('heading', { level: 2, name: 'COTA Champions' }),
+      await screen.findByRole('heading', { level: 1, name: 'COTA Champions' }),
     ).toBeInTheDocument();
   });
 
@@ -340,6 +349,9 @@ describe('League page', () => {
     server.use(
       teamHandler(),
       http.get(`${API_BASE}/leagues/123`, () => new HttpResponse(null, { status: 404 })),
+      http.get(`${API_BASE}/leagues/123/standings`, () =>
+        HttpResponse.json(createMockLeagueStandings({ leagueId: 123 })),
+      ),
     );
 
     renderWithRouter({
@@ -356,6 +368,9 @@ describe('League page', () => {
     server.use(
       teamHandler(),
       http.get(`${API_BASE}/leagues/500`, () => new HttpResponse(null, { status: 500 })),
+      http.get(`${API_BASE}/leagues/500/standings`, () =>
+        HttpResponse.json(createMockLeagueStandings({ leagueId: 500 })),
+      ),
     );
 
     renderWithRouter({

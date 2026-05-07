@@ -37,6 +37,12 @@ public static class LeagueEndpoints
             .WithDescription("Get a league by ID");
 
         leaguesGroup
+            .MapGet("/{id}/standings", GetLeagueStandingsAsync)
+            .RequireAuthorization()
+            .WithName("GetLeagueStandings")
+            .WithDescription("Get standings for a league");
+
+        leaguesGroup
             .MapPost("/{id}/join", JoinLeagueAsync)
             .RequireAuthorization()
             .WithName("JoinLeague")
@@ -130,6 +136,27 @@ public static class LeagueEndpoints
         }
 
         return Results.Ok(league);
+    }
+
+    private static async Task<IResult> GetLeagueStandingsAsync(
+        ILeagueStandingsService leagueStandingsService,
+        int id,
+        [FromServices] ILogger logger
+    )
+    {
+        logger.LogDebug("Fetching standings for league {LeagueId}", id);
+        var standings = await leagueStandingsService.GetLeagueStandingsAsync(id);
+
+        if (standings is null)
+        {
+            logger.LogWarning("League {LeagueId} not found", id);
+            return Results.Problem(
+                detail: "League not found",
+                statusCode: StatusCodes.Status404NotFound
+            );
+        }
+
+        return Results.Ok(standings);
     }
 
     private static async Task<IResult> JoinLeagueAsync(

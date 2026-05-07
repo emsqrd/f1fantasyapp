@@ -1,9 +1,8 @@
-import type { League as LeagueType } from '@/contracts/League';
 import type { LeagueInvite } from '@/contracts/LeagueInvite';
 import { useClipboard } from '@/hooks/useClipboard';
 import { getOrCreateLeagueInvite } from '@/services/leagueInviteService';
 import * as Sentry from '@sentry/react';
-import { useLoaderData, useRouteContext } from '@tanstack/react-router';
+import { getRouteApi, useRouteContext } from '@tanstack/react-router';
 import { Check, Copy, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
@@ -22,22 +21,13 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 
-// Type for the route's loader data
-interface LeagueLoaderData {
-  league: LeagueType;
-}
+const routeApi = getRouteApi('/_authenticated/_team-required/league/$leagueId');
 
 export function League() {
-  // Get user data from route context
   const { profile } = useRouteContext({
     from: '/_authenticated/_team-required/league/$leagueId',
   });
-
-  // Get league data from the route loader
-  // Data is already loaded before this component renders (no loading state needed)
-  const { league } = useLoaderData({
-    from: '/_authenticated/_team-required/league/$leagueId',
-  }) as LeagueLoaderData;
+  const { league } = routeApi.useLoaderData();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [leagueInvite, setLeagueInvite] = useState<LeagueInvite | null>(null);
@@ -50,7 +40,6 @@ export function League() {
   const isOwner = profile?.id === league.ownerId;
   const displayInviteButton = isOwner && league.isPrivate;
 
-  // lazy load invite when dialog opens
   const handleDialogOpen = async (open: boolean) => {
     setIsDialogOpen(open);
 
@@ -73,53 +62,46 @@ export function League() {
     }
   };
 
+  const inviteButton = displayInviteButton ? (
+    <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
+      <DialogTrigger asChild>
+        <Button className="shrink-0">
+          <UserPlus className="h-4 w-4" />
+          Invite
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Share League Invite</DialogTitle>
+          <DialogDescription>
+            Anyone who has this link will be able to join your league
+          </DialogDescription>
+        </DialogHeader>
+        {isLoading && <div>Loading invite link...</div>}
+        {error && <InlineError message={error} />}
+        {leagueInvite && (
+          <div className="flex items-center gap-2">
+            <Label htmlFor="link" className="sr-only">
+              League Invite Link
+            </Label>
+            <Input id="link" className="flex-1" value={inviteUrl} readOnly></Input>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => copy(inviteUrl)}
+              aria-label={hasCopied ? 'Copied' : 'Copy invite link'}
+            >
+              {hasCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  ) : null;
+
   return (
     <AppContainer maxWidth="md">
-      <header className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <h2 className="text-xl font-bold">{league.name}</h2>
-          {displayInviteButton && (
-            <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex-shrink-0">
-                  <UserPlus className="h-4 w-4" />
-                  Invite
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Share League Invite</DialogTitle>
-                  <DialogDescription>
-                    Anyone who has this link will be able to join your league
-                  </DialogDescription>
-                </DialogHeader>
-                {isLoading && <div>Loading invite link...</div>}
-                {error && <InlineError message={error} />}
-                {leagueInvite && (
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="link" className="sr-only">
-                      League Invite Link
-                    </Label>
-                    <Input id="link" className="flex-1" value={inviteUrl} readOnly></Input>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => copy(inviteUrl)}
-                      aria-label={hasCopied ? 'Copied' : 'Copy invite link'}
-                    >
-                      {hasCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                )}
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
-        {league.description && (
-          <p className="text-muted-foreground mt-2 text-sm">{league.description}</p>
-        )}
-      </header>
-      <Leaderboard />
+      <Leaderboard actions={inviteButton} />
     </AppContainer>
   );
 }

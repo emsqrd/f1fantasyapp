@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>League Leaderboard — Redesign</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --radius: 0.65rem;
+        --background: #ffffff;
+        --foreground: #09090b;
+        --card: #ffffff;
+        --card-foreground: #09090b;
+        --primary: #1447e6;
+        --primary-foreground: #eff6ff;
+        --secondary: #f4f4f5;
+        --secondary-foreground: #18181b;
+        --muted: #f4f4f5;
+        --muted-foreground: #71717b;
+        --accent: #f4f4f5;
+        --accent-foreground: #18181b;
+        --destructive: #e7000b;
+        --border: #e4e4e7;
+        --input: #e4e4e7;
+        --ring: #a1a1a1;
+        /* delta colors — light */
+        --delta-up-fg: #16803d;
+        --delta-up-bg: rgba(22,128,61,0.08);
+        --delta-down-fg: #b91c1c;
+        --delta-down-bg: rgba(185,28,28,0.08);
+        --delta-flat-fg: #71717b;
+        --delta-flat-bg: rgba(113,113,123,0.08);
+        /* medal tints — light */
+        --medal-1-bg: #fef3c7; --medal-1-fg: #854d0e; --medal-1-ring: #fbbf24;
+        --medal-2-bg: #f1f5f9; --medal-2-fg: #334155; --medal-2-ring: #94a3b8;
+        --medal-3-bg: #fde7d3; --medal-3-fg: #7c2d12; --medal-3-ring: #ea7c4a;
+        --rank-bg: #f4f4f5; --rank-fg: #27272a; --rank-ring: #e4e4e7;
+        /* row-highlight: tint fill + matching border for the viewer's own row.
+           Light mode: soft sky-blue family — fill is desaturated, border is a touch
+           deeper but still in the same blue conversation (GitHub-style accent). */
+        --row-highlight: oklch(60% 0.13 250);
+        --row-highlight-border: oklch(78% 0.09 250);
+      }
+      .dark {
+        color-scheme: dark;
+        --background: #09090b;
+        --foreground: #fafafa;
+        --card: #18181b;
+        --card-foreground: #fafafa;
+        --primary: #2b7fff;
+        --primary-foreground: #eff6ff;
+        --secondary: #27272a;
+        --secondary-foreground: #fafafa;
+        --muted: #27272a;
+        --muted-foreground: #9f9fa9;
+        --accent: #27272a;
+        --accent-foreground: #fafafa;
+        --destructive: #ff6467;
+        --border: #ffffff1a;
+        --input: #ffffff26;
+        --ring: #737373;
+        /* delta colors — dark (lifted for contrast) */
+        --delta-up-fg: #4ade80;
+        --delta-up-bg: rgba(74,222,128,0.14);
+        --delta-down-fg: #f87171;
+        --delta-down-bg: rgba(248,113,113,0.14);
+        --delta-flat-fg: #9f9fa9;
+        --delta-flat-bg: rgba(159,159,169,0.14);
+        /* medal tints — dark */
+        --medal-1-bg: #3b2f0c; --medal-1-fg: #fde68a; --medal-1-ring: #a16207;
+        --medal-2-bg: #1f2937; --medal-2-fg: #cbd5e1; --medal-2-ring: #475569;
+        --medal-3-bg: #3a1d10; --medal-3-fg: #fed7aa; --medal-3-ring: #9a3412;
+        --rank-bg: #27272a; --rank-fg: #fafafa; --rank-ring: #ffffff14;
+        --row-highlight: var(--primary);
+        --row-highlight-border: color-mix(in oklab, var(--primary) 55%, transparent);
+      }
+      html, body { background: var(--background); color: var(--foreground); }
+      body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    </style>
+    <script>
+      // tweak defaults — wrapped so the host can persist edits to disk
+      window.LEADERBOARD_DEFAULTS = /*EDITMODE-BEGIN*/{
+        "layout": "table",
+        "density": "comfortable",
+        "myRowStyle": "both",
+        "tintStrength": 17,
+        "glyphStyle": "arrow",
+        "dark": true,
+        "preview": "desktop"
+      }/*EDITMODE-END*/;
+    </script>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel" src="tweaks-panel.jsx"></script>
+    <script type="text/babel" src="ios-frame.jsx"></script>
+    <script type="text/babel" src="data.jsx"></script>
+    <script type="text/babel" src="leaderboard.jsx"></script>
+  </body>
+</html>

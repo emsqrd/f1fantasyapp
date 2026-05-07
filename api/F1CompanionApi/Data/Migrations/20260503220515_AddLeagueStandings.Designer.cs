@@ -3,6 +3,7 @@ using System;
 using F1CompanionApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace F1CompanionApi.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260503220515_AddLeagueStandings")]
+    partial class AddLeagueStandings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -558,6 +561,58 @@ namespace F1CompanionApi.Data.Migrations
                     b.ToTable("LeagueInvites");
                 });
 
+            modelBuilder.Entity("F1CompanionApi.Data.Entities.LeagueStanding", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CalculatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("LeagueId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RaceWeekendId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TeamId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RaceWeekendId");
+
+                    b.HasIndex("TeamId");
+
+                    b.HasIndex("LeagueId", "RaceWeekendId", "Position");
+
+                    b.HasIndex("LeagueId", "TeamId", "RaceWeekendId")
+                        .IsUnique();
+
+                    b.ToTable("LeagueStandings");
+                });
+
             modelBuilder.Entity("F1CompanionApi.Data.Entities.LeagueTeam", b =>
                 {
                     b.Property<int>("Id")
@@ -683,9 +738,6 @@ namespace F1CompanionApi.Data.Migrations
 
                     b.Property<int>("Round")
                         .HasColumnType("integer");
-
-                    b.Property<DateTime?>("ScoredAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("SeasonId")
                         .HasColumnType("integer");
@@ -987,58 +1039,6 @@ namespace F1CompanionApi.Data.Migrations
                     b.ToTable("TeamDrivers");
                 });
 
-            modelBuilder.Entity("F1CompanionApi.Data.Entities.TeamLeagueStanding", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CalculatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("LeagueId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Position")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RaceWeekendId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TeamId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TotalPoints")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RaceWeekendId");
-
-                    b.HasIndex("TeamId");
-
-                    b.HasIndex("LeagueId", "RaceWeekendId", "Position");
-
-                    b.HasIndex("LeagueId", "TeamId", "RaceWeekendId")
-                        .IsUnique();
-
-                    b.ToTable("TeamLeagueStandings");
-                });
-
             modelBuilder.Entity("F1CompanionApi.Data.Entities.TeamRaceWeekendScore", b =>
                 {
                     b.Property<int>("Id")
@@ -1266,6 +1266,33 @@ namespace F1CompanionApi.Data.Migrations
                     b.Navigation("League");
 
                     b.Navigation("UpdatedByUser");
+                });
+
+            modelBuilder.Entity("F1CompanionApi.Data.Entities.LeagueStanding", b =>
+                {
+                    b.HasOne("F1CompanionApi.Data.Entities.League", "League")
+                        .WithMany()
+                        .HasForeignKey("LeagueId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("F1CompanionApi.Data.Entities.RaceWeekend", "RaceWeekend")
+                        .WithMany()
+                        .HasForeignKey("RaceWeekendId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("F1CompanionApi.Data.Entities.Team", "Team")
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("League");
+
+                    b.Navigation("RaceWeekend");
+
+                    b.Navigation("Team");
                 });
 
             modelBuilder.Entity("F1CompanionApi.Data.Entities.LeagueTeam", b =>
@@ -1506,33 +1533,6 @@ namespace F1CompanionApi.Data.Migrations
                     b.Navigation("Team");
 
                     b.Navigation("UpdatedByUser");
-                });
-
-            modelBuilder.Entity("F1CompanionApi.Data.Entities.TeamLeagueStanding", b =>
-                {
-                    b.HasOne("F1CompanionApi.Data.Entities.League", "League")
-                        .WithMany()
-                        .HasForeignKey("LeagueId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("F1CompanionApi.Data.Entities.RaceWeekend", "RaceWeekend")
-                        .WithMany()
-                        .HasForeignKey("RaceWeekendId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("F1CompanionApi.Data.Entities.Team", "Team")
-                        .WithMany()
-                        .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("League");
-
-                    b.Navigation("RaceWeekend");
-
-                    b.Navigation("Team");
                 });
 
             modelBuilder.Entity("F1CompanionApi.Data.Entities.TeamRaceWeekendScore", b =>

@@ -3,6 +3,7 @@ import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
 import { League } from '@/components/League/League';
 import type { RouterContext } from '@/lib/router-context';
 import { getLeagueById } from '@/services/leagueService';
+import { getLeagueStandings } from '@/services/standingsService';
 import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
@@ -10,6 +11,7 @@ import {
   createAuthedAuth,
   createBaseRouterContext,
   createMockLeague,
+  createMockLeagueStandings,
   createMockTeam,
   createMockUserProfile,
   createTeamContext,
@@ -41,11 +43,15 @@ function buildLeagueRouteTree() {
     getParentRoute: () => teamRequiredLayoutRoute,
     path: 'league/$leagueId',
     loader: async ({ params }) => {
-      const league = await getLeagueById(Number(params.leagueId));
-      if (!league) {
-        throw notFound({ routeId: '/_authenticated/_team-required/league/$leagueId' });
+      const ROUTE_ID = '/_authenticated/_team-required/league/$leagueId';
+      const [league, standings] = await Promise.all([
+        getLeagueById(Number(params.leagueId)),
+        getLeagueStandings(Number(params.leagueId)),
+      ]);
+      if (!league || !standings) {
+        throw notFound({ routeId: ROUTE_ID });
       }
-      return { league };
+      return { league, standings };
     },
     component: League,
     notFoundComponent: () => <h1>League Not Found</h1>,
@@ -94,6 +100,12 @@ function privateLeagueHandler() {
   );
 }
 
+function standingsHandler() {
+  return http.get(`${API_BASE}/leagues/${LEAGUE_ID}/standings`, () =>
+    HttpResponse.json(createMockLeagueStandings({ leagueId: LEAGUE_ID })),
+  );
+}
+
 const inviteUrl = `${window.location.origin}/join/${INVITE_TOKEN}`;
 
 /**
@@ -136,6 +148,7 @@ describe('Share invite dialog', () => {
     server.use(
       teamHandler(),
       privateLeagueHandler(),
+      standingsHandler(),
       http.post(`${API_BASE}/leagues/${LEAGUE_ID}/invite`, inviteFetch),
     );
 
@@ -160,6 +173,7 @@ describe('Share invite dialog', () => {
     server.use(
       teamHandler(),
       privateLeagueHandler(),
+      standingsHandler(),
       http.post(
         `${API_BASE}/leagues/${LEAGUE_ID}/invite`,
         () => new HttpResponse(null, { status: 500 }),
@@ -193,6 +207,7 @@ describe('Share invite dialog', () => {
     server.use(
       teamHandler(),
       privateLeagueHandler(),
+      standingsHandler(),
       http.post(`${API_BASE}/leagues/${LEAGUE_ID}/invite`, inviteFetch),
     );
 
@@ -224,6 +239,7 @@ describe('Share invite dialog', () => {
     server.use(
       teamHandler(),
       privateLeagueHandler(),
+      standingsHandler(),
       http.post(`${API_BASE}/leagues/${LEAGUE_ID}/invite`, () =>
         HttpResponse.json({
           id: 1,
@@ -255,6 +271,7 @@ describe('Share invite dialog', () => {
     server.use(
       teamHandler(),
       privateLeagueHandler(),
+      standingsHandler(),
       http.post(`${API_BASE}/leagues/${LEAGUE_ID}/invite`, () =>
         HttpResponse.json({
           id: 1,
