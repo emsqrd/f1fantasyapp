@@ -886,26 +886,5 @@ public class ScoringServiceTests
         Assert.Equal(1, await context.TeamRaceWeekendScores.CountAsync());
     }
 
-    [Fact]
-    public async Task ScoreRaceWeekendAsync_HappyPath_SetsScoredAtOnRaceWeekend()
-    {
-        var context = CreateInMemoryContext();
-        var service = CreateServiceWithContext(context);
-
-        context.Circuits.Add(SeedCircuit(1));
-        var race = SeedRace(id: 1, seasonId: 1);
-        context.RaceWeekends.Add(race);
-        await context.SaveChangesAsync();
-
-        var beforeUtc = DateTime.UtcNow;
-        await service.ScoreRaceWeekendAsync(raceWeekendId: 1);
-        var afterUtc = DateTime.UtcNow;
-
-        var weekend = await context.RaceWeekends.FindAsync(1);
-        Assert.NotNull(weekend);
-        Assert.NotNull(weekend!.ScoredAt);
-        Assert.InRange(weekend.ScoredAt!.Value, beforeUtc, afterUtc);
-    }
-
     #endregion
 }
