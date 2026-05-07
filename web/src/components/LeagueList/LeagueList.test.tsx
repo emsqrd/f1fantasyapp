@@ -62,7 +62,7 @@ describe('LeagueList', () => {
   it('renders league links with type-safe navigation', () => {
     render(<LeagueList />);
 
-    const leagueLink = screen.getByRole('link', { name: /view league: league 1/i });
+    const leagueLink = screen.getByRole('link', { name: /open league 1/i });
     expect(leagueLink).toBeInTheDocument();
     expect(leagueLink).toHaveAttribute('href', '/league/1');
   });

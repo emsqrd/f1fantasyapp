@@ -42,7 +42,11 @@ public class RaceWeekendServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceWeekendService(context, _mockLogger.Object);
+        var service = new RaceWeekendService(
+            context,
+            Mock.Of<ISeasonService>(),
+            _mockLogger.Object
+        );
 
         var circuits = new[]
         {
@@ -97,7 +101,11 @@ public class RaceWeekendServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceWeekendService(context, _mockLogger.Object);
+        var service = new RaceWeekendService(
+            context,
+            Mock.Of<ISeasonService>(),
+            _mockLogger.Object
+        );
 
         // Act
         var result = await service.GetRaceWeekendsBySeasonAsync(1);
@@ -112,7 +120,11 @@ public class RaceWeekendServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceWeekendService(context, _mockLogger.Object);
+        var service = new RaceWeekendService(
+            context,
+            Mock.Of<ISeasonService>(),
+            _mockLogger.Object
+        );
 
         var circuits = new[]
         {
@@ -168,7 +180,11 @@ public class RaceWeekendServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceWeekendService(context, _mockLogger.Object);
+        var service = new RaceWeekendService(
+            context,
+            Mock.Of<ISeasonService>(),
+            _mockLogger.Object
+        );
 
         var circuits = new[]
         {
@@ -225,7 +241,11 @@ public class RaceWeekendServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceWeekendService(context, _mockLogger.Object);
+        var service = new RaceWeekendService(
+            context,
+            Mock.Of<ISeasonService>(),
+            _mockLogger.Object
+        );
 
         var circuits = new[]
         {
@@ -283,7 +303,11 @@ public class RaceWeekendServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceWeekendService(context, _mockLogger.Object);
+        var service = new RaceWeekendService(
+            context,
+            Mock.Of<ISeasonService>(),
+            _mockLogger.Object
+        );
 
         var circuits = new[]
         {
@@ -330,7 +354,11 @@ public class RaceWeekendServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceWeekendService(context, _mockLogger.Object);
+        var service = new RaceWeekendService(
+            context,
+            Mock.Of<ISeasonService>(),
+            _mockLogger.Object
+        );
 
         var raceDate = new DateTime(2026, 3, 22, 15, 0, 0, DateTimeKind.Utc);
         var lockDeadline = new DateTime(2026, 3, 22, 14, 0, 0, DateTimeKind.Utc);
@@ -377,7 +405,11 @@ public class RaceWeekendServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceWeekendService(context, _mockLogger.Object);
+        var service = new RaceWeekendService(
+            context,
+            Mock.Of<ISeasonService>(),
+            _mockLogger.Object
+        );
 
         var circuit = CreateCircuit("Bahrain International Circuit", "Sakhir", "Bahrain");
         context.Circuits.Add(circuit);
@@ -409,7 +441,11 @@ public class RaceWeekendServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceWeekendService(context, _mockLogger.Object);
+        var service = new RaceWeekendService(
+            context,
+            Mock.Of<ISeasonService>(),
+            _mockLogger.Object
+        );
 
         // Act
         var result = await service.GetRaceWeekendByRoundAsync(1, 999);
@@ -423,7 +459,11 @@ public class RaceWeekendServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceWeekendService(context, _mockLogger.Object);
+        var service = new RaceWeekendService(
+            context,
+            Mock.Of<ISeasonService>(),
+            _mockLogger.Object
+        );
 
         var circuit = CreateCircuit("Circuit 1", "Location", "Country");
         context.Circuits.Add(circuit);
@@ -453,7 +493,11 @@ public class RaceWeekendServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceWeekendService(context, _mockLogger.Object);
+        var service = new RaceWeekendService(
+            context,
+            Mock.Of<ISeasonService>(),
+            _mockLogger.Object
+        );
 
         var circuits = new[]
         {
@@ -504,7 +548,11 @@ public class RaceWeekendServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceWeekendService(context, _mockLogger.Object);
+        var service = new RaceWeekendService(
+            context,
+            Mock.Of<ISeasonService>(),
+            _mockLogger.Object
+        );
 
         var circuit = CreateCircuit("Circuit 1", "Location", "Country");
         context.Circuits.Add(circuit);
@@ -534,7 +582,11 @@ public class RaceWeekendServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceWeekendService(context, _mockLogger.Object);
+        var service = new RaceWeekendService(
+            context,
+            Mock.Of<ISeasonService>(),
+            _mockLogger.Object
+        );
 
         // Act
         var result = await service.GetIdByRoundAsync(1, 99);
@@ -548,7 +600,11 @@ public class RaceWeekendServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new RaceWeekendService(context, _mockLogger.Object);
+        var service = new RaceWeekendService(
+            context,
+            Mock.Of<ISeasonService>(),
+            _mockLogger.Object
+        );
 
         var circuit = CreateCircuit("Circuit 1", "Location", "Country");
         context.Circuits.Add(circuit);
