@@ -26,10 +26,7 @@ Sentry.init({
         ]
       : [
           // Production: Enable Session Replay to capture user sessions
-          Sentry.replayIntegration({
-            maskAllText: false,
-            blockAllMedia: false,
-          }),
+          Sentry.replayIntegration(),
         ]),
   ],
 
