@@ -119,7 +119,7 @@ FROM (VALUES
 WHERE up."Email" = src.email;
 
 -- =============================================================================
--- Stage 2: Create one Team per fake user (real teams 1/4/7 already exist).
+-- Stage 2: Create one Team per fake user (real teams 1/4/6/7 already exist).
 -- Lookup UserProfile by email; skip if a team already exists for that user.
 -- =============================================================================
 WITH fake_users AS (
@@ -162,7 +162,7 @@ WHERE NOT EXISTS (
 );
 
 -- =============================================================================
--- Stage 4: Add all 13 teams to the league.
+-- Stage 4: Add all 14 teams to the league.
 -- =============================================================================
 INSERT INTO "LeagueTeams" ("LeagueId", "TeamId", "JoinedAt",
                            "CreatedBy", "CreatedAt", "IsDeleted")
@@ -359,7 +359,7 @@ COMMIT;
 -- =============================================================================
 -- Verification (run separately if you want a sanity check):
 --   SELECT "Name", (SELECT COUNT(*) FROM "LeagueTeams" WHERE "LeagueId" = l."Id") AS teams
---   FROM "Leagues" l WHERE l."Name" = 'Lights Out League';   -- replace with whatever you set in _config
+--   FROM "Leagues" l WHERE l."Name" = 'Steward''s Discretion';   -- replace with whatever you set in _config
 --   -- expect: 14 teams
 --
 --   SELECT t."Id", t."Name", COUNT(*) AS lineup_rows
