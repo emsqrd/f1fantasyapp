@@ -125,6 +125,8 @@ instance.
 3. Run `dotnet ef migrations add MigrationName --project F1CompanionApi`
 4. Run `dotnet ef database update --project F1CompanionApi`
 
+RLS is auto-enabled on new public tables via the `auto_enable_rls_public` Supabase event trigger; no manual `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` is needed in the EF migration. No policies are defined — the .NET API connects with a privileged role that bypasses RLS, so RLS exists purely as defense-in-depth against direct queries to the Supabase REST surface (anon/authenticated roles).
+
 ### Adding a New Service
 
 1. Create interface `I{Feature}Service` and implementation in `Domain/Services/`
