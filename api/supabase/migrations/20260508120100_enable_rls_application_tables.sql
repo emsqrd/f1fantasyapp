@@ -10,7 +10,9 @@ DECLARE r record;
 BEGIN
     FOR r IN SELECT * FROM pg_event_trigger_ddl_commands()
     LOOP
-        IF r.schema_name = 'public' AND r.object_identity <> 'public."__EFMigrationsHistory"' THEN
+        IF r.object_type = 'table'
+           AND r.schema_name = 'public'
+           AND r.object_identity <> 'public."__EFMigrationsHistory"' THEN
             EXECUTE format('ALTER TABLE %s ENABLE ROW LEVEL SECURITY', r.object_identity);
         END IF;
     END LOOP;
