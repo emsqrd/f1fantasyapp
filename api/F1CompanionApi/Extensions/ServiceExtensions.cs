@@ -161,6 +161,7 @@ public static class ServiceExtensions
         services.AddScoped<IRaceWeekendService, RaceWeekendService>();
         services.AddScoped<ISeasonService, SeasonService>();
         services.AddScoped<IScoringService, ScoringService>();
+        services.AddScoped<ILeagueStandingsService, LeagueStandingsService>();
         services.AddScoped<ITeamService, TeamService>();
         services.AddScoped<IUserProfileService, UserProfileService>();
     }

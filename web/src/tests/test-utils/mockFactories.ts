@@ -1,4 +1,5 @@
 import type { League } from '@/contracts/League';
+import type { LeagueStandings } from '@/contracts/LeagueStandings';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team, TeamConstructor, TeamDriver } from '@/contracts/Team';
 import type { UserProfile } from '@/contracts/UserProfile';
@@ -313,6 +314,33 @@ export function createMockLeagueList(
       ...overridesFn?.(index),
     });
   });
+}
+
+/**
+ * Test utility: Creates a mock LeagueStandings response with sensible defaults.
+ *
+ * @example
+ * // Empty standings (preseason / no scoring yet)
+ * const standings = createMockLeagueStandings();
+ *
+ * @example
+ * // Mid-season
+ * const standings = createMockLeagueStandings({
+ *   lastScoredRound: 7,
+ *   lastScoredRaceWeekendName: 'Miami GP',
+ *   standings: [...],
+ * });
+ */
+export function createMockLeagueStandings(
+  overrides: Partial<LeagueStandings> = {},
+): LeagueStandings {
+  return {
+    leagueId: 1,
+    lastScoredRound: null,
+    lastScoredRaceWeekendName: null,
+    standings: [],
+    ...overrides,
+  };
 }
 
 /**

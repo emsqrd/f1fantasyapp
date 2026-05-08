@@ -1,15 +1,21 @@
 import type { League } from '@/contracts/League';
+import { cn } from '@/lib/utils';
 import { Link, useLoaderData, useNavigate } from '@tanstack/react-router';
+import { ChevronRightIcon } from 'lucide-react';
 
 import { AppContainer } from '../AppContainer/AppContainer';
 import { CreateLeague } from '../CreateLeague/CreateLeague';
-import { buttonVariants } from '../ui/button';
-import { Card } from '../ui/card';
 
 // Type for the route's loader data
 interface LeagueListLoaderData {
   leagues: League[];
 }
+
+const rowBase = 'flex w-full items-center gap-3 transition-colors';
+const rowChrome =
+  'rounded-[0.65rem] border bg-card p-4 sm:rounded-none sm:border-x-0 sm:border-t-0 sm:bg-transparent sm:px-4 sm:py-3';
+const rowHover = 'sm:hover:bg-accent';
+const rowFocus = 'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none';
 
 export function LeagueList() {
   // Get leagues data from the route loader
@@ -36,24 +42,28 @@ export function LeagueList() {
           <p className="text-muted-foreground text-lg">You haven't joined any leagues yet!</p>
         </div>
       ) : (
-        <div aria-label="league-list">
-          {leagues.map((league) => (
-            <Card key={league.id} className="mb-4 p-4">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex flex-col">
-                  <h3 className="text-lg font-medium">{league.name}</h3>
-                </div>
+        <div className="sm:border-border sm:bg-card sm:overflow-hidden sm:rounded-[0.65rem] sm:border">
+          <ul
+            role="list"
+            aria-label="league-list"
+            className="flex flex-col gap-2 sm:gap-0 sm:[&>li:not(:last-child)>a]:border-b"
+          >
+            {leagues.map((league) => (
+              <li key={league.id}>
                 <Link
                   to="/league/$leagueId"
                   params={{ leagueId: String(league.id) }}
-                  className={buttonVariants({ variant: 'outline' })}
-                  aria-label={`View league: ${league.name}`}
+                  className={cn(rowBase, rowChrome, rowHover, rowFocus)}
+                  aria-label={`Open ${league.name}`}
                 >
-                  View
+                  <h3 className="text-foreground min-w-0 flex-1 truncate text-lg font-medium">
+                    {league.name}
+                  </h3>
+                  <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
                 </Link>
-              </div>
-            </Card>
-          ))}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </AppContainer>

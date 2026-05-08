@@ -13,6 +13,7 @@ export {
   createMockDriver,
   createMockLeague,
   createMockLeagueList,
+  createMockLeagueStandings,
   createMockTeam,
   createMockTeamConstructor,
   createMockTeamDriver,

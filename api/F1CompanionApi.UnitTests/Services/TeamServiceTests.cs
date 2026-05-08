@@ -27,12 +27,27 @@ public class TeamServiceTests
         return new ApplicationDbContext(options);
     }
 
+    private TeamService CreateService(ApplicationDbContext context)
+    {
+        var raceWeekendService = new Mock<IRaceWeekendService>();
+        raceWeekendService
+            .Setup(s => s.GetCurrentSeasonRaceWeekendAsync())
+            .Returns(() =>
+                context
+                    .RaceWeekends.Where(r => r.ScoredAt == null)
+                    .OrderBy(r => r.Round)
+                    .FirstOrDefaultAsync()
+            );
+
+        return new TeamService(context, raceWeekendService.Object, _mockLogger.Object);
+    }
+
     [Fact]
     public async Task CreateTeamAsync_ValidRequest_ReturnsTeamResponseWithCorrectData()
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = new UserProfile
         {
@@ -60,7 +75,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = new UserProfile
         {
@@ -90,7 +105,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = new UserProfile
         {
@@ -127,7 +142,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var request = new CreateTeamRequest { Name = "Test Team" };
 
@@ -149,7 +164,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = new UserProfile
         {
@@ -179,7 +194,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = new UserProfile
         {
@@ -216,7 +231,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = new UserProfile
         {
@@ -240,7 +255,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         // Act
         var result = await service.GetUserTeamAsync(999);
@@ -254,7 +269,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = new UserProfile
         {
@@ -292,7 +307,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -315,7 +330,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -341,7 +356,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -363,7 +378,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -385,7 +400,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -408,7 +423,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -434,7 +449,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -456,7 +471,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var driver = CreateTestDriver(context, "VER", "Max", "Verstappen");
 
@@ -472,7 +487,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var owner = CreateTestUser(context);
         var otherUser = CreateTestUser(context, "other@test.com");
@@ -497,7 +512,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -516,7 +531,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -544,7 +559,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -566,7 +581,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -588,7 +603,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -605,7 +620,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -626,7 +641,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -646,7 +661,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -671,7 +686,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -695,7 +710,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
@@ -709,7 +724,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var owner = CreateTestUser(context);
         var otherUser = CreateTestUser(context, "other@test.com");
@@ -732,7 +747,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -753,7 +768,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -775,7 +790,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var constructor = CreateTestConstructor(context, "Red Bull Racing");
 
@@ -791,7 +806,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var owner = CreateTestUser(context);
         var otherUser = CreateTestUser(context, "other@test.com");
@@ -816,7 +831,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -835,7 +850,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -863,7 +878,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -885,7 +900,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -907,7 +922,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -930,7 +945,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -947,7 +962,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -967,7 +982,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -997,7 +1012,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1021,7 +1036,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
@@ -1035,7 +1050,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var owner = CreateTestUser(context);
         var otherUser = CreateTestUser(context, "other@test.com");
@@ -1058,7 +1073,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1079,7 +1094,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1108,7 +1123,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1127,7 +1142,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1153,7 +1168,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1178,7 +1193,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1215,7 +1230,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1244,7 +1259,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1263,7 +1278,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1288,7 +1303,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1313,7 +1328,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1341,7 +1356,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1369,7 +1384,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1405,7 +1420,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1434,7 +1449,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1456,7 +1471,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1473,7 +1488,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1496,7 +1511,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
@@ -1522,7 +1537,7 @@ public class TeamServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new TeamService(context, _mockLogger.Object);
+        var service = CreateService(context);
 
         var user = CreateTestUser(context);
         var team = CreateTestTeam(context, user.Id);
