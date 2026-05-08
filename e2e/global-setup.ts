@@ -16,20 +16,18 @@ import { readSupabaseEnv } from './fixtures/supabase-env';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
 const API_PROJECT = path.join(REPO_ROOT, 'api', 'F1CompanionApi');
+const SUPABASE_DIR = path.join(REPO_ROOT, 'e2e', 'supabase');
 
 /**
- * Migration ordering (implicit, worth knowing):
- *   1. `supabase start` (from e2e/supabase/) applies files in
- *      supabase/migrations/ against the stack's `postgres` DB. The profile
- *      trigger installs with unresolved `public.*` refs — PL/pgSQL defers
- *      name resolution to runtime, so this is fine today. A future supabase
- *      migration that needs `public.*` at CREATE time (e.g. an FK from
- *      `auth.*` → `public.*`) would break this order.
- *   2. `dotnet ef database update` runs here, creating the `public` tables.
- *   3. Tests execute; by then both layers are in place.
+ * Order:
+ *    supabase db reset → EF migrations → tests.
+ *
+ * The profile trigger uses unresolved `public.*` refs (PL/pgSQL defers name resolution);
+ * a future supabase migration needing `public.*` at CREATE time would break this order.
  */
 export default async function globalSetup(): Promise<void> {
   await ensureSupabaseRunning();
+  resetSupabaseDb();
   applyEfMigrations();
   // Warm the Supabase env cache so worker processes spend no time on
   // `supabase status` once tests start. Read ignores its own return value.
@@ -57,6 +55,24 @@ async function ensureSupabaseRunning(): Promise<void> {
     );
   } finally {
     await client.end().catch(() => {});
+  }
+}
+
+function resetSupabaseDb(): void {
+  const result = spawnSync('supabase', ['db', 'reset', '--no-seed'], {
+    cwd: SUPABASE_DIR,
+    stdio: 'inherit',
+  });
+
+  if (result.error) {
+    throw new Error(
+      `Failed to invoke \`supabase db reset\`: ${result.error.message}. ` +
+        `Ensure the Supabase CLI is installed and on PATH.`,
+    );
+  }
+
+  if (result.status !== 0) {
+    throw new Error(`supabase db reset exited with status ${result.status}.`);
   }
 }
 
