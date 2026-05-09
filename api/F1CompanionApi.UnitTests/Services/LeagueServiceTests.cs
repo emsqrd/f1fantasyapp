@@ -191,63 +191,6 @@ public class LeagueServiceTests
     }
 
     [Fact]
-    public async Task GetLeaguesAsync_NoLeagues_ReturnsEmptyCollection()
-    {
-        // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new LeagueService(context, _mockLogger.Object);
-
-        // Act
-        var result = await service.GetLeaguesAsync();
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public async Task GetLeaguesAsync_MultipleLeagues_ReturnsAllLeagues()
-    {
-        // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new LeagueService(context, _mockLogger.Object);
-
-        var owner = new UserProfile
-        {
-            AccountId = "test-account",
-            Email = "owner@test.com",
-            FirstName = "Test",
-            LastName = "Owner",
-        };
-        context.UserProfiles.Add(owner);
-
-        var league1 = new League
-        {
-            Name = "League 1",
-            OwnerId = owner.Id,
-            CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow,
-        };
-        var league2 = new League
-        {
-            Name = "League 2",
-            OwnerId = owner.Id,
-            CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow,
-        };
-
-        context.Leagues.AddRange(league1, league2);
-        await context.SaveChangesAsync();
-
-        // Act
-        var result = await service.GetLeaguesAsync();
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Count());
-    }
-
-    [Fact]
     public async Task GetLeagueByIdAsync_ExistingLeague_ReturnsLeague()
     {
         // Arrange

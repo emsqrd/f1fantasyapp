@@ -10,7 +10,6 @@ namespace F1CompanionApi.Domain.Services;
 public interface ILeagueService
 {
     Task<LeagueResponse> CreateLeagueAsync(CreateLeagueRequest createLeagueRequest, int ownerId);
-    Task<IEnumerable<LeagueResponse>> GetLeaguesAsync();
     Task<IEnumerable<LeagueResponse>> GetAvailableLeaguesAsync(
         int userId,
         string? searchTerm = null
@@ -99,17 +98,6 @@ public class LeagueService : ILeagueService
         await _dbContext.SaveChangesAsync();
 
         return newLeague.ToResponseModel();
-    }
-
-    public async Task<IEnumerable<LeagueResponse>> GetLeaguesAsync()
-    {
-        _logger.LogDebug("Fetching all leagues");
-
-        var leagues = await _dbContext.Leagues.Include(x => x.Owner).ToListAsync();
-
-        _logger.LogDebug("Retrieved {LeagueCount} leagues", leagues.Count);
-
-        return leagues.Select(league => league.ToResponseModel());
     }
 
     public async Task<IEnumerable<LeagueResponse>> GetAvailableLeaguesAsync(

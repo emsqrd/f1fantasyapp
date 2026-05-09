@@ -103,82 +103,6 @@ public class LeagueEndpointsTests
     }
 
     [Fact]
-    public async Task GetLeaguesAsync_LeaguesExist_ReturnsOkWithLeagues()
-    {
-        // Arrange
-        var leagues = new List<LeagueResponse>
-        {
-            new LeagueResponse
-            {
-                Id = 1,
-                Name = "League 1",
-                Description = "Description 1",
-                OwnerName = "John Doe",
-                MaxTeams = 15,
-                IsPrivate = true,
-            },
-            new LeagueResponse
-            {
-                Id = 2,
-                Name = "League 2",
-                OwnerName = "John Doe",
-                MaxTeams = 20,
-                IsPrivate = false,
-            },
-        };
-
-        _mockLeagueService.Setup(x => x.GetLeaguesAsync()).ReturnsAsync(leagues);
-
-        // Act
-        var result = await InvokeGetLeaguesAsync();
-
-        // Assert
-        Assert.IsType<Ok<IEnumerable<LeagueResponse>>>(result);
-        var okResult = (Ok<IEnumerable<LeagueResponse>>)result;
-        Assert.NotNull(okResult.Value);
-        var leagueList = okResult.Value.ToList();
-        Assert.Equal(2, leagueList.Count);
-        Assert.Equal("League 1", leagueList[0].Name);
-        Assert.Equal("League 2", leagueList[1].Name);
-    }
-
-    [Fact]
-    public async Task GetLeaguesAsync_NoLeagues_ReturnsOkWithEmptyCollection()
-    {
-        // Arrange
-        _mockLeagueService
-            .Setup(x => x.GetLeaguesAsync())
-            .ReturnsAsync(new List<LeagueResponse>());
-
-        // Act
-        var result = await InvokeGetLeaguesAsync();
-
-        // Assert
-        Assert.IsType<Ok<IEnumerable<LeagueResponse>>>(result);
-        var okResult = (Ok<IEnumerable<LeagueResponse>>)result;
-        Assert.NotNull(okResult.Value);
-        Assert.Empty(okResult.Value);
-    }
-
-    [Fact]
-    public async Task GetLeaguesAsync_ServiceReturnsEmptyCollection_ReturnsOkWithEmptyCollection()
-    {
-        // Arrange
-        _mockLeagueService
-            .Setup(x => x.GetLeaguesAsync())
-            .ReturnsAsync(Array.Empty<LeagueResponse>());
-
-        // Act
-        var result = await InvokeGetLeaguesAsync();
-
-        // Assert
-        Assert.IsType<Ok<IEnumerable<LeagueResponse>>>(result);
-        var okResult = (Ok<IEnumerable<LeagueResponse>>)result;
-        Assert.NotNull(okResult.Value);
-        Assert.Empty(okResult.Value);
-    }
-
-    [Fact]
     public async Task GetPublicLeaguesAsync_WithoutSearchTerm_ReturnsOkWithAvailableLeagues()
     {
         // Arrange
@@ -912,23 +836,6 @@ public class LeagueEndpointsTests
                         request,
                         _mockLogger.Object,
                     }
-                )!;
-
-        return await task;
-    }
-
-    private async Task<IResult> InvokeGetLeaguesAsync()
-    {
-        var method = typeof(LeagueEndpoints).GetMethod(
-            "GetLeaguesAsync",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
-        );
-
-        var task =
-            (Task<IResult>)
-                method!.Invoke(
-                    null,
-                    new object[] { _mockLeagueService.Object, _mockLogger.Object }
                 )!;
 
         return await task;

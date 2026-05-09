@@ -31,16 +31,4 @@ public class TeamTests : IntegrationTestBase
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
-
-    [Fact]
-    public async Task GetAllTeams_NoLongerSupported_Returns405()
-    {
-        var (client, _) = await Factory.CreateAuthenticatedAsync();
-
-        var response = await client.GetAsync("/api/teams");
-
-        // POST /teams still exists at this path, so the routing layer rejects
-        // the unsupported GET verb with 405 rather than 404.
-        Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
-    }
 }
