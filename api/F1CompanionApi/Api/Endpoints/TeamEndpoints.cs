@@ -18,9 +18,8 @@ public static class TeamEndpoints
             .WithName("CreateTeam")
             .WithDescription("Create a new team for the current user");
 
-        app.MapGet("/teams", GetTeamsAsync).WithName("GetTeams").WithDescription("Gets all teams");
-
         app.MapGet("/teams/{id}", GetTeamByIdAsync)
+            .RequireAuthorization()
             .WithName("GetTeamById")
             .WithDescription("Get Team By Id");
 
@@ -49,17 +48,6 @@ public static class TeamEndpoints
             logger.LogWarning(ex, "Failed to create team for user {UserId}", user.Id);
             return Results.BadRequest(ex.Message);
         }
-    }
-
-    private static async Task<IResult> GetTeamsAsync(
-        ApplicationDbContext db,
-        [FromServices] ILogger logger
-    )
-    {
-        logger.LogDebug("Fetching all teams");
-        var teams = await db.Teams.Include(t => t.Owner).ToListAsync() ?? [];
-        logger.LogDebug("Retrieved {TeamCount} teams", teams.Count);
-        return Results.Ok(teams.Select(t => t.ToResponseModel()));
     }
 
     private static async Task<IResult> GetTeamByIdAsync(

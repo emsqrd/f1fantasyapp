@@ -34,76 +34,6 @@ public class TeamEndpointsTests
     }
 
     [Fact]
-    public async Task GetTeamsAsync_MultipleTeams_ReturnsAllTeams()
-    {
-        // Arrange
-        using var context = CreateInMemoryContext();
-        var owners = new List<UserProfile>
-        {
-            new UserProfile
-            {
-                AccountId = Guid.NewGuid().ToString(),
-                Email = "owner1@test.com",
-                FirstName = "Owner",
-                LastName = "One",
-            },
-            new UserProfile
-            {
-                AccountId = Guid.NewGuid().ToString(),
-                Email = "owner2@test.com",
-                FirstName = "Owner",
-                LastName = "Two",
-            },
-            new UserProfile
-            {
-                AccountId = Guid.NewGuid().ToString(),
-                Email = "owner3@test.com",
-                FirstName = "Owner",
-                LastName = "Three",
-            },
-        };
-
-        context.UserProfiles.AddRange(owners);
-        await context.SaveChangesAsync();
-
-        var teams = new List<Team>
-        {
-            new Team
-            {
-                Name = "Team Alpha",
-                UserId = owners[0].Id,
-                CreatedBy = owners[0].Id,
-            },
-            new Team
-            {
-                Name = "Team Beta",
-                UserId = owners[1].Id,
-                CreatedBy = owners[1].Id,
-            },
-            new Team
-            {
-                Name = "Team Gamma",
-                UserId = owners[2].Id,
-                CreatedBy = owners[2].Id,
-            },
-        };
-
-        context.Teams.AddRange(teams);
-        await context.SaveChangesAsync();
-
-        // Act
-        var result = await InvokeGetTeamsAsync(context);
-
-        // Assert
-        Assert.NotNull(result);
-        var teamList = result.ToList();
-        Assert.Equal(3, teamList.Count);
-        Assert.Contains(teamList, t => t.Name == "Team Alpha");
-        Assert.Contains(teamList, t => t.Name == "Team Beta");
-        Assert.Contains(teamList, t => t.Name == "Team Gamma");
-    }
-
-    [Fact]
     public async Task GetTeamByIdAsync_ExistingTeam_ReturnsTeam()
     {
         // Arrange
@@ -256,20 +186,6 @@ public class TeamEndpointsTests
         Assert.Equal("User not found", badRequestResult.Value);
     }
 
-    [Fact]
-    public async Task GetTeams_EmptyDatabase_ReturnsEmptyList()
-    {
-        // Arrange
-        using var context = CreateInMemoryContext();
-
-        // Act
-        var result = await InvokeGetTeamsAsync(context);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Empty(result);
-    }
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -366,20 +282,6 @@ public class TeamEndpointsTests
     }
 
     // Helper methods to invoke private endpoint methods via reflection
-    private async Task<IEnumerable<TeamResponse>> InvokeGetTeamsAsync(ApplicationDbContext db)
-    {
-        var method = typeof(TeamEndpoints).GetMethod(
-            "GetTeamsAsync",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
-        );
-
-        var task = (Task<IResult>)method!.Invoke(null, new object[] { db, _mockLogger.Object })!;
-
-        var result = await task;
-        var okResult = (Ok<IEnumerable<TeamResponse>>)result;
-        return okResult.Value!;
-    }
-
     private async Task<IResult> InvokeGetTeamByIdAsync(int id, ApplicationDbContext db)
     {
         var method = typeof(TeamEndpoints).GetMethod(

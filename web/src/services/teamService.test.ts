@@ -13,7 +13,6 @@ import {
   createTeam,
   getMyTeam,
   getTeamById,
-  getTeams,
   removeConstructorFromTeam,
   removeDriverFromTeam,
   setCaptain,
@@ -111,41 +110,6 @@ describe('teamService', () => {
         message: 'Server error',
         status: 500,
       });
-    });
-  });
-
-  describe('getTeams', () => {
-    it('calls apiClient.get with correct endpoint', async () => {
-      const mockTeams: Team[] = [
-        createMockTeam({ id: 1, name: 'Team Alpha', ownerName: 'Alice' }),
-        createMockTeam({ id: 2, name: 'Team Beta', ownerName: 'Bob' }),
-        createMockTeam({ id: 3, name: 'Team Gamma', ownerName: 'Charlie' }),
-      ];
-
-      vi.mocked(apiClient.get).mockResolvedValue(mockTeams);
-
-      const result = await getTeams();
-
-      expect(apiClient.get).toHaveBeenCalledWith('/teams', 'get teams');
-      expect(result).toEqual(mockTeams);
-    });
-
-    it('returns empty array when no teams exist', async () => {
-      vi.mocked(apiClient.get).mockResolvedValue([]);
-
-      const result = await getTeams();
-
-      expect(result).toEqual([]);
-      expect(apiClient.get).toHaveBeenCalledWith('/teams', 'get teams');
-    });
-
-    it('propagates API errors during team retrieval', async () => {
-      const mockError = new Error('Failed to fetch teams');
-
-      vi.mocked(apiClient.get).mockRejectedValue(mockError);
-
-      await expect(getTeams()).rejects.toThrow('Failed to fetch teams');
-      expect(apiClient.get).toHaveBeenCalledWith('/teams', 'get teams');
     });
   });
 
