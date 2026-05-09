@@ -30,10 +30,6 @@ export async function getMyTeam(): Promise<Team | null> {
   }
 }
 
-export async function getTeams(): Promise<Team[]> {
-  return await apiClient.get('/teams', 'get teams');
-}
-
 export async function getTeamById(id: number): Promise<Team | null> {
   try {
     return await apiClient.get<Team>(`/teams/${id}`, 'get team');

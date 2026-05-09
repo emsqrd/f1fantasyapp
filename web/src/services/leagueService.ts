@@ -21,10 +21,6 @@ export async function createLeague(data: CreateLeagueRequest): Promise<League> {
   return league;
 }
 
-export async function getLeagues(): Promise<League[]> {
-  return apiClient.get<League[]>('/leagues', 'get leagues');
-}
-
 export async function getMyLeagues(): Promise<League[]> {
   return apiClient.get<League[]>('/me/leagues', 'get your leagues');
 }

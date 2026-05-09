@@ -10,7 +10,6 @@ import {
   createLeague,
   getAvailableLeagues,
   getLeagueById,
-  getLeagues,
   getMyLeagues,
   joinLeague,
 } from './leagueService';
@@ -96,37 +95,6 @@ describe('leagueService', () => {
         mockLeagueRequest,
         'create league',
       );
-    });
-  });
-
-  describe('getLeagues', () => {
-    it('calls apiClient.get with correct endpoint', async () => {
-      const mockLeagues: League[] = createMockLeagueList(2);
-
-      mockApiClient.get.mockResolvedValue(mockLeagues);
-
-      const result = await getLeagues();
-
-      expect(mockApiClient.get).toHaveBeenCalledWith('/leagues', 'get leagues');
-      expect(result).toEqual(mockLeagues);
-    });
-
-    it('returns empty array when no leagues exist', async () => {
-      mockApiClient.get.mockResolvedValue([]);
-
-      const result = await getLeagues();
-
-      expect(result).toEqual([]);
-      expect(mockApiClient.get).toHaveBeenCalledWith('/leagues', 'get leagues');
-    });
-
-    it('propagates API errors during league retrieval', async () => {
-      const mockError = new Error('Server error');
-
-      mockApiClient.get.mockRejectedValue(mockError);
-
-      await expect(getLeagues()).rejects.toThrow('Server error');
-      expect(mockApiClient.get).toHaveBeenCalledWith('/leagues', 'get leagues');
     });
   });
 

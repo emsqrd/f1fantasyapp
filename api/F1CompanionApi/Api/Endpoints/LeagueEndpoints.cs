@@ -19,12 +19,6 @@ public static class LeagueEndpoints
             .WithDescription("Create a new league");
 
         leaguesGroup
-            .MapGet("/", GetLeaguesAsync)
-            .RequireAuthorization()
-            .WithName("GetLeagues")
-            .WithDescription("Get all leagues");
-
-        leaguesGroup
             .MapGet("/available", GetAvailableLeaguesAsync)
             .RequireAuthorization()
             .WithName("GetAvailableLeagues")
@@ -91,17 +85,6 @@ public static class LeagueEndpoints
         return Results.Created($"/leagues/{leagueResponse.Id}", leagueResponse);
     }
 
-    private static async Task<IResult> GetLeaguesAsync(
-        ILeagueService leagueService,
-        [FromServices] ILogger logger
-    )
-    {
-        logger.LogDebug("Fetching all leagues");
-        var leagues = await leagueService.GetLeaguesAsync();
-
-        return Results.Ok(leagues);
-    }
-
     private static async Task<IResult> GetAvailableLeaguesAsync(
         ILeagueService leagueService,
         IUserProfileService userProfileService,
@@ -119,43 +102,32 @@ public static class LeagueEndpoints
 
     private static async Task<IResult> GetLeagueByIdAsync(
         ILeagueService leagueService,
+        IUserProfileService userProfileService,
         int id,
         [FromServices] ILogger logger
     )
     {
         logger.LogDebug("Fetching league {LeagueId}", id);
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+        await leagueService.GuardLeagueAccessAsync(id, user.Id);
+
         var league = await leagueService.GetLeagueByIdAsync(id);
-
-        if (league is null)
-        {
-            logger.LogWarning("League {LeagueId} not found", id);
-            return Results.Problem(
-                detail: "League not found",
-                statusCode: StatusCodes.Status404NotFound
-            );
-        }
-
         return Results.Ok(league);
     }
 
     private static async Task<IResult> GetLeagueStandingsAsync(
+        ILeagueService leagueService,
         ILeagueStandingsService leagueStandingsService,
+        IUserProfileService userProfileService,
         int id,
         [FromServices] ILogger logger
     )
     {
         logger.LogDebug("Fetching standings for league {LeagueId}", id);
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+        await leagueService.GuardLeagueAccessAsync(id, user.Id);
+
         var standings = await leagueStandingsService.GetLeagueStandingsAsync(id);
-
-        if (standings is null)
-        {
-            logger.LogWarning("League {LeagueId} not found", id);
-            return Results.Problem(
-                detail: "League not found",
-                statusCode: StatusCodes.Status404NotFound
-            );
-        }
-
         return Results.Ok(standings);
     }
 

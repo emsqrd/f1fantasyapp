@@ -191,63 +191,6 @@ public class LeagueServiceTests
     }
 
     [Fact]
-    public async Task GetLeaguesAsync_NoLeagues_ReturnsEmptyCollection()
-    {
-        // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new LeagueService(context, _mockLogger.Object);
-
-        // Act
-        var result = await service.GetLeaguesAsync();
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public async Task GetLeaguesAsync_MultipleLeagues_ReturnsAllLeagues()
-    {
-        // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new LeagueService(context, _mockLogger.Object);
-
-        var owner = new UserProfile
-        {
-            AccountId = "test-account",
-            Email = "owner@test.com",
-            FirstName = "Test",
-            LastName = "Owner",
-        };
-        context.UserProfiles.Add(owner);
-
-        var league1 = new League
-        {
-            Name = "League 1",
-            OwnerId = owner.Id,
-            CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow,
-        };
-        var league2 = new League
-        {
-            Name = "League 2",
-            OwnerId = owner.Id,
-            CreatedBy = owner.Id,
-            CreatedAt = DateTime.UtcNow,
-        };
-
-        context.Leagues.AddRange(league1, league2);
-        await context.SaveChangesAsync();
-
-        // Act
-        var result = await service.GetLeaguesAsync();
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Count());
-    }
-
-    [Fact]
     public async Task GetLeagueByIdAsync_ExistingLeague_ReturnsLeague()
     {
         // Arrange
@@ -1392,6 +1335,125 @@ public class LeagueServiceTests
         );
         Assert.Equal(league.Id, exception.LeagueId);
         Assert.Equal(userTeam.Id, exception.TeamId);
+    }
+
+    #endregion
+
+    #region GuardLeagueAccessAsync Tests
+
+    [Theory]
+    [InlineData(false, false)] // public league, non-member
+    [InlineData(false, true)] // public league, member
+    [InlineData(true, true)] // private league, member
+    public async Task GuardLeagueAccessAsync_AccessAllowed_DoesNotThrow(
+        bool isPrivate,
+        bool isMember
+    )
+    {
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+        var (leagueId, userId) = await SeedLeagueWithMembershipAsync(
+            context,
+            isPrivate,
+            seedMembership: isMember
+        );
+
+        await service.GuardLeagueAccessAsync(leagueId, userId);
+    }
+
+    [Fact]
+    public async Task GuardLeagueAccessAsync_PrivateLeague_NonMember_ThrowsNotLeagueMember()
+    {
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+        var (leagueId, userId) = await SeedLeagueWithMembershipAsync(
+            context,
+            isPrivate: true,
+            seedMembership: false
+        );
+
+        var exception = await Assert.ThrowsAsync<NotLeagueMemberException>(() =>
+            service.GuardLeagueAccessAsync(leagueId, userId)
+        );
+        Assert.Equal(leagueId, exception.LeagueId);
+        Assert.Equal(userId, exception.UserId);
+    }
+
+    [Fact]
+    public async Task GuardLeagueAccessAsync_NonExistentLeague_ThrowsLeagueNotFound()
+    {
+        using var context = CreateInMemoryContext();
+        var service = new LeagueService(context, _mockLogger.Object);
+
+        var exception = await Assert.ThrowsAsync<LeagueNotFoundException>(() =>
+            service.GuardLeagueAccessAsync(leagueId: 999, userId: 1)
+        );
+        Assert.Equal(999, exception.LeagueId);
+    }
+
+    private static async Task<(int LeagueId, int UserId)> SeedLeagueWithMembershipAsync(
+        ApplicationDbContext context,
+        bool isPrivate,
+        bool seedMembership
+    )
+    {
+        var owner = new UserProfile
+        {
+            AccountId = "owner-account",
+            Email = "owner@test.com",
+            FirstName = "Owner",
+            LastName = "User",
+        };
+        context.UserProfiles.Add(owner);
+
+        var requester = seedMembership
+            ? owner
+            : new UserProfile
+            {
+                AccountId = "requester-account",
+                Email = "requester@test.com",
+                FirstName = "Requester",
+                LastName = "User",
+            };
+        if (!seedMembership)
+        {
+            context.UserProfiles.Add(requester);
+        }
+
+        var league = new League
+        {
+            Name = "Test League",
+            IsPrivate = isPrivate,
+            OwnerId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow,
+        };
+        context.Leagues.Add(league);
+        await context.SaveChangesAsync();
+
+        var ownerTeam = new Team
+        {
+            Name = "Owner Team",
+            UserId = owner.Id,
+            CreatedBy = owner.Id,
+            CreatedAt = DateTime.UtcNow,
+        };
+        context.Teams.Add(ownerTeam);
+        await context.SaveChangesAsync();
+
+        context.LeagueTeams.Add(
+            new LeagueTeam
+            {
+                LeagueId = league.Id,
+                TeamId = ownerTeam.Id,
+                JoinedAt = DateTime.UtcNow,
+                CreatedBy = owner.Id,
+                CreatedAt = DateTime.UtcNow,
+            }
+        );
+        await context.SaveChangesAsync();
+
+        return (league.Id, requester.Id);
     }
 
     #endregion
