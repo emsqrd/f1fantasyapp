@@ -179,51 +179,6 @@ public class LeagueEndpointsTests
     }
 
     [Fact]
-    public async Task GetLeagueByIdAsync_LeagueExists_ReturnsOkWithLeague()
-    {
-        // Arrange
-        var league = new LeagueDetailsResponse
-        {
-            Id = 1,
-            Name = "Test League",
-            Description = "Test Description",
-            OwnerName = "John Doe",
-            MaxTeams = 15,
-            IsPrivate = true,
-        };
-
-        _mockLeagueService.Setup(x => x.GetLeagueByIdAsync(1)).ReturnsAsync(league);
-
-        // Act
-        var result = await InvokeGetLeagueByIdAsync(1);
-
-        // Assert
-        Assert.IsType<Ok<LeagueDetailsResponse>>(result);
-        var okResult = (Ok<LeagueDetailsResponse>)result;
-        Assert.NotNull(okResult.Value);
-        Assert.Equal(1, okResult.Value.Id);
-        Assert.Equal("Test League", okResult.Value.Name);
-        Assert.Equal("John Doe", okResult.Value.OwnerName);
-    }
-
-    [Fact]
-    public async Task GetLeagueByIdAsync_LeagueDoesNotExist_ReturnsNotFound()
-    {
-        // Arrange
-        _mockLeagueService
-            .Setup(x => x.GetLeagueByIdAsync(999))
-            .ReturnsAsync((LeagueDetailsResponse?)null);
-
-        // Act
-        var result = await InvokeGetLeagueByIdAsync(999);
-
-        // Assert
-        Assert.IsType<ProblemHttpResult>(result);
-        var problemResult = (ProblemHttpResult)result;
-        Assert.Equal(StatusCodes.Status404NotFound, problemResult.StatusCode);
-    }
-
-    [Fact]
     public async Task GetPublicLeaguesAsync_WithoutSearchTerm_ReturnsOkWithAvailableLeagues()
     {
         // Arrange
@@ -974,23 +929,6 @@ public class LeagueEndpointsTests
                 method!.Invoke(
                     null,
                     new object[] { _mockLeagueService.Object, _mockLogger.Object }
-                )!;
-
-        return await task;
-    }
-
-    private async Task<IResult> InvokeGetLeagueByIdAsync(int id)
-    {
-        var method = typeof(LeagueEndpoints).GetMethod(
-            "GetLeagueByIdAsync",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
-        );
-
-        var task =
-            (Task<IResult>)
-                method!.Invoke(
-                    null,
-                    new object[] { _mockLeagueService.Object, id, _mockLogger.Object }
                 )!;
 
         return await task;

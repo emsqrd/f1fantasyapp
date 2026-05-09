@@ -19,6 +19,7 @@ public interface ILeagueService
     Task<IEnumerable<LeagueResponse>> GetLeaguesByOwnerIdAsync(int ownerId);
     Task<IEnumerable<LeagueResponse>> GetLeaguesForUserAsync(int userId);
     Task<LeagueResponse> JoinLeagueAsync(int leagueId, int userId);
+    Task GuardLeagueAccessAsync(int leagueId, int userId);
 }
 
 public class LeagueService : ILeagueService
@@ -302,5 +303,27 @@ public class LeagueService : ILeagueService
         );
 
         return league.ToResponseModel();
+    }
+
+    public async Task GuardLeagueAccessAsync(int leagueId, int userId)
+    {
+        var access = await _dbContext
+            .Leagues.Where(l => l.Id == leagueId)
+            .Select(l => new
+            {
+                l.IsPrivate,
+                IsMember = l.LeagueTeams.Any(lt => lt.Team.UserId == userId),
+            })
+            .FirstOrDefaultAsync();
+
+        if (access is null)
+        {
+            throw new LeagueNotFoundException(leagueId);
+        }
+
+        if (access.IsPrivate && !access.IsMember)
+        {
+            throw new NotLeagueMemberException(leagueId, userId);
+        }
     }
 }

@@ -62,6 +62,12 @@ public class GlobalExceptionHandler : IExceptionHandler
                 ex.Message
             ),
 
+            NotLeagueMemberException _ => (
+                StatusCodes.Status403Forbidden,
+                "Not a League Member",
+                "You are not a member of this league."
+            ),
+
             UnauthorizedAccessException ex => (
                 StatusCodes.Status403Forbidden,
                 "Forbidden",

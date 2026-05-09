@@ -125,8 +125,7 @@ public class LeagueStandingsService : ILeagueStandingsService
     }
 
     /// <summary>
-    /// The current leaderboard for a league: each team's position, points earned this
-    /// season, and how that position has shifted since the previous race.
+    /// The current leaderboard for a league.
     /// </summary>
     /// <param name="leagueId">The league whose leaderboard is wanted.</param>
     public async Task<LeagueStandingsResponse?> GetLeagueStandingsAsync(int leagueId)
