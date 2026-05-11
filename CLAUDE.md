@@ -212,7 +212,7 @@ Open this folder in VSCode and use:
 
 ## Local Services Topology
 
-See `README.md` → "Local Services Topology" for the dev vs e2e stack layout, port-shift rule, and migration-sharing details. Quick recall: dev processes use Supabase `54321–54324` / web `5173` / API `5077`; e2e processes are all shifted by +100; `api/supabase/migrations/` is the source of truth and e2e symlinks to it.
+See [Local Services Topology](README.md#local-services-topology) in the README for the dev vs e2e stack layout, port-shift rule, and migration-sharing details. Quick recall: dev processes use Supabase `54321–54324` / web `5173` / API `5077`; e2e processes are all shifted by +100; `api/supabase/migrations/` is the source of truth and e2e symlinks to it.
 
 ## Production Infrastructure
 
