@@ -77,6 +77,10 @@ describe('supabase module initialization', () => {
 
     await import('./supabase');
 
-    expect(createClient).toHaveBeenCalledWith('https://myproject.supabase.co', 'my-anon-key');
+    expect(createClient).toHaveBeenCalledWith('https://myproject.supabase.co', 'my-anon-key', {
+      auth: {
+        flowType: 'pkce',
+      },
+    });
   });
 });
