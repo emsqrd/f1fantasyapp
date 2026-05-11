@@ -10,8 +10,6 @@ Email confirmations are currently disabled in Supabase (`enable_confirmations = 
 4. Complete verification when the user clicks the email link
 5. Handle the case where an unconfirmed user later tries to sign in
 
-**Cross-issue ordering** — this issue should ship before #167 (change-email re-verification, which reuses the same `/auth/callback` route and OTP entry UI) and before #165 (sign-in/redirect audit, which standardizes destinations across all auth flows). 164 preserves today's destination logic; 165 will standardize it later.
-
 **Out of scope:**
 - Branded email template content (deferred to #22)
 - Standardizing post-auth redirect destinations (deferred to #165)
@@ -31,6 +29,8 @@ Email confirmations are currently disabled in Supabase (`enable_confirmations = 
 | E2E approach | Existing admin-API fixture keeps `email_confirm: true` (auto-confirms); add two new tests in commit 4 (magic-link path + OTP path) | Existing tests stay fast; targeted e2e covers the new wiring |
 | Email template | Custom template at `api/supabase/templates/confirmation.html` includes both `{{ .ConfirmationURL }}` and `{{ .Token }}`, lands in commit 3 alongside the config flip | Default Supabase template already has both; we're shipping our own to control wording and prep for #22's branding |
 | Cross-issue ordering | 164 → 167 → 165 (locked) | 164 builds verification primitives; 167 reuses callback route + OTP entry pattern for change-email re-verification; 165 audits all destinations after both new flows exist. |
+| Auth callback implementation | **Route loader + inline `errorComponent`, no separate component** | Async work belongs in a TanStack Router `loader` (matches every other async route in the codebase — `joinInviteRoute`, `accountRoute`, etc.); avoids the `useEffect` + `cancelled`-flag anti-pattern. Side effects (Sentry capture) live at the failure site inside the loader's `try/catch`, not in a render-time hook. The shared `ErrorFallback` doesn't fit (hardcoded copy + "Try again" button; reloading can't fix a consumed PKCE code), and the bespoke error UI is small enough to inline in `errorComponent` rather than warrant a dedicated component file. |
+| Sentry coverage for loader failures | Manual `Sentry.captureException` inside the loader's `try/catch` | The auth-callback failure mode is a Supabase SDK error that bypasses `apiClient`'s built-in HTTP-error capture, so without explicit capture in the loader, Sentry never sees PKCE failures. This is consistent with the existing pattern in `rootRoute.beforeLoad`. The codebase-wide observability gap (loader failures outside `apiClient` are silently rendered) is tracked separately in #180; commit 1 doesn't try to solve it here. |
 
 ---
 
@@ -38,7 +38,7 @@ Email confirmations are currently disabled in Supabase (`enable_confirmations = 
 
 Each commit is a gate. Each must independently build, lint, test, and format. Wait for approval before moving on. Note: these commits are sized for review/approval — they don't necessarily map 1:1 to production deploys. Recommendation is to land all six before flipping production confirmations on, so users always have the OTP fallback path. The local-dev confirmation flip happens in commit 3; commits 1–2 are preparatory and safe under `enable_confirmations = false`.
 
-### Commit 1 — PKCE flow + `/auth/callback` route + AuthCallback handler
+### Commit 1 — PKCE flow + `/auth/callback` loader
 
 **Goal:** Stand up the magic-link landing page and switch the Supabase client to PKCE so the link returns `?code=` instead of an implicit hash. Safe to land while `enable_confirmations` is still `false`: the route exists but nothing emits a magic link yet, and PKCE is fully compatible with the existing implicit-flow happy path.
 
@@ -47,30 +47,35 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 - Required: pass `{ auth: { flowType: 'pkce' } }` so the magic link returns `?code=` (which `exchangeCodeForSession` consumes) instead of `#access_token=` (implicit hash flow)
 - This is a small but app-wide auth behavior change — covered by existing AuthContext tests
 
-**New components:**
-- `web/src/components/auth/AuthCallback/AuthCallback.tsx` — handles the magic-link return: on mount, reads `code` and optional `redirect` from URL search params, calls `supabase.auth.exchangeCodeForSession(code)`, on success navigates to `redirect` if present else `/create-team`, on error renders `<InlineError>` with link back to `/sign-in`. Reuses the existing `redirectSearchSchema` Zod validator at `web/src/router.tsx:87-93` (validates `redirect` starts with `/` to prevent open redirects).
-- `web/src/components/auth/AuthCallback/AuthCallback.test.tsx`
-
 **New helper** (`web/src/lib/auth-destination.ts`):
-- `getPostSignupDestination(redirectParam?: string): string` — returns `redirectParam` if present, else `/create-team`. Search-param validation is already enforced upstream by `redirectSearchSchema` (router.tsx:87-93) when the route validates its search params, so this helper just chooses between two valid values. Used by `AuthCallback` here, and later by `SignUpForm` and `<CheckEmailNotice>`'s `onVerified` from the signup callsite (commit 3). Lands here because AuthCallback is its first caller.
+- `getPostSignupDestination(redirectParam?: string): string` — returns `redirectParam` if present, else `/create-team`. Search-param validation is already enforced upstream by the route's Zod schema, so this helper just chooses between two valid values. Used by the auth-callback loader here, and later by `SignUpForm` and `<CheckEmailNotice>`'s `onVerified` from the signup callsite (commit 3). Lands here because the auth-callback loader is its first caller.
 
-**Wiring:**
-- `web/src/router.tsx` — add `/auth/callback` as a public child of root (sibling to `/sign-up`, `/sign-in`). Accepts `code` and optional `redirect` search params validated via Zod.
+**Wiring** (`web/src/router.tsx`):
+- New Zod schema `authCallbackSearchSchema` validates `code` (optional string) and `redirect` (optional string, must start with `/` — same shape as the existing `redirectSearchSchema`).
+- New `authCallbackRoute` as a public child of root (sibling to `/sign-up`, `/sign-in`). Built as a loader-driven route:
+  - `loaderDeps` pulls `code` and `redirect` from the validated search params.
+  - `loader` wraps the exchange in `try/catch`: if `code` is missing or `supabase.auth.exchangeCodeForSession` returns/rejects with an error, capture to Sentry with `tags: { component: 'authCallbackRoute', operation: 'exchangeCodeForSession' }` and rethrow. On success, `throw redirect({ to: getPostSignupDestination(redirect) })`.
+  - `pendingComponent` renders a "Confirming your email..." spinner during the loader phase.
+  - `errorComponent` is inlined: renders `<InlineError>` with the user-friendly copy and a "Back to sign in" `<Link>`. No dedicated component file — the shared `ErrorFallback` doesn't fit (hardcoded copy, "Try again" button that can't recover a consumed PKCE code), and the bespoke UI is ~15 lines of JSX.
+  - No `component` field — the loader always throws (`redirect` on success, captured error otherwise), so the route never renders to a normal component.
 
 **Tests:**
-- `AuthCallback.test.tsx`:
-  - On mount with `code` param, calls `exchangeCodeForSession` and navigates to `redirect` or default
-  - On exchange error, renders `<InlineError>` with `/sign-in` link
-  - With no `code` param, renders error state
+- `web/src/tests/integration/auth-callback.integration.test.tsx` — covers loader branches via a real router mounted over an inline route-tree mirror (matches the convention in `account.integration.test.tsx`):
+  - Default destination: with `?code=abc`, loader exchanges and redirects to `/create-team`; no Sentry capture.
+  - `redirect` honored: with `?code=abc&redirect=/leagues`, loader redirects to `/leagues`.
+  - Missing `code`: renders error UI + `Sentry.captureException` called with `component: authCallbackRoute`.
+  - Supabase returns error: renders error UI + Sentry captured with the supabase error.
+  - Supabase rejects: renders error UI + Sentry captured with the rejection.
 - `auth-destination.test.ts`:
-  - Returns the redirect param when provided
-  - Falls back to `/create-team` when redirect is missing/empty
+  - Returns the redirect param when provided.
+  - Falls back to `/create-team` when redirect is missing/empty.
 - Existing `AuthContext.test.tsx` keeps passing under PKCE (no behavioral change to the public API).
 
 **Verification:**
 1. `npm run web:test` green
 2. `npm run web:lint` + `npm run web:format:check` green
-3. Manual: existing signup/signin flow still works (auto-confirm path, no email sent because `enable_confirmations` is still `false`)
+3. `npm run web:build` green (TypeScript compile)
+4. Manual: existing signup/signin flow still works (auto-confirm path, no email sent because `enable_confirmations` is still `false`)
 
 ---
 
@@ -229,7 +234,7 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 
 **Modified:**
 - `web/src/lib/supabase.ts` (commit 1 — add `flowType: 'pkce'`)
-- `web/src/router.tsx` (commit 1 — add `/auth/callback` route)
+- `web/src/router.tsx` (commit 1 — add `/auth/callback` route with loader, pendingComponent, and inline errorComponent)
 - `api/supabase/config.toml` (commit 3)
 - `e2e/supabase/config.toml` (commit 3)
 - `web/src/contexts/AuthContext.tsx` (commits 3, 5)
@@ -238,8 +243,8 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 - `web/src/components/auth/SignInForm/SignInForm.tsx` (commit 6)
 
 **New:**
-- `web/src/components/auth/AuthCallback/AuthCallback.tsx` + `.test.tsx` (commit 1)
 - `web/src/lib/auth-destination.ts` + `auth-destination.test.ts` (commit 1)
+- `web/src/tests/integration/auth-callback.integration.test.tsx` (commit 1)
 - `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx` + `.test.tsx` (commit 2; expanded in commit 5)
 - `web/src/components/ui/input-otp.tsx` (commit 2; added via shadcn workflow — exact path matches existing shadcn components in the project)
 - `web/package.json` — adds `input-otp` dependency (commit 2)
@@ -248,7 +253,7 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 - New tests in `e2e/tests/auth.spec.ts` (commit 4)
 
 **Reused (existing components, no changes):**
-- `web/src/components/InlineError/InlineError.tsx` — error display in `<AuthCallback>`, `<CheckEmailNotice>`, existing forms
+- `web/src/components/InlineError/InlineError.tsx` — error display in the auth-callback `errorComponent`, `<CheckEmailNotice>`, existing forms
 - `web/src/components/LiveRegion/LiveRegion.tsx` — screen-reader announcements
 - `web/src/components/LoadingButton/LoadingButton.tsx` — Verify and Resend button loading states
 - `web/src/hooks/useAuth.ts` — auth hook (gains `resendConfirmation` in commit 5)
@@ -277,3 +282,4 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 ## Known preexisting concern (out of scope)
 
 - `on_auth_user_created` trigger in `api/supabase/migrations/20260108000000_create_user_profile_trigger.sql` fires on every `INSERT` into `auth.users`, regardless of whether the user has confirmed their email. With confirmations enabled, this means `Accounts` and `UserProfiles` rows are created at signup time even if the user never confirms. Result: orphan rows accumulate from abandoned signups. Cleanup (e.g., a periodic job to remove unconfirmed users older than N days, or moving the trigger to fire only after confirmation) is out of 164's scope but should be tracked as follow-up.
+- Non-HTTP errors thrown from route loaders and `beforeLoad` guards are silently rendered to the user via `errorComponent` and never reach Sentry — `apiClient` only captures HTTP failures, and React's error-boundary path doesn't see errors caught at the route layer. The auth-callback loader works around this with manual `Sentry.captureException`, but the broader codebase-wide gap (parsing errors, schema mismatches, third-party SDK errors, runtime bugs across every data-loading route) is tracked separately in #180.
