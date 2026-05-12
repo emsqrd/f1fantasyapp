@@ -20,7 +20,7 @@ Email confirmations are currently disabled in Supabase (`enable_confirmations = 
 | Decision | Choice | Rationale |
 |---|---|---|
 | Confirmation method | **Both magic link AND OTP code** in the email; user can use whichever | Resilient to corporate email scanners (Defender, Barracuda, Mimecast) that pre-fetch links and consume the token before users click. Supabase auth issue [#1214](https://github.com/supabase/auth/issues/1214) is open and unfixed; no clean recovery for affected users without an OTP fallback. Default Supabase template already emits both, so the email-side cost is near zero. |
-| OTP input component | shadcn/ui `<InputOTP>` (uses `input-otp` library) | Renders single invisible `<input autocomplete="one-time-code">` behind visual digit boxes — combines accessible single input (WCAG 1.3.5) with visual digit-box UX. Consistent with project's existing shadcn/ui usage. |
+| OTP input component | Custom `<OtpInput>` at `web/src/components/OtpInput/` | Hand-rolled single-input + overlay slot pattern (same architecture as `input-otp`) that fixes the slot-retargeting bug ([shadcn/ui #4046](https://github.com/shadcn-ui/ui/issues/4046)) where clicking a non-final slot focuses the last cell. Preserves every must-have: single accessible `<input>` for WCAG 1.3.5, iOS/Android SMS autofill via `autocomplete="one-time-code"`, native paste, full keyboard a11y, auto-submit. Lives outside `ui/` because `ui/` is reserved for vendored shadcn; sits next to the other custom primitives (`LoadingButton`, `InlineError`). Removes the `input-otp` dependency. |
 | Pending-UI surface | Inline state + shared `<CheckEmailNotice>` component | No URL params (OWASP: PII like email shouldn't appear in URLs — leaks via browser history, server logs, Referer to Sentry). Refresh degrades benignly: link in inbox still works, resend reachable via signin path. |
 | Email passing | React state within form components | User never retypes — Supabase's confirmation token uniquely identifies the user. Email passed as prop from parent (`SignUpForm`, `SignInForm`) into `<CheckEmailNotice>`. |
 | Sign-in unconfirmed handling | In scope, same issue (commit 6) | Completes the verification story: signup → pending → resend → confirm AND signin → unconfirmed → resend. |
@@ -79,32 +79,79 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 
 ---
 
-### Commit 2 — `<CheckEmailNotice>` component + `input-otp` vendoring
+### Commit 2 — `<OtpInput>` primitive + `<CheckEmailNotice>` component
 
-**Goal:** Add the pending-state UI as a self-contained, tested component. Not yet wired into any form — that happens in commit 3.
+**Goal:** Add the pending-state UI as a self-contained, tested component, backed by a hand-rolled `<OtpInput>` primitive (no `input-otp` dependency). End result is visually identical to the prior shadcn-based version but fixes the slot-retargeting bug so a user can click any slot to edit just that digit. Not yet wired into any form — that happens in commit 3.
 
-**New dependency:**
-- `input-otp` package via shadcn CLI: `npx shadcn@latest add input-otp` — installs to `web/src/components/ui/input-otp.tsx`, matching the project's existing shadcn vendoring per `web/components.json` aliases. Per `web/CLAUDE.md`, shadcn primitives are vendored — do not modify after install. Adds `input-otp` to `web/package.json`.
+**New primitive — `<OtpInput>`** (`web/src/components/OtpInput/OtpInput.tsx`):
 
-**New components:**
-- `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx` — shared pending UI. Props:
+- **Architecture:** Single-input + overlay slots, stacked via CSS Grid (not `position: absolute`). One real `<input>` and one slot-row `<div>` are both children of a `grid` container, both placed at `col-start-1 row-start-1` so they occupy the same cell. The input is rendered with transparent text and caret (`text-transparent caret-transparent`) and sits on top of the slot row, which is the visible UI driven by `value` and `selectionStart`. The slot-row `<div>` is itself a flex row (`flex justify-center gap-2.5`) carrying the 6 slot children. Grid stacking is preferred over `position: absolute` here because the container intrinsic-sizes to the slot row automatically — no `relative` ancestor or hand-tuned insets needed. Same end behavior as the `input-otp` library's overlay approach; the only meaningful difference is the click-to-edit handler that the library gets wrong.
+- **Scope of this primitive:** numeric OTP input only. The non-digit filter and `inputMode="numeric"` default are baked in; this is not a generic OTP primitive (no `pattern` prop). Spell that out in the component's JSDoc so a future caller doesn't try to pass alpha codes.
+- **Why this shape, not N individual inputs:** `<input autocomplete="one-time-code">` SMS autofill on iOS only works with a single input ([web.dev — SMS OTP form](https://web.dev/articles/sms-otp-form), confirmed broken on multi-input in [Chakra #4095](https://github.com/chakra-ui/chakra-ui/issues/4095), [react-verification-input #57](https://github.com/andreaswilli/react-verification-input/issues/57)). Paste, backspace, and arrow nav also come free at the browser level instead of needing hand-coded ref coordination.
+- **Props** (minimal, mirrors what `CheckEmailNotice` actually uses):
+  - `id?: string` — forwarded to the underlying `<input>` so external `<Label htmlFor>` works
+  - `value: string`
+  - `onChange: (value: string) => void`
+  - `length?: number` (default `6`) — also forwarded to the underlying `<input>` as `maxLength={length}` so attribute-based assertions on the labeled input (`maxlength='6'` in the existing `CheckEmailNotice.test.tsx`) keep passing
+  - `disabled?: boolean`
+  - `'aria-label'?: string`
+  - `autoComplete?: string` (default `"one-time-code"`)
+  - `inputMode?: HTMLAttributes<HTMLInputElement>['inputMode']` (default `"numeric"`)
+  - `className?: string` — merged via `cn()` onto the **grid container**, intended for outer sizing (e.g., `w-full`). Slot-row internal layout (`flex justify-center gap-2.5`) is baked in and not consumer-overridable — there's no third style hook by design, since the primitive owns its internal structure
+  - `slotClassName?: string` — merged via `cn()` onto each slot so consumers can override per-slot styling (size, border, active state) without forking the component (matches the shadcn convention of baking in defaults + allowing class overrides)
+  - **Internal `data-slot="otp-slot"` attribute** is set on each visible slot `<div>` as a styling/structure marker (mirrors the shadcn convention in `ui/input-otp.tsx:49`). Not a public test hook — tests should query through the labeled `<input>` per the testing strategy
+- **Behavior:**
+  - `onChange` strips non-digit characters and slices to `length` before bubbling up — so a paste of `"abc123456xyz"` becomes `"123456"`.
+  - **Click-to-edit any slot (the bug fix):** on slot `onPointerDown`, `preventDefault()`, `focus()` the input, then `setSelectionRange(i, i+1)` if the slot has a character, else collapse the caret at `min(i, value.length)`. Order matters — Safari ignores `setSelectionRange` if the input is not yet focused.
+  - **Active slot indicator:** a single `onSelect` handler on the input updates a `selectionStart` state (it fires for focus, keyboard nav, mouse selection, and programmatic `setSelectionRange` — no need for parallel `onFocus`/`onKeyUp` listeners). Track an `isFocused` state via `onFocus`/`onBlur`; render `data-active` and the blinking caret only when `isFocused === true`, so an unfocused input doesn't paint a phantom active slot or caret. Caret animation uses `animate-caret-blink` (from `tw-animate-css`, already a dep).
+  - **Auto-submit at completion:** `onChange` of the consumer drives this — when value reaches `length`, the parent (`CheckEmailNotice`) calls `verifyOtp`. The primitive itself stays single-purpose.
+  - **Disabled:** propagates to the `<input>` (real disable) and the slot container (`opacity-50 pointer-events-none`).
+  - **Native behavior for free:** paste, backspace, arrow keys, iOS/Android SMS autofill — all handled by the underlying single `<input>`.
+- **Styling:** bakes in the visual treatment currently spread across the shadcn slots in `CheckEmailNotice.tsx:131-138` as defaults — slot `h-14 w-12 rounded-md border font-mono text-2xl font-medium tabular-nums`, active state `border-primary ring-2 ring-primary/40 ring-inset`. The slot-row layout (`flex justify-center gap-2.5`) is also baked in — these classes today live on the consumer's `<InputOTPGroup>` but logically belong to the primitive's internal structure, so they move inward as part of this swap. Defaults are merged with consumer-supplied `className` (grid container) and `slotClassName` (each slot) via `cn()` (Tailwind merge wins on conflicts, matching the shadcn pattern). **End result with `CheckEmailNotice`'s current usage is pixel-identical to today's rendering** — see the migration note below for the corresponding consumer-side cleanup.
+- **Accessibility:** the wrapper carries no `role` (the input is the single labeled control). Screen readers announce one input ("Confirmation code, edit text") rather than six. `aria-label` defaults via the consumer's `<Label htmlFor>` association. The visible slot-row `<div>` is marked `aria-hidden="true"` so assistive tech sees only the labeled input and never the six empty slot divs.
+- **Implementation gotchas to address** (from research):
+  - Safari requires `focus()` before `setSelectionRange` — same handler, in that order.
+  - Empty-slot caret uses a collapsed range at `i`; full-slot uses range `(i, i+1)`.
+  - Android Gboard composition events may cause flicker — only gate on `onCompositionEnd` if observed in manual testing; don't add preemptively.
+
+**New flow component — `<CheckEmailNotice>`** (`web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx`):
+
+- Props:
   - `email: string` — displayed in message
   - `onVerified: () => void` — called after `verifyOtp` resolves successfully so parent can navigate
   - `onResend?: () => Promise<void>` — wired in commit 5 (placeholder/no-op for commits 2–4)
-  - Renders: instructional copy ("We sent a link to <email>. Click the link in the email, or enter the 6-digit code below."), a shadcn/ui `<InputOTP maxLength={6}>` component (renders 6 visual digit slots with a single accessible input + `autocomplete="one-time-code"` underneath), a `<LoadingButton>` that calls `supabase.auth.verifyOtp({ email, token: code, type: 'signup' })` on submit. On error, render `<InlineError>`. On success, call `onVerified`. (`type: 'signup'` is the verified value from `auth-js` `EmailOtpType` for initial-signup confirmation.)
-- `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.test.tsx`
+- Renders: instructional copy ("We sent a link to <email>. Click the link in the email, or enter the 6-digit code below."), an `<OtpInput length={6} />`, and a `<LoadingButton>` that submits `supabase.auth.verifyOtp({ email, token: code, type: 'signup' })`. Auto-submits when the 6th digit lands. On error renders `<InlineError>`. On success calls `onVerified`. (`type: 'signup'` is the verified value from `auth-js` `EmailOtpType` for initial-signup confirmation.)
 
 **Tests:**
-- `CheckEmailNotice.test.tsx`:
+
+- `OtpInput.test.tsx` (new) — behavioral coverage only; per `web/CLAUDE.md` ("user interactions, callback invocations, accessibility attributes" — not structural JSX):
+  - Typing into the input updates `value` via `onChange` and filters non-digits
+  - Paste of `"abc123456xyz"` results in `onChange("123456")` (one call, fully sliced)
+  - Backspace removes the last digit
+  - After entering a full code, clicking slot 3 positions the caret at slot 3 (`selectionStart === 3`) — guards the bug fix. Queries the slot via `data-slot="otp-slot"` (the only test that legitimately needs a structural selector, because the bug it guards is structural-positional)
+  - `disabled` prevents typing
+  - The underlying `<input>` exposes `inputmode="numeric"`, `maxlength=6`, `autocomplete="one-time-code"` — this assertion also implicitly covers that `length` is plumbed through to `maxLength`, so no separate "renders N slots" test is needed
+- `CheckEmailNotice.test.tsx` (behaviorally unchanged from prior commit 2 — the existing tests query by `getByLabelText(/confirmation code/i)` and assert attributes on the labeled input, both of which the new `<OtpInput>` still satisfies):
   - Renders email and code input
   - Submitting valid code calls `supabase.auth.verifyOtp` with expected args
   - On verify success, calls `onVerified` prop
   - On verify error, renders `<InlineError>`
-  - Code input enforces 6 digits / numeric only (via `inputMode` and `pattern` — server is the source of truth)
+  - Code input enforces 6 digits / numeric only
 
 **Verification:**
+
 1. `npm run web:test` + `npm run web:lint` + `npm run web:format:check` green
-2. Manual: nothing to verify in-app yet (component unwired); spot-check Storybook-style by importing into a scratch page if desired
+2. Manual: spot-check via the working-tree `/dev/check-email` scratch route (already present at `web/src/router.tsx:304-313`) that (a) the input visually matches the prior shadcn version, (b) clicking a middle slot after entering a full code retargets the caret to that slot, (c) iOS Simulator one-time-code autofill still works against a test SMS-shaped message (sanity check that single-input architecture wasn't broken), (d) pasting `"abc123456xyz"` fills the slots with `123456`
+3. **Before committing, remove the `/dev/check-email` scratch route** (and its `CheckEmailNotice` import added solely for it) from `web/src/router.tsx`. The route is a working-tree dev artifact; it must not land in the commit. The comment at `router.tsx:304` already flags this with "Revert before commit" — this step is the enforcement of that note.
+
+**Note for reapplying over the prior shadcn-based commit 2:**
+
+- Delete `web/src/components/ui/input-otp.tsx`
+- Remove `input-otp` from `web/package.json` dependencies and run `npm install`
+- Remove the `document.elementFromPoint` polyfill from `web/src/setupTests.ts:25-30`. It was added solely because `input-otp` calls `document.elementFromPoint` in a deferred timeout to detect focus and jsdom doesn't implement it; with the library gone, the polyfill is dead code.
+- Strip the `import { REGEXP_ONLY_DIGITS } from 'input-otp'` line and the `pattern={REGEXP_ONLY_DIGITS}` prop from `CheckEmailNotice.tsx` (current `:8` and `:125`). `<OtpInput>` filters digits internally, so `pattern` is no longer a meaningful prop on the public surface.
+- Strip the slot-row layout classes from the consumer call site — what is today `<InputOTPGroup className="w-full justify-center gap-2.5">` becomes `<OtpInput className="w-full" … />`. `justify-center gap-2.5` now lives inside the primitive's slot row (see Styling above); only outer sizing (`w-full`) stays consumer-controlled.
+- The existing `CheckEmailNotice.test.tsx` assertions continue to pass against the new component, so no test churn there.
 
 ---
 
@@ -245,9 +292,8 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 **New:**
 - `web/src/lib/auth-destination.ts` + `auth-destination.test.ts` (commit 1)
 - `web/src/tests/integration/auth-callback.integration.test.tsx` (commit 1)
+- `web/src/components/OtpInput/OtpInput.tsx` + `OtpInput.test.tsx` (commit 2) — custom OTP input primitive; lives at the top level of `components/` alongside other custom primitives (`LoadingButton`, `InlineError`, etc.), not in `ui/` (reserved for vendored shadcn)
 - `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx` + `.test.tsx` (commit 2; expanded in commit 5)
-- `web/src/components/ui/input-otp.tsx` (commit 2; added via shadcn workflow — exact path matches existing shadcn components in the project)
-- `web/package.json` — adds `input-otp` dependency (commit 2)
 - `api/supabase/templates/confirmation.html` (commit 3; includes both link and OTP from the start)
 - `e2e/fixtures/mailpit.ts` (commit 4)
 - New tests in `e2e/tests/auth.spec.ts` (commit 4)
