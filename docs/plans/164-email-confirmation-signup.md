@@ -90,13 +90,13 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 **Files modified:**
 
 - `api/supabase/templates/confirmation.html` — **no change in this commit**. The user customized this template (structure, copy, styling) and committed those customizations in `de592bc`. The only uncommitted edit was the token_hash URL surgery on the link `href`, which the prerequisite `git restore .` step reverts automatically. After `git restore .` the template is already in the correct state for the new design (link `href = {{ .ConfirmationURL }}`). Do not regenerate or replace the file.
-- `api/supabase/config.toml` — `additional_redirect_urls = ["http://localhost:5173/**"]`. Add a code comment noting that production must tighten to specific patterns.
+- `api/supabase/config.toml` — `additional_redirect_urls = ["http://localhost:5173/**"]`. Keep the comment minimal (this file is local-CLI only; the production allowlist is configured in the Supabase dashboard, covered in "Production deployment notes" below).
 - `e2e/supabase/config.toml` — `additional_redirect_urls = ["http://localhost:5273/**"]`.
 - `e2e/tests/_infra/config-sync.spec.ts` — extend `IGNORED_KEY_RE` to ignore `site_url` and `additional_redirect_urls` (the wildcard hosts differ between dev and e2e). This part survives from the old commit 3.
 - `web/src/lib/supabase.ts` — `createClient(url, key)` with no options. No `flowType`, no `detectSessionInUrl`.
 - `web/src/router.tsx` — delete `authCallbackRoute` declaration, `authCallbackSearchSchema`, its entry in `rootRoute.addChildren`, and any related imports (`Sentry`, `Link` if only used there, etc.). Leave `requireAuth`'s fallback intact.
 - `web/src/contexts/AuthContext.tsx` + `.ts` — `signUp` signature becomes `signUp(email, password, additionalData, options?: { emailRedirectTo?: string })`. Default: `emailRedirectTo: ${window.location.origin}/`. The implementation passes `options?.emailRedirectTo` straight through to `supabase.auth.signUp`'s options.
-- `web/src/components/auth/SignUpForm/SignUpForm.tsx` — remove `getPostSignupDestination` import and usage. Compute `emailRedirectTo` as `${window.location.origin}/` (hardcoded for this commit; commit 5 makes it dynamic). For the typed-OTP `onVerified` navigation in the same browser, navigate to `search.redirect ?? '/create-team'` using the existing React state.
+- `web/src/components/auth/SignUpForm/SignUpForm.tsx` — remove `getPostSignupDestination` import and usage. Compute `emailRedirectTo` as `${window.location.origin}/` (hardcoded for this commit; commit 5 makes it dynamic). For the typed-OTP `onVerified` navigation in the same browser, navigate to `search.redirect ?? '/'` using the existing React state — let `indexRoute.beforeLoad` (added in commit 5) handle the actual routing decision rather than hardcoding `/create-team` here.
 
 **Files deleted:**
 
@@ -115,7 +115,7 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 
 1. `cd api/supabase && supabase stop && supabase start` and the e2e equivalent to pick up config changes.
 2. `npm run web:test` + `npm run web:lint` + `npm run web:format:check` + `npm run web:build` green.
-3. Manual: signup with a fresh email → `<CheckEmailNotice>` appears → Mailpit (`http://127.0.0.1:54324`) shows the email → clicking the magic link auto-establishes session and lands the user at `${origin}/` (visually: marketing content inside the authenticated app shell — fixed in commit 5). Typing the OTP code → `verifyOtp` succeeds → navigate to `/create-team`.
+3. Manual: signup with a fresh email → `<CheckEmailNotice>` appears → Mailpit (`http://127.0.0.1:54324`) shows the email → clicking the magic link auto-establishes session and lands the user at `${origin}/` (visually: marketing content inside the authenticated app shell — fixed in commit 5). Typing the OTP code → `verifyOtp` succeeds → navigate to `${origin}/` (same visual state as the magic-link path; fixed in commit 5).
 4. `npm run e2e` green (the admin-API fixture continues to bypass email via `email_confirm: true`).
 
 ---
@@ -145,17 +145,17 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 
   ```typescript
   const search = useSearch({ from: '/sign-up' });
-  const destination = search.redirect ?? '/create-team';
+  const destination = search.redirect ?? '/';
   const emailRedirectTo = `${window.location.origin}${destination}`;
   ```
 
   Pass `emailRedirectTo` into `signUp({ emailRedirectTo })`. Use `destination` for the typed-OTP `onVerified` navigate call.
 
-  *Note:* `'/create-team'` is the in-browser default because the React state for `onVerified` runs in the same tab the user signed up from; `requireNoTeam` on `/create-team` bounces users who already have teams to `/leagues`. The `emailRedirectTo` default differs by one path segment (`/`) because the email's magic link may open in a different browser where the route guards take over.
+  Default is `/` (not `/create-team`) so the auth-flow code carries no feature knowledge. `indexRoute.beforeLoad` is the single home for "where does a signed-in user land" — both the magic-link path (different browser possible) and the typed-OTP path (same browser) funnel through it.
 
 **Tests:**
 
-- `web/src/components/auth/SignUpForm/SignUpForm.test.tsx` — assert `signUp` called with `emailRedirectTo: ${origin}/create-team` when no `search.redirect`; assert `emailRedirectTo: ${origin}/leagues/123` when `search.redirect = '/leagues/123'`. Assert typed-OTP `onVerified` navigates to the same destination.
+- `web/src/components/auth/SignUpForm/SignUpForm.test.tsx` — assert `signUp` called with `emailRedirectTo: ${origin}/` when no `search.redirect`; assert `emailRedirectTo: ${origin}/leagues/123` when `search.redirect = '/leagues/123'`. Assert typed-OTP `onVerified` navigates to the same destination.
 - `web/src/tests/integration/index-route.integration.test.tsx` — new file. Mount a per-test route tree with `indexRoute`, the authed/no-team and authed/with-team layout routes, and `LandingPage`. Assert: unauthed user sees `LandingPage` at `/`; authed-no-team user redirects to `/create-team`; authed-with-team user redirects to `/leagues`. Mirrors the pattern in `account.integration.test.tsx`.
 
 **Verification:**

@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
-import { getPostSignupDestination } from '@/lib/auth-destination';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 
@@ -23,10 +22,11 @@ export function SignUpForm() {
   const { signUp, startAuthTransition, completeAuthTransition } = useAuth();
   const navigate = useNavigate();
   const search = useSearch({ from: '/sign-up' });
+  const destination = search.redirect ?? '/';
 
   const completeSignUp = async () => {
     startAuthTransition();
-    await navigate({ to: getPostSignupDestination(search.redirect) });
+    await navigate({ to: destination });
     completeAuthTransition();
   };
 
@@ -75,7 +75,7 @@ export function SignUpForm() {
         email,
         password,
         { displayName },
-        { redirect: search.redirect },
+        { emailRedirectTo: `${window.location.origin}/` },
       );
 
       if (!session) {

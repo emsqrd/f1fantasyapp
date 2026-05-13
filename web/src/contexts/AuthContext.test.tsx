@@ -29,7 +29,7 @@ vi.mock('../services/userProfileService', () => ({
 }));
 
 // Test component that consumes the auth context
-function TestComponent({ signUpOptions }: { signUpOptions?: { redirect?: string } } = {}) {
+function TestComponent({ signUpOptions }: { signUpOptions?: { emailRedirectTo?: string } } = {}) {
   const { user, session, loading, signIn, signUp, signOut } = useAuth();
 
   const handleSignIn = async () => {
@@ -253,20 +253,22 @@ describe('AuthProvider', () => {
           data: {
             displayName: 'Test User',
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/`,
         },
       });
     });
 
-    it('should forward the redirect option into emailRedirectTo', async () => {
+    it('forwards the emailRedirectTo option verbatim to supabase.auth.signUp', async () => {
       vi.mocked(supabase.auth.signUp).mockResolvedValue({
         data: { user: mockUser, session: mockSession },
         error: null,
       });
 
+      const customEmailRedirectTo = `${window.location.origin}/join/abc123`;
+
       render(
         <AuthProvider>
-          <TestComponent signUpOptions={{ redirect: '/leagues/123' }} />
+          <TestComponent signUpOptions={{ emailRedirectTo: customEmailRedirectTo }} />
         </AuthProvider>,
       );
 
@@ -275,7 +277,7 @@ describe('AuthProvider', () => {
       expect(supabase.auth.signUp).toHaveBeenCalledWith(
         expect.objectContaining({
           options: expect.objectContaining({
-            emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent('/leagues/123')}`,
+            emailRedirectTo: customEmailRedirectTo,
           }),
         }),
       );
@@ -305,7 +307,7 @@ describe('AuthProvider', () => {
           data: {
             displayName: 'Test User',
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/`,
         },
       });
     });

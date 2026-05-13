@@ -43,15 +43,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     password: string,
     additionalData: CreateProfileData,
-    options?: { redirect?: string },
+    options?: { emailRedirectTo?: string },
   ) => {
     if (!additionalData.displayName?.trim()) {
       throw new Error('Display name is required');
     }
 
-    const emailRedirectTo = options?.redirect
-      ? `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(options.redirect)}`
-      : `${window.location.origin}/auth/callback`;
+    const emailRedirectTo = options?.emailRedirectTo ?? `${window.location.origin}/`;
 
     const { data, error } = await supabase.auth.signUp({
       email,

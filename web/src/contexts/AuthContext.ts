@@ -12,7 +12,7 @@ export interface AuthContextType {
     email: string,
     password: string,
     additionalData: CreateProfileData,
-    options?: { redirect?: string },
+    options?: { emailRedirectTo?: string },
   ) => Promise<{ session: Session | null }>;
   signOut: () => Promise<void>;
   startAuthTransition: () => void;

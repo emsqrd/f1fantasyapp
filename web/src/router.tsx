@@ -2,7 +2,6 @@ import { Account } from '@/components/Account/Account';
 import { CreateTeam } from '@/components/CreateTeam/CreateTeam';
 import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
 import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
-import { InlineError } from '@/components/InlineError/InlineError';
 import { LandingPage } from '@/components/LandingPage/LandingPage';
 import { Layout } from '@/components/Layout/Layout';
 import { League } from '@/components/League/League';
@@ -10,13 +9,10 @@ import { LeagueList } from '@/components/LeagueList/LeagueList';
 import { MyTeamRoute, TeamRoute } from '@/components/Team/Team';
 import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
-import { Button } from '@/components/ui/button';
 import type { Team as TeamType } from '@/contracts/Team';
 import type { UserProfile } from '@/contracts/UserProfile';
-import { getPostSignupDestination } from '@/lib/auth-destination';
 import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
-import { supabase } from '@/lib/supabase';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
 import { getLeagueStandings } from '@/services/standingsService';
 import { getMyTeam, getTeamById } from '@/services/teamService';
@@ -24,7 +20,6 @@ import { userProfileService } from '@/services/userProfileService';
 import * as Sentry from '@sentry/react';
 import {
   ErrorComponent,
-  Link,
   Outlet,
   createRootRouteWithContext,
   createRoute,
@@ -90,22 +85,6 @@ const teamIdParamsSchema = z.object({
  * @see {@link https://tanstack.com/router/latest/docs/framework/react/how-to/validate-search-params | Validate Search Parameters}
  */
 const redirectSearchSchema = z.object({
-  redirect: z
-    .string()
-    .refine((url) => url.startsWith('/'), 'Redirect must be an internal path')
-    .optional()
-    .catch(undefined),
-});
-
-/**
- * Zod schema for validating the /auth/callback search params.
- *
- * The PKCE flow returns a `code` param from Supabase that must be exchanged for
- * a session. `redirect` is forwarded through the email link so the user lands
- * on the intended destination after confirmation.
- */
-const authCallbackSearchSchema = z.object({
-  code: z.string().optional().catch(undefined),
   redirect: z
     .string()
     .refine((url) => url.startsWith('/'), 'Redirect must be an internal path')
@@ -242,62 +221,6 @@ const signUpRoute = createRoute({
     }
   },
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
-});
-
-/**
- * Auth callback route - public landing page for PKCE / magic-link returns.
- *
- * Supabase appends `code` (and optionally the forwarded `redirect`) to this URL
- * when the user clicks a confirmation link. The loader exchanges the code for a
- * session and throws a `redirect` to the post-confirmation destination. On any
- * failure (missing code, expired/consumed code, network error) the loader
- * captures to Sentry and rethrows so the `errorComponent` can render the
- * back-to-sign-in affordance.
- *
- * @type {import('@tanstack/react-router').Route}
- */
-const authCallbackRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/auth/callback',
-  validateSearch: authCallbackSearchSchema,
-  loaderDeps: ({ search }) => ({ code: search.code, redirect: search.redirect }),
-  loader: async ({ deps }) => {
-    try {
-      if (!deps.code) {
-        throw new Error('Missing confirmation code');
-      }
-      const { error } = await supabase.auth.exchangeCodeForSession(deps.code);
-      if (error) throw error;
-    } catch (err) {
-      const captured = err instanceof Error ? err : new Error('Auth callback failed');
-      Sentry.captureException(captured, {
-        tags: { component: 'authCallbackRoute', operation: 'exchangeCodeForSession' },
-      });
-      throw captured;
-    }
-
-    throw redirect({ to: getPostSignupDestination(deps.redirect) });
-  },
-  pendingComponent: () => (
-    <div role="status" className="flex w-full items-center justify-center p-8 md:min-h-screen">
-      <div className="text-center">
-        <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
-        <p className="text-muted-foreground">Confirming your email...</p>
-      </div>
-    </div>
-  ),
-  errorComponent: () => (
-    <div className="flex w-full items-center justify-center p-8 md:min-h-screen">
-      <div className="w-full max-w-md space-y-4">
-        <InlineError message="We couldn't confirm your email. The link may have expired or already been used." />
-        <div className="text-center">
-          <Button variant="link" asChild className="text-sm">
-            <Link to="/sign-in">Back to sign in</Link>
-          </Button>
-        </div>
-      </div>
-    </div>
-  ),
 });
 
 /**
@@ -785,7 +708,6 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   signInRoute,
   signUpRoute,
-  authCallbackRoute,
   joinInviteRoute,
   authenticatedLayoutRoute.addChildren([
     accountRoute,

@@ -11,10 +11,4 @@ if (!supabaseAnonKey) {
   throw new Error('Missing required environment variable: VITE_SUPABASE_ANON_KEY');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    flowType: 'pkce',
-    // Route loaders own URL code exchange; auto-detect would race them.
-    detectSessionInUrl: false,
-  },
-});
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

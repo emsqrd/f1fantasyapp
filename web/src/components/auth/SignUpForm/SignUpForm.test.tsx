@@ -187,7 +187,28 @@ describe('SignUpForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith({ to: '/create-team' });
+      expect(mockNavigate).toHaveBeenCalledWith({ to: '/' });
+    });
+  });
+
+  it('passes emailRedirectTo for the site origin into signUp', async () => {
+    mockSignUp.mockResolvedValueOnce({ session: mockSession });
+    setup();
+    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: 'password123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    await waitFor(() => {
+      expect(mockSignUp).toHaveBeenCalledWith(
+        'test@example.com',
+        'password123',
+        { displayName: 'Test User' },
+        { emailRedirectTo: `${window.location.origin}/` },
+      );
     });
   });
 });
