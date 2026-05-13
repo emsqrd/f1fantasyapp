@@ -1,32 +1,5 @@
 # Plan — Issue #164: Require email confirmation on signup
 
-> ## Status as of 2026-05-13 (rework — commits 1-3 superseded, commits 4-8 forward)
->
-> Commits 1-3 shipped an implementation built on PKCE flow, a custom `/auth/callback` loader, and `?redirect=` URL plumbing through `signUp`/`resendConfirmation`/`buildEmailRedirectTo`. That design was reconsidered against Supabase's documented SPA patterns and against the codebase's existing route-guard architecture; it was inventing infrastructure to deviate from the documented default and duplicating routing decisions already owned by route guards. Commits 4-8 rework it; commits 1-3 remain in branch history for traceability.
->
-> **Process for the fresh agent:**
->
-> 1. `git restore .` (or VS Code's "Discard All Changes") to drop all uncommitted work. The branch returns to commit `69351be`.
-> 2. Implement commits 4-8 in order; each is a review gate (build, lint, test, format all green) and is committed before moving to the next.
-> 3. Use conventional commit styling. No `Co-Authored-By` footer.
->
-> **What's kept from commits 1-3:**
->
-> - `<OtpInput>` and `<CheckEmailNotice>` (commit 2) — the typed-OTP path UI; unchanged.
-> - `enable_confirmations = true` in `api/supabase/config.toml` and `e2e/supabase/config.toml` (commit 3).
-> - `requireAuth`'s `supabase.auth.getSession()` fallback in `web/src/lib/route-guards.ts` (commit 3) — still load-bearing for the React/Supabase state-lag.
-> - The custom email template at `api/supabase/templates/confirmation.html` — kept as a file, but its link URL is rewritten in commit 4 to use `{{ .ConfirmationURL }}`.
->
-> **What's removed by commit 4:**
->
-> - `/auth/callback` route, its Zod schema, its loader, its `errorComponent`, its integration test.
-> - `web/src/lib/auth-destination.ts` (`getPostSignupDestination`).
-> - The `redirect: string` option threaded through `signUp` / `resendConfirmation` / `buildEmailRedirectTo`.
-> - The `token_hash` URL surgery in the email template.
-> - PKCE flow options on the Supabase client.
-
----
-
 ## Context
 
 Email confirmations are currently enabled in dev/e2e (`enable_confirmations = true` in `api/supabase/config.toml:176` and `e2e/supabase/config.toml`). The feature wires:
@@ -68,22 +41,22 @@ Email confirmations are currently enabled in dev/e2e (`enable_confirmations = tr
 
 ## Commits
 
-### Commit 1 — PKCE flow + `/auth/callback` loader (`23ca5ec`) — **SUPERSEDED**
+### Commit 1 — PKCE flow + `/auth/callback` loader (`23ca5ec`)
 
 Original design: switched the Supabase client to `flowType: 'pkce'` with `detectSessionInUrl: false`, added a `/auth/callback` route with a loader that called `exchangeCodeForSession`, and added `getPostSignupDestination` in `web/src/lib/auth-destination.ts`. Commit 4 reverts the client to defaults, deletes the route, and deletes the helper.
 
-### Commit 2 — `<OtpInput>` primitive + `<CheckEmailNotice>` component (`d4a632b`) — **KEPT**
+### Commit 2 — `<OtpInput>` primitive + `<CheckEmailNotice>` component (`d4a632b`)
 
 The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type: 'email'` (corrected from the original `'signup'` during the pivot; commit 4 keeps this corrected value).
 
-### Commit 3 — Enable confirmations + SignUpForm wiring (`de592bc`) — **PARTIALLY SUPERSEDED**
+### Commit 3 — Enable confirmations + SignUpForm wiring (`de592bc`)
 
 - **Kept by commit 4:** `enable_confirmations = true` config flip in both `api/supabase/config.toml` and `e2e/supabase/config.toml`. The custom email template file (its content gets rewritten). `requireAuth`'s `getSession()` fallback.
 - **Superseded by commit 4:** the `redirect: string` option threaded through `signUp`. The token_hash-style email template URL. The SignUpForm wiring that called `getPostSignupDestination`.
 
 ---
 
-### Commit 4 — Replace PKCE callback with implicit-flow defaults
+### Commit 4 — Replace PKCE callback with implicit-flow defaults (`93fa04a`)
 
 **Goal:** undo the PKCE/callback infrastructure and the redirect plumbing. After this commit, the email-confirmation flow works end-to-end via either path. Users land at `${origin}/` post-confirm; the `/` route has no `beforeLoad` for authed users yet (commit 5 adds it), so a signed-in user briefly sees `LandingPage` rendered inside the authenticated app shell — functional but visually unpolished. Build/lint/test all pass.
 
