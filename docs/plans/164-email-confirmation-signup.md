@@ -29,10 +29,10 @@ Email confirmations are currently disabled in Supabase (`enable_confirmations = 
 | Failure copy                                | Static generic message _"That code didn't match. Check your email for the latest one."_ — not the raw Supabase error string                                                                                                             | Supabase emits jargon ("Token has expired or is invalid"). Users typed a "code", not a "token", and the canonical follow-up is to enter a new code from the latest email. Also: `verify()` no longer optimistically clears the error at function entry (only on success), so re-attempts don't unmount/remount the `<InlineError>` and trigger a layout shift mid-flight.                                                                                                                                                                                                                                           |
 | Error placement inside `<CheckEmailNotice>` | `<InlineError>` sits _under_ the slot row, inside the same `space-y-3` group, replacing the idle-state status hint when present                                                                                                         | Keeps the eye path slots → error → button continuous. Originally placed above the slots; that path made the user snap up to the top, then back down to retype.                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Email passing                               | React state within form components                                                                                                                                                                                                      | User never retypes — Supabase's confirmation token uniquely identifies the user. Email passed as prop from parent (`SignUpForm`, `SignInForm`) into `<CheckEmailNotice>`.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Sign-in unconfirmed handling                | In scope, same issue (commit 6)                                                                                                                                                                                                         | Completes the verification story: signup → pending → resend → confirm AND signin → unconfirmed → resend.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Sign-in unconfirmed handling                | In scope, same issue (commit 5)                                                                                                                                                                                                         | Completes the verification story: signup → pending → resend → confirm AND signin → unconfirmed → resend.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | Post-confirmation destination               | Preserve current logic per parent (`SignUpForm` → redirect-or-`/create-team`; `SignInForm` → redirect-or-`/leagues`; magic link callback uses URL `redirect` search param, else `/create-team`)                                         | Standardization deferred to #165.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Resend with redirect override               | `AuthContext.resendConfirmation(email, { redirect? })` accepts the current redirect param so the resent email's link encodes the _current_ destination (e.g., signin's `/leagues/123`) rather than whatever was baked in at signup time | Helps a user who hits the unconfirmed-signin path with a deep link, triggers Resend, and uses the new email's link. The original signup email's link still routes to `/create-team` (can't fix retroactively); the OTP path always routes correctly via the callsite.                                                                                                                                                                                                                                                                                                                                               |
-| E2E approach                                | Existing admin-API fixture keeps `email_confirm: true` (auto-confirms); add two new tests in commit 4 (magic-link path + OTP path)                                                                                                      | Existing tests stay fast; targeted e2e covers the new wiring                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| E2E approach                                | Existing admin-API fixture keeps `email_confirm: true` (auto-confirms); add two new tests in commit 6 (magic-link path + OTP path)                                                                                                      | Existing tests stay fast; targeted e2e covers the new wiring                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Email template                              | Custom template at `api/supabase/templates/confirmation.html` includes both `{{ .ConfirmationURL }}` and `{{ .Token }}`, lands in commit 3 alongside the config flip                                                                    | Default Supabase template already has both; we're shipping our own to control wording and prep for #22's branding                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Cross-issue ordering                        | 164 → 167 → 165 (locked)                                                                                                                                                                                                                | 164 builds verification primitives; 167 reuses callback route + OTP entry pattern for change-email re-verification; 165 audits all destinations after both new flows exist.                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | Auth callback implementation                | **Route loader + inline `errorComponent`, no separate component**                                                                                                                                                                       | Async work belongs in a TanStack Router `loader` (matches every other async route in the codebase — `joinInviteRoute`, `accountRoute`, etc.); avoids the `useEffect` + `cancelled`-flag anti-pattern. Side effects (Sentry capture) live at the failure site inside the loader's `try/catch`, not in a render-time hook. The shared `ErrorFallback` doesn't fit (hardcoded copy + "Try again" button; reloading can't fix a consumed PKCE code), and the bespoke error UI is small enough to inline in `errorComponent` rather than warrant a dedicated component file.                                             |
@@ -121,12 +121,12 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 
 **New flow component — `<CheckEmailNotice>`** (`web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx`):
 
-- **Returns just a `<Card>`** — no outer page wrapper. Caller (commit 3's `SignUpForm`, commit 6's `SignInForm`, dev-route scaffolding) provides centering, full-viewport height, and background.
+- **Returns just a `<Card>`** — no outer page wrapper. Caller (commit 3's `SignUpForm`, commit 5's `SignInForm`, dev-route scaffolding) provides centering, full-viewport height, and background.
 - **Props:**
   - `email: string` — rendered in the body
   - `onVerified: () => void` — called after `verifyOtp` resolves successfully so caller can navigate
-  - `onResend?: () => Promise<void>` — declared in `Props` for commit 5; renders nothing in commit 2 (no `CardFooter` yet)
-  - `onChangeEmail?: () => void` — same; renders nothing until commit 5 reintroduces the `CardFooter`
+  - `onResend?: () => Promise<void>` — declared in `Props` for commit 4; renders nothing in commit 2 (no `CardFooter` yet)
+  - `onChangeEmail?: () => void` — same; renders nothing until commit 4 reintroduces the `CardFooter`
 - **Layout:**
   - `CardHeader`: envelope icon, "Check your email" heading, two-paragraph body (sentence 1 with the email chip; sentence 2 with "Enter it below or click the link…") wrapped in a `space-y-2` div so the two `<p>`s are visually separated.
   - `CardContent` (`space-y-4`): a `space-y-3` group containing the label + progress bar, the `<OtpInput length={6} className="w-full" />`, and (when set) `<InlineError>`. Below the group, a centered `<LoadingButton size="lg" min-w-48>` that fires `verify(code)` on click.
@@ -153,7 +153,7 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 
 ### Commit 3 — Enable confirmations + wire SignUpForm into the pending UI
 
-**Goal:** Flip the feature on. Signup goes end-to-end via either path: submit → "check your email, click link or enter code" UI → user clicks link OR types code → land back in app, logged in. (Resend deferred to commit 5; signin-unconfirmed deferred to commit 6.) This is the load-bearing commit; commits 1–2 are preparatory.
+**Goal:** Flip the feature on. Signup goes end-to-end via either path: submit → "check your email, click link or enter code" UI → user clicks link OR types code → land back in app, logged in. (Resend deferred to commit 4; signin-unconfirmed deferred to commit 5.) This is the load-bearing commit; commits 1–2 are preparatory.
 
 **Supabase config** (`api/supabase/config.toml` and `e2e/supabase/config.toml`):
 
@@ -172,7 +172,7 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 
 - `web/src/contexts/AuthContext.tsx`:
   - Update `signUp()` to pass `options: { data: { displayName }, emailRedirectTo: ${window.location.origin}/auth/callback?redirect=<encoded redirect> }`. The `redirect` is read from the current location and forwarded so deep-links survive the email gap on the magic-link path.
-  - No new context method this commit (resend in commit 5).
+  - No new context method this commit (resend in commit 4).
 - `web/src/components/auth/SignUpForm/SignUpForm.tsx`:
   - After successful `signUp()`, branch on `data.session`:
     - If `session` is non-null (auto-confirm fallback if confirmations are ever disabled): existing navigate-to-destination logic at lines 68-72.
@@ -196,13 +196,73 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 
 ---
 
-### Commit 4 — E2E coverage for magic-link and OTP signup paths
+### Commit 4 — Resend confirmation email
+
+**Goal:** "Resend" button on the pending UI re-sends the confirmation email (which contains both link and OTP).
+
+**Wiring:**
+
+- `web/src/contexts/AuthContext.ts` — add `resendConfirmation(email: string, options?: { redirect?: string }): Promise<void>` to interface
+- `web/src/contexts/AuthContext.tsx` — implement: calls `supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: ${origin}/auth/callback${redirect ? '?redirect=' + encodeURIComponent(redirect) : ''} } })`; throws on error
+- `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx` — **reintroduce** the `<CardFooter>` (removed during commit 2's trim) and add a Resend button inside it, gated on the existing `onResend` prop being present. On click, call `onResend()` (parent passes `auth.resendConfirmation(email, { redirect })`). Use existing `<LoadingButton>` for loading state. Use existing `<LiveRegion>` to announce success ("New confirmation email sent"). Use `<InlineError>` for errors, with friendly handling for Supabase's rate-limit error code (`over_email_send_rate_limit` → "Please wait a moment before requesting another email"). The `onResend` prop and `handleResend` orchestrator already exist in `Props` from commit 2's interface but render nothing today.
+- `SignUpForm.tsx` — pass `onResend={() => auth.resendConfirmation(email, { redirect })}` to `<CheckEmailNotice>`, where `redirect` is read from the current route's search params (same source as the existing `redirect` handling at `SignUpForm.tsx:68-72`)
+
+**Tests:**
+
+- `AuthContext.test.tsx`: `resendConfirmation` calls `supabase.auth.resend` with the correct args (type, email, emailRedirectTo); also tests the `redirect` option is encoded into emailRedirectTo correctly
+- `CheckEmailNotice.test.tsx`:
+  - Clicking Resend calls `onResend`
+  - Loading state visible during await
+  - Success message announced via `LiveRegion`
+  - Generic error rendered via `InlineError`
+  - Rate-limit error renders friendly text
+- `SignUpForm.test.tsx`: Resend button passes the current `redirect` param to `resendConfirmation`
+- `web/src/tests/integration/signup-resend.integration.test.tsx` — frontend integration (real router over an inline route-tree mirror, same convention as `auth-callback.integration.test.tsx` and `account.integration.test.tsx`; mock only the Supabase SDK):
+  - Mount the app at `/sign-up?redirect=/leagues/123`, submit the form, assert `<CheckEmailNotice>` renders. Click Resend, assert `supabase.auth.resend` was called with `{ type: 'signup', email, options: { emailRedirectTo: 'http://localhost/auth/callback?redirect=%2Fleagues%2F123' } }` — proves the route's `redirect` search param actually threads through the form → context → SDK call.
+  - Same setup, mock `supabase.auth.resend` to return `{ error: { code: 'over_email_send_rate_limit' } }`, click Resend, assert the friendly rate-limit copy renders (catches the error-code → user-copy wiring in the router context).
+
+**Verification:**
+
+- Manual: sign up, click Resend, verify a second email appears in Mailpit; either email's link OR either email's most-recent OTP completes verification
+- Manual: rapid-fire Resend → rate-limit message
+- All test commands green
+
+---
+
+### Commit 5 — Friendly handling of unconfirmed-email sign-in
+
+**Goal:** If a user signs up but never confirms, then later tries to sign in, they see the same `<CheckEmailNotice>` (with OTP entry + Resend) instead of a generic auth error.
+
+**Wiring:**
+
+- `web/src/components/auth/SignInForm/SignInForm.tsx` — after `signIn()` throws, inspect the error: if it's Supabase's `email_not_confirmed` (check `error.code === 'email_not_confirmed'` — verified against `auth-js/src/lib/error-codes.ts`; `AuthApiError` has a string `code` property per `auth-js/src/lib/errors.ts`), set local `pending` state and render `<CheckEmailNotice email={email} onVerified={handleVerified} onResend={() => auth.resendConfirmation(email, { redirect })} />` _in place of the existing `<Card>`_ (the outer page wrapper stays, same shape as commit 3's `SignUpForm` wiring), where `redirect` is the current route's `redirect` search param (same source as today's signin redirect handling at `SignInForm.tsx:33-37`). `handleVerified` here navigates to redirect-or-`/leagues`. For any other error, fall through to the existing `<InlineError>` at `SignInForm.tsx:39-43`. The Resend's `redirect` override means the resent email's magic link will encode the signin-time destination rather than the (potentially different) signup-time one.
+
+**Tests:**
+
+- `SignInForm.test.tsx`:
+  - Mocked `signIn` rejects with `email_not_confirmed` → `<CheckEmailNotice>` rendered, no navigation
+  - Mocked `signIn` rejects with any other error → existing `<InlineError>` behavior preserved
+  - On `<CheckEmailNotice>` `onVerified`, navigation runs with signin destination logic
+  - Resend from this context passes the signin-time `redirect` param to `resendConfirmation`
+- `web/src/tests/integration/signin-unconfirmed.integration.test.tsx` — frontend integration (real router over inline route-tree mirror; mock only the Supabase SDK):
+  - Mount at `/sign-in?redirect=/leagues/123`, mock `supabase.auth.signInWithPassword` to reject with `{ code: 'email_not_confirmed' }`, submit the form, assert `<CheckEmailNotice>` renders (proves the error-code → pending-state wiring in the real router context).
+  - Continue the same flow: mock `supabase.auth.verifyOtp` to resolve successfully, type 6 digits into the OTP input, assert navigation lands at `/leagues/123` (proves the signin-time `redirect` param threads through `handleVerified` rather than falling back to `/leagues`).
+
+**Verification:**
+
+- Manual: sign up, do NOT click the email link / enter the OTP, navigate to `/sign-in`, attempt sign-in with the unconfirmed credentials, verify pending UI appears with working OTP entry + Resend
+- All test commands green
+
+---
+
+### Commit 6 — E2E coverage for magic-link and OTP signup paths
 
 **Goal:** Cross-system assertion that the wired-up flow from commit 3 actually works end-to-end through a real browser, against the local Supabase + Mailpit stack.
 
 **New fixture** (`e2e/fixtures/mailpit.ts`):
 
-- Helper functions: `searchByRecipient(email)`, `getMessage(id)`, `clearAll()`. Targets `http://127.0.0.1:54424` (e2e Mailpit).
+- Helper functions: `searchByRecipient(email)`, `getMessage(id)`, `clearAll()`. Thin HTTP wrappers, single-shot — no internal retry/polling. Targets `http://127.0.0.1:54424` (e2e Mailpit).
+- **Waiting for an email to arrive:** callsites wrap `searchByRecipient` in `expect.poll(...).toHaveProperty('count', 1)` (Playwright's built-in polling assertion). Polling lives in test code, not the fixture, so waits are visible at the callsite, integrate with Playwright's timeout reporting, and individual tests can vary the expected count (e.g., `2` for a resend test). No `sleep`-based waits anywhere.
 - **Note on naming:** Supabase CLI replaced Inbucket with Mailpit but kept the `[inbucket]` config block and the container name `supabase_inbucket_*` for backward compatibility. The actual image is `public.ecr.aws/supabase/mailpit` (verified via `docker inspect`), and the API surface is Mailpit's, not Inbucket's.
 - **Search by recipient:** `GET /api/v1/search?query=to:<urlencoded email>` — returns newest-first. Verified shape:
   ```json
@@ -237,65 +297,13 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 
 **New e2e tests** (`e2e/tests/auth.spec.ts`):
 
-- **Magic-link path:** fill signup form via UI → assert `<CheckEmailNotice>` appears → search Mailpit for the address → GET the message → regex `Text` for the verify URL → `page.goto(verifyUrl)` → assert the app shows `/create-team`.
-- **OTP path:** fill signup form → assert `<CheckEmailNotice>` appears → search Mailpit → GET the same message → regex `Text` for `/Or enter this code in the app: \*(\d{6})\*/` → type the 6 digits into the OTP input → assert the app shows `/create-team`.
+- **OTP-input selector note:** the `<OtpInput>` from commit 2 renders 6 visible slot `<div>`s overlaying a single real `<input autocomplete="one-time-code">`. Tests type the 6-digit code into the underlying input (queryable via its `aria-label`), not into individual slots — the slot `<div>`s are `aria-hidden`. This is the only commit-6-specific selector callout; everything else follows the project-wide semantic-selector discipline from `e2e/README`.
+- **Magic-link path:** fill signup form via UI → assert `<CheckEmailNotice>` appears → `expect.poll(() => mailpit.searchByRecipient(email)).toHaveProperty('count', 1)` → GET the message → regex `Text` for the verify URL → `page.goto(verifyUrl)` → assert the app shows `/create-team`.
+- **OTP path:** fill signup form → assert `<CheckEmailNotice>` appears → poll Mailpit for the message → GET it → regex `Text` for `/Or enter this code in the app: \*(\d{6})\*/` → type the 6 digits into the OTP input (the single underlying `<input>`, per the selector note above) → assert the app shows `/create-team`.
 
 **Verification:**
 
 - `npm run e2e` green (existing suite + the two new tests)
-
----
-
-### Commit 5 — Resend confirmation email
-
-**Goal:** "Resend" button on the pending UI re-sends the confirmation email (which contains both link and OTP).
-
-**Wiring:**
-
-- `web/src/contexts/AuthContext.ts` — add `resendConfirmation(email: string, options?: { redirect?: string }): Promise<void>` to interface
-- `web/src/contexts/AuthContext.tsx` — implement: calls `supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: ${origin}/auth/callback${redirect ? '?redirect=' + encodeURIComponent(redirect) : ''} } })`; throws on error
-- `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx` — **reintroduce** the `<CardFooter>` (removed during commit 2's trim) and add a Resend button inside it, gated on the existing `onResend` prop being present. On click, call `onResend()` (parent passes `auth.resendConfirmation(email, { redirect })`). Use existing `<LoadingButton>` for loading state. Use existing `<LiveRegion>` to announce success ("New confirmation email sent"). Use `<InlineError>` for errors, with friendly handling for Supabase's rate-limit error code (`over_email_send_rate_limit` → "Please wait a moment before requesting another email"). The `onResend` prop and `handleResend` orchestrator already exist in `Props` from commit 2's interface but render nothing today.
-- `SignUpForm.tsx` — pass `onResend={() => auth.resendConfirmation(email, { redirect })}` to `<CheckEmailNotice>`, where `redirect` is read from the current route's search params (same source as the existing `redirect` handling at `SignUpForm.tsx:68-72`)
-
-**Tests:**
-
-- `AuthContext.test.tsx`: `resendConfirmation` calls `supabase.auth.resend` with the correct args (type, email, emailRedirectTo); also tests the `redirect` option is encoded into emailRedirectTo correctly
-- `CheckEmailNotice.test.tsx`:
-  - Clicking Resend calls `onResend`
-  - Loading state visible during await
-  - Success message announced via `LiveRegion`
-  - Generic error rendered via `InlineError`
-  - Rate-limit error renders friendly text
-- `SignUpForm.test.tsx`: Resend button passes the current `redirect` param to `resendConfirmation`
-
-**Verification:**
-
-- Manual: sign up, click Resend, verify a second email appears in Mailpit; either email's link OR either email's most-recent OTP completes verification
-- Manual: rapid-fire Resend → rate-limit message
-- All test commands green
-
----
-
-### Commit 6 — Friendly handling of unconfirmed-email sign-in
-
-**Goal:** If a user signs up but never confirms, then later tries to sign in, they see the same `<CheckEmailNotice>` (with OTP entry + Resend) instead of a generic auth error.
-
-**Wiring:**
-
-- `web/src/components/auth/SignInForm/SignInForm.tsx` — after `signIn()` throws, inspect the error: if it's Supabase's `email_not_confirmed` (check `error.code === 'email_not_confirmed'` — verified against `auth-js/src/lib/error-codes.ts`; `AuthApiError` has a string `code` property per `auth-js/src/lib/errors.ts`), set local `pending` state and render `<CheckEmailNotice email={email} onVerified={handleVerified} onResend={() => auth.resendConfirmation(email, { redirect })} />` _in place of the existing `<Card>`_ (the outer page wrapper stays, same shape as commit 3's `SignUpForm` wiring), where `redirect` is the current route's `redirect` search param (same source as today's signin redirect handling at `SignInForm.tsx:33-37`). `handleVerified` here navigates to redirect-or-`/leagues`. For any other error, fall through to the existing `<InlineError>` at `SignInForm.tsx:39-43`. The Resend's `redirect` override means the resent email's magic link will encode the signin-time destination rather than the (potentially different) signup-time one.
-
-**Tests:**
-
-- `SignInForm.test.tsx`:
-  - Mocked `signIn` rejects with `email_not_confirmed` → `<CheckEmailNotice>` rendered, no navigation
-  - Mocked `signIn` rejects with any other error → existing `<InlineError>` behavior preserved
-  - On `<CheckEmailNotice>` `onVerified`, navigation runs with signin destination logic
-  - Resend from this context passes the signin-time `redirect` param to `resendConfirmation`
-
-**Verification:**
-
-- Manual: sign up, do NOT click the email link / enter the OTP, navigate to `/sign-in`, attempt sign-in with the unconfirmed credentials, verify pending UI appears with working OTP entry + Resend
-- All test commands green
 
 ---
 
@@ -307,27 +315,29 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 - `web/src/router.tsx` (commit 1 — add `/auth/callback` route with loader, pendingComponent, and inline errorComponent)
 - `api/supabase/config.toml` (commit 3)
 - `e2e/supabase/config.toml` (commit 3)
-- `web/src/contexts/AuthContext.tsx` (commits 3, 5)
-- `web/src/contexts/AuthContext.ts` (commit 5)
-- `web/src/components/auth/SignUpForm/SignUpForm.tsx` (commit 3, minor in commit 5)
-- `web/src/components/auth/SignInForm/SignInForm.tsx` (commit 6)
+- `web/src/contexts/AuthContext.tsx` (commits 3, 4)
+- `web/src/contexts/AuthContext.ts` (commit 4)
+- `web/src/components/auth/SignUpForm/SignUpForm.tsx` (commit 3, minor in commit 4)
+- `web/src/components/auth/SignInForm/SignInForm.tsx` (commit 5)
 
 **New:**
 
 - `web/src/lib/auth-destination.ts` + `auth-destination.test.ts` (commit 1)
 - `web/src/tests/integration/auth-callback.integration.test.tsx` (commit 1)
 - `web/src/components/OtpInput/OtpInput.tsx` + `OtpInput.test.tsx` (commit 2) — custom OTP input primitive; lives at the top level of `components/` alongside other custom primitives (`LoadingButton`, `InlineError`, etc.), not in `ui/` (reserved for vendored shadcn)
-- `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx` + `.test.tsx` (commit 2; expanded in commit 5)
+- `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx` + `.test.tsx` (commit 2; expanded in commit 4)
 - `api/supabase/templates/confirmation.html` (commit 3; includes both link and OTP from the start)
-- `e2e/fixtures/mailpit.ts` (commit 4)
-- New tests in `e2e/tests/auth.spec.ts` (commit 4)
+- `web/src/tests/integration/signup-resend.integration.test.tsx` (commit 4)
+- `web/src/tests/integration/signin-unconfirmed.integration.test.tsx` (commit 5)
+- `e2e/fixtures/mailpit.ts` (commit 6)
+- New tests in `e2e/tests/auth.spec.ts` (commit 6)
 
 **Reused (existing components, no changes):**
 
 - `web/src/components/InlineError/InlineError.tsx` — error display in the auth-callback `errorComponent`, `<CheckEmailNotice>`, existing forms
 - `web/src/components/LiveRegion/LiveRegion.tsx` — screen-reader announcements
 - `web/src/components/LoadingButton/LoadingButton.tsx` — Verify and Resend button loading states
-- `web/src/hooks/useAuth.ts` — auth hook (gains `resendConfirmation` in commit 5)
+- `web/src/hooks/useAuth.ts` — auth hook (gains `resendConfirmation` in commit 4)
 
 ---
 
