@@ -24,7 +24,9 @@ Email confirmations are currently disabled in Supabase (`enable_confirmations = 
 | OTP input component                         | Custom `<OtpInput>` at `web/src/components/OtpInput/`                                                                                                                                                                                   | Hand-rolled single-input + overlay slot pattern (same architecture as `input-otp`) that fixes the slot-retargeting bug ([shadcn/ui #4046](https://github.com/shadcn-ui/ui/issues/4046)) where clicking a non-final slot focuses the last cell. Preserves every must-have: single accessible `<input>` for WCAG 1.3.5, iOS/Android SMS autofill via `autocomplete="one-time-code"`, native paste, full keyboard a11y, auto-submit. Lives outside `ui/` because `ui/` is reserved for vendored shadcn; sits next to the other custom primitives (`LoadingButton`, `InlineError`). Removes the `input-otp` dependency. |
 | Pending-UI surface                          | Inline state + shared `<CheckEmailNotice>` component                                                                                                                                                                                    | No URL params (OWASP: PII like email shouldn't appear in URLs — leaks via browser history, server logs, Referer to Sentry). Refresh degrades benignly: link in inbox still works, resend reachable via signin path.                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `<CheckEmailNotice>` shape                  | **Card-only component, not a full-page screen** — returns the `<Card>` directly; page chrome (centering, full-viewport height, background) is the caller's responsibility                                                               | The caller already provides a page wrapper (`SignUpForm`'s and `SignInForm`'s outer `flex w-full ... justify-center ... md:min-h-screen` div). A second wrapper inside `<CheckEmailNotice>` would double-wrap and made the Card's `w-full max-w-lg` resolve against a content-sized parent, which let the `<InlineError>`'s width feed back into the Card width. Card-only avoids both issues; commits 3 and 6 swap `<CheckEmailNotice>` in place of the existing `<Card>` inside the parent's wrapper.                                                                                                             |
-| Auto-submit vs. manual submit               | **Auto-submit on 6th digit AND a manual Verify button**, no `<form>` wrapper. Button is `type="button"` with `onClick`. No Enter-to-submit                                                                                              | Auto-submit covers every typed/pasted happy path (`onPaste` in `<OtpInput>` also fires `onChange`). The Verify button serves as the loading-state visual, the success-state visual ("Verified" + check), and the explicit retry affordance after a failure. The `<form>` was vestigial after we dropped HTML-form-validation; its only remaining job was Enter-to-submit, which would only ever re-fire the same already-failed code — a weak use case for OTP.                                                                                                                                                     |
+| Auto-submit vs. manual submit               | **Auto-submit on 6th digit AND a manual Verify button**, no `<form>` wrapper. Button is `type="button"` with `onClick`. No Enter-to-submit                                                                                              | Auto-submit covers every typed/pasted/retyped happy path via `<OtpInput>`'s dedicated `onComplete` callback (fires from `onChange`, `onPaste`, and `onBeforeInput`'s same-digit splice). The Verify button serves as the loading-state visual, the success-state visual ("Verified" + check), and the explicit retry affordance after a failure. The `<form>` was vestigial after we dropped HTML-form-validation; its only remaining job was Enter-to-submit, which would only ever re-fire the same already-failed code — a weak use case for OTP. |
+| `<OtpInput>` completion signal              | Dedicated `onComplete(value)` callback, not `onChange + value.length === length` inspection at the callsite                                                                                                                             | Same-digit replacements in a full code (e.g., user retypes a wrong digit over the same position) bypass React's `onChange` because the SyntheticEvent value tracker bails when the input's value didn't change. A dedicated callback wired into the primitive's `onChange` / `onPaste` / `onBeforeInput` paths means the callsite gets a single reliable "done" signal regardless of typing pattern, and the same-digit case still fires verification.                                                                                              |
+| `requireAuth` route guard                   | Falls back to `supabase.auth.getSession()` when `context.auth.user` is null before redirecting                                                                                                                                          | After the auth-callback loader calls `exchangeCodeForSession`, Supabase persists the session synchronously but AuthContext's React state only catches up on the next render. A redirect-target route's `beforeLoad` runs before that re-render, so `context.auth.user` is briefly null even though the user is signed in. Without the fallback, the user bounces back to `/` immediately after the loader redirects them. The fallback consults Supabase directly and lets the navigation through; both code paths flow into the same logged-in state. |
 | Verify button shape                         | Centered, `size="lg" min-w-48`, not full-width                                                                                                                                                                                          | Centered slots above + centered button below reads visually balanced. Full-width would deviate less from `SignUpForm`/`SignInForm` but visually anchors the manual button more heavily than is warranted given auto-submit is the primary path. `min-w-48` keeps the tap target generous on mobile.                                                                                                                                                                                                                                                                                                                 |
 | Failure copy                                | Static generic message _"That code didn't match. Check your email for the latest one."_ — not the raw Supabase error string                                                                                                             | Supabase emits jargon ("Token has expired or is invalid"). Users typed a "code", not a "token", and the canonical follow-up is to enter a new code from the latest email. Also: `verify()` no longer optimistically clears the error at function entry (only on success), so re-attempts don't unmount/remount the `<InlineError>` and trigger a layout shift mid-flight.                                                                                                                                                                                                                                           |
 | Error placement inside `<CheckEmailNotice>` | `<InlineError>` sits _under_ the slot row, inside the same `space-y-3` group, replacing the idle-state status hint when present                                                                                                         | Keeps the eye path slots → error → button continuous. Originally placed above the slots; that path made the user snap up to the top, then back down to retype.                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -51,7 +53,9 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 **Supabase client flow change** (`web/src/lib/supabase.ts`):
 
 - Today: `createClient(url, key)` with no options → defaults to `flowType: 'implicit'` (verified in `auth-js` source — `DEFAULT_OPTIONS.flowType: 'implicit'`)
-- Required: pass `{ auth: { flowType: 'pkce' } }` so the magic link returns `?code=` (which `exchangeCodeForSession` consumes) instead of `#access_token=` (implicit hash flow)
+- Required: pass `{ auth: { flowType: 'pkce', detectSessionInUrl: false } }`:
+  - `flowType: 'pkce'` so the magic link returns `?code=` (which `exchangeCodeForSession` consumes) instead of `#access_token=` (implicit hash flow)
+  - `detectSessionInUrl: false` so the SDK's default URL-watcher doesn't race the auth-callback loader for the `?code=` param. The loader owns the exchange; auto-detection would double-fire and the second call would 400 on the already-consumed code.
 - This is a small but app-wide auth behavior change — covered by existing AuthContext tests
 
 **New helper** (`web/src/lib/auth-destination.ts`):
@@ -102,6 +106,7 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 - **Props:**
   - `id?: string` — forwarded to the underlying `<input>` so external `<Label htmlFor>` works
   - `value: string`, `onChange: (value: string) => void`
+  - `onComplete?: (value: string) => void` — fires the first time `value` reaches `length` after any input path: `onChange` digit-fill, `onPaste`, or the `onBeforeInput` same-digit-replace path described below. Callers use this as the auto-submit signal.
   - `length?: number` (default `6`) — also forwarded as `maxLength`
   - `disabled?: boolean`
   - `'aria-label'?: string`
@@ -111,12 +116,13 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
   - `slotClassName?: string` — merged onto each slot for per-slot style overrides
   - Each visible slot carries `data-slot="otp-slot"` as a styling/structure marker (mirrors the shadcn convention). Not a public test hook except for the one click-retargeting test that the bug it guards is structural-positional.
 - **Behavior:**
-  - `onChange` strips non-digit characters and slices to `length`.
+  - `onChange` strips non-digit characters and slices to `length`. Tracks the post-change caret in `selectionStart` state so active-slot styling reacts to typing without waiting for the next `selectionchange` event.
   - **Paste interceptor (`onPaste`):** intercepts paste events, `preventDefault`s the browser default, sanitizes `clipboardData.getData('text')`, and calls `onChange` with the sliced result. Necessary because `maxLength` on the underlying input would otherwise truncate a mixed-character paste (e.g., `"abc123456xyz"`) to its first 6 characters (`"abc123"`) _before_ our digit filter can run. With the interceptor, paste yields `onChange("123456")` in a single call.
+  - **Same-digit replacement (`onBeforeInput`):** when the input is already at `length` and the user types a digit, React's value tracker skips `onChange` if the resulting character is identical to the one being replaced (e.g., position 3 holds `5` and the user types `5` again). The handler intercepts `beforeinput`, `preventDefault`s the browser, splices the new digit into `value` at `selectionStart`, advances the caret by one, and re-selects the next slot via `requestAnimationFrame` + `setSelectionRange(next, next+1)`. Also fires `onComplete` when this path lands on the final slot.
   - **Click-to-edit any slot (the bug fix):** on slot `onPointerDown`, `preventDefault`, `focus()` the input, then `setSelectionRange(i, i+1)` if the slot has a character, else collapse the caret at `min(i, value.length)`. Safari requires `focus()` before `setSelectionRange`.
-  - **Active slot tracking:** uses a `document`-level `selectionchange` listener (gated on `isFocused`) — the only DOM event that fires for _every_ selection mutation, including programmatic `setSelectionRange`. `onSelect` would miss the click-retarget case. The listener updates a `selectionStart` state, and `activeIndex` is derived from `isFocused + selectionStart + value.length`. Caret animation uses `animate-caret-blink` (from `tw-animate-css`).
+  - **Active slot tracking:** uses a `document`-level `selectionchange` listener (gated on `isFocused`) for cursor moves that don't go through `onChange` (arrow keys, click-to-position) and that `onSelect` misses on Safari. The listener updates a `selectionStart` state, and `activeIndex` is derived from `isFocused + selectionStart + value.length`. Caret animation uses `animate-caret-blink` (from `tw-animate-css`).
   - **Disabled:** propagates to the `<input>` and the slot container (`pointer-events-none opacity-50`).
-- **Styling defaults baked in:** slot `h-14 w-12 rounded-md border font-mono text-2xl font-medium tabular-nums`; active state `border-primary ring-2 ring-primary/40 ring-inset`; slot-row `flex justify-center gap-2.5`. Consumer-supplied `className` / `slotClassName` merge via `cn()` (Tailwind merge wins on conflicts).
+- **Styling defaults baked in:** slot is `h-12 w-10 sm:h-14 sm:w-12 rounded-md border font-mono text-2xl font-medium tabular-nums` (responsive so the row fits on ~320px phones); active state `border-primary ring-2 ring-primary/40 ring-inset`; slot-row `flex justify-center gap-1.5 sm:gap-2.5`. The underlying `<input>` also carries `selection:bg-transparent selection:text-transparent` so the native selection highlight doesn't leak into the visible slots when `setSelectionRange` extends across positions. Consumer-supplied `className` / `slotClassName` merge via `cn()` (Tailwind merge wins on conflicts).
 - **Accessibility:** the grid container carries no `role`; the slot-row `<div>` is `aria-hidden="true"`. Screen readers see only the single labeled `<input>`.
 
 **New flow component — `<CheckEmailNotice>`** (`web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx`):
@@ -130,17 +136,17 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 - **Layout:**
   - `CardHeader`: envelope icon, "Check your email" heading, two-paragraph body (sentence 1 with the email chip; sentence 2 with "Enter it below or click the link…") wrapped in a `space-y-2` div so the two `<p>`s are visually separated.
   - `CardContent` (`space-y-4`): a `space-y-3` group containing the label + progress bar, the `<OtpInput length={6} className="w-full" />`, and (when set) `<InlineError>`. Below the group, a centered `<LoadingButton size="lg" min-w-48>` that fires `verify(code)` on click.
-- **No `<form>` wrapper.** Verify button is `type="button"` with `onClick={() => { if (status === 'idle') verify(code); }}`. Auto-submit handles every code-completion path (`onChange` reaches `OTP_LENGTH`). The `status === 'idle'` guard on the button prevents a mid-verify re-click from re-firing.
+- **No `<form>` wrapper.** Verify button is `type="button"` with `onClick={() => { if (status === 'idle') verify(code); }}`. Auto-submit handles every code-completion path via `<OtpInput>`'s `onComplete` callback — the local `handleComplete(value)` re-checks `status === 'idle'` and fires `verify(value)`. The button's `status === 'idle'` guard prevents a mid-verify re-click from re-firing.
 - **`verify(token)`:** sets status to `'verifying'`, awaits `supabase.auth.verifyOtp({ email, token, type: 'signup' })`. On success: clears `error`, sets status to `'success'`, calls `onVerified()`. On failure (rejection OR returned error): sets a static generic message _"That code didn't match. Check your email for the latest one."_ and resets status to `'idle'`. Notably, the error is _not_ optimistically cleared at function entry — so a re-attempt doesn't unmount/remount `<InlineError>` and trigger a layout shift while the new request is in flight.
 - **`Status` type:** `'idle' | 'verifying' | 'success'`. Drives the `<OtpInput disabled>`, the `<LoadingButton isLoading>`, the Card's success ring (`ring-1 ring-emerald-500/40`), and the button's "Verified" + check icon swap-in. No separate status-line component — `LoadingButton` and the Card visual state carry it.
 
 **Tests:**
 
-- `OtpInput.test.tsx` (6 behavioral tests): attribute forwarding (`inputmode` / `maxlength` / `autocomplete`); typing filters non-digits; paste yields one `onChange` call with sanitized + sliced value; backspace removes last digit; click slot 3 after full code → `selectionStart === 3` (the bug fix); `disabled` prevents typing.
+- `OtpInput.test.tsx` (9 behavioral tests): attribute forwarding (`inputmode` / `maxlength` / `autocomplete`); typing filters non-digits; paste yields one `onChange` call with sanitized + sliced value; backspace removes last digit; click slot 3 after full code → `selectionStart === 3` (the bug fix); `disabled` prevents typing; `onComplete` fires once when the 6th digit lands by typing; `onComplete` fires once when paste fills the value; active slot advances after each typed digit (verified via `data-active="true"` on the slot `<div>`).
 - `CheckEmailNotice.test.tsx` (4 behavioral tests, trimmed per the testing strategy — no static-JSX assertions, no duplication of `OtpInput`'s attribute matrix, no separate test per error code path):
   - Email prop renders in the body
   - Auto-submit fires `verifyOtp` with `{ email, token, type: 'signup' }` and `onVerified` on success
-  - Failure path renders the generic `<InlineError>` text and skips `onVerified`
+  - Failure path renders the generic `<InlineError>` text, skips `onVerified`, and leaves the typed code in the input so the user can edit a single digit instead of re-typing all six
   - Verify button stays disabled (and `verifyOtp` uncalled) until the 6th digit lands
 
 **Verification:**
@@ -160,7 +166,7 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 - `[auth] site_url` → set to local web URL (`http://localhost:5173` for dev, `http://localhost:5273` for e2e). Existing `http://127.0.0.1:3000` is dead config; nothing in the codebase references it.
 - `[auth] additional_redirect_urls` → `["http://localhost:5173/auth/callback"]` for dev (and `5273` for e2e). Existing `https://127.0.0.1:3000` is HTTPS on a non-running port — wrong on multiple counts.
 - `[auth.email] enable_confirmations = true` (currently `false` at line 176)
-- `[auth.email.template.confirmation]` block pointing at `./templates/confirmation.html`. Both configs can reference the same file via relative path; mirrors how `e2e/supabase/migrations/` is symlinked to `api/supabase/migrations/`.
+- `[auth.email.template.confirmation]` block pointing at `./templates/confirmation.html`. `e2e/supabase/templates` is a symlink to `../../api/supabase/templates` so both stacks read the same file — mirrors how `e2e/supabase/migrations/` shares the dev migrations directory.
 
 **New email template** (`api/supabase/templates/confirmation.html`):
 
@@ -171,21 +177,30 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 **Wiring:**
 
 - `web/src/contexts/AuthContext.tsx`:
-  - Update `signUp()` to pass `options: { data: { displayName }, emailRedirectTo: ${window.location.origin}/auth/callback?redirect=<encoded redirect> }`. The `redirect` is read from the current location and forwarded so deep-links survive the email gap on the magic-link path.
+  - Update `signUp()` to pass `options: { data: { displayName }, emailRedirectTo: ${window.location.origin}/auth/callback?redirect=<encoded redirect> }`. The `redirect` is read from the current location and forwarded so deep-links survive the email gap on the magic-link path. Returns `{ session: data.session }` so the callsite can branch on auto-confirm vs. pending.
   - No new context method this commit (resend in commit 4).
+- `web/src/lib/route-guards.ts`:
+  - `requireAuth` falls back to `supabase.auth.getSession()` when `context.auth.user` is null before throwing the redirect. Necessary because `exchangeCodeForSession` in the auth-callback loader persists the session synchronously but AuthContext's React state hasn't re-rendered yet by the time the redirect target's `beforeLoad` runs — without the fallback, a freshly-confirmed user bounces straight back to `/`. The two existing "redirects to..." tests are replaced with one "context lags but Supabase has a session" test plus a comment-documented mock for `supabase.auth.getSession`.
 - `web/src/components/auth/SignUpForm/SignUpForm.tsx`:
-  - After successful `signUp()`, branch on `data.session`:
-    - If `session` is non-null (auto-confirm fallback if confirmations are ever disabled): existing navigate-to-destination logic at lines 68-72.
-    - If `session` is null: set local `pending` state, render `<CheckEmailNotice email={email} onVerified={handleVerified} />` _in place of the existing `<Card>`_ (not the whole component) — the outer page wrapper (`<div className="flex w-full items-center justify-center p-8 md:min-h-screen">` and the `<div className="w-full max-w-md space-y-4">` cap) stays. `handleVerified` runs the same destination logic via `getPostSignupDestination`.
+  - After successful `signUp()`, branch on the returned `session`:
+    - If `session` is non-null (auto-confirm fallback if confirmations are ever disabled): existing navigate-to-destination logic, factored into a `completeSignUp()` helper that runs `startAuthTransition` → `navigate({ to: getPostSignupDestination(search.redirect) })` → `completeAuthTransition`.
+    - If `session` is null: set local `awaitingConfirmation` state, render `<CheckEmailNotice email={email} onVerified={completeSignUp} />` _in place of the existing `<Card>`_ (not the whole component) — the outer page wrapper stays. The wrapper's padding is widened to `p-4 sm:p-8` so the OtpInput row fits on narrow phones (the responsive slot sizing in `<OtpInput>` does the rest).
   - Width nuance: `<CheckEmailNotice>` Card is `max-w-lg` (512px), but the parent's `max-w-md` cap wins, so pending renders at 448px — same width as the form. If you want pending wider, raise the `SignUpForm` wrapper's cap to `max-w-lg`.
+- `e2e/tests/_infra/config-sync.spec.ts`:
+  - Extend `IGNORED_KEY_RE` to also ignore `site_url` and `additional_redirect_urls`. These now differ between dev (`localhost:5173`) and e2e (`localhost:5273`) because the web port shifts by the +100 e2e convention. Without the extension, the config-sync guard test fails on every CI run after this commit.
 
 **Tests:**
 
 - `SignUpForm.test.tsx`:
-  - When mocked `signUp` returns no session, `<CheckEmailNotice>` is rendered and no navigation occurs
-  - When mocked `signUp` returns a session (auto-confirm fallback), existing navigation behavior preserved
+  - When mocked `signUp` returns `{ session: null }`, `<CheckEmailNotice>` is rendered and no navigation occurs
+  - When mocked `signUp` returns `{ session: mockSession }` (auto-confirm fallback), navigation runs to `/create-team` (default) or to the redirect search param
+  - The "disables submit while loading" test uses a never-resolving promise rather than a `setTimeout` so the post-submit branch can't bleed into the next test
 - `AuthContext.test.tsx`:
-  - `signUp` calls Supabase with the expected `emailRedirectTo` (including the forwarded `redirect` query)
+  - `signUp` calls Supabase with `emailRedirectTo` set to `${origin}/auth/callback` when no redirect option is provided
+  - `signUp` calls Supabase with `emailRedirectTo` set to `${origin}/auth/callback?redirect=<encoded>` when a redirect option is provided
+- `route-guards.test.ts`:
+  - `requireAuth` resolves without redirect when `context.auth.user` is null but `supabase.auth.getSession()` returns a session
+  - The two prior "redirects to ... with replace option" tests for `requireTeam` / `requireNoTeam` are deleted — they only exercised `requireAuth`'s redirect path, which is now covered by the consolidated `requireAuth` describe block
 
 **Verification:**
 
@@ -311,14 +326,18 @@ Each commit is a gate. Each must independently build, lint, test, and format. Wa
 
 **Modified:**
 
-- `web/src/lib/supabase.ts` (commit 1 — add `flowType: 'pkce'`)
+- `web/src/lib/supabase.ts` (commit 1 — add `flowType: 'pkce'` and `detectSessionInUrl: false`)
 - `web/src/router.tsx` (commit 1 — add `/auth/callback` route with loader, pendingComponent, and inline errorComponent)
+- `web/src/lib/route-guards.ts` (commit 3 — `requireAuth` falls back to `supabase.auth.getSession()`)
 - `api/supabase/config.toml` (commit 3)
 - `e2e/supabase/config.toml` (commit 3)
+- `e2e/tests/_infra/config-sync.spec.ts` (commit 3 — extend ignore list with `site_url` / `additional_redirect_urls`)
 - `web/src/contexts/AuthContext.tsx` (commits 3, 4)
-- `web/src/contexts/AuthContext.ts` (commit 4)
+- `web/src/contexts/AuthContext.ts` (commits 3, 4 — `signUp` signature gains `options?: { redirect?: string }` and returns `{ session }`)
 - `web/src/components/auth/SignUpForm/SignUpForm.tsx` (commit 3, minor in commit 4)
 - `web/src/components/auth/SignInForm/SignInForm.tsx` (commit 5)
+- `web/src/components/OtpInput/OtpInput.tsx` (commit 2 — `onComplete` prop + `onBeforeInput` splice handler + responsive slot sizing)
+- `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx` (commit 2 — consume `onComplete` instead of `onChange + length` check)
 
 **New:**
 
