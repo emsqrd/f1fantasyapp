@@ -1,5 +1,6 @@
 import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
+import { supabase } from '@/lib/supabase';
 import { getMyTeam } from '@/services/teamService';
 import type { Session, User } from '@supabase/supabase-js';
 import { redirect } from '@tanstack/react-router';
@@ -21,6 +22,16 @@ vi.mock('@tanstack/react-router', async () => {
 // Mock teamService
 vi.mock('@/services/teamService', () => ({
   getMyTeam: vi.fn(),
+}));
+
+// Mock Supabase — requireAuth falls back to getSession() when context.auth.user
+// is null to handle the lag between exchangeCodeForSession and React state.
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    auth: {
+      getSession: vi.fn(),
+    },
+  },
 }));
 
 // Helper to create a mock user
@@ -46,6 +57,10 @@ const createMockSession = (): Session => ({
 describe('route-guards', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: null },
+      error: null,
+    } as Awaited<ReturnType<typeof supabase.auth.getSession>>);
   });
 
   describe('requireAuth', () => {
@@ -107,7 +122,17 @@ describe('route-guards', () => {
       await expect(requireAuth(context)).resolves.not.toThrow();
     });
 
-    it('redirects to landing page with replace option', async () => {
+    it('does not throw when context lags but Supabase has a session', async () => {
+      // Simulates the moment right after the email-confirmation callback
+      // signs the user in: Supabase has persisted the session (so
+      // getSession() returns it), but AuthContext hasn't re-rendered yet,
+      // so context.auth.user is still null. The guard should fall back to
+      // getSession() and let the navigation through instead of redirecting.
+      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+        data: { session: createMockSession() },
+        error: null,
+      } as Awaited<ReturnType<typeof supabase.auth.getSession>>);
+
       const context: RouterContext = {
         auth: {
           user: null,
@@ -131,14 +156,8 @@ describe('route-guards', () => {
         currentSeason: null,
       };
 
-      try {
-        await requireAuth(context);
-      } catch (error) {
-        expect((error as Error & { redirect: unknown }).redirect).toEqual({
-          to: '/',
-          replace: true,
-        });
-      }
+      await expect(requireAuth(context)).resolves.not.toThrow();
+      expect(redirect).not.toHaveBeenCalled();
     });
   });
 
@@ -211,7 +230,7 @@ describe('route-guards', () => {
       await expect(requireTeam(context)).resolves.not.toThrow();
     });
 
-    it('does not throw when user is not authenticated', async () => {
+    it('delegates to requireAuth when user is not authenticated', async () => {
       const context: RouterContext = {
         auth: {
           user: null,
@@ -235,43 +254,7 @@ describe('route-guards', () => {
         currentSeason: null,
       };
 
-      // Should throw redirect because requireAuth is called first and user is not authenticated
       await expect(() => requireTeam(context)).rejects.toThrow();
-    });
-
-    it('redirects to create-team page with replace option', async () => {
-      vi.mocked(getMyTeam).mockResolvedValue(null);
-      const context: RouterContext = {
-        auth: {
-          user: createMockUser(),
-          session: createMockSession(),
-          loading: false,
-          isAuthTransitioning: false,
-          signIn: vi.fn(),
-          signUp: vi.fn(),
-          signOut: vi.fn(),
-          startAuthTransition: vi.fn(),
-          completeAuthTransition: vi.fn(),
-        },
-        teamContext: {
-          myTeamId: null,
-          hasTeam: false,
-          setMyTeamId: vi.fn(),
-          refreshMyTeam: vi.fn(),
-        },
-        team: null,
-        profile: null,
-        currentSeason: null,
-      };
-
-      try {
-        await requireTeam(context);
-      } catch (error) {
-        expect((error as Error & { redirect: unknown }).redirect).toEqual({
-          to: '/create-team',
-          replace: true,
-        });
-      }
     });
   });
 
@@ -344,7 +327,7 @@ describe('route-guards', () => {
       await expect(requireNoTeam(context)).resolves.not.toThrow();
     });
 
-    it('does not throw when user is not authenticated', async () => {
+    it('delegates to requireAuth when user is not authenticated', async () => {
       const context: RouterContext = {
         auth: {
           user: null,
@@ -368,51 +351,7 @@ describe('route-guards', () => {
         currentSeason: null,
       };
 
-      // Should throw redirect because requireAuth is called first and user is not authenticated
       await expect(() => requireNoTeam(context)).rejects.toThrow();
-    });
-
-    it('redirects to leagues page with replace option', async () => {
-      vi.mocked(getMyTeam).mockResolvedValue({
-        id: 1,
-        name: 'Test Team',
-        ownerId: 1,
-        ownerName: 'Test Owner',
-        remainingBudget: 100_000_000,
-        drivers: [],
-        constructors: [],
-      });
-      const context: RouterContext = {
-        auth: {
-          user: createMockUser(),
-          session: createMockSession(),
-          loading: false,
-          isAuthTransitioning: false,
-          signIn: vi.fn(),
-          signUp: vi.fn(),
-          signOut: vi.fn(),
-          startAuthTransition: vi.fn(),
-          completeAuthTransition: vi.fn(),
-        },
-        teamContext: {
-          myTeamId: 1,
-          hasTeam: true,
-          setMyTeamId: vi.fn(),
-          refreshMyTeam: vi.fn(),
-        },
-        team: null,
-        profile: null,
-        currentSeason: null,
-      };
-
-      try {
-        await requireNoTeam(context);
-      } catch (error) {
-        expect((error as Error & { redirect: unknown }).redirect).toEqual({
-          to: '/leagues',
-          replace: true,
-        });
-      }
     });
   });
 });

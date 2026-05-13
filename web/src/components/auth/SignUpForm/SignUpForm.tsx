@@ -1,12 +1,14 @@
 import { InlineError } from '@/components/InlineError/InlineError';
 import { LiveRegion } from '@/components/LiveRegion/LiveRegion';
 import { LoadingButton } from '@/components/LoadingButton/LoadingButton';
+import { CheckEmailNotice } from '@/components/auth/CheckEmailNotice/CheckEmailNotice';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
+import { getPostSignupDestination } from '@/lib/auth-destination';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 
@@ -17,9 +19,16 @@ export function SignUpForm() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const { signUp, startAuthTransition, completeAuthTransition } = useAuth();
   const navigate = useNavigate();
   const search = useSearch({ from: '/sign-up' });
+
+  const completeSignUp = async () => {
+    startAuthTransition();
+    await navigate({ to: getPostSignupDestination(search.redirect) });
+    completeAuthTransition();
+  };
 
   const { message, announce } = useLiveRegion();
 
@@ -62,15 +71,19 @@ export function SignUpForm() {
     }
 
     try {
-      await signUp(email, password, { displayName });
-      startAuthTransition();
+      const { session } = await signUp(
+        email,
+        password,
+        { displayName },
+        { redirect: search.redirect },
+      );
 
-      if (search.redirect) {
-        await navigate({ to: search.redirect });
-      } else {
-        await navigate({ to: '/create-team' });
+      if (!session) {
+        setAwaitingConfirmation(true);
+        return;
       }
-      completeAuthTransition();
+
+      await completeSignUp();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Sign up failed';
       setError(errorMessage);
@@ -81,79 +94,83 @@ export function SignUpForm() {
   };
 
   return (
-    <div className="flex w-full items-center justify-center p-8 md:min-h-screen">
+    <div className="flex w-full items-center justify-center p-4 sm:p-8 md:min-h-screen">
       <div className="w-full max-w-md space-y-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Create Account</CardTitle>
-            <CardDescription>Join the F1 fantasy league</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-              <LiveRegion message={message} />
-              {error && <InlineError message={error} />}
+        {awaitingConfirmation ? (
+          <CheckEmailNotice email={email} onVerified={completeSignUp} />
+        ) : (
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Create Account</CardTitle>
+              <CardDescription>Join the F1 fantasy league</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                <LiveRegion message={message} />
+                {error && <InlineError message={error} />}
 
-              <div className="space-y-2">
-                <Label htmlFor="display-name">Display Name</Label>
-                <Input
-                  id="display-name"
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  required
-                  autoComplete="name"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="display-name">Display Name</Label>
+                  <Input
+                    id="display-name"
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    required
+                    autoComplete="name"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="signup-email">Email</Label>
-                <Input
-                  id="signup-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="signup-password">Password</Label>
-                <Input
-                  id="signup-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  autoComplete="new-password"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <Input
+                    id="signup-password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  autoComplete="new-password"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                  />
+                </div>
 
-              <LoadingButton
-                type="submit"
-                className="w-full"
-                isLoading={isLoading}
-                loadingText="Creating account..."
-              >
-                Sign Up
-              </LoadingButton>
-            </form>
-          </CardContent>
-        </Card>
+                <LoadingButton
+                  type="submit"
+                  className="w-full"
+                  isLoading={isLoading}
+                  loadingText="Creating account..."
+                >
+                  Sign Up
+                </LoadingButton>
+              </form>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="text-center">
           <Button variant="link" asChild className="text-sm">

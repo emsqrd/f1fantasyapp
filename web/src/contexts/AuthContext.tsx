@@ -39,22 +39,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   };
 
-  const signUp = async (email: string, password: string, additionalData: CreateProfileData) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    additionalData: CreateProfileData,
+    options?: { redirect?: string },
+  ) => {
     if (!additionalData.displayName?.trim()) {
       throw new Error('Display name is required');
     }
 
-    const { error } = await supabase.auth.signUp({
+    const emailRedirectTo = options?.redirect
+      ? `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(options.redirect)}`
+      : `${window.location.origin}/auth/callback`;
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           displayName: additionalData.displayName,
         },
+        emailRedirectTo,
       },
     });
 
     if (error) throw error;
+    return { session: data.session };
   };
 
   const signOut = async () => {

@@ -1,8 +1,16 @@
 import type { AuthContextType } from '@/contexts/AuthContext';
+import type { Session } from '@supabase/supabase-js';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SignUpForm } from './SignUpForm';
+
+const mockSession = {
+  access_token: 'mock-access-token',
+  refresh_token: 'mock-refresh-token',
+  expires_in: 3600,
+  token_type: 'bearer',
+} as unknown as Session;
 
 // Mock useAuth and useNavigate
 vi.mock('@/hooks/useAuth', async () => {
@@ -115,7 +123,8 @@ describe('SignUpForm', () => {
   });
 
   it('disables submit button while loading', async () => {
-    mockSignUp.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)));
+    // Pending forever so the post-submit branch can't race the next test.
+    mockSignUp.mockImplementation(() => new Promise(() => {}));
     setup();
     fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
@@ -132,7 +141,7 @@ describe('SignUpForm', () => {
   });
 
   it('navigates to redirect path when redirect search parameter is provided', async () => {
-    mockSignUp.mockResolvedValueOnce(undefined);
+    mockSignUp.mockResolvedValueOnce({ session: mockSession });
     mockUseSearch.mockReturnValue({ redirect: '/leagues' });
     setup();
     fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
@@ -145,6 +154,40 @@ describe('SignUpForm', () => {
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith({ to: '/leagues' });
+    });
+  });
+
+  it('renders the check-email pending UI when signUp returns no session', async () => {
+    mockSignUp.mockResolvedValueOnce({ session: null });
+    setup();
+    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: 'pending@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: 'password123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    expect(await screen.findByRole('heading', { name: /check your email/i })).toBeInTheDocument();
+    expect(screen.getByText('pending@example.com')).toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('navigates to default destination when signUp returns a session (auto-confirm)', async () => {
+    mockSignUp.mockResolvedValueOnce({ session: mockSession });
+    setup();
+    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: 'password123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith({ to: '/create-team' });
     });
   });
 });

@@ -86,6 +86,47 @@ describe('OtpInput', () => {
     expect(input.selectionEnd).toBe(4);
   });
 
+  it('fires onComplete when the value is filled by typing the final digit', async () => {
+    const user = userEvent.setup();
+    const onComplete = vi.fn();
+    render(<Controlled onComplete={onComplete} />);
+    const input = screen.getByLabelText('Confirmation code');
+
+    await user.type(input, '12345');
+    expect(onComplete).not.toHaveBeenCalled();
+    await user.type(input, '6');
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onComplete).toHaveBeenCalledWith('123456');
+  });
+
+  it('fires onComplete when paste fills the value', async () => {
+    const user = userEvent.setup();
+    const onComplete = vi.fn();
+    render(<Controlled onComplete={onComplete} />);
+    const input = screen.getByLabelText('Confirmation code');
+
+    input.focus();
+    await user.paste('123456');
+
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onComplete).toHaveBeenCalledWith('123456');
+  });
+
+  it('advances the active slot after each typed digit', async () => {
+    const user = userEvent.setup();
+    render(<Controlled />);
+    const input = screen.getByLabelText('Confirmation code');
+    input.focus();
+
+    const slots = document.querySelectorAll('[data-slot="otp-slot"]');
+    await user.keyboard('1');
+    expect(slots[1]).toHaveAttribute('data-active', 'true');
+    await user.keyboard('2');
+    expect(slots[2]).toHaveAttribute('data-active', 'true');
+    await user.keyboard('3');
+    expect(slots[3]).toHaveAttribute('data-active', 'true');
+  });
+
   it('prevents typing when disabled', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

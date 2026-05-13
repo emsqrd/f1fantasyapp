@@ -73,6 +73,7 @@ describe('CheckEmailNotice', () => {
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent(/that code didn't match/i);
     expect(props.onVerified).not.toHaveBeenCalled();
+    expect(screen.getByLabelText(/confirmation code/i)).toHaveValue('123456');
   });
 
   it('keeps the Verify button disabled and verifyOtp uncalled until 6 digits land', async () => {

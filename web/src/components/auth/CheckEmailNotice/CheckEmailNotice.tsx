@@ -42,11 +42,8 @@ export function CheckEmailNotice({ email, onVerified }: Props) {
     }
   };
 
-  const handleCodeChange = (value: string) => {
-    setCode(value);
-    if (value.length === OTP_LENGTH && status === 'idle') {
-      verify(value);
-    }
+  const handleComplete = (value: string) => {
+    if (status === 'idle') verify(value);
   };
 
   return (
@@ -100,7 +97,8 @@ export function CheckEmailNotice({ email, onVerified }: Props) {
             id="confirmation-code"
             length={OTP_LENGTH}
             value={code}
-            onChange={handleCodeChange}
+            onChange={setCode}
+            onComplete={handleComplete}
             disabled={status === 'verifying' || status === 'success'}
             className="w-full"
           />

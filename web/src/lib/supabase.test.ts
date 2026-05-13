@@ -80,6 +80,7 @@ describe('supabase module initialization', () => {
     expect(createClient).toHaveBeenCalledWith('https://myproject.supabase.co', 'my-anon-key', {
       auth: {
         flowType: 'pkce',
+        detectSessionInUrl: false,
       },
     });
   });

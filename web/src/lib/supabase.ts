@@ -14,5 +14,7 @@ if (!supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     flowType: 'pkce',
+    // Route loaders own URL code exchange; auto-detect would race them.
+    detectSessionInUrl: false,
   },
 });
