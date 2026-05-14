@@ -190,20 +190,31 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 
 ### Commit 7 — Add resend confirmation email
 
-**Goal:** "Resend" button on `<CheckEmailNotice>` re-sends the confirmation email. Same shape as the original commit 4 plan, simpler because no redirect plumbing.
+**Goal:** "Resend" button on `<CheckEmailNotice>` re-sends the confirmation email and surfaces friendly UX for rate-limiting and unexpected failures.
+
+**Files added:**
+
+- `web/src/lib/auth-resend.ts` — `resendConfirmation(email, options?)` free function wrapping `supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo } })`. Throws on error. Lives outside `AuthContext` — see "Decisions worth recording" below.
+- `web/src/lib/auth-resend.test.ts` — unit tests: default args (`emailRedirectTo: undefined`), forwards custom `emailRedirectTo`, throws on Supabase error.
+- `web/src/tests/integration/signup-resend.integration.test.tsx` — mounts a real `/sign-up` route, submits the form to reach `<CheckEmailNotice>`, clicks Resend, asserts `supabase.auth.resend` was called with the expected payload. A second test mocks `supabase.auth.resend` to return `AuthApiError(..., 429, 'over_email_send_rate_limit')` and asserts the friendly rate-limit message renders. Mocks at the third-party seam (`@/lib/supabase`) so the real `resendConfirmation` runs.
 
 **Files modified:**
 
-- `web/src/contexts/AuthContext.tsx` + `.ts` — add `resendConfirmation(email: string, options?: { emailRedirectTo?: string }): Promise<void>` to interface and implementation. Calls `supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: options?.emailRedirectTo } })`. Throws on error.
-- `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx` — reintroduce `<CardFooter>` with a Resend button gated on the existing `onResend` prop. Use `<LoadingButton>` for loading state. Use `<LiveRegion>` to announce success ("New confirmation email sent."). Use `<InlineError>` for failures, with a friendly message for `over_email_send_rate_limit` ("Please wait a moment before requesting another email.") and a generic message for other errors. Local `resendStatus: 'idle' | 'sending'` mirrors the original commit 4 design.
-- `web/src/components/auth/SignUpForm/SignUpForm.tsx` — pass `onResend={() => resendConfirmation(email, { emailRedirectTo })}` to `<CheckEmailNotice>`, reusing the same `emailRedirectTo` value computed for the initial `signUp` call.
+- `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx`
+  - Reintroduces `<CardFooter>` with a Resend `<LoadingButton>` gated on the `onResend` prop, plus `<LiveRegion>` for the success announcement ("New confirmation email sent.") and `<InlineError>` for failures.
+  - Discriminates failures via `isAuthApiError(err) && err.code === 'over_email_send_rate_limit'` — Supabase's recommended pattern per [their error-codes guide](https://supabase.com/docs/guides/auth/debugging/error-codes) ("Always use `error.code` and `error.name` to identify errors"; "Use `isAuthApiError` instead of `instanceof` checks").
+  - Rate-limit failure: "You've sent too many confirmation requests. Please try again later." (no Sentry).
+  - Generic failure: "Couldn't send the email. Please try again." + `Sentry.captureException(err, { tags: { component: 'CheckEmailNotice', operation: 'resendConfirmation' } })`. Rate-limit is expected user behavior — capturing it would be noise; generic is the "unknown failure" bucket worth investigating.
+  - Layout restructure: drop `w-full` from `<OtpInput>` so it sizes to its slot row, and group `OtpInput` + error + `Verify` in a shared `mx-auto flex w-fit flex-col` column. `Verify` is now `w-full` and naturally matches the OTP slot row's width at any breakpoint — no magic numbers tying button width to slot dimensions. Trade-off: clicking the dead space between the slots and the card edges no longer focuses the input (the slots themselves and the label `htmlFor` still do).
+- `web/src/components/auth/SignUpForm/SignUpForm.tsx` — imports `resendConfirmation` from `@/lib/auth-resend` and passes `onResend={() => resendConfirmation(email, { emailRedirectTo })}` to `<CheckEmailNotice>`, reusing the same `emailRedirectTo` value computed for `signUp`.
+- `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.test.tsx` — new `Resend` describe block covers: hidden button when no handler, click fires `onResend`, loading label visible while in flight, success announced via `LiveRegion`, generic failure renders message and calls `Sentry.captureException` with the right tags, rate-limit renders the friendly message and does NOT call Sentry.
 
-**Tests:**
+**Decisions worth recording:**
 
-- `web/src/contexts/AuthContext.test.tsx` — `resendConfirmation` calls `supabase.auth.resend` with `{ type: 'signup', email, options: { emailRedirectTo } }`. With no `emailRedirectTo`, the options object's `emailRedirectTo` is `undefined`. Throws on Supabase error.
-- `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.test.tsx` — clicking Resend fires `onResend`. Loading state visible during the await. Success announced via `LiveRegion`. Generic error renders via `<InlineError>`. Rate-limit error renders the friendly rate-limit message.
-- `web/src/components/auth/SignUpForm/SignUpForm.test.tsx` — Resend passes the current `emailRedirectTo` (with `search.redirect` threading) to `resendConfirmation`.
-- `web/src/tests/integration/signup-resend.integration.test.tsx` — new file. Mount sign-up flow at `/sign-up?redirect=/leagues/123`, submit, click Resend, assert `supabase.auth.resend` was called with the expected args. Same setup but with `supabase.auth.resend` mocked to return `{ error: { code: 'over_email_send_rate_limit' } }` → assert the friendly rate-limit message renders.
+- **Free function in `lib/auth-resend.ts`, not an `AuthContext` method.** `signUp` / `signIn` / `signOut` on AuthContext are the gates for lifecycle transitions; even though they don't directly mutate React state (the `onAuthStateChange` listener does), they bracket those transitions. `resendConfirmation` is a pure side-effecting call — it sends an email and has no auth-state implication. Closer fit to the existing `lib/auth-redirect.ts` precedent (`readConfirmationLinkError`) than to AuthContext. Keeps AuthContext focused.
+- **Sentry capture only on the unrecognized-failure branch.** Rate-limit hits are expected user behavior (clicking too fast, hitting Supabase's per-identity throttle); logging them would be noise. Generic failures are the "Supabase outage / network down / unknown new code" bucket where a Sentry alert is actually informative. Per `web/CLAUDE.md`: capture unexpected errors, not validation errors or user cancellations.
+- **Mock at the third-party seam in the integration test.** Mocking `@/lib/supabase` and letting the real `resendConfirmation` run preserves the layer's promise — exercise real wiring, only stub what we don't own.
+- **No redundant Resend wiring test in `SignUpForm.test.tsx`.** The integration test asserts the same args after the same user flow with strictly higher fidelity (real router, real `useSearch`). Per the overlap rule in `web/CLAUDE.md`, keep the faster integration test, drop the lower-fidelity duplicate.
 
 **Verification:**
 
@@ -241,7 +252,7 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 - `e2e/tests/_infra/config-sync.spec.ts` (commit 4)
 - `web/src/lib/supabase.ts` (commit 4)
 - `web/src/router.tsx` (commits 4, 5, 6)
-- `web/src/contexts/AuthContext.tsx` + `.ts` (commits 4, 7)
+- `web/src/contexts/AuthContext.tsx` + `.ts` (commit 4)
 - `web/src/components/auth/SignUpForm/SignUpForm.tsx` (commits 4, 5, 6, 7)
 - `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx` (commit 7)
 - `web/src/lib/route-guards.ts` — _kept_, no modifications across the rework
@@ -249,6 +260,7 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 **New across commits 4-8:**
 
 - `web/src/lib/auth-redirect.ts` + `.test.ts` (commit 6)
+- `web/src/lib/auth-resend.ts` + `.test.ts` (commit 7)
 - `web/src/tests/integration/root-routing.integration.test.tsx` (commit 5)
 - `web/src/tests/integration/signup-resend.integration.test.tsx` (commit 7)
 - `e2e/fixtures/mailpit.ts` (commit 8)
