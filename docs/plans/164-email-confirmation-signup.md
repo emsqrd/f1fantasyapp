@@ -30,11 +30,11 @@ Email confirmations are currently enabled in dev/e2e (`enable_confirmations = tr
 | Post-confirm destination                | Caller of `signUp`/`resendConfirmation` passes `emailRedirectTo` directly (full URL). Default: `${origin}/`. Dynamic: `${origin}${search.redirect}` when SignUpForm was reached via a redirect param (e.g., `/sign-up?redirect=/join/<token>`).                                              | One source of truth for "where does this user land": the `emailRedirectTo` URL itself. No parallel `?redirect=` URL parameter, no `getPostSignupDestination` helper. Route guards continue to own routing for users landing at any given URL.                                                                                                                                  |
 | Cross-browser invite preservation       | Encoded in `emailRedirectTo`                                                                                                                                                                                                                                                                 | Supabase forwards `emailRedirectTo` verbatim through `/verify`. A user who signs up from `/join/<token>` on desktop and confirms via the email on mobile lands directly at `/join/<token>` on mobile, signed in.                                                                                                                                                               |
 | `/` route handling                      | Add `beforeLoad` that bounces authenticated users to `/create-team` or `/leagues` based on team state                                                                                                                                                                                        | Mirrors the existing pattern on `/sign-in` (`router.tsx:218-228`) and `/sign-up` (`router.tsx:240-250`). Eliminates the "marketing content rendered inside authenticated app shell" weirdness when a signed-in user lands at `/`. Single home for post-auth routing: route guards.                                                                                             |
-| Auth-URL error UX                       | `useEffect` in `AuthContext` reads `window.location.hash` on mount, parses `error` + `error_description`, sets `authUrlError` state via `mapAuthUrlError(code, description)`, strips the hash. `<Layout>` renders `<InlineError>` above `<Outlet>` when set. `clearAuthUrlError` on dismiss. | `getSession()` swallows `_initialize` errors (verified at `GoTrueClient.ts:2661-2671`); reading the URL fragment is the only way to surface them. `<InlineError>` matches `web/CLAUDE.md`'s convention for primary-flow errors (toasts are reserved for background operations).                                                                                                |
+| Confirmation-link failure UX            | `readConfirmationLinkError()` helper (in `lib/auth-redirect.ts`) wraps `supabase.auth.initialize()`, type-guards, and returns `'expired' \| 'generic' \| null` based on `error.details?.code`. `indexRoute.beforeLoad` calls it to decide whether to redirect to `/sign-up` with `replace: true`. `signUpRoute.beforeLoad` calls it (same cached promise — free) and returns the code as route context. `SignUpForm` reads via `useRouteContext({ from: '/sign-up' })` and renders `<InlineError>` with the mapped message. | `getSession()` discards `_initialize` errors (verified at `GoTrueClient.ts:2661-2671`), but `initialize()` itself returns them — that's the documented hook. Matching on the typed `otp_expired` code (verified in gotrue `verify.go`) beats string-matching descriptions, per Supabase's own [error-handling docs](https://supabase.com/docs/guides/auth/debugging/error-codes). Route context (vs. AuthContext state) keeps AuthContext focused on session/user and avoids a cleanup-on-unmount effect; the message naturally clears on navigation away from `/sign-up`. |
 | Supabase redirect allowlist             | Wildcards: `http://localhost:5173/**` (dev), `http://localhost:5273/**` (e2e). Production: tightened to specific patterns per surface (`https://<prod>/`, `https://<prod>/join/**`, etc.).                                                                                                   | Required to allow dynamic `emailRedirectTo` paths. Wildcard support confirmed in Supabase docs; `**` matches any sequence including separators.                                                                                                                                                                                                                                |
 | `requireAuth` `getSession()` fallback   | Kept                                                                                                                                                                                                                                                                                         | Still load-bearing: AuthContext's React state lags Supabase's session state by one render after any auth state change. Without the fallback, freshly-confirmed users bounce back to `/` because `context.auth.user` is briefly null in `beforeLoad`.                                                                                                                           |
 | Email passing into `<CheckEmailNotice>` | React state from parent (`SignUpForm`, later `SignInForm`)                                                                                                                                                                                                                                   | Same as the original commit 2 design. Supabase identifies the user by token; email is only for display + the typed-OTP `verifyOtp` call. No URL params (OWASP: PII shouldn't appear in URLs).                                                                                                                                                                                  |
-| Failure copy for typed-OTP              | Static generic message: _"That code didn't match. Check your email for the latest one."_                                                                                                                                                                                                     | Same as the original commit 2 design.                                                                                                                                                                                                                                                                                                                                          |
+| Failure message for typed-OTP           | Static generic message: _"That code didn't match. Check your email for the latest one."_                                                                                                                                                                                                     | Same as the original commit 2 design.                                                                                                                                                                                                                                                                                                                                          |
 | Sign-in unconfirmed handling            | Deferred                                                                                                                                                                                                                                                                                     | Commits 4-8 do not include the SignInForm wiring for `email_not_confirmed`. The original commit 5 plan is preserved as future work but is not part of this rework. The rework focuses on getting the signup path onto the correct foundation; the signin-unconfirmed UX reuses the same `<CheckEmailNotice>` and can be added afterward without affecting the rework's design. |
 
 ---
@@ -62,7 +62,7 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 
 **Files modified:**
 
-- `api/supabase/templates/confirmation.html` — **no change in this commit**. The user customized this template (structure, copy, styling) and committed those customizations in `de592bc`. The only uncommitted edit was the token_hash URL surgery on the link `href`, which the prerequisite `git restore .` step reverts automatically. After `git restore .` the template is already in the correct state for the new design (link `href = {{ .ConfirmationURL }}`). Do not regenerate or replace the file.
+- `api/supabase/templates/confirmation.html` — **no change in this commit**. The user customized this template (structure, text, styling) and committed those customizations in `de592bc`. The only uncommitted edit was the token_hash URL surgery on the link `href`, which the prerequisite `git restore .` step reverts automatically. After `git restore .` the template is already in the correct state for the new design (link `href = {{ .ConfirmationURL }}`). Do not regenerate or replace the file.
 - `api/supabase/config.toml` — `additional_redirect_urls = ["http://localhost:5173/**"]`. Keep the comment minimal (this file is local-CLI only; the production allowlist is configured in the Supabase dashboard, covered in "Production deployment notes" below).
 - `e2e/supabase/config.toml` — `additional_redirect_urls = ["http://localhost:5273/**"]`.
 - `e2e/tests/_infra/config-sync.spec.ts` — extend `IGNORED_KEY_RE` to ignore `site_url` and `additional_redirect_urls` (the wildcard hosts differ between dev and e2e). This part survives from the old commit 3.
@@ -129,7 +129,7 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 **Tests:**
 
 - `web/src/components/auth/SignUpForm/SignUpForm.test.tsx` — assert `signUp` called with `emailRedirectTo: ${origin}/` when no `search.redirect`; assert `emailRedirectTo: ${origin}/join/abc-123` when `search.redirect = '/join/abc-123'`. The typed-OTP `onVerified` destination assertion is already covered by the existing "navigates to redirect path when redirect search parameter is provided" test from commit 4.
-- `web/src/tests/integration/root-routing.integration.test.tsx` — new file. Mount a per-test route tree with `indexRoute` (carrying the real `beforeLoad`) plus bare stub routes for `/create-team` and `/leagues` whose headings are the redirect-target assertion surface. The `/` component is a stub heading rather than the real `LandingPage` so marketing copy changes don't break the test. Destination routes are not parented under `_no-team` / `_authenticated/_team-required` layouts because those guards are already covered in `route-guards.integration.test.tsx`; isolating to `indexRoute.beforeLoad`'s `teamContext.hasTeam` ternary is what's new in commit 5. Assert: unauthed user stays at `/`; authed-no-team user lands at `/create-team`; authed-with-team user lands at `/leagues`.
+- `web/src/tests/integration/root-routing.integration.test.tsx` — new file. Mount a per-test route tree with `indexRoute` (carrying the real `beforeLoad`) plus bare stub routes for `/create-team` and `/leagues` whose headings are the redirect-target assertion surface. The `/` component is a stub heading rather than the real `LandingPage` so landing-page text changes don't break the test. Destination routes are not parented under `_no-team` / `_authenticated/_team-required` layouts because those guards are already covered in `route-guards.integration.test.tsx`; isolating to `indexRoute.beforeLoad`'s `teamContext.hasTeam` ternary is what's new in commit 5. Assert: unauthed user stays at `/`; authed-no-team user lands at `/create-team`; authed-with-team user lands at `/leagues`.
 
 **Verification:**
 
@@ -138,29 +138,53 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 
 ---
 
-### Commit 6 — Surface auth-URL errors via `<InlineError>` in Layout
+### Commit 6 — Route confirmation-link failures to `/sign-up` with an inline error
 
-**Goal:** when Supabase's `/verify` redirects back with `#error_description=...` (expired token, consumed link, etc.), surface a friendly message instead of silently leaving the user on the destination as if not signed in.
+**Goal:** when Supabase's `/verify` redirects back with an error (expired token, consumed link, invalid token), redirect the user to `/sign-up` and surface a friendly message above the form. The recovery action ("sign up again to get a new link") lives next to where it can be taken.
 
-**Files modified:**
+**Why redirect instead of a layout-wide banner:** the default `emailRedirectTo` lands users on `/`. A banner over the marketing landing page is jarring, and the recovery action (sign up again) requires hunting for the Sign Up button. Routing to `/sign-up` colocates the message with the action.
 
-- `web/src/contexts/AuthContext.tsx` — in the existing mount-time `useEffect` (or a sibling), read `window.location.hash` for `error` and `error_description`. If either is set, call `setAuthUrlError(mapAuthUrlError(code, description))` and strip the fragment via `window.history.replaceState(null, '', window.location.pathname + window.location.search)`.
-- `web/src/contexts/AuthContext.ts` — add `authUrlError: string | null` and `clearAuthUrlError: () => void` to `AuthContextType`. Expose both from the provider.
-- `web/src/components/Layout/Layout.tsx` — read `authUrlError` and `clearAuthUrlError` from `useAuth()`. Render `<InlineError>` above the `<Outlet>` (in both the authenticated and unauthenticated branches) when `authUrlError` is non-null. Provide a dismiss affordance that calls `clearAuthUrlError`.
+**Why read the error via `supabase.auth.initialize()` instead of parsing the URL hash ourselves:** the SDK auto-runs `initialize()` in its constructor and caches the result. `getSession()` discards the URL-parse error, but `initialize()` itself returns it — that's the documented hook for reading auth-redirect failures. Avoids re-implementing the SDK's own URL parsing and means we work in terms of typed error codes (`error.details.code`), not pattern-matching on the human-readable description (which Supabase docs explicitly warn against).
+
+**Why route context instead of AuthContext state:** the error isn't ongoing auth state — it's a one-shot routing concern (the user just landed from a failed redirect). Putting it in AuthContext required a cleanup `useEffect` on `SignUpForm` unmount, which coupled unrelated lifecycles. Route context, set in `signUpRoute.beforeLoad`, is recomputed on navigation and naturally clears when the user leaves `/sign-up`. AuthContext stays focused on session/user.
 
 **Files added:**
 
-- `web/src/lib/auth-url-errors.ts` — `mapAuthUrlError(code: string | null, description: string | null): string`. Small lookup: known codes (e.g., `access_denied` with expired-description → "This confirmation link has expired or has already been used. Try signing in to get a new one.") map to friendly copy; generic fallback ("We couldn't confirm your email. Please try signing in again.") for unknowns.
-- `web/src/lib/auth-url-errors.test.ts` — one test per mapped case plus the fallback.
+- `web/src/lib/auth-redirect.ts` — `readConfirmationLinkError()` returns `'expired' | 'generic' | null`. Wraps `supabase.auth.initialize()`, type-guards on `isAuthImplicitGrantRedirectError`, maps `error.details?.code === 'otp_expired'` to `'expired'` and any other redirect error to `'generic'`. Non-redirect errors (network failures, etc.) return `null` — they're handled wherever the originating call surfaces.
+- `web/src/lib/auth-redirect.test.ts` — one test per mapped case plus the null fallbacks (success, non-redirect error).
+
+**Files modified:**
+
+- `web/src/router.tsx`
+  - `indexRoute.beforeLoad`: when the user isn't signed in, `await readConfirmationLinkError()` and `throw redirect({ to: '/sign-up', replace: true })` if it returns a code. The redirect with `replace: true` overwrites the failed-URL history entry, so back-button / refresh / share don't re-trigger.
+  - `signUpRoute.beforeLoad`: after the existing auth check, `return { confirmationError: await readConfirmationLinkError() }`. The cached `initializePromise` means this is the same value indexRoute saw — free. TanStack Router merges the return into the route's context, accessible via `useRouteContext({ from: '/sign-up' })`.
+- `web/src/components/auth/SignUpForm/SignUpForm.tsx` — reads `confirmationError` from `useRouteContext({ from: '/sign-up' })`. Maps the code to a user-facing message via a `CONFIRMATION_ERROR_MESSAGES` map at module scope. Renders `<InlineError>` above the form when set.
+
+**Files NOT created (deliberate departures from the original plan):**
+
+- No `auth-url-errors.ts` helper / `mapAuthUrlError` function. The lib is `auth-redirect.ts` with `readConfirmationLinkError`, and the code→message mapping is a small lookup in `SignUpForm`.
+- No `<InlineError>` banner in `Layout.tsx`. The redirect approach makes the layout-wide banner unnecessary.
+- No URL hash stripping. The redirect with `replace: true` moves the user off the URL containing the error fragment.
+- No `confirmationLinkError` state in `AuthContext`. The error rides on the route's context, set by `signUpRoute.beforeLoad`.
+
+**Decisions worth recording for future-me:**
+
+- **Match on `error_code`, not the description string.** Verified directly from gotrue source (`internal/api/verify.go`): every email-confirmation failure (expired, already-used, invalid) returns `ErrorCodeOTPExpired = "otp_expired"`. The description text varies; the code is stable. Supabase's own docs say _"Always use `error.code` and `error.name` to identify errors, not string matching on error messages."_
+- **Only `otp_expired` is worth a specific case today.** Cross-referenced every documented code in `authErrorCodes.toml` against (a) what can reach the `/verify` redirect path and (b) which apply to our config (email/password only, no OAuth/MFA/SAML/phone). Everything else is either out-of-scope, surfaces through a different API call, or generic enough that the fallback message suffices. Extend the matcher if Sentry shows specific codes accumulating.
+- **`replace: true` on the redirect handles URL cleanup.** Replaces the failed-URL history entry instead of pushing a new one. Back button can't revisit the error; refreshes happen at `/sign-up` (no hash).
+- **Route context, not React state.** The error is data tied to "this navigation," not to "this user session." TanStack Router's `beforeLoad` return becomes route match context. `useRouteContext({ from: '/sign-up' })` reads it from the form. No cleanup effect, no AuthContext state, no URL search-param pollution.
+- **Known trade-off: in-session "stale reappear."** Because the SDK's `initialize()` result is cached for the page's lifetime, a user who navigates `/sign-up` → `/sign-in` → `/sign-up` in the same session would see the error message again. Acceptable: the realistic flow is "land → sign up again," not "land → wander → return." A hard refresh on `/sign-up` clears it (fresh SDK instance, no hash). If this becomes a real complaint, the fix is to track "consumed" state somewhere — but adding that complexity now would be premature.
 
 **Tests:**
 
-- `web/src/contexts/AuthContext.test.tsx` — test: `window.location.hash` containing `#error_description=...` on mount sets `authUrlError` and strips the hash. Test: `clearAuthUrlError` resets state to `null`. Test: no hash → no state set.
+- `web/src/lib/auth-redirect.test.ts` — `readConfirmationLinkError` returns `'expired'` for `code: 'otp_expired'`; returns `'generic'` for other redirect errors; returns `null` for `{ error: null }` and for non-redirect errors.
+- `web/src/components/auth/SignUpForm/SignUpForm.test.tsx` — three new tests: `confirmationError: 'expired'` renders the expired-link message; `'generic'` renders the generic message; `null` renders no alert. Existing tests get a `useRouteContext` mock returning `{ confirmationError: null }` by default.
+- Mock updates in every test file that constructs an `AuthContextType` literal: `tests/test-utils/renderContexts.ts`, `InnerApp.test.tsx`, `contexts/TeamContext.test.tsx`, `lib/route-guards.test.ts`, `components/auth/SignInForm/SignInForm.test.tsx`, `components/auth/SignUpForm/SignUpForm.test.tsx` — the new context fields we added in a prior iteration are removed since AuthContext is back to its pre-commit-6 shape.
 
 **Verification:**
 
 1. `npm run web:test` + lint/format/build green.
-2. Manual: reproduce a failure by clicking a link with an invalid/expired token, or by manually constructing a URL like `http://localhost:5173/#error_description=Email%20link%20is%20invalid` → load the app → see `<InlineError>` above the page content with friendly copy; dismiss → error clears; URL bar no longer contains the fragment.
+2. Manual: reproduce a failure by clicking an expired link, or by manually constructing a URL like `http://localhost:5173/#error=access_denied&error_code=otp_expired&error_description=Email%20link%20is%20invalid%20or%20has%20expired` → load the app → user gets routed to `/sign-up` → `<InlineError>` renders above the form with the expired-link message → navigating to `/sign-in` and back to `/sign-up` does NOT clear it in the same page session (known trade-off; refresh on `/sign-up` clears).
 
 ---
 
@@ -171,15 +195,15 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 **Files modified:**
 
 - `web/src/contexts/AuthContext.tsx` + `.ts` — add `resendConfirmation(email: string, options?: { emailRedirectTo?: string }): Promise<void>` to interface and implementation. Calls `supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: options?.emailRedirectTo } })`. Throws on error.
-- `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx` — reintroduce `<CardFooter>` with a Resend button gated on the existing `onResend` prop. Use `<LoadingButton>` for loading state. Use `<LiveRegion>` to announce success ("New confirmation email sent."). Use `<InlineError>` for failures, with friendly copy for `over_email_send_rate_limit` ("Please wait a moment before requesting another email.") and a generic message for other errors. Local `resendStatus: 'idle' | 'sending'` mirrors the original commit 4 design.
+- `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx` — reintroduce `<CardFooter>` with a Resend button gated on the existing `onResend` prop. Use `<LoadingButton>` for loading state. Use `<LiveRegion>` to announce success ("New confirmation email sent."). Use `<InlineError>` for failures, with a friendly message for `over_email_send_rate_limit` ("Please wait a moment before requesting another email.") and a generic message for other errors. Local `resendStatus: 'idle' | 'sending'` mirrors the original commit 4 design.
 - `web/src/components/auth/SignUpForm/SignUpForm.tsx` — pass `onResend={() => resendConfirmation(email, { emailRedirectTo })}` to `<CheckEmailNotice>`, reusing the same `emailRedirectTo` value computed for the initial `signUp` call.
 
 **Tests:**
 
 - `web/src/contexts/AuthContext.test.tsx` — `resendConfirmation` calls `supabase.auth.resend` with `{ type: 'signup', email, options: { emailRedirectTo } }`. With no `emailRedirectTo`, the options object's `emailRedirectTo` is `undefined`. Throws on Supabase error.
-- `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.test.tsx` — clicking Resend fires `onResend`. Loading state visible during the await. Success announced via `LiveRegion`. Generic error renders via `<InlineError>`. Rate-limit error renders the friendly copy.
+- `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.test.tsx` — clicking Resend fires `onResend`. Loading state visible during the await. Success announced via `LiveRegion`. Generic error renders via `<InlineError>`. Rate-limit error renders the friendly rate-limit message.
 - `web/src/components/auth/SignUpForm/SignUpForm.test.tsx` — Resend passes the current `emailRedirectTo` (with `search.redirect` threading) to `resendConfirmation`.
-- `web/src/tests/integration/signup-resend.integration.test.tsx` — new file. Mount sign-up flow at `/sign-up?redirect=/leagues/123`, submit, click Resend, assert `supabase.auth.resend` was called with the expected args. Same setup but with `supabase.auth.resend` mocked to return `{ error: { code: 'over_email_send_rate_limit' } }` → assert friendly rate-limit copy renders.
+- `web/src/tests/integration/signup-resend.integration.test.tsx` — new file. Mount sign-up flow at `/sign-up?redirect=/leagues/123`, submit, click Resend, assert `supabase.auth.resend` was called with the expected args. Same setup but with `supabase.auth.resend` mocked to return `{ error: { code: 'over_email_send_rate_limit' } }` → assert the friendly rate-limit message renders.
 
 **Verification:**
 
@@ -216,16 +240,15 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 - `e2e/supabase/config.toml` (commit 4)
 - `e2e/tests/_infra/config-sync.spec.ts` (commit 4)
 - `web/src/lib/supabase.ts` (commit 4)
-- `web/src/router.tsx` (commits 4, 5)
-- `web/src/contexts/AuthContext.tsx` + `.ts` (commits 4, 6, 7)
-- `web/src/components/auth/SignUpForm/SignUpForm.tsx` (commits 4, 5, 7)
+- `web/src/router.tsx` (commits 4, 5, 6)
+- `web/src/contexts/AuthContext.tsx` + `.ts` (commits 4, 7)
+- `web/src/components/auth/SignUpForm/SignUpForm.tsx` (commits 4, 5, 6, 7)
 - `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx` (commit 7)
-- `web/src/components/Layout/Layout.tsx` (commit 6)
 - `web/src/lib/route-guards.ts` — _kept_, no modifications across the rework
 
 **New across commits 4-8:**
 
-- `web/src/lib/auth-url-errors.ts` + `.test.ts` (commit 6)
+- `web/src/lib/auth-redirect.ts` + `.test.ts` (commit 6)
 - `web/src/tests/integration/root-routing.integration.test.tsx` (commit 5)
 - `web/src/tests/integration/signup-resend.integration.test.tsx` (commit 7)
 - `e2e/fixtures/mailpit.ts` (commit 8)
@@ -253,7 +276,7 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 2. **OTP happy path:** Sign up with new email → `<CheckEmailNotice>` → check Mailpit → type 6-digit code → land on `/create-team` logged in.
 3. **Cross-browser invite preservation:** Sign up from `/sign-up?redirect=/join/<token>` on Browser A → click link in Browser B → land directly at `/join/<token>` signed in.
 4. **Resend:** Sign up → click Resend → second email arrives → either email's link OR the latest OTP completes verification.
-5. **Link failure:** Click an expired/consumed link → land at `/` (or destination) with `<InlineError>` above the content carrying friendly copy; dismiss → clears.
+5. **Link failure:** Click an expired/consumed link → user is routed to `/sign-up` with `<InlineError>` above the form with a friendly message; navigating away clears the message.
 6. **Authed user at `/`:** Visit `/` signed in → bounce to `/leagues` (with team) or `/create-team` (without). Sign out → return to `/` → `LandingPage` renders normally.
 7. **Existing e2e tests:** `npm run e2e` all green (admin fixture continues working via `email_confirm: true`).
 8. **All tests + format + lint:** `npm run test:all` + `npm run web:lint` + `npm run web:format:check` + `npm run api:format:check` all green.

@@ -8,8 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
+
+const CONFIRMATION_ERROR_MESSAGES = {
+  expired: 'This confirmation link is no longer valid. Sign up again to receive a new one.',
+  generic: "We couldn't confirm your email. Please try signing up again.",
+} as const;
 
 export function SignUpForm() {
   const [email, setEmail] = useState('');
@@ -20,8 +25,12 @@ export function SignUpForm() {
   const [error, setError] = useState<string | null>(null);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const { signUp, startAuthTransition, completeAuthTransition } = useAuth();
+
   const navigate = useNavigate();
   const search = useSearch({ from: '/sign-up' });
+  const { confirmationError } = useRouteContext({ from: '/sign-up' });
+  const confirmationErrorMessage =
+    confirmationError && CONFIRMATION_ERROR_MESSAGES[confirmationError];
   const destination = search.redirect ?? '/';
   const emailRedirectTo = `${window.location.origin}${destination}`;
 
@@ -103,6 +112,7 @@ export function SignUpForm() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                 <LiveRegion message={message} />
+                {confirmationErrorMessage && <InlineError message={confirmationErrorMessage} />}
                 {error && <InlineError message={error} />}
 
                 <div className="space-y-2">

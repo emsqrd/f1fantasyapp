@@ -24,9 +24,11 @@ vi.mock('@/hooks/useAuth', async () => {
 
 const mockNavigate = vi.fn();
 const mockUseSearch = vi.fn();
+const mockUseRouteContext = vi.fn();
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
   useSearch: () => mockUseSearch(),
+  useRouteContext: () => mockUseRouteContext(),
   Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
     <a href={to}>{children}</a>
   ),
@@ -51,6 +53,7 @@ describe('SignUpForm', () => {
       completeAuthTransition: vi.fn(),
     });
     mockUseSearch.mockReturnValue({});
+    mockUseRouteContext.mockReturnValue({ confirmationError: null });
   });
 
   afterEach(() => {
@@ -232,5 +235,30 @@ describe('SignUpForm', () => {
         { emailRedirectTo: `${window.location.origin}/join/abc-123` },
       );
     });
+  });
+
+  it('renders the expired-link copy when route context carries confirmationError="expired"', () => {
+    mockUseRouteContext.mockReturnValue({ confirmationError: 'expired' });
+    setup();
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'This confirmation link is no longer valid. Sign up again to receive a new one.',
+    );
+  });
+
+  it('renders the generic copy when route context carries confirmationError="generic"', () => {
+    mockUseRouteContext.mockReturnValue({ confirmationError: 'generic' });
+    setup();
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      "We couldn't confirm your email. Please try signing up again.",
+    );
+  });
+
+  it('renders no confirmation-error alert when route context carries confirmationError=null', () => {
+    mockUseRouteContext.mockReturnValue({ confirmationError: null });
+    setup();
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });
