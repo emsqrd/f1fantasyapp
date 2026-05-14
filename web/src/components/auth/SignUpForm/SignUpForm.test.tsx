@@ -211,4 +211,26 @@ describe('SignUpForm', () => {
       );
     });
   });
+
+  it('threads search.redirect through emailRedirectTo when present', async () => {
+    mockSignUp.mockResolvedValueOnce({ session: mockSession });
+    mockUseSearch.mockReturnValue({ redirect: '/join/abc-123' });
+    setup();
+    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: 'password123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    await waitFor(() => {
+      expect(mockSignUp).toHaveBeenCalledWith(
+        'test@example.com',
+        'password123',
+        { displayName: 'Test User' },
+        { emailRedirectTo: `${window.location.origin}/join/abc-123` },
+      );
+    });
+  });
 });

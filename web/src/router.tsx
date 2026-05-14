@@ -175,7 +175,16 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
+  validateSearch: redirectSearchSchema,
   component: LandingPage,
+  beforeLoad: async ({ context }) => {
+    if (context.auth.user) {
+      throw redirect({
+        to: context.teamContext.hasTeam ? '/leagues' : '/create-team',
+        replace: true,
+      });
+    }
+  },
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
 

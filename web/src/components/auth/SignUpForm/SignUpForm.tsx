@@ -23,6 +23,7 @@ export function SignUpForm() {
   const navigate = useNavigate();
   const search = useSearch({ from: '/sign-up' });
   const destination = search.redirect ?? '/';
+  const emailRedirectTo = `${window.location.origin}${destination}`;
 
   const completeSignUp = async () => {
     startAuthTransition();
@@ -71,12 +72,7 @@ export function SignUpForm() {
     }
 
     try {
-      const { session } = await signUp(
-        email,
-        password,
-        { displayName },
-        { emailRedirectTo: `${window.location.origin}/` },
-      );
+      const { session } = await signUp(email, password, { displayName }, { emailRedirectTo });
 
       if (!session) {
         setAwaitingConfirmation(true);
