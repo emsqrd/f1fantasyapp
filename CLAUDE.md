@@ -142,6 +142,37 @@ Overlap is correct when each layer catches a distinct failure mode. It's waste w
 - Frontend unit/component tests: Vitest + `@testing-library/react`.
 - E2E: Playwright, small suite, runs against a prod-like build. Parallel workers with isolated users.
 
+## Commenting Strategy
+
+Default to no comment. Every comment is debt — it can rot, mislead, or distract. Write one only when the alternative is worse: a reader would otherwise misunderstand the code or spend time discovering something the comment encodes directly.
+
+### The test before writing
+
+Ask: **"Would removing this confuse a competent reader six months from now, reading the code cold?"** If no — cut it. Trust the names, the types, and the structure to carry the meaning.
+
+### When a comment earns its place
+
+- **Non-obvious WHY.** A constraint or invariant that wouldn't show up in the AST. _"Caller must hold the write lock." "API returns 200 with an error body for this case — peek at the JSON."_
+- **A surprise.** Behavior a reader would assume is a bug. _"Off-by-one is intentional — F1 rounds are 1-indexed." "We retry on 401 — auth service emits them during clock skew."_
+- **Workaround pointer.** External constraint forcing a non-obvious shape. _"Chrome bug crbug.com/123456 — drop when our floor is M120."_
+- **Domain pointer.** Spec/RFC/paper that explains the rule. _"RFC 7231 §6.4.3: 303 always GETs the target."_
+
+### When a comment doesn't
+
+- **What the code or types already say.** `// Iterate users` above a `for` loop; `// Returns 'expired' or null` above `(): Promise<'expired' | null>`. Rename, don't comment.
+- **Task context.** _"Fix for #164." "Per the design doc."_ Belongs in the commit message; rots when issues close.
+- **Historical state.** _"Was synchronous before."_ `git log` owns this; the file describes what is, not what was.
+- **Internal callers / provenance.** _"Used by SignUpForm." "Set by indexRoute.beforeLoad."_ Find-references gives you this for free; comment goes stale on the next caller.
+- **Design rationale.** _"We chose route context over AuthContext because…"_ Lives in `docs/plans/`, not the source file. The code is the chosen path; the argument is dead weight once the choice is made.
+- **Reassurance about performance/correctness of an implementation detail.** _"This is cached, so it's free to call."_ Reader doesn't need it.
+
+### Heuristics
+
+- Tempted to write _"// this X-es the Y"_ → rename instead.
+- Tempted to write _"// because Z"_ → is Z visible in the code (keep) or only in your head / the conversation / the plan (cut).
+- Watch the diff-talk smell: _"now uses," "still works," "originally was"_ narrate history, not state.
+- Read it cold. If a reader needs to know "the resend flow" or "the X migration" to parse the comment, rewrite in plain terms or delete.
+
 ## Git Commit Message Preferences
 
 - Do not include the "Generated with Claude Code" footer in commit messages or PR descriptions
