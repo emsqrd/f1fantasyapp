@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
+import { resendConfirmation } from '@/lib/auth-resend';
 import { Link, useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 
@@ -102,12 +103,16 @@ export function SignUpForm() {
     <div className="flex w-full items-center justify-center p-4 sm:p-8 md:min-h-screen">
       <div className="w-full max-w-md space-y-4">
         {awaitingConfirmation ? (
-          <CheckEmailNotice email={email} onVerified={completeSignUp} />
+          <CheckEmailNotice
+            email={email}
+            onVerified={completeSignUp}
+            onResend={() => resendConfirmation(email, { emailRedirectTo })}
+          />
         ) : (
           <Card className="w-full max-w-md">
             <CardHeader>
               <CardTitle>Create Account</CardTitle>
-              <CardDescription>Join the F1 fantasy league</CardDescription>
+              <CardDescription>Join the F1 Fantasy Sports App</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4" noValidate>
@@ -177,7 +182,6 @@ export function SignUpForm() {
             </CardContent>
           </Card>
         )}
-
         <div className="text-center">
           <Button variant="link" asChild className="text-sm">
             <Link to="/sign-in">Already have an account? Sign in</Link>

@@ -1,10 +1,14 @@
 import { InlineError } from '@/components/InlineError/InlineError';
+import { LiveRegion } from '@/components/LiveRegion/LiveRegion';
 import { LoadingButton } from '@/components/LoadingButton/LoadingButton';
 import { OtpInput } from '@/components/OtpInput/OtpInput';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { useLiveRegion } from '@/hooks/useLiveRegion';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
+import * as Sentry from '@sentry/react';
+import { isAuthApiError } from '@supabase/supabase-js';
 import { Check } from 'lucide-react';
 import { useState } from 'react';
 
@@ -18,11 +22,15 @@ interface Props {
 const OTP_LENGTH = 6;
 
 type Status = 'idle' | 'verifying' | 'success';
+type ResendStatus = 'idle' | 'sending';
 
-export function CheckEmailNotice({ email, onVerified }: Props) {
+export function CheckEmailNotice({ email, onVerified, onResend }: Props) {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>('idle');
+  const [resendStatus, setResendStatus] = useState<ResendStatus>('idle');
+  const [resendError, setResendError] = useState<string | null>(null);
+  const { message, announce } = useLiveRegion();
 
   const verify = async (token: string) => {
     setStatus('verifying');
@@ -44,6 +52,28 @@ export function CheckEmailNotice({ email, onVerified }: Props) {
 
   const handleComplete = (value: string) => {
     if (status === 'idle') verify(value);
+  };
+
+  const handleResend = async () => {
+    if (!onResend || resendStatus === 'sending') return;
+    setResendStatus('sending');
+    setResendError(null);
+    try {
+      await onResend();
+      announce('New confirmation email sent.');
+    } catch (err) {
+      const isRateLimit = isAuthApiError(err) && err.code === 'over_email_send_rate_limit';
+      if (isRateLimit) {
+        setResendError("You've sent too many confirmation requests. Please try again later.");
+      } else {
+        Sentry.captureException(err, {
+          tags: { component: 'CheckEmailNotice', operation: 'resendConfirmation' },
+        });
+        setResendError("Couldn't send the email. Please try again.");
+      }
+    } finally {
+      setResendStatus('idle');
+    }
   };
 
   return (
@@ -77,22 +107,22 @@ export function CheckEmailNotice({ email, onVerified }: Props) {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label
-              htmlFor="confirmation-code"
-              className="text-muted-foreground text-[13px] font-medium tracking-[0.01em]"
-            >
-              Confirmation code
-            </Label>
-            <div className="bg-border h-0.75 w-20 overflow-hidden rounded-full">
-              <div
-                className="bg-primary h-full transition-all duration-200"
-                style={{ width: `${(code.length / OTP_LENGTH) * 100}%` }}
-              />
-            </div>
+        <div className="flex items-center justify-between">
+          <Label
+            htmlFor="confirmation-code"
+            className="text-muted-foreground text-[13px] font-medium tracking-[0.01em]"
+          >
+            Confirmation code
+          </Label>
+          <div className="bg-border h-0.75 w-20 overflow-hidden rounded-full">
+            <div
+              className="bg-primary h-full transition-all duration-200"
+              style={{ width: `${(code.length / OTP_LENGTH) * 100}%` }}
+            />
           </div>
+        </div>
 
+        <div className="mx-auto flex w-fit flex-col items-stretch gap-3">
           <OtpInput
             id="confirmation-code"
             length={OTP_LENGTH}
@@ -100,20 +130,21 @@ export function CheckEmailNotice({ email, onVerified }: Props) {
             onChange={setCode}
             onComplete={handleComplete}
             disabled={status === 'verifying' || status === 'success'}
-            className="w-full"
           />
 
-          {error && <InlineError message={error} />}
-        </div>
+          {error && (
+            <div className="w-0 min-w-full">
+              <InlineError message={error} />
+            </div>
+          )}
 
-        <div className="flex justify-center">
           <LoadingButton
             type="button"
             onClick={() => {
               if (status === 'idle') verify(code);
             }}
             size="lg"
-            className="min-w-48"
+            className="w-full"
             isLoading={status === 'verifying'}
             loadingText="Verifying..."
             disabled={code.length < OTP_LENGTH || status === 'success'}
@@ -129,6 +160,27 @@ export function CheckEmailNotice({ email, onVerified }: Props) {
           </LoadingButton>
         </div>
       </CardContent>
+
+      {onResend && (
+        <CardFooter className="flex-col items-center gap-3">
+          <LiveRegion message={message} />
+          {resendError && <InlineError message={resendError} />}
+          <p className="text-muted-foreground text-sm">
+            Didn't get your email?{' '}
+            <LoadingButton
+              type="button"
+              onClick={handleResend}
+              variant="link"
+              className="h-auto p-0 align-baseline text-sm"
+              isLoading={resendStatus === 'sending'}
+              loadingText="Sending..."
+              disabled={status === 'success'}
+            >
+              Resend the code
+            </LoadingButton>
+          </p>
+        </CardFooter>
+      )}
     </Card>
   );
 }

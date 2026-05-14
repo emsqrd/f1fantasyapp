@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import type { AuthError } from '@supabase/supabase-js';
+import * as Sentry from '@sentry/react';
+import { AuthApiError, type AuthError } from '@supabase/supabase-js';
 import { render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -12,6 +13,10 @@ vi.mock('@/lib/supabase', () => ({
       verifyOtp: vi.fn(),
     },
   },
+}));
+
+vi.mock('@sentry/react', () => ({
+  captureException: vi.fn(),
 }));
 
 describe('CheckEmailNotice', () => {
@@ -86,5 +91,77 @@ describe('CheckEmailNotice', () => {
     await user.type(screen.getByLabelText(/confirmation code/i), '12345');
     expect(button).toBeDisabled();
     expect(supabase.auth.verifyOtp).not.toHaveBeenCalled();
+  });
+
+  describe('Resend', () => {
+    it('hides the Resend button when no onResend handler is provided', () => {
+      setup();
+      expect(screen.queryByRole('button', { name: /resend/i })).not.toBeInTheDocument();
+    });
+
+    it('fires onResend when the button is clicked and announces success', async () => {
+      const user = userEvent.setup();
+      const onResend = vi.fn().mockResolvedValue(undefined);
+      setup({ onResend });
+
+      await user.click(screen.getByRole('button', { name: /resend/i }));
+
+      expect(onResend).toHaveBeenCalledTimes(1);
+      await waitFor(() => {
+        expect(screen.getByText('New confirmation email sent.')).toBeInTheDocument();
+      });
+    });
+
+    it('shows the loading label while the resend request is in flight', async () => {
+      const user = userEvent.setup();
+      let resolveResend: () => void = () => {};
+      const onResend = vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveResend = resolve;
+          }),
+      );
+      setup({ onResend });
+
+      await user.click(screen.getByRole('button', { name: /resend/i }));
+
+      const sendingButton = await screen.findByRole('button', { name: /sending/i });
+      expect(sendingButton).toHaveAttribute('aria-busy', 'true');
+
+      resolveResend();
+      await waitFor(() => {
+        expect(screen.queryByRole('button', { name: /sending/i })).not.toBeInTheDocument();
+      });
+    });
+
+    it('renders the generic failure message and reports the error to Sentry when onResend rejects without a known code', async () => {
+      const user = userEvent.setup();
+      const unknownError = new Error('boom');
+      const onResend = vi.fn().mockRejectedValue(unknownError);
+      setup({ onResend });
+
+      await user.click(screen.getByRole('button', { name: /resend/i }));
+
+      const alert = await screen.findByRole('alert');
+      expect(alert).toHaveTextContent("Couldn't send the email. Please try again.");
+      expect(Sentry.captureException).toHaveBeenCalledWith(unknownError, {
+        tags: { component: 'CheckEmailNotice', operation: 'resendConfirmation' },
+      });
+    });
+
+    it('renders the rate-limit message without reporting to Sentry', async () => {
+      const user = userEvent.setup();
+      const rateLimitError = new AuthApiError('rate limit', 429, 'over_email_send_rate_limit');
+      const onResend = vi.fn().mockRejectedValue(rateLimitError);
+      setup({ onResend });
+
+      await user.click(screen.getByRole('button', { name: /resend/i }));
+
+      const alert = await screen.findByRole('alert');
+      expect(alert).toHaveTextContent(
+        "You've sent too many confirmation requests. Please try again later.",
+      );
+      expect(Sentry.captureException).not.toHaveBeenCalled();
+    });
   });
 });
