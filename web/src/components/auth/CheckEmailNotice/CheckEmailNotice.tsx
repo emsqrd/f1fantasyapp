@@ -44,8 +44,15 @@ export function CheckEmailNotice({ email, onVerified, onResend }: Props) {
       setError(null);
       setStatus('success');
       onVerified();
-    } catch {
-      setError("That code didn't match. Check your email for the latest one.");
+    } catch (err) {
+      if (isAuthApiError(err)) {
+        setError("That code didn't match. Check your email for the latest one.");
+      } else {
+        Sentry.captureException(err, {
+          tags: { component: 'CheckEmailNotice', operation: 'verifyOtp' },
+        });
+        setError("Couldn't verify the code. Please try again.");
+      }
       setStatus('idle');
     }
   };

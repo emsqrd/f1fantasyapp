@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import * as Sentry from '@sentry/react';
-import { AuthApiError, type AuthError } from '@supabase/supabase-js';
+import { AuthApiError } from '@supabase/supabase-js';
 import { render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -69,7 +69,7 @@ describe('CheckEmailNotice', () => {
     const user = userEvent.setup();
     vi.mocked(supabase.auth.verifyOtp).mockResolvedValue({
       data: { user: null, session: null },
-      error: new Error('Invalid code') as AuthError,
+      error: new AuthApiError('Token has expired or is invalid', 403, 'otp_expired'),
     });
     const props = setup();
 
@@ -79,6 +79,23 @@ describe('CheckEmailNotice', () => {
     expect(alert).toHaveTextContent(/that code didn't match/i);
     expect(props.onVerified).not.toHaveBeenCalled();
     expect(screen.getByLabelText(/confirmation code/i)).toHaveValue('123456');
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+  });
+
+  it('renders a generic failure message and reports to Sentry when verifyOtp throws a non-AuthApiError', async () => {
+    const user = userEvent.setup();
+    const networkError = new Error('Network down');
+    vi.mocked(supabase.auth.verifyOtp).mockRejectedValue(networkError);
+    const props = setup();
+
+    await user.type(screen.getByLabelText(/confirmation code/i), '123456');
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent("Couldn't verify the code. Please try again.");
+    expect(props.onVerified).not.toHaveBeenCalled();
+    expect(Sentry.captureException).toHaveBeenCalledWith(networkError, {
+      tags: { component: 'CheckEmailNotice', operation: 'verifyOtp' },
+    });
   });
 
   it('keeps the Verify button disabled and verifyOtp uncalled until 6 digits land', async () => {

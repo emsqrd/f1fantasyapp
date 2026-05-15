@@ -37,8 +37,11 @@ export function SignUpForm() {
 
   const completeSignUp = async () => {
     startAuthTransition();
-    await navigate({ to: destination });
-    completeAuthTransition();
+    try {
+      await navigate({ to: destination });
+    } finally {
+      completeAuthTransition();
+    }
   };
 
   const { message, announce } = useLiveRegion();

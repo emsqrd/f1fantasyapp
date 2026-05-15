@@ -36,10 +36,14 @@ vi.mock('@tanstack/react-router', () => ({
 
 describe('SignUpForm', () => {
   let mockSignUp: ReturnType<typeof vi.fn<AuthContextType['signUp']>>;
+  let mockStartAuthTransition: ReturnType<typeof vi.fn<() => void>>;
+  let mockCompleteAuthTransition: ReturnType<typeof vi.fn<() => void>>;
   let useAuth: typeof import('@/hooks/useAuth').useAuth;
 
   beforeEach(async () => {
     mockSignUp = vi.fn<AuthContextType['signUp']>();
+    mockStartAuthTransition = vi.fn<() => void>();
+    mockCompleteAuthTransition = vi.fn<() => void>();
     useAuth = (await import('@/hooks/useAuth')).useAuth;
     vi.mocked(useAuth).mockReturnValue({
       user: null,
@@ -49,8 +53,8 @@ describe('SignUpForm', () => {
       signIn: vi.fn(),
       signUp: mockSignUp,
       signOut: vi.fn(),
-      startAuthTransition: vi.fn(),
-      completeAuthTransition: vi.fn(),
+      startAuthTransition: mockStartAuthTransition,
+      completeAuthTransition: mockCompleteAuthTransition,
     });
     mockUseSearch.mockReturnValue({});
     mockUseRouteContext.mockReturnValue({ confirmationError: null });
@@ -191,6 +195,26 @@ describe('SignUpForm', () => {
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith({ to: '/' });
+    });
+  });
+
+  it('clears the auth transition flag even if post-signup navigation rejects', async () => {
+    mockSignUp.mockResolvedValueOnce({ session: mockSession });
+    mockNavigate.mockRejectedValueOnce(new Error('navigation cancelled'));
+    setup();
+    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: 'password123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    await waitFor(() => {
+      expect(mockStartAuthTransition).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => {
+      expect(mockCompleteAuthTransition).toHaveBeenCalledTimes(1);
     });
   });
 
