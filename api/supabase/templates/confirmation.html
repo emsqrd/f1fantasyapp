@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <title>Confirm your email — F1 Fantasy</title>
+    <style>
+      /* Reset (clients ignore most, but harmless) */
+      body,
+      table,
+      td,
+      p,
+      a {
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+      }
+      table,
+      td {
+        mso-table-lspace: 0pt;
+        mso-table-rspace: 0pt;
+        border-collapse: collapse;
+      }
+      img {
+        -ms-interpolation-mode: bicubic;
+        border: 0;
+        outline: none;
+        text-decoration: none;
+      }
+
+      /* Dark mode for clients that honour prefers-color-scheme (Apple Mail, iOS, etc.) */
+      @media (prefers-color-scheme: dark) {
+        body,
+        .bg {
+          background: #18181b !important;
+        }
+        .text-strong {
+          color: #fafafa !important;
+        }
+        .text-dim {
+          color: #a1a1aa !important;
+        }
+        .text-faint {
+          color: #71717b !important;
+        }
+        .rule {
+          border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        .btn {
+          background: #fafafa !important;
+          color: #18181b !important;
+        }
+        .brand-stroke {
+          stroke: #fafafa !important;
+        }
+        .link {
+          color: #71717b !important;
+        }
+      }
+
+      /* Mobile */
+      @media only screen and (max-width: 520px) {
+        .container {
+          width: 100% !important;
+          padding-left: 24px !important;
+          padding-right: 24px !important;
+        }
+        .h1 {
+          font-size: 24px !important;
+          line-height: 1.22 !important;
+        }
+        .cta-row {
+          display: block !important;
+        }
+        .cta-row .cta-aside {
+          display: block !important;
+          margin: 10px 0 0 0 !important;
+        }
+      }
+
+      /* Force solid background on the page in Outlook desktop */
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+    </style>
+  </head>
+  <body class="bg" style="margin: 0; padding: 0; background: #ffffff">
+    <!-- Hidden preheader -->
+    <div style="display: none; max-height: 0; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: #ffffff">
+      Confirm your email to start drafting your F1 Fantasy team. Code: {{ .Token }}
+    </div>
+
+    <table role="presentation" class="bg" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #ffffff">
+      <tr>
+        <td align="center" style="padding: 56px 16px 48px">
+          <table
+            role="presentation"
+            class="container"
+            width="480"
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            style="max-width: 480px; width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+          >
+            <!-- Wordmark -->
+            <tr>
+              <td style="padding: 0 0 40px">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td valign="middle" style="padding-right: 8px; line-height: 0">
+                      <!-- Trophy mark -->
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#09090b"
+                        class="brand-stroke"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                        <path d="M4 22h16" />
+                        <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+                      </svg>
+                    </td>
+                    <td valign="middle" class="text-strong" style="font-size: 13px; font-weight: 600; color: #09090b; letter-spacing: 0.04em">
+                      F1 Fantasy
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Headline -->
+            <tr>
+              <td style="padding: 0 0 14px">
+                <h1
+                  class="h1 text-strong"
+                  style="margin: 0; font-size: 28px; font-weight: 600; color: #09090b; letter-spacing: -0.022em; line-height: 1.2"
+                >
+                  You're on the grid.
+                </h1>
+              </td>
+            </tr>
+
+            <!-- Body paragraph -->
+            <tr>
+              <td class="text-dim" style="padding: 0 0 28px; font-size: 15.5px; color: #52525b; line-height: 1.65">
+                Confirm your email below and you can start drafting drivers, building your team, and joining leagues. The link expires in
+                60&nbsp;minutes.
+              </td>
+            </tr>
+
+            <!-- CTA + aside -->
+            <tr>
+              <td style="padding: 0 0 36px">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="cta-row">
+                  <tr>
+                    <td valign="middle">
+                      <!-- Bulletproof button -->
+                      <a
+                        href="{{ .ConfirmationURL }}"
+                        class="btn"
+                        style="
+                          display: inline-block;
+                          padding: 11px 20px;
+                          background: #09090b;
+                          color: #ffffff;
+                          border-radius: 8px;
+                          font-size: 14px;
+                          font-weight: 600;
+                          text-decoration: none;
+                          letter-spacing: -0.005em;
+                          font-family: inherit;
+                        "
+                      >
+                        Confirm your email
+                      </a>
+                    </td>
+                    <td valign="middle" class="cta-aside text-faint" style="padding-left: 12px; font-size: 13px; color: #71717b">
+                      or paste the code below
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Hairline + code row -->
+            <tr>
+              <td class="rule" style="border-top: 1px solid #e4e4e7; font-size: 0; line-height: 0">&nbsp;</td>
+            </tr>
+            <tr>
+              <td class="rule" style="padding: 16px 0 18px; border-bottom: 1px solid #e4e4e7">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td valign="middle" class="text-faint" style="font-size: 12px; color: #71717b; letter-spacing: 0.04em">Verification code</td>
+                    <td
+                      valign="middle"
+                      align="right"
+                      class="text-strong"
+                      style="
+                        font-family: 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+                        font-size: 22px;
+                        font-weight: 600;
+                        color: #09090b;
+                        letter-spacing: 0.22em;
+                      "
+                    >
+                      {{ .Token }}
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Sign-off -->
+            <tr>
+              <td style="padding: 32px 0 0">
+                <p class="text-dim" style="margin: 0 0 6px; font-size: 14.5px; color: #52525b; line-height: 1.6">Welcome aboard,</p>
+                <p class="text-strong" style="margin: 0; font-size: 14.5px; color: #09090b; font-weight: 500">The F1 Fantasy team</p>
+              </td>
+            </tr>
+
+            <!-- Postscript -->
+            <tr>
+              <td class="text-faint" style="padding: 32px 0 0; font-size: 12.5px; color: #71717b; line-height: 1.6">
+                <span class="text-dim" style="color: #52525b; font-weight: 500">P.S.</span>
+                Didn't sign up for F1 Fantasy? You can safely ignore this email — no account will be created.
+              </td>
+            </tr>
+
+            <!-- Outer footer -->
+            <tr>
+              <td style="padding: 40px 0 0; font-size: 11.5px; color: #71717b; line-height: 1.6" class="text-faint">
+                <a href="#" class="link" style="color: #71717b; text-decoration: underline">Unsubscribe</a>
+                <span> · </span>
+                <a href="#" class="link" style="color: #71717b; text-decoration: underline">Help</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

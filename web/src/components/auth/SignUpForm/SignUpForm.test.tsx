@@ -1,8 +1,16 @@
 import type { AuthContextType } from '@/contexts/AuthContext';
+import type { Session } from '@supabase/supabase-js';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SignUpForm } from './SignUpForm';
+
+const mockSession = {
+  access_token: 'mock-access-token',
+  refresh_token: 'mock-refresh-token',
+  expires_in: 3600,
+  token_type: 'bearer',
+} as unknown as Session;
 
 // Mock useAuth and useNavigate
 vi.mock('@/hooks/useAuth', async () => {
@@ -16,9 +24,11 @@ vi.mock('@/hooks/useAuth', async () => {
 
 const mockNavigate = vi.fn();
 const mockUseSearch = vi.fn();
+const mockUseRouteContext = vi.fn();
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
   useSearch: () => mockUseSearch(),
+  useRouteContext: () => mockUseRouteContext(),
   Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
     <a href={to}>{children}</a>
   ),
@@ -26,10 +36,14 @@ vi.mock('@tanstack/react-router', () => ({
 
 describe('SignUpForm', () => {
   let mockSignUp: ReturnType<typeof vi.fn<AuthContextType['signUp']>>;
+  let mockStartAuthTransition: ReturnType<typeof vi.fn<() => void>>;
+  let mockCompleteAuthTransition: ReturnType<typeof vi.fn<() => void>>;
   let useAuth: typeof import('@/hooks/useAuth').useAuth;
 
   beforeEach(async () => {
     mockSignUp = vi.fn<AuthContextType['signUp']>();
+    mockStartAuthTransition = vi.fn<() => void>();
+    mockCompleteAuthTransition = vi.fn<() => void>();
     useAuth = (await import('@/hooks/useAuth')).useAuth;
     vi.mocked(useAuth).mockReturnValue({
       user: null,
@@ -39,10 +53,11 @@ describe('SignUpForm', () => {
       signIn: vi.fn(),
       signUp: mockSignUp,
       signOut: vi.fn(),
-      startAuthTransition: vi.fn(),
-      completeAuthTransition: vi.fn(),
+      startAuthTransition: mockStartAuthTransition,
+      completeAuthTransition: mockCompleteAuthTransition,
     });
     mockUseSearch.mockReturnValue({});
+    mockUseRouteContext.mockReturnValue({ confirmationError: null });
   });
 
   afterEach(() => {
@@ -115,7 +130,8 @@ describe('SignUpForm', () => {
   });
 
   it('disables submit button while loading', async () => {
-    mockSignUp.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)));
+    // Pending forever so the post-submit branch can't race the next test.
+    mockSignUp.mockImplementation(() => new Promise(() => {}));
     setup();
     fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
@@ -132,7 +148,7 @@ describe('SignUpForm', () => {
   });
 
   it('navigates to redirect path when redirect search parameter is provided', async () => {
-    mockSignUp.mockResolvedValueOnce(undefined);
+    mockSignUp.mockResolvedValueOnce({ session: mockSession });
     mockUseSearch.mockReturnValue({ redirect: '/leagues' });
     setup();
     fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
@@ -146,5 +162,127 @@ describe('SignUpForm', () => {
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith({ to: '/leagues' });
     });
+  });
+
+  it('renders the check-email pending UI when signUp returns no session', async () => {
+    mockSignUp.mockResolvedValueOnce({ session: null });
+    setup();
+    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: 'pending@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: 'password123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    expect(await screen.findByRole('heading', { name: /check your email/i })).toBeInTheDocument();
+    expect(screen.getByText('pending@example.com')).toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('navigates to default destination when signUp returns a session (auto-confirm)', async () => {
+    mockSignUp.mockResolvedValueOnce({ session: mockSession });
+    setup();
+    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: 'password123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith({ to: '/' });
+    });
+  });
+
+  it('clears the auth transition flag even if post-signup navigation rejects', async () => {
+    mockSignUp.mockResolvedValueOnce({ session: mockSession });
+    mockNavigate.mockRejectedValueOnce(new Error('navigation cancelled'));
+    setup();
+    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: 'password123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    await waitFor(() => {
+      expect(mockStartAuthTransition).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => {
+      expect(mockCompleteAuthTransition).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('passes emailRedirectTo for the site origin into signUp', async () => {
+    mockSignUp.mockResolvedValueOnce({ session: mockSession });
+    setup();
+    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: 'password123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    await waitFor(() => {
+      expect(mockSignUp).toHaveBeenCalledWith(
+        'test@example.com',
+        'password123',
+        { displayName: 'Test User' },
+        { emailRedirectTo: `${window.location.origin}/` },
+      );
+    });
+  });
+
+  it('threads search.redirect through emailRedirectTo when present', async () => {
+    mockSignUp.mockResolvedValueOnce({ session: mockSession });
+    mockUseSearch.mockReturnValue({ redirect: '/join/abc-123' });
+    setup();
+    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: 'password123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    await waitFor(() => {
+      expect(mockSignUp).toHaveBeenCalledWith(
+        'test@example.com',
+        'password123',
+        { displayName: 'Test User' },
+        { emailRedirectTo: `${window.location.origin}/join/abc-123` },
+      );
+    });
+  });
+
+  it('renders the expired-link copy when route context carries confirmationError="expired"', () => {
+    mockUseRouteContext.mockReturnValue({ confirmationError: 'expired' });
+    setup();
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'This confirmation link is no longer valid. Sign up again to receive a new one.',
+    );
+  });
+
+  it('renders the generic copy when route context carries confirmationError="generic"', () => {
+    mockUseRouteContext.mockReturnValue({ confirmationError: 'generic' });
+    setup();
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      "We couldn't confirm your email. Please try signing up again.",
+    );
+  });
+
+  it('renders no confirmation-error alert when route context carries confirmationError=null', () => {
+    mockUseRouteContext.mockReturnValue({ confirmationError: null });
+    setup();
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

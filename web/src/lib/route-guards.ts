@@ -1,5 +1,6 @@
 import type { Team } from '@/contracts/Team';
 import type { RouterContext } from '@/lib/router-context';
+import { supabase } from '@/lib/supabase';
 import { getMyTeam } from '@/services/teamService';
 import { redirect } from '@tanstack/react-router';
 
@@ -30,13 +31,19 @@ import { redirect } from '@tanstack/react-router';
  * @see {@link https://tanstack.com/router/latest/docs/framework/react/guide/authenticated-routes | TanStack Router Authentication Guide}
  */
 export async function requireAuth(context: RouterContext): Promise<void> {
-  // Throw redirect if user is not authenticated
-  if (!context.auth.user) {
-    throw redirect({
-      to: '/',
-      replace: true,
-    });
-  }
+  if (context.auth.user) return;
+
+  // context.auth.user is a React-state snapshot; it lags Supabase right after
+  // a session is established. Check getSession() before redirecting.
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (session?.user) return;
+
+  throw redirect({
+    to: '/',
+    replace: true,
+  });
 }
 
 /**
