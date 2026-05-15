@@ -19,7 +19,12 @@ const E2E_CONFIG = path.join(REPO_ROOT, 'e2e', 'supabase', 'config.toml');
 //     Services Topology) to run alongside dev
 //   - site_url / additional_redirect_urls: contain the web port
 //     (5173 dev, 5273 e2e), so they shift too
-const IGNORED_KEY_RE = /^\s*(project_id|[a-z_]*port|site_url|additional_redirect_urls)\s*=/;
+//   - email_sent: e2e raises the per-hour cap so the suite has
+//     headroom for signup + resend within a single run
+//   - max_frequency: e2e drops the per-user resend cool-down to 0s
+//     so resend tests don't have to sleep past gotrue's throttle
+const IGNORED_KEY_RE =
+  /^\s*(project_id|[a-z_]*port|site_url|additional_redirect_urls|email_sent|max_frequency)\s*=/;
 
 test('api/supabase/config.toml and e2e/supabase/config.toml stay in sync', () => {
   const dev = readFileSync(DEV_CONFIG, 'utf8').split('\n');

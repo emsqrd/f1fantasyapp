@@ -98,6 +98,42 @@ test.describe('auth', () => {
     await expect(page).toHaveURL('/create-team');
   });
 
+  test('resends the confirmation email and confirms via the resent link', async ({ page }) => {
+    const unique = randomUUID();
+    const email = `signup-resend-${unique}@e2e.local`;
+    const password = 'e2e-password';
+    const displayName = `Test Resend ${unique.slice(0, 8)}`;
+
+    await page.goto('/sign-up');
+    await page.getByLabel('Display Name').fill(displayName);
+    await page.getByLabel('Email').fill(email);
+    await page.getByLabel('Password', { exact: true }).fill(password);
+    await page.getByLabel('Confirm Password').fill(password);
+    await page.locator('form').getByRole('button', { name: 'Sign Up' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+
+    await expect
+      .poll(async () => (await searchByRecipient(email)).count, { timeout: 10_000 })
+      .toBe(1);
+
+    await page.getByRole('button', { name: 'Resend the code' }).click();
+
+    await expect
+      .poll(async () => (await searchByRecipient(email)).count, { timeout: 10_000 })
+      .toBe(2);
+
+    // Mailpit returns messages newest-first; [0] is the resent email.
+    const search = await searchByRecipient(email);
+    const message = await getMessage(search.messages[0].ID);
+    const linkMatch = message.HTML.match(/href="([^"]*\/auth\/v1\/verify[^"]*)"/);
+    if (!linkMatch) throw new Error('Could not find confirmation URL in resent email HTML');
+    const confirmationUrl = linkMatch[1].replace(/&amp;/g, '&');
+
+    await page.goto(confirmationUrl);
+    await expect(page).toHaveURL('/create-team');
+  });
+
   test('preserves /join/<token> across browsers via emailRedirectTo', async ({ browser }) => {
     const owner = await createTestUser({ emailPrefix: 'cross-owner' });
     const season = await seedCurrentSeason();
