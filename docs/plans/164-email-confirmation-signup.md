@@ -252,24 +252,47 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 
 ---
 
+### Commit 9 — E2E coverage for resend confirmation email path
+
+**Goal:** promote the resend smoke from manual to automated. The unit/component tests cover the rate-limit UX path against a mocked Supabase; the integration test covers SignUpForm → CheckEmailNotice → resend wiring with a mocked seam. Neither proves `supabase.auth.resend({ type: 'signup', ... })` actually produces a second email against the real Supabase + Mailpit stack — that's the failure mode this commit owns.
+
+**Files modified:**
+
+- `e2e/tests/auth.spec.ts` — new test `resends the confirmation email and confirms via the resent link`. Signs up via the UI, polls Mailpit until the first email arrives, clicks "Resend the code", polls until count reaches 2, then completes signup via the resent email's `/auth/v1/verify` link. Mailpit returns messages newest-first so `messages[0]` is the resent one.
+- `e2e/supabase/config.toml` — `email_sent = 30` (was 2). The dev value is intentionally tight; the e2e suite now performs signup + resend in a single run and needs headroom. `[auth.email] max_frequency = "1ms"` (was `"1s"`). gotrue treats `"0s"` as unset and falls back to a hardcoded ~60s floor on the `/resend` endpoint; any positive value bypasses that floor. `"1ms"` makes the per-recipient cool-down effectively zero without tripping the fallback.
+- `e2e/tests/_infra/config-sync.spec.ts` — extend `IGNORED_KEY_RE` to ignore `email_sent` and `max_frequency`. Both must legitimately differ between dev and e2e.
+
+**Decisions worth recording:**
+
+- **gotrue's hidden `max_frequency` floor.** Setting `max_frequency = "0s"` does *not* disable the per-recipient resend throttle — gotrue rejects with "you can only request this after 59 seconds." Verified empirically against `gotrue:v2.188.1`. A positive value (any > 0) takes effect as configured; `0` falls through to a 60s default. The plan keeps `"1ms"` rather than something larger so test runtime isn't gated on a real-world throttle.
+- **Rate-limit UX path is not tested here.** With `email_sent = 30` and `max_frequency = "1ms"`, the rate-limit branch in `CheckEmailNotice` (renders "You've sent too many confirmation requests.") is unreachable in this run. That branch is covered by `CheckEmailNotice.test.tsx`'s mocked `over_email_send_rate_limit` test — no E2E duplication needed.
+- **Per-test config drift now covered by `IGNORED_KEY_RE`.** The pattern matches by line, so `max_frequency` is excluded across `[auth.email]`, `[auth.sms]`, and `[auth.mfa.phone]`. The suite doesn't exercise sms/mfa, so silent drift on those is an acceptable trade for the simpler regex.
+
+**Verification:**
+
+1. `cd e2e/supabase && supabase stop && supabase start` to pick up the config change.
+2. `npm run e2e` green (15 tests total: previous 14 + the new resend test).
+
+---
+
 ## Critical files
 
-**Modified across commits 4-8:**
+**Modified across commits 4-9:**
 
 - `api/supabase/config.toml` (commit 4)
-- `e2e/supabase/config.toml` (commit 4)
-- `e2e/tests/_infra/config-sync.spec.ts` (commit 4)
+- `e2e/supabase/config.toml` (commits 4, 9 — commit 9 bumps `email_sent` and drops `max_frequency` for the resend test)
+- `e2e/tests/_infra/config-sync.spec.ts` (commits 4, 9 — commit 9 adds `email_sent` and `max_frequency` to `IGNORED_KEY_RE`)
 - `web/src/lib/supabase.ts` (commit 4)
 - `web/src/router.tsx` (commits 4, 5, 6)
 - `web/src/contexts/AuthContext.tsx` + `.ts` (commit 4)
 - `web/src/components/auth/SignUpForm/SignUpForm.tsx` (commits 4, 5, 6, 7)
 - `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx` (commit 7)
-- `e2e/tests/auth.spec.ts` (commit 8 — adds magic-link, OTP, and cross-browser tests; `beforeEach` also clears Mailpit)
+- `e2e/tests/auth.spec.ts` (commits 8, 9 — commit 8 adds magic-link, OTP, and cross-browser tests + `beforeEach` Mailpit clear; commit 9 adds the resend test)
 - `e2e/tests/team.spec.ts` (commit 8 — migrates UI-signup test to `createTestUser` + `signInAs`)
 - `e2e/tests/league.spec.ts` (commit 8 — same migration on the `/join/<token>` test)
 - `web/src/lib/route-guards.ts` — _kept_, no modifications across the rework
 
-**New across commits 4-8:**
+**New across commits 4-9:**
 
 - `web/src/lib/auth-redirect.ts` + `.test.ts` (commit 6)
 - `web/src/lib/auth-resend.ts` + `.test.ts` (commit 7)
@@ -293,12 +316,12 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 
 ---
 
-## End-to-end verification (after all commits 4-8)
+## End-to-end verification (after all commits 4-9)
 
 1. **Magic-link happy path:** Sign up with new email → `<CheckEmailNotice>` → check Mailpit → click link → land on `/create-team` logged in. _(Automated in commit 8.)_
 2. **OTP happy path:** Sign up with new email → `<CheckEmailNotice>` → check Mailpit → type 6-digit code → land on `/create-team` logged in. _(Automated in commit 8.)_
 3. **Cross-browser invite preservation:** Sign up from `/sign-up?redirect=/join/<token>` on Browser A → click link in Browser B → land directly at `/join/<token>` signed in. _(Automated in commit 8 via two Playwright `browser.newContext()` instances.)_
-4. **Resend:** Sign up → click Resend → second email arrives → either email's link OR the latest OTP completes verification.
+4. **Resend:** Sign up → click Resend → second email arrives → either email's link OR the latest OTP completes verification. _(Automated in commit 9.)_
 5. **Link failure:** Click an expired/consumed link → user is routed to `/sign-up` with `<InlineError>` above the form with a friendly message; navigating away clears the message.
 6. **Authed user at `/`:** Visit `/` signed in → bounce to `/leagues` (with team) or `/create-team` (without). Sign out → return to `/` → `LandingPage` renders normally.
 7. **Existing e2e tests:** `npm run e2e` all green (admin fixture continues working via `email_confirm: true`).
