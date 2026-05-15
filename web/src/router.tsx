@@ -11,6 +11,7 @@ import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import type { Team as TeamType } from '@/contracts/Team';
 import type { UserProfile } from '@/contracts/UserProfile';
+import { readConfirmationLinkError } from '@/lib/auth-redirect';
 import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
@@ -175,7 +176,19 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
+  validateSearch: redirectSearchSchema,
   component: LandingPage,
+  beforeLoad: async ({ context }) => {
+    if (!context.auth.user && (await readConfirmationLinkError())) {
+      throw redirect({ to: '/sign-up', replace: true });
+    }
+    if (context.auth.user) {
+      throw redirect({
+        to: context.teamContext.hasTeam ? '/leagues' : '/create-team',
+        replace: true,
+      });
+    }
+  },
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
 
@@ -219,6 +232,7 @@ const signUpRoute = createRoute({
         replace: true,
       });
     }
+    return { confirmationError: await readConfirmationLinkError() };
   },
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });

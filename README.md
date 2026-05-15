@@ -109,7 +109,7 @@ npm run test:all               # Frontend + backend (unit + integration). Does n
 
 Two Supabase CLI stacks and two sets of web/API servers coexist on one machine so dev work and the e2e suite never touch the same state.
 
-| Stack | Config          | Supabase ports (API/DB/Studio/Inbucket) | Web port | API port |
+| Stack | Config          | Supabase ports (API/DB/Studio/Mailpit) | Web port | API port |
 | ----- | --------------- | --------------------------------------- | -------- | -------- |
 | Dev   | `api/supabase/` | `54321 / 54322 / 54323 / 54324`         | `5173`   | `5077`   |
 | E2E   | `e2e/supabase/` | `54421 / 54422 / 54423 / 54424`         | `5273`   | `5177`   |

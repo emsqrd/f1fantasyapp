@@ -29,7 +29,7 @@ vi.mock('../services/userProfileService', () => ({
 }));
 
 // Test component that consumes the auth context
-function TestComponent() {
+function TestComponent({ signUpOptions }: { signUpOptions?: { emailRedirectTo?: string } } = {}) {
   const { user, session, loading, signIn, signUp, signOut } = useAuth();
 
   const handleSignIn = async () => {
@@ -42,7 +42,7 @@ function TestComponent() {
 
   const handleSignUp = async () => {
     try {
-      await signUp('test@example.com', 'password', { displayName: 'Test User' });
+      await signUp('test@example.com', 'password', { displayName: 'Test User' }, signUpOptions);
     } catch {
       // Errors are expected in some tests, silently handle them
     }
@@ -253,8 +253,34 @@ describe('AuthProvider', () => {
           data: {
             displayName: 'Test User',
           },
+          emailRedirectTo: `${window.location.origin}/`,
         },
       });
+    });
+
+    it('forwards the emailRedirectTo option verbatim to supabase.auth.signUp', async () => {
+      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+        data: { user: mockUser, session: mockSession },
+        error: null,
+      });
+
+      const customEmailRedirectTo = `${window.location.origin}/join/abc123`;
+
+      render(
+        <AuthProvider>
+          <TestComponent signUpOptions={{ emailRedirectTo: customEmailRedirectTo }} />
+        </AuthProvider>,
+      );
+
+      await userEvent.click(screen.getByTestId('sign-up-btn'));
+
+      expect(supabase.auth.signUp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.objectContaining({
+            emailRedirectTo: customEmailRedirectTo,
+          }),
+        }),
+      );
     });
 
     it('should handle signUp error', async () => {
@@ -281,6 +307,7 @@ describe('AuthProvider', () => {
           data: {
             displayName: 'Test User',
           },
+          emailRedirectTo: `${window.location.origin}/`,
         },
       });
     });

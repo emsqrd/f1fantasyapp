@@ -8,7 +8,12 @@ export interface AuthContextType {
   loading: boolean;
   isAuthTransitioning: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, additionalData: CreateProfileData) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    additionalData: CreateProfileData,
+    options?: { emailRedirectTo?: string },
+  ) => Promise<{ session: Session | null }>;
   signOut: () => Promise<void>;
   startAuthTransition: () => void;
   completeAuthTransition: () => void;
