@@ -62,7 +62,7 @@ test.describe('league', () => {
     await contextB.close();
   });
 
-  test('User B browses available leagues, joins User A\'s public league from the list', async ({
+  test("User B browses available leagues, joins User A's public league from the list", async ({
     browser,
   }) => {
     const userA = await createTestUser({ emailPrefix: 'public-owner' });
@@ -96,10 +96,11 @@ test.describe('league', () => {
     await contextB.close();
   });
 
-  test('unauthenticated visitor to /join/$token signs up, creates a team, and joins', async ({
+  test('authenticated visitor without a team visits /join/$token, creates a team, and joins', async ({
     page,
   }) => {
     const owner = await createTestUser({ emailPrefix: 'owner' });
+    const joiner = await createTestUser({ emailPrefix: 'joiner' });
     const season = await seedCurrentSeason();
     const grid = await seedMinimalGrid({ seasonId: season.id });
     await seedTeamForUser(owner, {
@@ -111,27 +112,16 @@ test.describe('league', () => {
     const invite = await seedLeagueInvite(owner, league.id);
 
     const joinPath = `/join/${invite.token}`;
-    const unique = randomUUID();
-    const email = `joiner-${unique}@e2e.local`;
-    const password = 'e2e-password';
-    const displayName = `Joiner ${unique.slice(0, 8)}`;
-    const teamName = `Team ${unique.slice(0, 8)}`;
+    const teamName = `Team ${randomUUID().slice(0, 8)}`;
+
+    await signInAs(page, joiner);
+    await expect(page).toHaveURL('/create-team');
 
     await page.goto(joinPath);
     await expect(page.getByText(leagueName)).toBeVisible();
 
-    // Sign-up preserves ?redirect=/join/${token} all the way through.
-    await page.getByRole('link', { name: 'Create Account' }).click();
-    await expect(page).toHaveURL(new RegExp(`/sign-up\\?redirect=${encodeURIComponent(joinPath)}`));
-
-    await page.getByLabel('Display Name').fill(displayName);
-    await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password', { exact: true }).fill(password);
-    await page.getByLabel('Confirm Password').fill(password);
-    await page.locator('form').getByRole('button', { name: 'Sign Up' }).click();
-
-    // Back on the invite page, now authenticated but without a team.
-    await expect(page).toHaveURL(joinPath);
+    // Authenticated but without a team — the invite page surfaces Create Team
+    // with ?redirect=/join/${token} preserved through the team-creation round-trip.
     await page.getByRole('link', { name: 'Create Team' }).click();
     await expect(page).toHaveURL(
       new RegExp(`/create-team\\?redirect=${encodeURIComponent(joinPath)}`),

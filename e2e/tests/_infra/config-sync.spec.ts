@@ -8,10 +8,23 @@ const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 const DEV_CONFIG = path.join(REPO_ROOT, 'api', 'supabase', 'config.toml');
 const E2E_CONFIG = path.join(REPO_ROOT, 'e2e', 'supabase', 'config.toml');
 
-// Fields the two stacks are intentionally allowed to differ on. Every other
-// line must match exactly so config drift fails loudly before it causes
-// silent behavioral divergence between dev and e2e.
-const IGNORED_KEY_RE = /^\s*(project_id|[a-z_]*port)\s*=/;
+// Both stacks must run the same Supabase config — if someone edits
+// api/supabase/config.toml and forgets the e2e copy, e2e tests pass
+// against config the user never sees in dev. This test diffs them and
+// fails on drift.
+//
+// The exceptions below are values that *must* differ:
+//   - project_id: distinguishes the two local stacks
+//   - *_port: e2e shifts every port by +100 (see README → Local
+//     Services Topology) to run alongside dev
+//   - site_url / additional_redirect_urls: contain the web port
+//     (5173 dev, 5273 e2e), so they shift too
+//   - email_sent: e2e raises the per-hour cap so the suite has
+//     headroom for signup + resend within a single run
+//   - max_frequency: e2e drops the per-user resend cool-down to 0s
+//     so resend tests don't have to sleep past gotrue's throttle
+const IGNORED_KEY_RE =
+  /^\s*(project_id|[a-z_]*port|site_url|additional_redirect_urls|email_sent|max_frequency)\s*=/;
 
 test('api/supabase/config.toml and e2e/supabase/config.toml stay in sync', () => {
   const dev = readFileSync(DEV_CONFIG, 'utf8').split('\n');
