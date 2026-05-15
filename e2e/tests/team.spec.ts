@@ -12,20 +12,11 @@ test.describe('team', () => {
     await resetDb();
   });
 
-  test('new user signs up, creates a team, and lands on /my-team', async ({ page }) => {
-    const unique = randomUUID();
-    const email = `signup-${unique}@e2e.local`;
-    const password = 'e2e-password';
-    const displayName = `Signup ${unique.slice(0, 8)}`;
-    const teamName = `Team ${unique.slice(0, 8)}`;
+  test('new user creates a team and lands on /my-team', async ({ page }) => {
+    const user = await createTestUser();
+    const teamName = `Team ${randomUUID().slice(0, 8)}`;
 
-    await page.goto('/sign-up');
-    await page.getByLabel('Display Name').fill(displayName);
-    await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password', { exact: true }).fill(password);
-    await page.getByLabel('Confirm Password').fill(password);
-    await page.locator('form').getByRole('button', { name: 'Sign Up' }).click();
-
+    await signInAs(page, user);
     await expect(page).toHaveURL('/create-team');
 
     await page.getByLabel('Team Name').fill(teamName);
