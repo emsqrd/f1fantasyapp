@@ -47,7 +47,7 @@ Original design: switched the Supabase client to `flowType: 'pkce'` with `detect
 
 ### Commit 2 — `<OtpInput>` primitive + `<CheckEmailNotice>` component (`d4a632b`)
 
-The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type: 'email'` (corrected from the original `'signup'` during the pivot; commit 4 keeps this corrected value).
+The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type: 'signup'` — the type string Supabase's email-confirmation flow uses for OTPs minted via `signUp`. End-to-end verified against real Supabase by the OTP signup E2E in commit 8.
 
 ### Commit 3 — Enable confirmations + SignUpForm wiring (`de592bc`)
 
@@ -223,23 +223,32 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 
 ---
 
-### Commit 8 — E2E coverage for magic-link and OTP signup paths
+### Commit 8 — E2E coverage for magic-link, OTP, and cross-browser signup paths
 
-**Goal:** cross-system assertion that the wired-up flow works end-to-end through a real browser, against the local Supabase + Mailpit stack.
+**Goal:** cross-system assertion that the wired-up flow works end-to-end through a real browser, against the local Supabase + Mailpit stack. Also promotes cross-browser invite preservation from manual verification (originally listed under "End-to-end verification" step 3) to automated coverage, and repairs two pre-existing UI-signup tests that commits 4-7 silently broke by routing UI signup into the email-confirmation gate.
 
 **Files added:**
 
-- `e2e/fixtures/mailpit.ts` — thin HTTP wrappers. `searchByRecipient(email)` → `GET /api/v1/search?query=to:<encoded>`. `getMessage(id)` → `GET /api/v1/message/{id}`. `clearAll()` → `DELETE /api/v1/messages`. Targets `http://127.0.0.1:54424` (e2e Mailpit, dev `54324` + 100 per the port-shift convention). No internal polling — callsites wrap `searchByRecipient` in Playwright's `expect.poll(...).toHaveProperty('count', 1)` so waits are visible at the callsite and integrate with Playwright's timeout reporting.
+- `e2e/fixtures/mailpit.ts` — thin HTTP wrappers. `searchByRecipient(email)` → `GET /api/v1/search?query=to:<encoded>`. `getMessage(id)` → `GET /api/v1/message/{id}`. `clearAll()` → `DELETE /api/v1/messages`. Targets `http://127.0.0.1:54424` (e2e Mailpit, dev `54324` + 100 per the port-shift convention). No internal polling — callsites wrap `searchByRecipient` in Playwright's `expect.poll(async () => (await searchByRecipient(email)).count).toBe(1)` so waits are visible at the callsite and integrate with Playwright's timeout reporting.
 
 **Files modified:**
 
-- `e2e/tests/auth.spec.ts` — add two tests. `beforeEach` clears Mailpit.
-  - **Magic-link path:** fill signup form via UI → assert `<CheckEmailNotice>` appears → `expect.poll(() => mailpit.searchByRecipient(email)).toHaveProperty('count', 1)` → GET the message → regex `Text` for the verify URL → `page.goto(verifyUrl)` → assert the app shows `/create-team`.
-  - **OTP path:** fill signup form → assert `<CheckEmailNotice>` → poll Mailpit → GET → regex `Text` for `/Or enter this code in the app: \*(\d{6})\*/` → type the 6 digits into the underlying OTP input (queryable via its `aria-label`; the slot `<div>`s are `aria-hidden`) → assert the app shows `/create-team`.
+- `e2e/tests/auth.spec.ts` — add three tests. `beforeEach` also clears Mailpit.
+  - **Magic-link path:** fill signup form via UI → assert `<CheckEmailNotice>` heading and the typed email are visible → poll Mailpit until `count === 1` → fetch the message → regex `message.HTML` for `href="([^"]*\/auth\/v1\/verify[^"]*)"` (the only `{{ .ConfirmationURL }}` substitution in the template) → un-escape `&amp;` → `page.goto(confirmationUrl)` → assert the app shows `/create-team`. URL extraction goes against `HTML` rather than `Text` because the `href` attribute is more stable across template restructuring than the auto-generated text layout.
+  - **OTP path:** fill signup form → assert `<CheckEmailNotice>` → poll Mailpit → fetch the message → regex `message.Text` for `\b(\d{6})\b` (the only 6-digit sequence in the email) → fill the `Confirmation code` input via `getByLabel`. The `<OtpInput>`'s `onComplete` fires `verifyOtp` automatically once 6 digits land, so no explicit Verify click. Assert the app shows `/create-team`.
+  - **Cross-browser preservation:** seed owner + league + private invite → in `contextA`, sign up at `/sign-up?redirect=/join/<token>` → stop at `<CheckEmailNotice>`, close `contextA` → poll Mailpit, extract magic-link URL → in a fresh `contextB` with zero prior storage, `page.goto(magicLinkUrl)` → assert URL matches `/join/<token>#?$` (Supabase's SDK leaves a bare `#` after stripping the access_token fragment via `history.replaceState`) and the league name renders. Owns three failure modes nothing lower in the suite can see: dynamic `emailRedirectTo` clearing the `additional_redirect_urls` allowlist, implicit-flow auto-detect working against a client with zero prior state (the specific failure mode that killed PKCE), and `requireAuth` + the `JoinInvite` loader surviving the session-just-materialized timing window at a non-root destination.
+- `e2e/tests/team.spec.ts` — `'new user signs up, creates a team, and lands on /my-team'` → `'new user creates a team and lands on /my-team'`: replace the UI signup steps with `createTestUser` + `signInAs`. The signup behavior the test used to incidentally exercise is now owned by the dedicated auth tests above.
+- `e2e/tests/league.spec.ts` — `'unauthenticated visitor to /join/$token signs up, creates a team, and joins'` → `'authenticated visitor without a team visits /join/$token, creates a team, and joins'`: same migration. Retains the `?redirect=` preservation assertion through the `/create-team` round-trip; signup-side redirect preservation is now covered by the cross-browser auth test.
+
+**Decisions worth recording:**
+
+- **Email rate limit didn't need bumping.** `e2e/supabase/config.toml:149` keeps `email_sent = 2` per hour. Empirically the limit applies per-identity in gotrue rather than per-IP globally, so each test's unique email gets its own quota. Three confirmation-email sends per run all delivered cleanly. Plan's production note about raising the limit still stands for unrelated reasons (real signup volume).
+- **OTP `Text`-body regex over a specific anchor string.** Earlier draft proposed matching `/Or enter this code in the app: \*(\d{6})\*/`, but that text isn't in the actual template. The shipped regex `\b(\d{6})\b` finds the only 6-digit sequence in the auto-generated text body — resilient to template wording changes while still deterministic for this template.
+- **Trailing `#` in the cross-browser destination URL is a Supabase SDK behavior, not a bug.** `_initialize` calls `history.replaceState(null, '', cleanedUrl)` to scrub `access_token=...` after parsing, and the cleanup leaves a bare `#` behind. The URL match uses an optional `#?$` rather than working around the SDK.
 
 **Verification:**
 
-1. `npm run e2e` green (existing suite + the two new tests).
+1. `npm run e2e` green (14 tests total: existing suite + three new auth tests, with two pre-existing tests migrated off UI signup).
 
 ---
 
@@ -255,6 +264,9 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 - `web/src/contexts/AuthContext.tsx` + `.ts` (commit 4)
 - `web/src/components/auth/SignUpForm/SignUpForm.tsx` (commits 4, 5, 6, 7)
 - `web/src/components/auth/CheckEmailNotice/CheckEmailNotice.tsx` (commit 7)
+- `e2e/tests/auth.spec.ts` (commit 8 — adds magic-link, OTP, and cross-browser tests; `beforeEach` also clears Mailpit)
+- `e2e/tests/team.spec.ts` (commit 8 — migrates UI-signup test to `createTestUser` + `signInAs`)
+- `e2e/tests/league.spec.ts` (commit 8 — same migration on the `/join/<token>` test)
 - `web/src/lib/route-guards.ts` — _kept_, no modifications across the rework
 
 **New across commits 4-8:**
@@ -264,7 +276,6 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 - `web/src/tests/integration/root-routing.integration.test.tsx` (commit 5)
 - `web/src/tests/integration/signup-resend.integration.test.tsx` (commit 7)
 - `e2e/fixtures/mailpit.ts` (commit 8)
-- New tests in `e2e/tests/auth.spec.ts` (commit 8)
 
 **Deleted in commit 4:**
 
@@ -284,9 +295,9 @@ The typed-OTP path UI. Unchanged by the rework. `verifyOtp` is called with `type
 
 ## End-to-end verification (after all commits 4-8)
 
-1. **Magic-link happy path:** Sign up with new email → `<CheckEmailNotice>` → check Mailpit → click link → land on `/create-team` logged in.
-2. **OTP happy path:** Sign up with new email → `<CheckEmailNotice>` → check Mailpit → type 6-digit code → land on `/create-team` logged in.
-3. **Cross-browser invite preservation:** Sign up from `/sign-up?redirect=/join/<token>` on Browser A → click link in Browser B → land directly at `/join/<token>` signed in.
+1. **Magic-link happy path:** Sign up with new email → `<CheckEmailNotice>` → check Mailpit → click link → land on `/create-team` logged in. _(Automated in commit 8.)_
+2. **OTP happy path:** Sign up with new email → `<CheckEmailNotice>` → check Mailpit → type 6-digit code → land on `/create-team` logged in. _(Automated in commit 8.)_
+3. **Cross-browser invite preservation:** Sign up from `/sign-up?redirect=/join/<token>` on Browser A → click link in Browser B → land directly at `/join/<token>` signed in. _(Automated in commit 8 via two Playwright `browser.newContext()` instances.)_
 4. **Resend:** Sign up → click Resend → second email arrives → either email's link OR the latest OTP completes verification.
 5. **Link failure:** Click an expired/consumed link → user is routed to `/sign-up` with `<InlineError>` above the form with a friendly message; navigating away clears the message.
 6. **Authed user at `/`:** Visit `/` signed in → bounce to `/leagues` (with team) or `/create-team` (without). Sign out → return to `/` → `LandingPage` renders normally.
