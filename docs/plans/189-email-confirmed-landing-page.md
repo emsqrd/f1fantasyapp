@@ -27,9 +27,19 @@ Each commit independently passes `npm run web:build`, `npm run web:lint`, `npm r
 
 **Why this lands first:** the layout deduplicates the existing redirect-if-authed pattern *before* #189 adds a 4th and 5th site. Shipping the refactor as a focused precursor means the #189 commits stay scoped to the new feature, and the diff for each commit reads cleanly.
 
-**What ships:** a new `_unauthenticated` pathless layout route (mirrors `_authenticated`, `_no-team` conventions) that runs the "if signed-in, redirect to leagues/create-team" check once in its `beforeLoad`. `indexRoute`, `signInRoute`, `signUpRoute` move under it. Their own `beforeLoad`s shrink: indexRoute's vanishes entirely (the `readConfirmationLinkError` branch is still removed in Commit 3, where its dead-code status becomes provable); signInRoute's vanishes entirely; signUpRoute's keeps only the `return { confirmationError: ... }` line.
+**What ships:** a new `_unauthenticated` pathless layout route (mirrors `_authenticated`, `_no-team` conventions) that runs the "if signed-in, redirect to leagues/create-team" check once in its `beforeLoad`. `indexRoute`, `signInRoute`, `signUpRoute` move under it. Their own `beforeLoad`s shrink: indexRoute's vanishes entirely (the `readConfirmationLinkError` branch is still removed in Commit 3, where its dead-code status becomes provable); signInRoute's vanishes entirely; signUpRoute's keeps only the `return { confirmationError: ... }` line. The shared redirect rule lands as a `defaultAuthedDestination` helper in `router-context.ts` so Commit 2's new sites (route defensive branch, component Continue handler) consume the same source of truth.
 
 **Files modified:**
+
+- `web/src/lib/router-context.ts` — add a `defaultAuthedDestination` helper co-located with the `RouterContext` type it operates on:
+  ```typescript
+  export function defaultAuthedDestination(
+    teamContext: Pick<RouterContext['teamContext'], 'hasTeam'>,
+  ): '/leagues' | '/create-team' {
+    return teamContext.hasTeam ? '/leagues' : '/create-team';
+  }
+  ```
+  This is the single source of truth for "where do signed-in users belong by default?" — used by the layout below in Commit 1, and by `authConfirmedRoute.beforeLoad` + `ConfirmedNotice` in Commit 2.
 
 - `web/src/router.tsx`:
   - Add `unauthenticatedLayoutRoute`:
@@ -39,10 +49,7 @@ Each commit independently passes `npm run web:build`, `npm run web:lint`, `npm r
       id: '_unauthenticated',
       beforeLoad: ({ context }) => {
         if (context.auth.user) {
-          if (context.teamContext.hasTeam) {
-            throw redirect({ to: '/leagues', replace: true });
-          }
-          throw redirect({ to: '/create-team', replace: true });
+          throw redirect({ to: defaultAuthedDestination(context.teamContext), replace: true });
         }
       },
       component: () => <Outlet />,
@@ -51,7 +58,7 @@ Each commit independently passes `npm run web:build`, `npm run web:lint`, `npm r
   - Remove the `if (context.auth.user) { throw redirect(...) }` block from `indexRoute.beforeLoad` (lines 185-190), `signInRoute.beforeLoad` (lines 207-212), and `signUpRoute.beforeLoad` (lines 229-233). `indexRoute.beforeLoad` keeps its `readConfirmationLinkError` check (removed in Commit 3); `signUpRoute.beforeLoad` keeps `return { confirmationError: ... }`; `signInRoute.beforeLoad` becomes empty and is removed entirely.
   - Update the route tree (lines 721-737): wrap the three routes under `unauthenticatedLayoutRoute.addChildren([indexRoute, signInRoute, signUpRoute])`.
 
-- `web/src/tests/test-utils/routeTreeBuilders.tsx` — add a sibling helper to the existing `buildAuthenticatedLayout` / `buildTeamRequiredLayout` / `buildNoTeamLayout`:
+- `web/src/tests/test-utils/routeTreeBuilders.tsx` — add a sibling helper to the existing `buildAuthenticatedLayout` / `buildTeamRequiredLayout` / `buildNoTeamLayout`. Uses the same `defaultAuthedDestination` helper so the test layout and production layout share the rule:
   ```typescript
   export function buildUnauthenticatedLayout(rootRoute: AnyRoute) {
     return createRoute({
@@ -59,10 +66,7 @@ Each commit independently passes `npm run web:build`, `npm run web:lint`, `npm r
       id: '_unauthenticated',
       beforeLoad: ({ context }: { context: RouterContext }) => {
         if (context.auth.user) {
-          if (context.teamContext.hasTeam) {
-            throw redirect({ to: '/leagues', replace: true });
-          }
-          throw redirect({ to: '/create-team', replace: true });
+          throw redirect({ to: defaultAuthedDestination(context.teamContext), replace: true });
         }
       },
       component: () => <Outlet />,
@@ -71,9 +75,11 @@ Each commit independently passes `npm run web:build`, `npm run web:lint`, `npm r
   ```
   Keeps a single source of truth so a future change to the redirect rule touches one file, not every integration test (this is exactly the convention the file's header comment establishes).
 
-- `web/src/tests/integration/signup-resend.integration.test.tsx` — currently mirrors `signUpRoute` directly under root (line 29-43). Wrap it under `buildUnauthenticatedLayout(rootRoute)` so it exercises the real layout's redirect-if-authed pipeline. Other integration tests that build sign-up / sign-in / index trees get the same treatment if any exist (check via `grep -l "signUpRoute\|signInRoute\|indexRoute" web/src/tests/integration/`).
+- `web/src/tests/integration/signup-resend.integration.test.tsx` — currently mirrors `signUpRoute` directly under root (line 29-43). Wrap it under `buildUnauthenticatedLayout(rootRoute)` so it exercises the real layout's redirect-if-authed pipeline.
 
-**New tests:** none required — this is a pure refactor with no behavioral change. The existing `route-guards.integration.test.tsx` and `signup-resend.integration.test.tsx` cover the behavior that's being relocated; rerunning them against the layout-wrapped tree verifies the relocation. If grep surfaces a `root-routing.integration.test.tsx` or similar that pinned the inline-ternary behavior, update it to mount through the layout.
+- `web/src/tests/integration/root-routing.integration.test.tsx` — currently pins the inline `context.teamContext.hasTeam ? '/leagues' : '/create-team'` ternary inside the mirrored `indexRoute.beforeLoad` (lines 45-52). Replace the inline `indexRoute` definition with `buildUnauthenticatedLayout(rootRoute)` wrapping a stub index route, so the test exercises the relocated redirect through the real layout. The three existing test cases (unauth stays at `/`, authed-no-team → `/create-team`, authed-with-team → `/leagues`) all continue to pass against the layout-wrapped tree.
+
+**New tests:** none required — this is a pure refactor with no behavioral change. The existing `route-guards.integration.test.tsx`, `signup-resend.integration.test.tsx`, and `root-routing.integration.test.tsx` cover the behavior that's being relocated; rerunning them against the layout-wrapped tree verifies the relocation.
 
 **Build/test commands:** `npm run web:lint && npm run web:format:check && npm run web:test && npm run web:build`.
 
@@ -81,75 +87,83 @@ Each commit independently passes `npm run web:build`, `npm run web:lint`, `npm r
 
 ### Commit 2 — Add `/auth/confirmed` route (dead code, fully tested)
 
-**What ships:** a new public route, its component, a tiny helper that captures URL-hash state at module load, and a small `defaultAuthedDestination` helper for the two sites the layout can't cover (the route's defensive branch and the component's Continue handler). Nothing in production sends users to `/auth/confirmed` yet — that wiring lands in Commit 3.
+**What ships:** a new public route, its component, a tiny "did the user arrive from an auth callback?" signal wired through Supabase's `detectSessionInUrl` hook, and a helper that reads it. Reuses the `defaultAuthedDestination` helper introduced in Commit 1 for the two sites that resolve a signed-in user's home destination (the route's defensive branch and the component's Continue handler). Nothing in production sends users to `/auth/confirmed` yet — that wiring lands in Commit 3.
 
 **Why not under the `_unauthenticated` layout:** the layout's invariant is "signed-in users get redirected away." But `authConfirmedRoute`'s success case is precisely "signed-in user just confirmed — render the acknowledgment for them to click through." Putting it under the layout would redirect away every successful confirmation. So `authConfirmedRoute` keeps its own `beforeLoad` with the subtler logic.
 
 **Files added:**
 
-- `web/src/components/auth/ConfirmedNotice/ConfirmedNotice.tsx` — the success-state UI: a `Card` with a brief acknowledgment heading + description, and a single primary `Button` labeled "Continue". On click, navigates via `useNavigate` to:
-  - `search.redirect` if present, OR
+- `web/src/components/auth/ConfirmedNotice/ConfirmedNotice.tsx` — the success-state UI: a `Card` with heading **"Email confirmed"**, a short description (suggested: "You're all set. Click continue to head into F1 Fantasy."), and a single primary `Button` labeled "Continue". On click, navigates via `useNavigate` to:
+  - `search.redirect` if present (read via `useSearch({ from: '/auth/confirmed' })`), OR
   - `defaultAuthedDestination(teamContext)` otherwise (via `useRouteContext({ from: '/auth/confirmed' })` to read `teamContext`).
 
-  No `useEffect`-driven navigation. No timer. The click is the acknowledgment (AC 9). Uses existing primitives — `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `Button` from `@/components/ui/*`.
+  No `useEffect`-driven navigation. No timer. The click is the acknowledgment (AC 9). Uses existing primitives — `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `Button` from `@/components/ui/*`. The heading text "Email confirmed" is also the assertion target for the e2e test in Commit 3 (`getByRole('heading', { name: /email confirmed/i })`), so keep them in sync.
 
 - `web/src/tests/integration/auth-confirmed.integration.test.tsx` — integration coverage for the route. Builds a per-test route tree with `createRootRouteWithContext<RouterContext>()`, mirrors the production `authConfirmedRoute` inline (its `beforeLoad`, `validateSearch`, `component`), and includes stub routes for `/sign-up`, `/leagues`, `/create-team`, `/join/$token` so redirect targets are assertable via `findByRole('heading', { name })`. Uses `buildStubRoute` from `web/src/tests/test-utils/routeTreeBuilders.tsx`.
 
   **Mock seam.** Per `web/CLAUDE.md`, don't mock own-code modules in the integration layer. Mock only the third-party seam — `vi.mock('@/lib/supabase', () => ({ supabase: { auth: { initialize: vi.fn() } } }))` — the same pattern `signup-resend.integration.test.tsx:12` uses for `supabase.auth.resend`. The real `readConfirmationLinkError()` runs against that mock and returns null / expired / generic based on what `initialize()` resolves to.
 
-  **Hash-capture test wiring.** Because `hadConfirmationGrantOnLoad` captures `window.location.hash` at module load, per-test variation requires `vi.resetModules()` + dynamic `await import('@/lib/auth-redirect')` inside each test, after setting `window.location.hash`. The route tree must also be built per test inside the same dynamic-import scope so it pulls the freshly evaluated helper:
+  **Arrival-flag test wiring.** `hadConfirmationGrantOnLoad()` reads `window.__f1ImplicitGrantOnLoad`, which production code sets from inside the Supabase `detectSessionInUrl` callback (see the `supabase.ts` modification below). Tests set the flag directly before mounting:
 
   ```typescript
-  beforeEach(() => { vi.resetModules(); });
-
-  async function setupRoute({ hash }: { hash: string }) {
-    window.location.hash = hash;
-    const { hadConfirmationGrantOnLoad, readConfirmationLinkError } = await import('@/lib/auth-redirect');
-    const { ConfirmedNotice } = await import('@/components/auth/ConfirmedNotice/ConfirmedNotice');
-    return buildAuthConfirmedRouteTree({ hadConfirmationGrantOnLoad, readConfirmationLinkError, ConfirmedNotice });
-  }
+  afterEach(() => { delete window.__f1ImplicitGrantOnLoad; });
   ```
+
+  Each test sets `window.__f1ImplicitGrantOnLoad = true` to simulate "user arrived from a magic link" or leaves it unset to simulate "no confirmation in flight." No `vi.resetModules()` / dynamic-import dance is needed because the flag lives on `window`, not in module-load state.
 
   Tests:
 
-  1. **Fresh magic-link arrival, no-team user** — hash set to `'#access_token=fake'`, `supabase.auth.initialize` resolves `{ error: null }`, auth = `createAuthedAuth()`, `teamContext.hasTeam = false`. Asserts the confirmation message renders + a single "Continue" button. Click Continue → `/create-team` stub.
+  1. **Fresh magic-link arrival, no-team user** — `window.__f1ImplicitGrantOnLoad = true`, `supabase.auth.initialize` resolves `{ error: null }`, auth = `createAuthedAuth()`, `teamContext.hasTeam = false`. Asserts the confirmation message renders + a single "Continue" button. Click Continue → `/create-team` stub.
   2. **Fresh magic-link arrival, has-team user** — same setup but `teamContext.hasTeam = true`. Continue → `/leagues` stub.
   3. **Fresh magic-link arrival, with `?redirect=/join/abc`** — initialEntry includes the search param; Continue → `/join/abc` stub (overrides team-state decision).
-  4. **Error in hash** — `supabase.auth.initialize` resolves with an `AuthImplicitGrantRedirectError` carrying `details.code: 'otp_expired'`. Asserts redirect to `/sign-up` stub (ConfirmedNotice never renders). `'generic'` covered by a second case (different error code).
-  5. **Defensive: no hash, no session** — hash = `''`, `auth = createUnauthAuth()`. Asserts redirect to `/sign-up` stub.
-  6. **Defensive: no hash, has session** — hash = `''`, `auth = createAuthedAuth()`, `hasTeam = false`. Asserts redirect to `/create-team` stub. Mirror case with `hasTeam = true` → `/leagues` stub.
+  4. **Error in hash** — `window.__f1ImplicitGrantOnLoad = true`, `supabase.auth.initialize` resolves with an `AuthImplicitGrantRedirectError` carrying `details.code: 'otp_expired'`. Asserts redirect to `/sign-up` stub (ConfirmedNotice never renders). `'generic'` covered by a second case (different error code).
+  5. **Defensive: no arrival flag, no session** — flag unset, `auth = createUnauthAuth()`. Asserts redirect to `/sign-up` stub.
+  6. **Defensive: no arrival flag, has session** — flag unset, `auth = createAuthedAuth()`, `hasTeam = false`. Asserts redirect to `/create-team` stub. Mirror case with `hasTeam = true` → `/leagues` stub.
   7. **No auto-redirect on success** — extends test 1: without clicking Continue, page stays on `/auth/confirmed` across a `waitFor` window. Covers AC 9 directly.
 
   No MSW handlers needed — this route makes no API calls.
 
 **Files modified:**
 
-- `web/src/lib/auth-redirect.ts` — add `hadConfirmationGrantOnLoad()`. The capture must happen at module load because Supabase's `initialize()` (scheduled as a microtask during client construction) strips the URL fragment before any `beforeLoad` can run.
+- `web/src/lib/supabase.ts` — pass a function-typed `detectSessionInUrl` to `createClient`. Supabase's `_initialize()` invokes this function while parsing the URL, **before** stripping `window.location.hash`. We use it as a notification hook: when the SDK identifies the URL as an implicit-grant callback, we set a `window` flag for the `/auth/confirmed` route to read. Returning `Boolean(params.access_token || params.error_description)` preserves the SDK's default detection behavior — the existing `_getSessionFromURL` / `SIGNED_IN` / `readConfirmationLinkError()` pipelines are unchanged.
 
   ```typescript
-  // Captured at module load — the auth library removes this part of the URL
-  // before our route guards run, so reading it later returns nothing.
-  const HAD_IMPLICIT_GRANT_ON_LOAD =
-    typeof window !== 'undefined' && window.location.hash.includes('access_token=');
+  declare global {
+    interface Window {
+      __f1ImplicitGrantOnLoad?: boolean;
+    }
+  }
 
+  export const supabase = createClient(
+    import.meta.env.VITE_SUPABASE_URL!,
+    import.meta.env.VITE_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        // Supabase calls this synchronously while parsing the URL on boot,
+        // before stripping the hash. We treat the call itself as "the user
+        // arrived from an auth callback" — the /auth/confirmed route reads
+        // this flag instead of trying to inspect the (already stripped) hash.
+        detectSessionInUrl: (_url, params) => {
+          const isCallback = Boolean(params.access_token || params.error_description);
+          if (isCallback) window.__f1ImplicitGrantOnLoad = true;
+          return isCallback; // matches default detection behavior
+        },
+      },
+    },
+  );
+  ```
+
+  The function form is part of the public `GoTrueClientOptions` type signature in `@supabase/auth-js` (`types.ts:107` in v2.105.3 — `boolean | ((url: URL, params: { [parameter: string]: string }) => boolean)`). Its documented use case is filtering non-Supabase OAuth fragments (e.g., Facebook), but the call site (`GoTrueClient._isImplicitGrantCallback`) runs before `_getSessionFromURL` strips the hash, which makes it the right hook for our arrival signal too.
+
+- `web/src/lib/auth-redirect.ts` — add `hadConfirmationGrantOnLoad()` that reads the flag set by the `detectSessionInUrl` hook in `supabase.ts`. No module-load capture needed: the SDK calls the hook at the right moment, regardless of our import graph.
+
+  ```typescript
   export function hadConfirmationGrantOnLoad(): boolean {
-    return HAD_IMPLICIT_GRANT_ON_LOAD;
+    return typeof window !== 'undefined' && window.__f1ImplicitGrantOnLoad === true;
   }
   ```
 
-- `web/src/lib/route-guards.ts` — add a small named function for the route + component sites the layout can't cover:
-
-  ```typescript
-  export function defaultAuthedDestination(
-    teamContext: Pick<RouterContext['teamContext'], 'hasTeam'>,
-  ): '/leagues' | '/create-team' {
-    return teamContext.hasTeam ? '/leagues' : '/create-team';
-  }
-  ```
-
-  Used by `authConfirmedRoute.beforeLoad` defensive branch and `ConfirmedNotice` Continue handler. The layout in Commit 1 inlines its branches for clarity (just two `throw redirect` calls); this helper exists for the non-route sites where the value flows into a `navigate({ to })` call or another decision.
-
-- `web/src/router.tsx` — add `authConfirmedRoute` as a peer of the `unauthenticatedLayoutRoute` (NOT under it — see "Why not under the `_unauthenticated` layout" above). Register in the route tree.
+- `web/src/router.tsx` — add `authConfirmedRoute` as a peer of the `unauthenticatedLayoutRoute` (NOT under it — see "Why not under the `_unauthenticated` layout" above). Register in the route tree. Imports `defaultAuthedDestination` from `@/lib/router-context` (introduced in Commit 1).
 
   ```typescript
   const authConfirmedRoute = createRoute({
@@ -185,7 +199,7 @@ Each commit independently passes `npm run web:build`, `npm run web:lint`, `npm r
 
 **Files modified:**
 
-- `web/src/components/auth/SignUpForm/SignUpForm.tsx` — replace the `emailRedirectTo` construction (lines 35-36) with TanStack Router's typed location builder. This is the file's first use of `buildLocation`, but `useRouter()` is already an established pattern in the codebase (`useLineupPicker.ts:2`). The win: compile-time validation that `/auth/confirmed` is a registered route, and typed search-param shape.
+- `web/src/components/auth/SignUpForm/SignUpForm.tsx` — replace the `emailRedirectTo` construction (lines 35-36) with TanStack Router's typed location builder. The codebase's prevailing pattern for `to:` is type-safe route literals (`<Link to>`, `navigate({ to })`, `redirect({ to })` — used everywhere from `AppSidebar` to `JoinInvite`); `emailRedirectTo` is the lone untyped URL construction and we're about to add another reference to a registered route from it. Using `buildLocation` extends the typed-routing discipline to this URL-out case rather than introducing a fresh untyped string. The win: compile-time validation that `/auth/confirmed` is a registered route.
 
   ```typescript
   const router = useRouter();
@@ -203,15 +217,27 @@ Each commit independently passes `npm run web:build`, `npm run web:lint`, `npm r
 
   After this commit, `indexRoute.beforeLoad` may end up empty — if so, drop the `beforeLoad` key entirely. The `unauthenticatedLayoutRoute` parent already handles signed-in redirect.
 
-- `web/src/tests/integration/signup-resend.integration.test.tsx` (line 81) — update the assertion. The `built.href` from `buildLocation` produces a path with TanStack's canonical search-string encoding; verify the exact string against an actual call output during implementation, but expected shape:
+- `web/src/tests/integration/signup-resend.integration.test.tsx` — two changes:
 
-  ```typescript
-  options: {
-    emailRedirectTo: `${window.location.origin}/auth/confirmed?redirect=%2Fleagues%2F123`,
-  }
-  ```
+  1. **Extend the inline route tree to register `/auth/confirmed`** so `buildLocation({ to: '/auth/confirmed' })` resolves cleanly inside `SignUpForm`. Add a stub via the existing `buildStubRoute` helper from `routeTreeBuilders.tsx`:
+     ```typescript
+     const authConfirmedRoute = buildStubRoute(rootRoute, {
+       path: '/auth/confirmed',
+       heading: 'Email Confirmed Stub',
+     });
+     // ...and include in rootRoute.addChildren([...])
+     ```
+     The test never navigates to this stub — it just needs the route registered so the typed `to:` resolves. (The stub must accept the same `redirect` search param shape; `buildStubRoute` doesn't validate search, which is fine here — only the registered path matters for `buildLocation` resolution.)
 
-  (TanStack `buildLocation` URL-encodes search-param values via the router's `parseSearch` / `stringifySearch` pair, which defaults to `JSON.parse` / `JSON.stringify`-with-encoding; the value `/leagues/123` round-trips to `%2Fleagues%2F123` — confirm during implementation.) The test's `initialEntry` (`/sign-up?redirect=/leagues/123`) and the rest of the flow are unchanged. The same test now covers AC 6's "resent email points at confirmation page" property.
+  2. **Update the assertion at line 81** to the new `emailRedirectTo` value:
+     ```typescript
+     options: {
+       emailRedirectTo: `${window.location.origin}/auth/confirmed?redirect=%2Fleagues%2F123`,
+     }
+     ```
+     This is the exact string TanStack's default `stringifySearch` produces — verified by executing `defaultStringifySearch({ redirect: '/leagues/123' })` against `web/node_modules/@tanstack/router-core/dist/cjs/searchParams.cjs`. Plain strings (non-JSON-parseable) pass through `URLSearchParams.set` which `encodeURIComponent`s them; no JSON quotes are added. No `parseSearch` / `stringifySearch` override exists in `createRouter()` (router.tsx:754-783), so the default is in effect.
+
+  The test's `initialEntry` (`/sign-up?redirect=/leagues/123`) and the rest of the flow are unchanged. The same test now covers AC 6's "resent email points at confirmation page" property.
 
 - `e2e/tests/auth.spec.ts` — update three tests so post-link-click assertions step through the new intermediate page, and add one new test for the error-redirect chain. The OTP test (lines 72-99) and the sign-in tests are not touched.
 
@@ -275,5 +301,6 @@ npm run e2e
 
 - **Supabase redirect allowlist:** dev/e2e are covered by the existing `http://localhost:5173/**` wildcard in `api/supabase/config.toml:126`; no config change. Production may need `/auth/confirmed` added if the dashboard uses tightened patterns — flag in PR description; out of repo's automatable scope.
 - **Commit message style:** conventional commits per CLAUDE.md (`refactor:`, `feat:`, `feat:` or similar). PR title NOT conventional-commit-styled per user preference. No `Co-Authored-By` footer.
-- **Comments:** only one is justified — the const in `auth-redirect.ts` explaining the module-load capture timing. Everything else (component structure, redirect decisions, layout intent) is self-evident from the code and the route-tree shape.
+- **Comments:** only one is justified — the inline note on the `detectSessionInUrl` callback in `supabase.ts` explaining what we're using the hook for (since "arrival signal" isn't its documented purpose). Everything else (component structure, redirect decisions, layout intent) is self-evident from the code and the route-tree shape.
+- **Why `detectSessionInUrl` as a function, not a module-load hash capture:** an earlier draft of this plan captured `window.location.hash` at module-load time in `auth-redirect.ts`. That approach worked only because `auth-redirect.ts` happened to evaluate during the initial synchronous import chain before Supabase's microtask-scheduled `_initialize()` strips the hash — a brittle invariant that any future lazy-loading would silently break. The function-typed `detectSessionInUrl` hook is the SDK's own pre-strip callback (`@supabase/auth-js` v2.105.3, `types.ts:107`; invoked from `_isImplicitGrantCallback` before `_getSessionFromURL` runs). Using it means the SDK guarantees the timing, not our import graph.
 - **No new contracts, services, or third-party deps** are introduced. The new component uses existing `@/components/ui/*` primitives; the route reuses `redirectSearchSchema` and the existing `RouterContext` shape. `useRouter` and `buildLocation` are already in the project's TanStack Router dependency.
