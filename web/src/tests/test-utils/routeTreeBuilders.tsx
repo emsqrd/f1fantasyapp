@@ -2,8 +2,8 @@
 // with `RouterContext`. If a test needs a different context shape, drop down to
 // `createRoute` directly — these helpers won't fit.
 import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
-import type { RouterContext } from '@/lib/router-context';
-import { type AnyRoute, Outlet, createRoute } from '@tanstack/react-router';
+import { type RouterContext, defaultAuthedDestination } from '@/lib/router-context';
+import { type AnyRoute, Outlet, createRoute, redirect } from '@tanstack/react-router';
 
 /**
  * Test utility: builds the production `_authenticated` pathless layout route
@@ -32,6 +32,22 @@ export function buildTeamRequiredLayout(parent: AnyRoute) {
     getParentRoute: () => parent,
     id: '_team-required',
     beforeLoad: ({ context }: { context: RouterContext }) => requireTeam(context),
+    component: () => <Outlet />,
+  });
+}
+
+export function buildUnauthenticatedLayout(rootRoute: AnyRoute) {
+  return createRoute({
+    getParentRoute: () => rootRoute,
+    id: '_unauthenticated',
+    beforeLoad: ({ context }: { context: RouterContext }) => {
+      if (context.auth.user) {
+        throw redirect({
+          to: defaultAuthedDestination(context.teamContext),
+          replace: true,
+        });
+      }
+    },
     component: () => <Outlet />,
   });
 }

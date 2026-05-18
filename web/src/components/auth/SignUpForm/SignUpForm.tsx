@@ -28,8 +28,8 @@ export function SignUpForm() {
   const { signUp, startAuthTransition, completeAuthTransition } = useAuth();
 
   const navigate = useNavigate();
-  const search = useSearch({ from: '/sign-up' });
-  const { confirmationError } = useRouteContext({ from: '/sign-up' });
+  const search = useSearch({ from: '/_unauthenticated/sign-up' });
+  const { confirmationError } = useRouteContext({ from: '/_unauthenticated/sign-up' });
   const confirmationErrorMessage =
     confirmationError && CONFIRMATION_ERROR_MESSAGES[confirmationError];
   const destination = search.redirect ?? '/';

@@ -3,30 +3,16 @@ import { TeamContext } from '@/contexts/TeamContext';
 import type { RouterContext } from '@/lib/router-context';
 import {
   buildStubRoute,
+  buildUnauthenticatedLayout,
   createAuthedAuth,
   createBaseRouterContext,
   createTeamContext,
   createUnauthAuth,
   renderWithRouter,
 } from '@/tests/test-utils';
-import {
-  ErrorComponent,
-  Outlet,
-  createRootRouteWithContext,
-  createRoute,
-  redirect,
-} from '@tanstack/react-router';
+import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { z } from 'zod';
-
-const redirectSearchSchema = z.object({
-  redirect: z
-    .string()
-    .refine((url) => url.startsWith('/'), 'Redirect must be an internal path')
-    .optional()
-    .catch(undefined),
-});
 
 function buildRootRoutingTree(teamContextValue: TeamContextType) {
   const rootRoute = createRootRouteWithContext<RouterContext>()({
@@ -37,20 +23,10 @@ function buildRootRoutingTree(teamContextValue: TeamContextType) {
     ),
   });
 
-  const indexRoute = createRoute({
-    getParentRoute: () => rootRoute,
+  const unauthenticatedLayoutRoute = buildUnauthenticatedLayout(rootRoute);
+  const indexRoute = buildStubRoute(unauthenticatedLayoutRoute, {
     path: '/',
-    validateSearch: redirectSearchSchema,
-    component: () => <h1>Landing Page</h1>,
-    beforeLoad: async ({ context }) => {
-      if (context.auth.user) {
-        throw redirect({
-          to: context.teamContext.hasTeam ? '/leagues' : '/create-team',
-          replace: true,
-        });
-      }
-    },
-    errorComponent: ({ error }) => <ErrorComponent error={error} />,
+    heading: 'Landing Page',
   });
 
   const createTeamRoute = buildStubRoute(rootRoute, {
@@ -62,7 +38,11 @@ function buildRootRoutingTree(teamContextValue: TeamContextType) {
     heading: 'Leagues Page',
   });
 
-  return rootRoute.addChildren([indexRoute, createTeamRoute, leaguesRoute]);
+  return rootRoute.addChildren([
+    unauthenticatedLayoutRoute.addChildren([indexRoute]),
+    createTeamRoute,
+    leaguesRoute,
+  ]);
 }
 
 describe('routing at /', () => {
