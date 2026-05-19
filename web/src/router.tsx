@@ -7,6 +7,7 @@ import { Layout } from '@/components/Layout/Layout';
 import { League } from '@/components/League/League';
 import { LeagueList } from '@/components/LeagueList/LeagueList';
 import { MyTeamRoute, TeamRoute } from '@/components/Team/Team';
+import { ConfirmedNotice } from '@/components/auth/ConfirmedNotice/ConfirmedNotice';
 import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import type { Team as TeamType } from '@/contracts/Team';
@@ -14,6 +15,7 @@ import type { UserProfile } from '@/contracts/UserProfile';
 import { readConfirmationLinkError } from '@/lib/auth-redirect';
 import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
 import { type RouterContext, defaultAuthedDestination } from '@/lib/router-context';
+import { supabase } from '@/lib/supabase';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
 import { getLeagueStandings } from '@/services/standingsService';
 import { getMyTeam, getTeamById } from '@/services/teamService';
@@ -213,6 +215,10 @@ const signInRoute = createRoute({
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
 
+const signUpSearchSchema = redirectSearchSchema.extend({
+  confirmationError: z.enum(['expired', 'generic']).optional().catch(undefined),
+});
+
 /**
  * Sign-up route - public route for user registration.
  *
@@ -221,9 +227,49 @@ const signInRoute = createRoute({
 const signUpRoute = createRoute({
   getParentRoute: () => unauthenticatedLayoutRoute,
   path: '/sign-up',
-  validateSearch: redirectSearchSchema,
+  validateSearch: signUpSearchSchema,
   component: SignUpForm,
   beforeLoad: async () => ({ confirmationError: await readConfirmationLinkError() }),
+  errorComponent: ({ error }) => <ErrorComponent error={error} />,
+});
+
+const authConfirmSearchSchema = z.object({
+  token_hash: z.string().optional(),
+  type: z.literal('signup').optional(),
+  next: z.string().optional().catch(undefined),
+});
+
+// Peer of `_unauthenticated` rather than a child: a successful verification
+// mints a session, and the unauthenticated layout would redirect signed-in
+// users away from this very page.
+const authConfirmRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/auth/confirm',
+  validateSearch: authConfirmSearchSchema,
+  component: ConfirmedNotice,
+  beforeLoad: async ({ context, search }) => {
+    if (!search.token_hash || !search.type) {
+      if (context.auth.user) {
+        throw redirect({
+          to: defaultAuthedDestination(context.teamContext),
+          replace: true,
+        });
+      }
+      throw redirect({ to: '/sign-up', replace: true });
+    }
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash: search.token_hash,
+      type: search.type,
+    });
+    if (error) {
+      const confirmationError = error.code === 'otp_expired' ? 'expired' : 'generic';
+      throw redirect({
+        to: '/sign-up',
+        search: { confirmationError },
+        replace: true,
+      });
+    }
+  },
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
 
@@ -710,6 +756,7 @@ const myTeamRoute = createRoute({
  */
 const routeTree = rootRoute.addChildren([
   unauthenticatedLayoutRoute.addChildren([indexRoute, signInRoute, signUpRoute]),
+  authConfirmRoute,
   joinInviteRoute,
   authenticatedLayoutRoute.addChildren([
     accountRoute,
