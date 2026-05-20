@@ -1,5 +1,19 @@
 # Plan — Issue #189: Dedicated email-confirmed landing page
 
+## Status as of 2026-05-19 (click-to-verify correction)
+
+Commits 1–3 are committed on `email-confirmed-landing-issue-189`:
+
+- Commit 1 (`df129c6`) — `_unauthenticated` layout route.
+- Commit 2 (`50829f4`) — `/auth/confirm` route verifying the token via `verifyOtp` in `beforeLoad`.
+- Commit 3 (`612eb3e`) — signup email flipped to `/auth/confirm`; implicit-flow scaffolding removed.
+
+Commit 4 below corrects a design flaw in Commits 2–3: verifying inside `beforeLoad` consumes the
+one-time token on page **load**, so an email-link scanner that prefetches the URL can burn the token
+before the user ever clicks. Commit 4 moves verification onto the Continue button. It is **additive**
+on top of the committed work — no `git restore`; the "Discard prior WIP" instructions in the section
+below are obsolete and do not apply.
+
 ## Status as of 2026-05-19 (token-hash redesign)
 
 Commit 1 (`_unauthenticated` layout, `df129c6`) is shipped and unchanged. This document supersedes the earlier draft of Commits 2 and 3 — the previous design intercepted Supabase's implicit-grant URL fragment via a `detectSessionInUrl` hook + `window.__f1ImplicitGrantOnLoad` arrival flag; the revised design uses Supabase's documented token-hash flow (`verifyOtp({ token_hash, type })`) and owns the verification step inside a route loader.
@@ -302,7 +316,94 @@ npm run e2e
 
 ---
 
-## Verification (end-to-end, after both commits)
+### Commit 4 — Move verification onto the Continue click (scanner-resilient)
+
+**Why this changes the design:** Commits 2–3 verify the signup token inside `authConfirmRoute`'s
+`beforeLoad` — the token is consumed as a side effect of the page _loading_. Email security
+appliances (Microsoft Defender Safe Links, Proofpoint, Mimecast) and link-preview crawlers issue
+automated GET requests against every link in an email before the human clicks; a JS-executing
+scanner boots the SPA, runs `beforeLoad`, and burns the one-time token — the real user then gets
+`otp_expired`. Verifying on load also violates HTTP GET-safety (RFC 9110 §9.2.1) and breaks on a
+plain page refresh. Supabase's own email-template docs recommend the fix: land on a page whose
+button — a deliberate user action — consumes the token. Issue #189 already mandates a Continue click
+(AC 9), so this costs **zero extra clicks**; it just makes the existing button do the real work.
+
+**Files renamed:**
+
+- `web/src/components/auth/ConfirmedNotice/ConfirmedNotice.tsx` →
+  `web/src/components/auth/ConfirmEmailNotice/ConfirmEmailNotice.tsx`. The component is now a
+  _prompt_ ("Confirm your email"), not a _notice_ of an accomplished fact — the email isn't
+  confirmed until the click. Export renamed `ConfirmedNotice` → `ConfirmEmailNotice`.
+
+**Files modified:**
+
+- `ConfirmEmailNotice.tsx` — the component owns verification now:
+  - Reads `useAuth()` for `user`; holds a `submitting` state.
+  - Heading "Confirm your email"; body "Click continue to confirm your email and head into F1
+    Fantasy."; primary `<LoadingButton>` labeled "Continue" (`isLoading={submitting}` — `aria-busy`,
+    stays keyboard-reachable).
+  - On click: if not already signed in and `token_hash` + `type` are present, call
+    `supabase.auth.verifyOtp({ token_hash, type })`.
+    - Error → `navigate({ to: '/sign-up', search: { confirmationError }, replace: true })`
+      (`expired` for `otp_expired`, else `generic`) — reuses SignUpForm's existing inline error.
+    - Success, or user already signed in (back-button / double-click re-entry) → `navigate` to
+      `resolveNextDestination(search.next)` or `defaultAuthedDestination(teamContext)`, `replace: true`.
+  - The `!user` guard makes re-entry idempotent: a signed-in visitor skips `verifyOtp` (the token is
+    already spent) and just navigates.
+  - `resolveNextDestination` unchanged. One comment earns its place — that verification sits on the
+    click, not the load, so a future refactor doesn't silently reintroduce the scanner bug.
+
+- `web/src/router.tsx`:
+  - `authConfirmRoute.beforeLoad` drops the `verifyOtp` call and the `if (context.auth.user) return`
+    idempotency guard, keeping only the missing-params guard (no `token_hash`/`type` → redirect to
+    `defaultAuthedDestination` if signed in, else `/sign-up`). It becomes synchronous.
+  - `component: ConfirmedNotice` → `ConfirmEmailNotice`; update the import path.
+  - Remove the now-unused `import { supabase }` line.
+  - Refresh the peer-route comment: the route stays a peer of `_unauthenticated` because it must
+    remain reachable by signed-in users (the no-token redirect branch, back-button re-entry) — not
+    because `beforeLoad` mints a session.
+
+**Tests:**
+
+- `web/src/tests/integration/auth-confirm.integration.test.tsx` — rewritten for the new flow. The
+  mirrored `beforeLoad` loses the `verifyOtp` block; the real `ConfirmEmailNotice` (imported, not
+  mirrored) runs `verifyOtp` on click. Mock seam stays `verifyOtp` only. Cases:
+  1. Valid token, no-team, signed-out → page renders, `verifyOtp` **not yet called**; click Continue
+     → `verifyOtp({ token_hash, type })` called → `/create-team`.
+  2. Valid token, has-team → click → `/leagues`.
+  3. `next=<same-origin>/join/abc` → click → `/join/abc` (overrides team-state default).
+  4. `verifyOtp` → `otp_expired` → click → `/sign-up?confirmationError=expired`.
+  5. `verifyOtp` → other code → click → `/sign-up?confirmationError=generic`.
+  6. Missing `token_hash`, signed-out → `beforeLoad` redirect to `/sign-up`, no click.
+  7. Missing `token_hash`, signed-in + team → redirect to `/leagues`.
+  8. Cross-origin `next` → click → falls back to `defaultAuthedDestination`.
+  9. **Token not consumed on load** — render, assert `verifyOtp` **not called** and the page stays on
+     `/auth/confirm` across a `waitFor` window. This is the scanner-safety property the commit exists
+     for.
+  10. Already signed in → click skips `verifyOtp`, navigates to destination.
+
+- `e2e/tests/auth.spec.ts`:
+  - Single-browser signup + resend tests: heading assertion `/email confirmed/i` →
+    `/confirm your email/i`; the existing `click('Continue')` step stays.
+  - Expired-link test: `page.goto(brokenUrl)` now lands on `/auth/confirm` (the bad token isn't
+    checked until the click). Add: assert `/auth/confirm`, click Continue, _then_ assert
+    `/sign-up?confirmationError=` + the inline alert.
+  - Cross-browser test: unchanged — it already clicks Continue and asserts no heading.
+
+- `SignUpForm` and its tests are untouched — `confirmationError` already arrives as a `/sign-up`
+  search param (Commit 3).
+
+**Build/test commands:**
+
+```bash
+npm run web:lint && npm run web:format:check && npm run web:test && npm run web:build
+# E2E requires `cd e2e/supabase && supabase start` first:
+npm run e2e
+```
+
+---
+
+## Verification (end-to-end, after all commits)
 
 1. **Manual smoke (dev stack):** `npm run web:dev` + `npm run api:watch`. In the browser:
    - Sign up with a new email → land on Check Your Email screen. Open Mailpit (`http://localhost:54324`), grab the magic link, paste in a fresh incognito window. Expect: `/auth/confirm` → ConfirmedNotice visible. Click Continue → `/create-team`. (AC 1, 2)
