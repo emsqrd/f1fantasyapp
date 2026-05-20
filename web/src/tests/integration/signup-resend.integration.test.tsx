@@ -23,12 +23,13 @@ vi.mock('@/lib/supabase', () => ({
 }));
 
 // Mirrors the `/sign-up` route from `router.tsx`.
-const redirectSearchSchema = z.object({
+const signUpSearchSchema = z.object({
   redirect: z
     .string()
     .refine((url) => url.startsWith('/'), 'Redirect must be an internal path')
     .optional()
     .catch(undefined),
+  confirmationError: z.enum(['expired', 'generic']).optional().catch(undefined),
 });
 
 function buildSignUpRouteTree() {
@@ -41,9 +42,8 @@ function buildSignUpRouteTree() {
   const signUpRoute = createRoute({
     getParentRoute: () => unauthenticatedLayoutRoute,
     path: '/sign-up',
-    validateSearch: redirectSearchSchema,
+    validateSearch: signUpSearchSchema,
     component: SignUpForm,
-    beforeLoad: () => ({ confirmationError: null }),
   });
 
   return rootRoute.addChildren([unauthenticatedLayoutRoute.addChildren([signUpRoute])]);

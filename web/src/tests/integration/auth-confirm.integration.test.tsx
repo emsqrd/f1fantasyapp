@@ -73,6 +73,7 @@ function buildAuthConfirmRouteTree() {
         }
         throw redirect({ to: '/sign-up', replace: true });
       }
+      if (context.auth.user) return;
       const { error } = await supabase.auth.verifyOtp({
         token_hash: search.token_hash,
         type: search.type,
@@ -137,10 +138,32 @@ describe('/auth/confirm route', () => {
     vi.mocked(supabase.auth.verifyOtp).mockReset();
   });
 
-  it('renders ConfirmedNotice after verifyOtp succeeds and navigates to /create-team when the user has no team', async () => {
+  it('calls verifyOtp, renders ConfirmedNotice, and navigates to /create-team when the user has no team', async () => {
     mockVerifyOtpSuccess();
     const teamContext = createTeamContext({ hasTeam: false });
     const user = userEvent.setup();
+
+    renderWithRouter({
+      routeTree: buildAuthConfirmRouteTree(),
+      initialEntry: '/auth/confirm?token_hash=abc123&type=signup',
+      auth: createUnauthAuth(),
+      routerContext: createBaseRouterContext({ teamContext }),
+    });
+
+    expect(await screen.findByRole('heading', { name: /email confirmed/i })).toBeInTheDocument();
+    expect(supabase.auth.verifyOtp).toHaveBeenCalledWith({
+      token_hash: 'abc123',
+      type: 'signup',
+    });
+    expect(screen.getAllByRole('button', { name: /continue/i })).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: /continue/i }));
+
+    expect(await screen.findByRole('heading', { name: 'Create Team Stub' })).toBeInTheDocument();
+  });
+
+  it('skips verifyOtp when the user is already signed in with a valid token_hash (idempotent re-entry)', async () => {
+    const teamContext = createTeamContext({ hasTeam: false });
 
     renderWithRouter({
       routeTree: buildAuthConfirmRouteTree(),
@@ -150,11 +173,7 @@ describe('/auth/confirm route', () => {
     });
 
     expect(await screen.findByRole('heading', { name: /email confirmed/i })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /continue/i })).toHaveLength(1);
-
-    await user.click(screen.getByRole('button', { name: /continue/i }));
-
-    expect(await screen.findByRole('heading', { name: 'Create Team Stub' })).toBeInTheDocument();
+    expect(supabase.auth.verifyOtp).not.toHaveBeenCalled();
   });
 
   it('navigates to the same-origin next param, overriding the team-state default', async () => {

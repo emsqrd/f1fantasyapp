@@ -12,7 +12,6 @@ import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import type { Team as TeamType } from '@/contracts/Team';
 import type { UserProfile } from '@/contracts/UserProfile';
-import { readConfirmationLinkError } from '@/lib/auth-redirect';
 import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
 import { type RouterContext, defaultAuthedDestination } from '@/lib/router-context';
 import { supabase } from '@/lib/supabase';
@@ -194,11 +193,6 @@ const indexRoute = createRoute({
   path: '/',
   validateSearch: redirectSearchSchema,
   component: LandingPage,
-  beforeLoad: async () => {
-    if (await readConfirmationLinkError()) {
-      throw redirect({ to: '/sign-up', replace: true });
-    }
-  },
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
 
@@ -229,7 +223,6 @@ const signUpRoute = createRoute({
   path: '/sign-up',
   validateSearch: signUpSearchSchema,
   component: SignUpForm,
-  beforeLoad: async () => ({ confirmationError: await readConfirmationLinkError() }),
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
 
@@ -257,6 +250,10 @@ const authConfirmRoute = createRoute({
       }
       throw redirect({ to: '/sign-up', replace: true });
     }
+    // verifyOtp consumes the token. SIGNED_IN fires immediately after success
+    // and the router invalidates, re-running beforeLoad with the same URL —
+    // skip the second call so the consumed token doesn't fail verification.
+    if (context.auth.user) return;
     const { error } = await supabase.auth.verifyOtp({
       token_hash: search.token_hash,
       type: search.type,

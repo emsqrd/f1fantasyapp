@@ -168,8 +168,9 @@
                   <tr>
                     <td valign="middle">
                       <!-- Bulletproof button -->
+                      <!-- type MUST match [auth.email.template.confirmation] in api/supabase/config.toml -->
                       <a
-                        href="{{ .ConfirmationURL }}"
+                        href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup&next={{ .RedirectTo }}"
                         class="btn"
                         style="
                           display: inline-block;

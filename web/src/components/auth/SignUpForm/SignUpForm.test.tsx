@@ -24,11 +24,9 @@ vi.mock('@/hooks/useAuth', async () => {
 
 const mockNavigate = vi.fn();
 const mockUseSearch = vi.fn();
-const mockUseRouteContext = vi.fn();
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
   useSearch: () => mockUseSearch(),
-  useRouteContext: () => mockUseRouteContext(),
   Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
     <a href={to}>{children}</a>
   ),
@@ -57,7 +55,6 @@ describe('SignUpForm', () => {
       completeAuthTransition: mockCompleteAuthTransition,
     });
     mockUseSearch.mockReturnValue({});
-    mockUseRouteContext.mockReturnValue({ confirmationError: null });
   });
 
   afterEach(() => {
@@ -261,8 +258,8 @@ describe('SignUpForm', () => {
     });
   });
 
-  it('renders the expired-link copy when route context carries confirmationError="expired"', () => {
-    mockUseRouteContext.mockReturnValue({ confirmationError: 'expired' });
+  it('renders the expired-link copy when search carries confirmationError="expired"', () => {
+    mockUseSearch.mockReturnValue({ confirmationError: 'expired' });
     setup();
 
     expect(screen.getByRole('alert')).toHaveTextContent(
@@ -270,8 +267,8 @@ describe('SignUpForm', () => {
     );
   });
 
-  it('renders the generic copy when route context carries confirmationError="generic"', () => {
-    mockUseRouteContext.mockReturnValue({ confirmationError: 'generic' });
+  it('renders the generic copy when search carries confirmationError="generic"', () => {
+    mockUseSearch.mockReturnValue({ confirmationError: 'generic' });
     setup();
 
     expect(screen.getByRole('alert')).toHaveTextContent(
@@ -279,8 +276,8 @@ describe('SignUpForm', () => {
     );
   });
 
-  it('renders no confirmation-error alert when route context carries confirmationError=null', () => {
-    mockUseRouteContext.mockReturnValue({ confirmationError: null });
+  it('renders no confirmation-error alert when search omits confirmationError', () => {
+    mockUseSearch.mockReturnValue({});
     setup();
 
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
