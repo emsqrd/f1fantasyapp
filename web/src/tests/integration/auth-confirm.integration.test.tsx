@@ -1,4 +1,4 @@
-import { ConfirmedNotice } from '@/components/auth/ConfirmedNotice/ConfirmedNotice';
+import { ConfirmEmailNotice } from '@/components/auth/ConfirmEmailNotice/ConfirmEmailNotice';
 import { type RouterContext, defaultAuthedDestination } from '@/lib/router-context';
 import { supabase } from '@/lib/supabase';
 import {
@@ -62,8 +62,8 @@ function buildAuthConfirmRouteTree() {
     getParentRoute: () => rootRoute,
     path: '/auth/confirm',
     validateSearch: authConfirmSearchSchema,
-    component: ConfirmedNotice,
-    beforeLoad: async ({ context, search }) => {
+    component: ConfirmEmailNotice,
+    beforeLoad: ({ context, search }) => {
       if (!search.token_hash || !search.type) {
         if (context.auth.user) {
           throw redirect({
@@ -72,19 +72,6 @@ function buildAuthConfirmRouteTree() {
           });
         }
         throw redirect({ to: '/sign-up', replace: true });
-      }
-      if (context.auth.user) return;
-      const { error } = await supabase.auth.verifyOtp({
-        token_hash: search.token_hash,
-        type: search.type,
-      });
-      if (error) {
-        const confirmationError = error.code === 'otp_expired' ? 'expired' : 'generic';
-        throw redirect({
-          to: '/sign-up',
-          search: { confirmationError },
-          replace: true,
-        });
       }
     },
     errorComponent: ({ error }) => <ErrorComponent error={error} />,
@@ -138,7 +125,7 @@ describe('/auth/confirm route', () => {
     vi.mocked(supabase.auth.verifyOtp).mockReset();
   });
 
-  it('calls verifyOtp, renders ConfirmedNotice, and navigates to /create-team when the user has no team', async () => {
+  it('verifies the token on the Continue click and navigates to /create-team for a no-team user', async () => {
     mockVerifyOtpSuccess();
     const teamContext = createTeamContext({ hasTeam: false });
     const user = userEvent.setup();
@@ -150,30 +137,33 @@ describe('/auth/confirm route', () => {
       routerContext: createBaseRouterContext({ teamContext }),
     });
 
-    expect(await screen.findByRole('heading', { name: /email confirmed/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /confirm your email/i })).toBeInTheDocument();
+    expect(supabase.auth.verifyOtp).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: /continue/i }));
+
     expect(supabase.auth.verifyOtp).toHaveBeenCalledWith({
       token_hash: 'abc123',
       type: 'signup',
     });
-    expect(screen.getAllByRole('button', { name: /continue/i })).toHaveLength(1);
-
-    await user.click(screen.getByRole('button', { name: /continue/i }));
-
     expect(await screen.findByRole('heading', { name: 'Create Team Stub' })).toBeInTheDocument();
   });
 
-  it('skips verifyOtp when the user is already signed in with a valid token_hash (idempotent re-entry)', async () => {
-    const teamContext = createTeamContext({ hasTeam: false });
+  it('navigates to /leagues after verification when the user has a team', async () => {
+    mockVerifyOtpSuccess();
+    const teamContext = createTeamContext({ myTeamId: 1, hasTeam: true });
+    const user = userEvent.setup();
 
     renderWithRouter({
       routeTree: buildAuthConfirmRouteTree(),
       initialEntry: '/auth/confirm?token_hash=abc123&type=signup',
-      auth: createAuthedAuth(),
+      auth: createUnauthAuth(),
       routerContext: createBaseRouterContext({ teamContext }),
     });
 
-    expect(await screen.findByRole('heading', { name: /email confirmed/i })).toBeInTheDocument();
-    expect(supabase.auth.verifyOtp).not.toHaveBeenCalled();
+    await user.click(await screen.findByRole('button', { name: /continue/i }));
+
+    expect(await screen.findByRole('heading', { name: 'Leagues Stub' })).toBeInTheDocument();
   });
 
   it('navigates to the same-origin next param, overriding the team-state default', async () => {
@@ -187,18 +177,18 @@ describe('/auth/confirm route', () => {
       initialEntry: `/auth/confirm?token_hash=abc123&type=signup&next=${encodeURIComponent(
         sameOriginNext,
       )}`,
-      auth: createAuthedAuth(),
+      auth: createUnauthAuth(),
       routerContext: createBaseRouterContext({ teamContext }),
     });
 
-    expect(await screen.findByRole('heading', { name: /email confirmed/i })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /continue/i }));
+    await user.click(await screen.findByRole('button', { name: /continue/i }));
 
     expect(await screen.findByRole('heading', { name: 'Join Invite Stub' })).toBeInTheDocument();
   });
 
   it('redirects to /sign-up?confirmationError=expired when verifyOtp errors with otp_expired', async () => {
     mockVerifyOtpError('otp_expired');
+    const user = userEvent.setup();
 
     renderWithRouter({
       routeTree: buildAuthConfirmRouteTree(),
@@ -206,6 +196,8 @@ describe('/auth/confirm route', () => {
       auth: createUnauthAuth(),
       routerContext: createBaseRouterContext(),
     });
+
+    await user.click(await screen.findByRole('button', { name: /continue/i }));
 
     expect(await screen.findByRole('heading', { name: 'Sign-up Stub' })).toBeInTheDocument();
     expect(await screen.findByTestId('confirmation-error')).toHaveTextContent('expired');
@@ -213,6 +205,7 @@ describe('/auth/confirm route', () => {
 
   it('redirects to /sign-up?confirmationError=generic when verifyOtp errors with any other code', async () => {
     mockVerifyOtpError('some_other_error');
+    const user = userEvent.setup();
 
     renderWithRouter({
       routeTree: buildAuthConfirmRouteTree(),
@@ -220,6 +213,8 @@ describe('/auth/confirm route', () => {
       auth: createUnauthAuth(),
       routerContext: createBaseRouterContext(),
     });
+
+    await user.click(await screen.findByRole('button', { name: /continue/i }));
 
     expect(await screen.findByRole('heading', { name: 'Sign-up Stub' })).toBeInTheDocument();
     expect(await screen.findByTestId('confirmation-error')).toHaveTextContent('generic');
@@ -261,19 +256,44 @@ describe('/auth/confirm route', () => {
       initialEntry: `/auth/confirm?token_hash=abc123&type=signup&next=${encodeURIComponent(
         'https://evil.example.com/foo',
       )}`,
-      auth: createAuthedAuth(),
+      auth: createUnauthAuth(),
       routerContext: createBaseRouterContext({ teamContext }),
     });
 
-    expect(await screen.findByRole('heading', { name: /email confirmed/i })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /continue/i }));
+    await user.click(await screen.findByRole('button', { name: /continue/i }));
 
     expect(await screen.findByRole('heading', { name: 'Leagues Stub' })).toBeInTheDocument();
   });
 
-  it('does not navigate away from ConfirmedNotice without a Continue click', async () => {
+  it('does not verify the token on page load — only on the Continue click', async () => {
     mockVerifyOtpSuccess();
     const teamContext = createTeamContext({ hasTeam: false });
+
+    renderWithRouter({
+      routeTree: buildAuthConfirmRouteTree(),
+      initialEntry: '/auth/confirm?token_hash=abc123&type=signup',
+      auth: createUnauthAuth(),
+      routerContext: createBaseRouterContext({ teamContext }),
+    });
+
+    expect(await screen.findByRole('heading', { name: /confirm your email/i })).toBeInTheDocument();
+
+    await expect(
+      waitFor(
+        () => {
+          expect(supabase.auth.verifyOtp).toHaveBeenCalled();
+        },
+        { timeout: 200 },
+      ),
+    ).rejects.toBeTruthy();
+
+    expect(supabase.auth.verifyOtp).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: /confirm your email/i })).toBeInTheDocument();
+  });
+
+  it('skips verifyOtp for an already signed-in visitor and navigates straight through', async () => {
+    const teamContext = createTeamContext({ hasTeam: false });
+    const user = userEvent.setup();
 
     renderWithRouter({
       routeTree: buildAuthConfirmRouteTree(),
@@ -282,20 +302,9 @@ describe('/auth/confirm route', () => {
       routerContext: createBaseRouterContext({ teamContext }),
     });
 
-    expect(await screen.findByRole('heading', { name: /email confirmed/i })).toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: /continue/i }));
 
-    await expect(
-      waitFor(
-        () => {
-          expect(
-            screen.queryByRole('heading', { name: /email confirmed/i }),
-          ).not.toBeInTheDocument();
-        },
-        { timeout: 200 },
-      ),
-    ).rejects.toBeTruthy();
-
-    expect(screen.getByRole('heading', { name: /email confirmed/i })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Create Team Stub' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Create Team Stub' })).toBeInTheDocument();
+    expect(supabase.auth.verifyOtp).not.toHaveBeenCalled();
   });
 });

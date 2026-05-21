@@ -67,7 +67,7 @@ test.describe('auth', () => {
 
     await page.goto(confirmationUrl);
     await expect(page).toHaveURL(/\/auth\/confirm/);
-    await expect(page.getByRole('heading', { name: /email confirmed/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /confirm your email/i })).toBeVisible();
     await page.getByRole('button', { name: /continue/i }).click();
     await expect(page).toHaveURL('/create-team');
   });
@@ -135,7 +135,7 @@ test.describe('auth', () => {
 
     await page.goto(confirmationUrl);
     await expect(page).toHaveURL(/\/auth\/confirm/);
-    await expect(page.getByRole('heading', { name: /email confirmed/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /confirm your email/i })).toBeVisible();
     await page.getByRole('button', { name: /continue/i }).click();
     await expect(page).toHaveURL('/create-team');
   });
@@ -172,6 +172,8 @@ test.describe('auth', () => {
     );
 
     await page.goto(brokenUrl);
+    await expect(page).toHaveURL(/\/auth\/confirm/);
+    await page.getByRole('button', { name: /continue/i }).click();
     await expect(page).toHaveURL(/\/sign-up\?confirmationError=/);
     await expect(page.getByRole('alert')).toContainText(/couldn't confirm|no longer valid/i);
   });

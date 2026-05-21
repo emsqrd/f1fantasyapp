@@ -7,14 +7,13 @@ import { Layout } from '@/components/Layout/Layout';
 import { League } from '@/components/League/League';
 import { LeagueList } from '@/components/LeagueList/LeagueList';
 import { MyTeamRoute, TeamRoute } from '@/components/Team/Team';
-import { ConfirmedNotice } from '@/components/auth/ConfirmedNotice/ConfirmedNotice';
+import { ConfirmEmailNotice } from '@/components/auth/ConfirmEmailNotice/ConfirmEmailNotice';
 import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import type { Team as TeamType } from '@/contracts/Team';
 import type { UserProfile } from '@/contracts/UserProfile';
 import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
 import { type RouterContext, defaultAuthedDestination } from '@/lib/router-context';
-import { supabase } from '@/lib/supabase';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
 import { getLeagueStandings } from '@/services/standingsService';
 import { getMyTeam, getTeamById } from '@/services/teamService';
@@ -232,15 +231,15 @@ const authConfirmSearchSchema = z.object({
   next: z.string().optional().catch(undefined),
 });
 
-// Peer of `_unauthenticated` rather than a child: a successful verification
-// mints a session, and the unauthenticated layout would redirect signed-in
-// users away from this very page.
+// Peer of `_unauthenticated` rather than a child: this route must stay
+// reachable by signed-in users — the no-token branch redirects them onward,
+// and a back-button re-entry after a successful confirmation lands here too.
 const authConfirmRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/auth/confirm',
   validateSearch: authConfirmSearchSchema,
-  component: ConfirmedNotice,
-  beforeLoad: async ({ context, search }) => {
+  component: ConfirmEmailNotice,
+  beforeLoad: ({ context, search }) => {
     if (!search.token_hash || !search.type) {
       if (context.auth.user) {
         throw redirect({
@@ -249,22 +248,6 @@ const authConfirmRoute = createRoute({
         });
       }
       throw redirect({ to: '/sign-up', replace: true });
-    }
-    // verifyOtp consumes the token. SIGNED_IN fires immediately after success
-    // and the router invalidates, re-running beforeLoad with the same URL —
-    // skip the second call so the consumed token doesn't fail verification.
-    if (context.auth.user) return;
-    const { error } = await supabase.auth.verifyOtp({
-      token_hash: search.token_hash,
-      type: search.type,
-    });
-    if (error) {
-      const confirmationError = error.code === 'otp_expired' ? 'expired' : 'generic';
-      throw redirect({
-        to: '/sign-up',
-        search: { confirmationError },
-        replace: true,
-      });
     }
   },
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
