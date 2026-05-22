@@ -231,9 +231,9 @@ const authConfirmSearchSchema = z.object({
   next: z.string().optional().catch(undefined),
 });
 
-// Peer of `_unauthenticated` rather than a child: this route must stay
-// reachable by signed-in users — the no-token branch redirects them onward,
-// and a back-button re-entry after a successful confirmation lands here too.
+// Not under the `_unauthenticated` layout, which redirects signed-in users
+// away: a re-clicked or back-navigated confirmation link must still reach
+// this route, since the user is already signed in by then.
 const authConfirmRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/auth/confirm',

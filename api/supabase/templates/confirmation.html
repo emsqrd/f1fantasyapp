@@ -168,7 +168,7 @@
                   <tr>
                     <td valign="middle">
                       <!-- Bulletproof button -->
-                      <!-- type MUST match [auth.email.template.confirmation] in api/supabase/config.toml -->
+                      <!-- type tells /auth/confirm which token kind to verify — `signup` for this confirmation email -->
                       <a
                         href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup&next={{ .RedirectTo }}"
                         class="btn"
