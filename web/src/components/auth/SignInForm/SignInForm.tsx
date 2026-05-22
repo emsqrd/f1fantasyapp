@@ -17,7 +17,7 @@ export function SignInForm() {
   const [error, setError] = useState<string | null>(null);
   const { signIn, startAuthTransition, completeAuthTransition } = useAuth();
   const navigate = useNavigate();
-  const search = useSearch({ from: '/sign-in' });
+  const search = useSearch({ from: '/_unauthenticated/sign-in' });
 
   const { message, announce } = useLiveRegion();
 

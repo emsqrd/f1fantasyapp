@@ -24,3 +24,9 @@ export interface RouterContext {
 
   currentSeason: Season | null;
 }
+
+export function defaultAuthedDestination(
+  teamContext: Pick<RouterContext['teamContext'], 'hasTeam'>,
+): '/leagues' | '/create-team' {
+  return teamContext.hasTeam ? '/leagues' : '/create-team';
+}

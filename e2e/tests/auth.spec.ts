@@ -61,11 +61,14 @@ test.describe('auth', () => {
 
     const search = await searchByRecipient(email);
     const message = await getMessage(search.messages[0].ID);
-    const linkMatch = message.HTML.match(/href="([^"]*\/auth\/v1\/verify[^"]*)"/);
+    const linkMatch = message.HTML.match(/href="([^"]*\/auth\/confirm[^"]*)"/);
     if (!linkMatch) throw new Error('Could not find confirmation URL in email HTML');
     const confirmationUrl = linkMatch[1].replace(/&amp;/g, '&');
 
     await page.goto(confirmationUrl);
+    await expect(page).toHaveURL(/\/auth\/confirm/);
+    await expect(page.getByRole('heading', { name: /confirm your email/i })).toBeVisible();
+    await page.getByRole('button', { name: /continue/i }).click();
     await expect(page).toHaveURL('/create-team');
   });
 
@@ -126,12 +129,53 @@ test.describe('auth', () => {
     // Mailpit returns messages newest-first; [0] is the resent email.
     const search = await searchByRecipient(email);
     const message = await getMessage(search.messages[0].ID);
-    const linkMatch = message.HTML.match(/href="([^"]*\/auth\/v1\/verify[^"]*)"/);
+    const linkMatch = message.HTML.match(/href="([^"]*\/auth\/confirm[^"]*)"/);
     if (!linkMatch) throw new Error('Could not find confirmation URL in resent email HTML');
     const confirmationUrl = linkMatch[1].replace(/&amp;/g, '&');
 
     await page.goto(confirmationUrl);
+    await expect(page).toHaveURL(/\/auth\/confirm/);
+    await expect(page.getByRole('heading', { name: /confirm your email/i })).toBeVisible();
+    await page.getByRole('button', { name: /continue/i }).click();
     await expect(page).toHaveURL('/create-team');
+  });
+
+  test('lands on /sign-up with the inline error when the magic link token is invalid', async ({
+    page,
+  }) => {
+    const unique = randomUUID();
+    const email = `signup-expired-${unique}@e2e.local`;
+    const password = 'e2e-password';
+    const displayName = `Test Expired ${unique.slice(0, 8)}`;
+
+    await page.goto('/sign-up');
+    await page.getByLabel('Display Name').fill(displayName);
+    await page.getByLabel('Email').fill(email);
+    await page.getByLabel('Password', { exact: true }).fill(password);
+    await page.getByLabel('Confirm Password').fill(password);
+    await page.locator('form').getByRole('button', { name: 'Sign Up' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+
+    await expect
+      .poll(async () => (await searchByRecipient(email)).count, { timeout: 10_000 })
+      .toBe(1);
+
+    const search = await searchByRecipient(email);
+    const message = await getMessage(search.messages[0].ID);
+    const linkMatch = message.HTML.match(/href="([^"]*\/auth\/confirm[^"]*)"/);
+    if (!linkMatch) throw new Error('Could not find confirmation URL in email HTML');
+    const confirmationUrl = linkMatch[1].replace(/&amp;/g, '&');
+    const brokenUrl = confirmationUrl.replace(
+      /token_hash=[^&]+/,
+      'token_hash=pkce_invalidinvalidinvalidinvalid',
+    );
+
+    await page.goto(brokenUrl);
+    await expect(page).toHaveURL(/\/auth\/confirm/);
+    await page.getByRole('button', { name: /continue/i }).click();
+    await expect(page).toHaveURL(/\/sign-up\?confirmationError=/);
+    await expect(page.getByRole('alert')).toContainText(/couldn't confirm|no longer valid/i);
   });
 
   test('preserves /join/<token> across browsers via emailRedirectTo', async ({ browser }) => {
@@ -152,10 +196,11 @@ test.describe('auth', () => {
     const password = 'e2e-password';
     const displayName = `Cross ${unique.slice(0, 8)}`;
 
-    // Browser A: sign up on /sign-up?redirect=<joinPath>, then close. The
-    // signup-side context shares no storage with Browser B, so the implicit
-    // flow's auto-detect on B has to work from URL fragment alone — the
-    // failure mode that killed PKCE during the rework.
+    // Browser A signs up, then closes. Browser B opens the magic link with
+    // zero shared storage and must still verify — the token hash in the URL
+    // is the only proof of identity, so verifyOtp succeeds without any
+    // code_verifier or session data from A. This is the cross-device
+    // property that PKCE couldn't satisfy.
     const contextA = await browser.newContext();
     const pageA = await contextA.newPage();
     await pageA.goto(`/sign-up?redirect=${encodeURIComponent(joinPath)}`);
@@ -172,17 +217,16 @@ test.describe('auth', () => {
       .toBe(1);
     const search = await searchByRecipient(email);
     const message = await getMessage(search.messages[0].ID);
-    const linkMatch = message.HTML.match(/href="([^"]*\/auth\/v1\/verify[^"]*)"/);
+    const linkMatch = message.HTML.match(/href="([^"]*\/auth\/confirm[^"]*)"/);
     if (!linkMatch) throw new Error('Could not find confirmation URL in email HTML');
     const confirmationUrl = linkMatch[1].replace(/&amp;/g, '&');
 
-    // Browser B: fresh context with zero prior auth state. Supabase's SDK
-    // strips the access_token fragment after parsing but leaves a bare `#`,
-    // hence the optional trailing `#` in the URL match.
     const contextB = await browser.newContext();
     const pageB = await contextB.newPage();
     await pageB.goto(confirmationUrl);
-    await expect(pageB).toHaveURL(new RegExp(`/join/${invite.token}#?$`));
+    await expect(pageB).toHaveURL(/\/auth\/confirm/);
+    await pageB.getByRole('button', { name: /continue/i }).click();
+    await expect(pageB).toHaveURL(new RegExp(`/join/${invite.token}$`));
     await expect(pageB.getByText(leagueName)).toBeVisible();
     await contextB.close();
   });

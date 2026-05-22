@@ -1,7 +1,12 @@
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import type { RouterContext } from '@/lib/router-context';
 import { supabase } from '@/lib/supabase';
-import { createBaseRouterContext, createUnauthAuth, renderWithRouter } from '@/tests/test-utils';
+import {
+  buildUnauthenticatedLayout,
+  createBaseRouterContext,
+  createUnauthAuth,
+  renderWithRouter,
+} from '@/tests/test-utils';
 import { AuthApiError } from '@supabase/supabase-js';
 import { Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router';
 import { screen, waitFor } from '@testing-library/react';
@@ -18,12 +23,13 @@ vi.mock('@/lib/supabase', () => ({
 }));
 
 // Mirrors the `/sign-up` route from `router.tsx`.
-const redirectSearchSchema = z.object({
+const signUpSearchSchema = z.object({
   redirect: z
     .string()
     .refine((url) => url.startsWith('/'), 'Redirect must be an internal path')
     .optional()
     .catch(undefined),
+  confirmationError: z.enum(['expired', 'generic']).optional().catch(undefined),
 });
 
 function buildSignUpRouteTree() {
@@ -31,15 +37,16 @@ function buildSignUpRouteTree() {
     component: () => <Outlet />,
   });
 
+  const unauthenticatedLayoutRoute = buildUnauthenticatedLayout(rootRoute);
+
   const signUpRoute = createRoute({
-    getParentRoute: () => rootRoute,
+    getParentRoute: () => unauthenticatedLayoutRoute,
     path: '/sign-up',
-    validateSearch: redirectSearchSchema,
+    validateSearch: signUpSearchSchema,
     component: SignUpForm,
-    beforeLoad: () => ({ confirmationError: null }),
   });
 
-  return rootRoute.addChildren([signUpRoute]);
+  return rootRoute.addChildren([unauthenticatedLayoutRoute.addChildren([signUpRoute])]);
 }
 
 async function driveFormToPending(user: ReturnType<typeof userEvent.setup>) {

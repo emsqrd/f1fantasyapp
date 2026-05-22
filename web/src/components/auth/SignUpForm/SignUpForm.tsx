@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
 import { resendConfirmation } from '@/lib/auth-resend';
-import { Link, useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
 
 const CONFIRMATION_ERROR_MESSAGES = {
@@ -28,8 +28,8 @@ export function SignUpForm() {
   const { signUp, startAuthTransition, completeAuthTransition } = useAuth();
 
   const navigate = useNavigate();
-  const search = useSearch({ from: '/sign-up' });
-  const { confirmationError } = useRouteContext({ from: '/sign-up' });
+  const search = useSearch({ from: '/_unauthenticated/sign-up' });
+  const { confirmationError } = search;
   const confirmationErrorMessage =
     confirmationError && CONFIRMATION_ERROR_MESSAGES[confirmationError];
   const destination = search.redirect ?? '/';

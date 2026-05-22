@@ -7,13 +7,13 @@ import { Layout } from '@/components/Layout/Layout';
 import { League } from '@/components/League/League';
 import { LeagueList } from '@/components/LeagueList/LeagueList';
 import { MyTeamRoute, TeamRoute } from '@/components/Team/Team';
+import { ConfirmEmailNotice } from '@/components/auth/ConfirmEmailNotice/ConfirmEmailNotice';
 import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import type { Team as TeamType } from '@/contracts/Team';
 import type { UserProfile } from '@/contracts/UserProfile';
-import { readConfirmationLinkError } from '@/lib/auth-redirect';
 import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
-import type { RouterContext } from '@/lib/router-context';
+import { type RouterContext, defaultAuthedDestination } from '@/lib/router-context';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
 import { getLeagueStandings } from '@/services/standingsService';
 import { getMyTeam, getTeamById } from '@/services/teamService';
@@ -165,6 +165,20 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
   ),
 });
 
+const unauthenticatedLayoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: '_unauthenticated',
+  beforeLoad: ({ context }) => {
+    if (context.auth.user) {
+      throw redirect({
+        to: defaultAuthedDestination(context.teamContext),
+        replace: true,
+      });
+    }
+  },
+  component: () => <Outlet />,
+});
+
 /**
  * Landing page route - public route accessible to all users.
  *
@@ -174,21 +188,10 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
  * @type {import('@tanstack/react-router').Route}
  */
 const indexRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => unauthenticatedLayoutRoute,
   path: '/',
   validateSearch: redirectSearchSchema,
   component: LandingPage,
-  beforeLoad: async ({ context }) => {
-    if (!context.auth.user && (await readConfirmationLinkError())) {
-      throw redirect({ to: '/sign-up', replace: true });
-    }
-    if (context.auth.user) {
-      throw redirect({
-        to: context.teamContext.hasTeam ? '/leagues' : '/create-team',
-        replace: true,
-      });
-    }
-  },
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
 
@@ -198,20 +201,15 @@ const indexRoute = createRoute({
  * @type {import('@tanstack/react-router').Route}
  */
 const signInRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => unauthenticatedLayoutRoute,
   path: '/sign-in',
   validateSearch: redirectSearchSchema,
   component: SignInForm,
-  beforeLoad: async ({ context }) => {
-    // Redirect authenticated users to their appropriate page
-    if (context.auth.user) {
-      throw redirect({
-        to: context.teamContext.hasTeam ? '/leagues' : '/create-team',
-        replace: true,
-      });
-    }
-  },
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
+});
+
+const signUpSearchSchema = redirectSearchSchema.extend({
+  confirmationError: z.enum(['expired', 'generic']).optional().catch(undefined),
 });
 
 /**
@@ -220,19 +218,37 @@ const signInRoute = createRoute({
  * @type {import('@tanstack/react-router').Route}
  */
 const signUpRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => unauthenticatedLayoutRoute,
   path: '/sign-up',
-  validateSearch: redirectSearchSchema,
+  validateSearch: signUpSearchSchema,
   component: SignUpForm,
-  beforeLoad: async ({ context }) => {
-    // Redirect authenticated users to their appropriate page
-    if (context.auth.user) {
-      throw redirect({
-        to: context.teamContext.hasTeam ? '/leagues' : '/create-team',
-        replace: true,
-      });
+  errorComponent: ({ error }) => <ErrorComponent error={error} />,
+});
+
+const authConfirmSearchSchema = z.object({
+  token_hash: z.string().optional(),
+  type: z.literal('signup').optional(),
+  next: z.string().optional().catch(undefined),
+});
+
+// Not under the `_unauthenticated` layout, which redirects signed-in users
+// away: a re-clicked or back-navigated confirmation link must still reach
+// this route, since the user is already signed in by then.
+const authConfirmRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/auth/confirm',
+  validateSearch: authConfirmSearchSchema,
+  component: ConfirmEmailNotice,
+  beforeLoad: ({ context, search }) => {
+    if (!search.token_hash || !search.type) {
+      if (context.auth.user) {
+        throw redirect({
+          to: defaultAuthedDestination(context.teamContext),
+          replace: true,
+        });
+      }
+      throw redirect({ to: '/sign-up', replace: true });
     }
-    return { confirmationError: await readConfirmationLinkError() };
   },
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
@@ -719,9 +735,8 @@ const myTeamRoute = createRoute({
  * @see {@link https://tanstack.com/router/latest/docs/framework/react/guide/route-trees | Route Trees}
  */
 const routeTree = rootRoute.addChildren([
-  indexRoute,
-  signInRoute,
-  signUpRoute,
+  unauthenticatedLayoutRoute.addChildren([indexRoute, signInRoute, signUpRoute]),
+  authConfirmRoute,
   joinInviteRoute,
   authenticatedLayoutRoute.addChildren([
     accountRoute,

@@ -168,8 +168,9 @@
                   <tr>
                     <td valign="middle">
                       <!-- Bulletproof button -->
+                      <!-- type tells /auth/confirm which token kind to verify — `signup` for this confirmation email -->
                       <a
-                        href="{{ .ConfirmationURL }}"
+                        href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup&next={{ .RedirectTo }}"
                         class="btn"
                         style="
                           display: inline-block;
