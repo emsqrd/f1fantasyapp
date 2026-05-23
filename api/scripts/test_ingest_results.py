@@ -85,12 +85,13 @@ class TestMapSessionStatus:
 
 
 class TestLoadSession:
-    def test_raises_ingest_error_when_results_empty(self):
+    def test_returns_none_when_results_empty(self, capsys):
         mock_session = MagicMock()
         mock_session.results = pd.DataFrame()
         with patch("ingest_results.fastf1.get_session", return_value=mock_session):
-            with pytest.raises(IngestError, match="may not have occurred yet"):
-                load_session(2026, 7, "Race")
+            result = load_session(2026, 7, "Race")
+        assert result is None
+        assert "no results yet" in capsys.readouterr().out
 
     def test_returns_none_when_session_type_does_not_exist(self):
         with patch("ingest_results.fastf1.get_session", side_effect=Exception("Session type 'Sprint' does not exist")):
@@ -560,3 +561,66 @@ class TestIngestOrchestration:
         assert write_calls.index(advance) > gp_put_idx
         # Exactly one advance call.
         assert sum(1 for c in write_calls if c == advance) == 1
+
+    def test_bails_on_sprint_weekend_when_sprint_unavailable(self, monkeypatch, capsys):
+        api_session = _make_ingest_mocks(
+            monkeypatch, has_sprint=True, total_rounds=10, round_number=6
+        )
+        monkeypatch.setattr(
+            "ingest_results.load_session", lambda year, rn, name: None
+        )
+
+        ingest(round_number=6, env="local")
+
+        write_calls = [c for c in _captured_calls(api_session) if c[0] in ("PUT", "POST")]
+        assert write_calls == []
+        captured = capsys.readouterr().out
+        assert "Sprint not available yet" in captured
+        assert "nothing to ingest for round 6" in captured
+        assert "Loading qualifying session" not in captured
+        assert "Loading race session" not in captured
+
+    def test_bails_on_standard_weekend_when_qualifying_unavailable(
+        self, monkeypatch, capsys
+    ):
+        api_session = _make_ingest_mocks(
+            monkeypatch, has_sprint=False, total_rounds=10, round_number=6
+        )
+        monkeypatch.setattr(
+            "ingest_results.load_session", lambda year, rn, name: None
+        )
+
+        ingest(round_number=6, env="local")
+
+        write_calls = [c for c in _captured_calls(api_session) if c[0] in ("PUT", "POST")]
+        assert write_calls == []
+        captured = capsys.readouterr().out
+        assert "Qualifying not available yet" in captured
+        assert "nothing to ingest for round 6" in captured
+        assert "Loading race session" not in captured
+
+    def test_continues_on_sprint_weekend_when_only_qualifying_missing(
+        self, monkeypatch, capsys
+    ):
+        api_session = _make_ingest_mocks(
+            monkeypatch, has_sprint=True, total_rounds=10, round_number=6
+        )
+        fake_session = MagicMock()
+        fake_session.results = pd.DataFrame([{"Abbreviation": "VER"}])
+        fake_session.laps = None
+        monkeypatch.setattr(
+            "ingest_results.load_session",
+            lambda year, rn, name: None if name == "Qualifying" else fake_session,
+        )
+
+        ingest(round_number=6, env="local")
+
+        write_calls = [c for c in _captured_calls(api_session) if c[0] in ("PUT", "POST")]
+        sprint_put = ("PUT", "http://api/api/seasons/1/race-weekends/6/results/sprint")
+        gp_put = ("PUT", "http://api/api/seasons/1/race-weekends/6/results/grand-prix")
+        quali_put = ("PUT", "http://api/api/seasons/1/race-weekends/6/results/qualifying")
+        assert sprint_put in write_calls
+        assert gp_put in write_calls
+        assert quali_put not in write_calls
+        captured = capsys.readouterr().out
+        assert "Skipping qualifying — session not available" in captured
