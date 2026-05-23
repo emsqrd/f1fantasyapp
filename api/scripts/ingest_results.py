@@ -12,7 +12,6 @@ Usage:
 import argparse
 import os
 import sys
-from datetime import datetime, timezone
 from enum import IntEnum
 from itertools import combinations
 
@@ -94,20 +93,19 @@ def find_race_weekend(race_weekends: list[dict], round_number: int) -> dict:
 
 
 def load_session(year: int, round_number: int, session_name: str):
-    """Load a FastF1 session. Returns the session object, or None on failure."""
+    """Load a FastF1 session. Returns the session object, or None if unavailable."""
     try:
         session = fastf1.get_session(year, round_number, session_name)
         session.load(telemetry=False, weather=False, messages=False)
-        if session.results is None or session.results.empty:
-            raise IngestError(
-                f"No data available for {session_name} R{round_number} — session may not have occurred yet"
-            )
-        return session
-    except IngestError:
-        raise
     except Exception as exc:
         print(f"  Warning: could not load {session_name} R{round_number}: {exc}")
         return None
+
+    if session.results is None or session.results.empty:
+        print(f"  Warning: {session_name} R{round_number} has no results yet")
+        return None
+
+    return session
 
 
 def _build_pit_laps(laps) -> set[tuple[str, int]]:
@@ -374,6 +372,7 @@ def ingest(round_number: int, env: str) -> None:
     # Set up FastF1 cache
     os.makedirs(CACHE_DIR, exist_ok=True)
     fastf1.Cache.enable_cache(CACHE_DIR)
+    fastf1.set_log_level("ERROR")
 
     api_session = create_api_session(config["F1_API_KEY"])
     api_url = config["F1_API_URL"]
@@ -394,38 +393,37 @@ def ingest(round_number: int, env: str) -> None:
     race_weekends = fetch_race_weekends(api_session, api_url, season_id)
     race_weekend = find_race_weekend(race_weekends, round_number)
     has_sprint = race_weekend.get("weekendFormat", 0) == WEEKEND_FORMAT_SPRINT
-    race_date = datetime.fromisoformat(race_weekend["raceDate"]).replace(tzinfo=timezone.utc)
     print(f"  Race weekend: {race_weekend['name']} (round={round_number}, hasSprint={has_sprint})")
-
-    if datetime.now(timezone.utc) < race_date:
-        raise IngestError(f"Race has not occurred yet (scheduled {race_date.date()})")
-
-    # Qualifying
-    print(f"Loading qualifying session (R{round_number})...")
-    quali = load_session(year, round_number, "Qualifying")
-    if quali is not None:
-        payload, warnings = build_qualifying_payload(quali, driver_map)
-        report_warnings(warnings, "qualifying")
-        if payload:
-            submit_results(api_session, api_url, season_id, round_number, "qualifying", payload)
-            post_score(api_session, api_url, season_id, round_number)
-    else:
-        print("  Skipping qualifying — session not available")
 
     # Sprint
     if has_sprint:
         print(f"Loading sprint session (R{round_number})...")
         sprint = load_session(year, round_number, "Sprint")
-        if sprint is not None:
-            sprint_overtakes = count_overtakes(sprint.laps)
-            sprint_fl = get_fastest_lap_driver(sprint.laps)
-            payload, warnings = build_race_payload(sprint, driver_map, sprint_overtakes, sprint_fl)
-            report_warnings(warnings, "sprint")
-            if payload:
-                submit_results(api_session, api_url, season_id, round_number, "sprint", payload)
-                post_score(api_session, api_url, season_id, round_number)
-        else:
-            print("  Skipping sprint — session not available")
+        if sprint is None:
+            print(f"  Sprint not available yet — nothing to ingest for round {round_number}")
+            return
+        sprint_overtakes = count_overtakes(sprint.laps)
+        sprint_fl = get_fastest_lap_driver(sprint.laps)
+        payload, warnings = build_race_payload(sprint, driver_map, sprint_overtakes, sprint_fl)
+        report_warnings(warnings, "sprint")
+        if payload:
+            submit_results(api_session, api_url, season_id, round_number, "sprint", payload)
+            post_score(api_session, api_url, season_id, round_number)
+
+    # Qualifying
+    print(f"Loading qualifying session (R{round_number})...")
+    quali = load_session(year, round_number, "Qualifying")
+    if quali is None:
+        if not has_sprint:
+            print(f"  Qualifying not available yet — nothing to ingest for round {round_number}")
+            return
+        print("  Skipping qualifying — session not available")
+    else:
+        payload, warnings = build_qualifying_payload(quali, driver_map)
+        report_warnings(warnings, "qualifying")
+        if payload:
+            submit_results(api_session, api_url, season_id, round_number, "qualifying", payload)
+            post_score(api_session, api_url, season_id, round_number)
 
     # Grand Prix
     print(f"Loading race session (R{round_number})...")
