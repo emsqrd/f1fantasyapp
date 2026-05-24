@@ -290,7 +290,7 @@ public static class MeEndpoints
 
         logger.LogDebug("Fetching team summary for user {UserId}", user.Id);
 
-        var summary = await teamService.GetTeamSummaryAsync(user.Id);
+        var summary = await teamService.GetTeamSummaryForUserAsync(user.Id);
         if (summary is null)
         {
             logger.LogWarning("User {UserId} has no team", user.Id);

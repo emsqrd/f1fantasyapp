@@ -12,7 +12,7 @@ public interface ITeamService
 {
     Task<TeamResponse> CreateTeamAsync(CreateTeamRequest request, int userId);
     Task<TeamDetailsResponse?> GetUserTeamAsync(int userId);
-    Task<TeamSummaryResponse?> GetTeamSummaryAsync(int userId);
+    Task<TeamSummaryResponse?> GetTeamSummaryForUserAsync(int userId);
     Task AddDriverToTeamAsync(int teamId, int driverId, int slotPosition, int userId);
     Task RemoveDriverFromTeamAsync(int teamId, int slotPosition, int userId);
     Task AddConstructorToTeamAsync(int teamId, int constructorId, int slotPosition, int userId);
@@ -124,7 +124,7 @@ public class TeamService : ITeamService
         return team.ToDetailsResponseModel(captainDriverId);
     }
 
-    public async Task<TeamSummaryResponse?> GetTeamSummaryAsync(int userId)
+    public async Task<TeamSummaryResponse?> GetTeamSummaryForUserAsync(int userId)
     {
         _logger.LogDebug("Fetching team summary for user {UserId}", userId);
 
