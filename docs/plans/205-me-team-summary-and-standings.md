@@ -84,35 +84,36 @@ Service is a thin EF query + trivial in-memory pick; no extractable pure logic. 
 
 ---
 
-## Commit 2 — `GET /me/standings`
+## Commit 2 — `GET /me/standings` *(implemented)*
 
 ### Files
 
 - `api/F1CompanionApi/Api/Models/MyLeagueStandingResponse.cs` (new) — `{ required int LeagueId, required string LeagueName, required int TotalTeams, int? Position, int? TotalPoints }`.
 - `api/F1CompanionApi/Api/Mappers/MyLeagueStandingResponseMapper.cs` (new) — `(this LeagueTeam membership, int totalTeams, TeamLeagueStanding? latestStanding) → MyLeagueStandingResponse`. Pure shape transformation; service pre-computes `totalTeams` and `latestStanding`.
-- `api/F1CompanionApi/Domain/Services/LeagueStandingsService.cs` + `ILeagueStandingsService.cs` — add `Task<IReadOnlyList<MyLeagueStandingResponse>> GetUserStandingsAsync(int userId)`.
+- `api/F1CompanionApi/Domain/Services/LeagueStandingsService.cs` + `ILeagueStandingsService.cs` — add `Task<IReadOnlyList<MyLeagueStandingResponse>> GetStandingsForUserAsync(int userId)`.
 - `api/F1CompanionApi/Api/Endpoints/MeEndpoints.cs` — register `meGroup.MapGet("/standings", ...)` + handler.
 - `api/F1CompanionApi.IntegrationTests/Scenarios/MeStandingsTests.cs` (new) — integration tests.
 
 ### Service shape
 
-Resolve team, league memberships, total-teams-per-league, and latest standing per (team, league) within the current season. Materialise standings then group in memory — bounded by `leagues-per-user × races-per-season` (max ~15 × ~24 ≈ 360 rows).
+Resolve league memberships, total-teams-per-league, and latest standing per (team, league) within the current season. Materialise standings then group in memory — bounded by `leagues-per-user × races-per-season` (max ~15 × ~24 ≈ 360 rows). Membership query joins through `lt.Team.UserId == userId`, so the no-team case collapses naturally into an empty memberships result — no separate Teams lookup or no-team guard.
 
 ```csharp
-public async Task<IReadOnlyList<MyLeagueStandingResponse>> GetUserStandingsAsync(int userId)
+public async Task<IReadOnlyList<MyLeagueStandingResponse>> GetStandingsForUserAsync(int userId)
 {
     _logger.LogDebug("Fetching standings for user {UserId}", userId);
-
-    var team = await _dbContext.Teams.FirstOrDefaultAsync(t => t.UserId == userId);
-    if (team is null) return Array.Empty<MyLeagueStandingResponse>();
 
     var memberships = await _dbContext
         .LeagueTeams.AsNoTracking()
         .Include(lt => lt.League)
-        .Where(lt => lt.TeamId == team.Id)
+        .Where(lt => lt.Team.UserId == userId)
         .ToListAsync();
-    if (memberships.Count == 0) return Array.Empty<MyLeagueStandingResponse>();
+    if (memberships.Count == 0)
+    {
+        return [];
+    }
 
+    var teamId = memberships[0].TeamId;
     var leagueIds = memberships.Select(m => m.LeagueId).ToList();
 
     var totalTeamsByLeague = await _dbContext
@@ -128,7 +129,7 @@ public async Task<IReadOnlyList<MyLeagueStandingResponse>> GetUserStandingsAsync
     var latestByLeague = (
         await _dbContext.TeamLeagueStandings.AsNoTracking()
             .Include(ls => ls.RaceWeekend)
-            .Where(ls => ls.TeamId == team.Id
+            .Where(ls => ls.TeamId == teamId
                       && leagueIds.Contains(ls.LeagueId)
                       && ls.RaceWeekend.SeasonId == currentSeason.Id)
             .ToListAsync()
@@ -150,7 +151,7 @@ public async Task<IReadOnlyList<MyLeagueStandingResponse>> GetUserStandingsAsync
 Collection endpoint — always returns a list, no null-mapping needed:
 
 ```csharp
-return Results.Ok(await leagueStandingsService.GetUserStandingsAsync(user.Id));
+return Results.Ok(await leagueStandingsService.GetStandingsForUserAsync(user.Id));
 ```
 
 ### Tests
@@ -158,8 +159,10 @@ return Results.Ok(await leagueStandingsService.GetUserStandingsAsync(user.Id));
 Same reasoning as Commit 1 — thin EF + in-memory grouping. All tests at the HTTP seam. Distinct failure modes only:
 
 - **Auth boundary** — unauthenticated → 401.
-- **Empty state** — authed caller with no team → `[]`. (Empty memberships collapse to the same path; one test covers both since the early-returns share a shape.)
-- **Happy path / multi-league fan-out** — caller's team in three leagues with mixed state: League A has multiple current-season scored rounds (asserts `position`/`totalPoints` reflect the latest round); League B is a member but has no scored race in the current season (asserts null fields while still listing the league); League C has a scored standing only in a *prior* season (asserts current-season WHERE clause excludes it, row remains listed with nulls). Each league has additional non-caller teams so `totalTeams` is exercised end-to-end.
+- **Empty state** — authed caller with no team → `[]`. (After the membership-via-`Team.UserId` refactor, no-team and no-memberships share a single code path; one test covers both.)
+- **League with scored rounds** — multiple current-season scored rounds inserted out of round order; asserts `Position`/`TotalPoints` come from the latest round (not insertion order) and `TotalTeams` reflects all league members.
+- **League with no scored round** — caller is a member but the league has no standings; asserts the league still lists with null `Position`/`TotalPoints`.
+- **Prior-season standing only** — caller has a standing in a prior season but none in the current season; asserts the current-season filter excludes it while the league row still lists with null fields.
 
 ---
 

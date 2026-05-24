@@ -1,3 +1,4 @@
+using F1CompanionApi.Api.Mappers;
 using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data;
 using F1CompanionApi.Data.Entities;
@@ -9,6 +10,7 @@ public interface ILeagueStandingsService
 {
     Task UpdateLeagueStandingsForRaceWeekendAsync(int raceWeekendId);
     Task<LeagueStandingsResponse?> GetLeagueStandingsAsync(int leagueId);
+    Task<IReadOnlyList<MyLeagueStandingResponse>> GetStandingsForUserAsync(int userId);
 }
 
 public class LeagueStandingsService : ILeagueStandingsService
@@ -173,6 +175,64 @@ public class LeagueStandingsService : ILeagueStandingsService
             LastScoredRaceWeekendName = latestScoredWeekend?.Name,
             Standings = LeagueStandingsBuilder.Build(league, currentStandings, priorStandings),
         };
+    }
+
+    /// <summary>
+    /// One row per league the caller's team belongs to, each carrying the caller's
+    /// latest-round position and total in that league. Position and totals are null
+    /// when the league has no scored round in the current season.
+    /// </summary>
+    /// <param name="userId">The authenticated user whose memberships are being summarized.</param>
+    public async Task<IReadOnlyList<MyLeagueStandingResponse>> GetStandingsForUserAsync(int userId)
+    {
+        _logger.LogDebug("Fetching standings for user {UserId}", userId);
+
+        var memberships = await _dbContext
+            .LeagueTeams.AsNoTracking()
+            .Include(lt => lt.League)
+            .Where(lt => lt.Team.UserId == userId)
+            .ToListAsync();
+
+        if (memberships.Count == 0)
+        {
+            return [];
+        }
+
+        var teamId = memberships[0].TeamId;
+        var leagueIds = memberships.Select(m => m.LeagueId).ToList();
+
+        var totalTeamsByLeague = await _dbContext
+            .LeagueTeams.Where(lt => leagueIds.Contains(lt.LeagueId))
+            .GroupBy(lt => lt.LeagueId)
+            .Select(g => new { LeagueId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.LeagueId, x => x.Count);
+
+        var currentSeason =
+            await _seasonService.GetCurrentSeasonAsync()
+            ?? throw new InvalidOperationException("No active season found.");
+
+        var latestByLeague = (
+            await _dbContext
+                .TeamLeagueStandings.AsNoTracking()
+                .Include(ls => ls.RaceWeekend)
+                .Where(ls =>
+                    ls.TeamId == teamId
+                    && leagueIds.Contains(ls.LeagueId)
+                    && ls.RaceWeekend.SeasonId == currentSeason.Id
+                )
+                .ToListAsync()
+        )
+            .GroupBy(ls => ls.LeagueId)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(s => s.RaceWeekend.Round).First());
+
+        return memberships
+            .Select(m =>
+                m.ToResponseModel(
+                    totalTeamsByLeague.GetValueOrDefault(m.LeagueId, 0),
+                    latestByLeague.GetValueOrDefault(m.LeagueId)
+                )
+            )
+            .ToList();
     }
 
     /// <summary>

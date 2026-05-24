@@ -33,6 +33,13 @@ public static class MeEndpoints
             .WithName("Get My Leagues")
             .WithDescription("Gets leagues owned by the authenticated user");
 
+        meGroup
+            .MapGet("/standings", GetMyStandingsAsync)
+            .WithName("Get My Standings")
+            .WithDescription(
+                "Gets the authenticated user's latest position and total points in each league their team belongs to"
+            );
+
         var teamGroup = meGroup.MapGroup("/team");
 
         teamGroup
@@ -236,6 +243,20 @@ public static class MeEndpoints
             logger.LogError(ex, "Failed to fetch leagues for current user");
             throw;
         }
+    }
+
+    private static async Task<IResult> GetMyStandingsAsync(
+        ILeagueStandingsService leagueStandingsService,
+        IUserProfileService userProfileService,
+        ILogger logger
+    )
+    {
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+
+        logger.LogDebug("Fetching standings for user {UserId}", user.Id);
+
+        var standings = await leagueStandingsService.GetStandingsForUserAsync(user.Id);
+        return Results.Ok(standings);
     }
 
     private static async Task<IResult> GetMyTeamAsync(
