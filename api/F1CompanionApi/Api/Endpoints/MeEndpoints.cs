@@ -33,12 +33,24 @@ public static class MeEndpoints
             .WithName("Get My Leagues")
             .WithDescription("Gets leagues owned by the authenticated user");
 
+        meGroup
+            .MapGet("/standings", GetMyStandingsAsync)
+            .WithName("Get My Standings")
+            .WithDescription(
+                "Gets the authenticated user's latest position and total points in each league their team belongs to"
+            );
+
         var teamGroup = meGroup.MapGroup("/team");
 
         teamGroup
             .MapGet("/", GetMyTeamAsync)
             .WithName("Get My Team")
             .WithDescription("Get current user's team or null if none exists");
+
+        teamGroup
+            .MapGet("/summary", GetMyTeamSummaryAsync)
+            .WithName("Get My Team Summary")
+            .WithDescription("Gets a summary of the current user's team this season");
 
         teamGroup
             .MapPost("/drivers", AddDriverToTeamAsync)
@@ -233,6 +245,20 @@ public static class MeEndpoints
         }
     }
 
+    private static async Task<IResult> GetMyStandingsAsync(
+        ILeagueStandingsService leagueStandingsService,
+        IUserProfileService userProfileService,
+        ILogger logger
+    )
+    {
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+
+        logger.LogDebug("Fetching standings for user {UserId}", user.Id);
+
+        var standings = await leagueStandingsService.GetStandingsForUserAsync(user.Id);
+        return Results.Ok(standings);
+    }
+
     private static async Task<IResult> GetMyTeamAsync(
         ITeamService teamService,
         IUserProfileService userProfileService,
@@ -252,6 +278,29 @@ public static class MeEndpoints
         }
 
         return Results.Ok(team);
+    }
+
+    private static async Task<IResult> GetMyTeamSummaryAsync(
+        ITeamService teamService,
+        IUserProfileService userProfileService,
+        ILogger logger
+    )
+    {
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+
+        logger.LogDebug("Fetching team summary for user {UserId}", user.Id);
+
+        var summary = await teamService.GetTeamSummaryForUserAsync(user.Id);
+        if (summary is null)
+        {
+            logger.LogWarning("User {UserId} has no team", user.Id);
+            return Results.Problem(
+                detail: "User has no team",
+                statusCode: StatusCodes.Status404NotFound
+            );
+        }
+
+        return Results.Ok(summary);
     }
 
     private static async Task<IResult> AddDriverToTeamAsync(

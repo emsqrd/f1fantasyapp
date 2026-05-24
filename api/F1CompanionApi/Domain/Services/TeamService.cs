@@ -12,6 +12,7 @@ public interface ITeamService
 {
     Task<TeamResponse> CreateTeamAsync(CreateTeamRequest request, int userId);
     Task<TeamDetailsResponse?> GetUserTeamAsync(int userId);
+    Task<TeamSummaryResponse?> GetTeamSummaryForUserAsync(int userId);
     Task AddDriverToTeamAsync(int teamId, int driverId, int slotPosition, int userId);
     Task RemoveDriverFromTeamAsync(int teamId, int slotPosition, int userId);
     Task AddConstructorToTeamAsync(int teamId, int constructorId, int slotPosition, int userId);
@@ -23,20 +24,24 @@ public class TeamService : ITeamService
 {
     private readonly ApplicationDbContext _dbContext;
     private readonly IRaceWeekendService _raceWeekendService;
+    private readonly ISeasonService _seasonService;
     private readonly ILogger<TeamService> _logger;
 
     public TeamService(
         ApplicationDbContext dbContext,
         IRaceWeekendService raceWeekendService,
+        ISeasonService seasonService,
         ILogger<TeamService> logger
     )
     {
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(raceWeekendService);
+        ArgumentNullException.ThrowIfNull(seasonService);
         ArgumentNullException.ThrowIfNull(logger);
 
         _dbContext = dbContext;
         _raceWeekendService = raceWeekendService;
+        _seasonService = seasonService;
         _logger = logger;
     }
 
@@ -117,6 +122,30 @@ public class TeamService : ITeamService
                 .FirstOrDefaultAsync();
 
         return team.ToDetailsResponseModel(captainDriverId);
+    }
+
+    public async Task<TeamSummaryResponse?> GetTeamSummaryForUserAsync(int userId)
+    {
+        _logger.LogDebug("Fetching team summary for user {UserId}", userId);
+
+        var team = await _dbContext.Teams.FirstOrDefaultAsync(t => t.UserId == userId);
+        if (team is null)
+        {
+            return null;
+        }
+
+        var currentSeason =
+            await _seasonService.GetCurrentSeasonAsync()
+            ?? throw new InvalidOperationException("No active season found.");
+
+        var scoredRaces = await _dbContext
+            .TeamRaceWeekendScores.AsNoTracking()
+            .Include(s => s.RaceWeekend)
+            .Where(s => s.TeamId == team.Id && s.RaceWeekend.SeasonId == currentSeason.Id)
+            .ToListAsync();
+
+        var latest = scoredRaces.OrderByDescending(s => s.RaceWeekend.Round).FirstOrDefault();
+        return scoredRaces.ToResponseModel(latest);
     }
 
     public async Task AddDriverToTeamAsync(int teamId, int driverId, int slotPosition, int userId)

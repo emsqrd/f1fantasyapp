@@ -116,7 +116,17 @@ instance.
 2. Define private static async methods returning `IResult`, chain `.RequireAuthorization()`, `.WithName()`, `.WithDescription()`
 3. Register in `Endpoints.MapEndpoints()` by chaining `.Map{Feature}Endpoints()`
 4. Add request/response DTOs in `Api/Models/`
-5. Add mapper extension method in `Api/Mappers/`
+5. Add mapper extension method in `Api/Mappers/` (see "Mapper file organization" below)
+
+**Read-endpoint 404 pattern.** When a read targets a single resource that may not exist, the service returns a nullable response (`Task<XxxResponse?>`) and the handler maps `null → 404`: `LogWarning(...)` then `Results.Problem(detail: "...", statusCode: StatusCodes.Status404NotFound)`. Reference: `SeasonEndpoints.GetCurrentSeasonAsync`, `DriverEndpoints`, `ConstructorEndpoints`. Don't throw a `*NotFoundException` from a read — those are write-side guards (see "Adding a New Exception" below).
+
+**Required-resource guards in services.** When a service needs a resource that must exist for the work to be meaningful (e.g., the current season for a season-scoped read), guard at the service boundary with `?? throw new InvalidOperationException("...")`. Surfaces as a 500, distinct from "the resource the caller asked for doesn't exist" (404). Reference: `LeagueStandingsService.cs:147`, `LineupService.cs:39`, `ScoringService.cs:218`.
+
+### Mapper file organization
+
+- **One file per source entity.** Named after the primary DTO it produces, lives in `Api/Mappers/`. Multiple methods in the same file when the same source maps to base + richer variants — `Team → TeamResponse` and `Team → TeamDetailsResponse` both live in `TeamResponseMapper.cs`.
+- **Container/child splits across files.** When a DTO contains a nested child DTO, the child gets its own mapper file. `TeamDetailsResponse` contains `TeamDriverResponse` and `TeamConstructorResponse`, so there are three mapper files (`TeamResponseMapper`, `TeamDriverResponseMapper`, `TeamConstructorResponseMapper`); the parent mapper calls the children via their extension methods.
+- **Mappers stay decision-free.** Selection logic (`OrderByDescending(...).FirstOrDefault()`) belongs in the service; pass the already-selected value into the mapper. Aggregation (`Sum`, ordering for output) inside the mapper is fine. Reference: `TeamSummaryResponseMapper.ToResponseModel` accepts a pre-selected `latest`.
 
 ### Adding a New Entity
 
@@ -132,7 +142,10 @@ RLS is auto-enabled on new public tables via the `auto_enable_rls_public` Supaba
 1. Create interface `I{Feature}Service` and implementation in `Domain/Services/`
 2. Register as scoped in `ServiceExtensions.cs:AddServices`: `services.AddScoped<IFeatureService, FeatureService>()`
 
+**Service method naming for user-scoped reads.** When a method takes `int userId` and returns something belonging to that user, use the `GetXForUserAsync(int userId)` shape (e.g., `GetStandingsForUserAsync`, `GetLeaguesForUserAsync`) rather than `GetUserXAsync`. The `User`-prefixed form is grammatically ambiguous — `GetUserStandingsAsync` reads either as "get [user-standings]" (some concept) or "get [the user's] standings." The `ForUser` form removes that ambiguity. The codebase has both forms historically (`TeamService.GetUserTeamAsync` uses the prefix); don't retroactively rename existing methods unless asked, but prefer `ForUser` for new ones.
+
 ### Adding a New Exception
 
+- **Custom exceptions are for write-side business-rule violations only** — `DuplicateTeamException`, `TeamOwnershipException`, `RosterLockedException`, `BudgetExceededException` etc. Reads use the null-return + handler-side 404 pattern from "Adding a New Endpoint" above. Several existing `*NotFoundException` types map to **400**, not 404 (e.g., `TeamNotFoundException` → 400 with a league-creation-flavored message) — check `GlobalExceptionHandler.cs` before assuming an exception name implies a status code.
 - Use standard HTTP status codes only — avoid WebDAV-specific codes (e.g. use 409 Conflict, not 423 Locked)
 - The class `<summary>` should explain both what triggers the exception and why it's considered exceptional (what it implies about the caller). See `SlotOccupiedException` as the reference example.
