@@ -41,6 +41,11 @@ public static class MeEndpoints
             .WithDescription("Get current user's team or null if none exists");
 
         teamGroup
+            .MapGet("/summary", GetMyTeamSummaryAsync)
+            .WithName("Get My Team Summary")
+            .WithDescription("Gets a summary of the current user's team this season");
+
+        teamGroup
             .MapPost("/drivers", AddDriverToTeamAsync)
             .WithName("Add Driver to Team")
             .WithDescription("Add a driver to the current user's team at a specific slot position");
@@ -252,6 +257,29 @@ public static class MeEndpoints
         }
 
         return Results.Ok(team);
+    }
+
+    private static async Task<IResult> GetMyTeamSummaryAsync(
+        ITeamService teamService,
+        IUserProfileService userProfileService,
+        ILogger logger
+    )
+    {
+        var user = await userProfileService.GetRequiredCurrentUserProfileAsync();
+
+        logger.LogDebug("Fetching team summary for user {UserId}", user.Id);
+
+        var summary = await teamService.GetTeamSummaryAsync(user.Id);
+        if (summary is null)
+        {
+            logger.LogWarning("User {UserId} has no team", user.Id);
+            return Results.Problem(
+                detail: "User has no team",
+                statusCode: StatusCodes.Status404NotFound
+            );
+        }
+
+        return Results.Ok(summary);
     }
 
     private static async Task<IResult> AddDriverToTeamAsync(

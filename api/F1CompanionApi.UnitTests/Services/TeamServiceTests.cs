@@ -39,7 +39,14 @@ public class TeamServiceTests
                     .FirstOrDefaultAsync()
             );
 
-        return new TeamService(context, raceWeekendService.Object, _mockLogger.Object);
+        var seasonService = new Mock<ISeasonService>();
+
+        return new TeamService(
+            context,
+            raceWeekendService.Object,
+            seasonService.Object,
+            _mockLogger.Object
+        );
     }
 
     [Fact]
