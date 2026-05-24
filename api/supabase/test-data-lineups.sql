@@ -1,27 +1,36 @@
 -- ============================================================================
--- Test Data Generation: Lineups for Rounds 1-3 of the 2026 Season
+-- Test Data Generation: Lineups for Rounds 1-5 of the 2026 Season
 -- ============================================================================
 -- Creates persistent rosters (TeamDrivers + TeamConstructors) and per-race
--- LineupEntry rows for the first three RaceWeekends of the 2026 season for:
+-- LineupEntry rows for the first five RaceWeekends of the 2026 season for:
 --   - The 10 generated test teams from test-data-teams.sql
---   - 'Sainz of Time' (created externally with a real user)
+--   - 'Sainz of Trouble' (created externally with a real user)
 --
--- Also adds 'Sainz of Time' to the 'Paddock Pretenders' league (idempotent).
+-- Also adds 'Sainz of Trouble' to the 'Paddock Pretenders' league (idempotent).
 --
 -- Preconditions:
 --   1. seed.sql + seed-prices.sql have been run (Drivers, Constructors, Seasons,
---      RaceWeekends 2026 rounds 1-3, and prices are loaded).
+--      RaceWeekends 2026 rounds 1-5, and prices are loaded).
 --   2. test-data-teams.sql has been run (10 test teams + Paddock Pretenders league).
---   3. A team named exactly 'Sainz of Time' exists, owned by a real user.
+--   3. A team named exactly 'Sainz of Trouble' exists, owned by a real user.
 --
 -- Lineup design notes:
---   - All 11 lineups are budget-cap compliant (<= $100M / 100,000,000 raw units).
+--   - All 11 lineups are budget-cap compliant (<= $100M / 100,000,000 raw units)
+--     at every round (using round-1 prices as the budget reference).
 --   - Each lineup respects composition intent: <= 3 elite (>=$22M) assets.
---   - Same lineup and captain are used across rounds 1-3 (transfers not modeled).
+--   - Driver lineups vary across rounds: some teams swap a driver mid-season
+--     (modeled as a per-round entry, not a "transfer" event), and several teams
+--     rotate captain across rounds to produce week-over-week leaderboard movement.
+--   - Constructor lineups are stable across all 5 rounds in this draft.
 --   - Driver slot positions: 0-4. Constructor slot positions: 0-1.
 --     (Matches the API's TeamService validation, which is zero-indexed.)
---   - Captain is the slot-0 driver on each team (IsCaptain = true on exactly
---     one LineupEntry per team per race; constructors are never captain).
+--   - Exactly one IsCaptain = true per team per race; constructors are never captain.
+--   - TeamDrivers (the "current roster") reflects each team's round-5 driver per
+--     slot, since the roster naturally tracks the most recent lineup.
+--
+-- Implementation notes:
+--   - Names/abbreviations are resolved to IDs once via lookup temp tables at the
+--     top of the script. Every downstream join is on integer/uuid IDs, not text.
 --
 -- Scoring/ingestion ordering:
 --   1. Run this script.
@@ -36,282 +45,502 @@
 BEGIN;
 
 -- ============================================================================
+-- Lookup tables: resolve names/abbreviations to IDs once
+-- ============================================================================
+-- Every downstream INSERT joins on integer/uuid IDs from these tables instead
+-- of repeating text-based joins against "Teams"."Name" etc. Column types are
+-- inferred from the source columns.
+--
+-- teams_to_clean is broader than team_lookup: it includes every test team by
+-- email pattern (so the cleanup still works if a team got renamed) plus the
+-- externally-created 'Sainz of Trouble' team.
+
+CREATE TEMP TABLE teams_to_clean ON COMMIT DROP AS
+SELECT t."Id" AS team_id
+FROM "Teams" t
+LEFT JOIN "UserProfiles" up ON t."UserId" = up."Id"
+WHERE up."Email" LIKE '%testteam%@f1fantasy.test'
+   OR t."Name" = 'Sainz of Trouble';
+
+CREATE TEMP TABLE team_lookup ON COMMIT DROP AS
+SELECT t."Id" AS team_id, t."UserId" AS user_id, t."Name" AS team_name
+FROM "Teams" t
+WHERE t."Name" IN (
+  'Red Bull Rivals', 'Verstappen''s Victory', 'Monza Mavericks',
+  'Ferrari Fanatics', 'Hamilton Heroes', 'Silverstone Speedsters',
+  'McLaren Masters', 'Norris Navigators', 'Spa Specialists',
+  'Mercedes Maniacs', 'Sainz of Trouble'
+);
+
+CREATE TEMP TABLE race_weekend_lookup ON COMMIT DROP AS
+SELECT rw."Id" AS race_weekend_id, rw."Round" AS round
+FROM "RaceWeekends" rw
+INNER JOIN "Seasons" s ON s."Id" = rw."SeasonId"
+WHERE s."Year" = 2026 AND rw."Round" <= 5;
+
+CREATE TEMP TABLE driver_lookup ON COMMIT DROP AS
+SELECT d."Id" AS driver_id, d."Abbreviation" AS abbreviation
+FROM "Drivers" d;
+
+CREATE TEMP TABLE constructor_lookup ON COMMIT DROP AS
+SELECT c."Id" AS constructor_id, c."Abbreviation" AS abbreviation
+FROM "Constructors" c;
+
+-- ============================================================================
 -- Cleanup (allows re-running this script)
 -- ============================================================================
--- Scoped to our 11 teams. For test teams, test-data-teams.sql re-cleanup
--- cascades these tables anyway when it deletes the Teams; this block is the
--- safety net for re-running test-data-lineups.sql in isolation, and is the
--- ONLY path that cleans up rows for the externally-created 'Sainz of Time'.
+-- For test teams, test-data-teams.sql re-cleanup cascades these tables anyway
+-- when it deletes the Teams; this block is the safety net for re-running
+-- test-data-lineups.sql in isolation, and is the ONLY path that cleans up rows
+-- for the externally-created 'Sainz of Trouble'.
 
 DELETE FROM "LineupEntries"
-WHERE "TeamId" IN (
-  SELECT t."Id"
-  FROM "Teams" t
-  LEFT JOIN "UserProfiles" up ON t."UserId" = up."Id"
-  WHERE up."Email" LIKE '%testteam%@f1fantasy.test'
-     OR t."Name" = 'Sainz of Time'
-)
-AND "RaceWeekendId" IN (
-  SELECT rw."Id"
-  FROM "RaceWeekends" rw
-  INNER JOIN "Seasons" s ON rw."SeasonId" = s."Id"
-  WHERE s."Year" = 2026 AND rw."Round" IN (1, 2, 3)
-);
+WHERE "TeamId" IN (SELECT team_id FROM teams_to_clean)
+  AND "RaceWeekendId" IN (SELECT race_weekend_id FROM race_weekend_lookup);
 
 DELETE FROM "TeamDrivers"
-WHERE "TeamId" IN (
-  SELECT t."Id"
-  FROM "Teams" t
-  LEFT JOIN "UserProfiles" up ON t."UserId" = up."Id"
-  WHERE up."Email" LIKE '%testteam%@f1fantasy.test'
-     OR t."Name" = 'Sainz of Time'
-);
+WHERE "TeamId" IN (SELECT team_id FROM teams_to_clean);
 
 DELETE FROM "TeamConstructors"
-WHERE "TeamId" IN (
-  SELECT t."Id"
-  FROM "Teams" t
-  LEFT JOIN "UserProfiles" up ON t."UserId" = up."Id"
-  WHERE up."Email" LIKE '%testteam%@f1fantasy.test'
-     OR t."Name" = 'Sainz of Time'
-);
+WHERE "TeamId" IN (SELECT team_id FROM teams_to_clean);
 
 -- ============================================================================
--- Step 1: Add 'Sainz of Time' to the Paddock Pretenders league
+-- Step 1: Add 'Sainz of Trouble' to the Paddock Pretenders league
 -- ============================================================================
 -- No-op if already a member. Skipped silently if either the team or the league
 -- is missing (no rows to insert).
-INSERT INTO "LeagueTeams" ("LeagueId", "TeamId", "JoinedAt", "CreatedBy", "CreatedAt", "UpdatedAt", "DeletedAt", "IsDeleted", "UpdatedBy", "DeletedBy")
+INSERT INTO "LeagueTeams" ("LeagueId", "TeamId", "JoinedAt", "CreatedBy", "CreatedAt", "IsDeleted")
 SELECT
-  l."Id" as "LeagueId",
-  t."Id" as "TeamId",
-  NOW() as "JoinedAt",
-  t."UserId" as "CreatedBy",
-  NOW() as "CreatedAt",
-  NOW() as "UpdatedAt",
-  NULL as "DeletedAt",
-  false as "IsDeleted",
-  NULL as "UpdatedBy",
-  NULL as "DeletedBy"
-FROM "Teams" t
+  l."Id" AS "LeagueId",
+  tl.team_id AS "TeamId",
+  NOW() AS "JoinedAt",
+  tl.user_id AS "CreatedBy",
+  NOW() AS "CreatedAt",
+  false AS "IsDeleted"
+FROM team_lookup tl
 CROSS JOIN "Leagues" l
-WHERE t."Name" = 'Sainz of Time'
+WHERE tl.team_name = 'Sainz of Trouble'
   AND l."Name" = 'Paddock Pretenders'
 ON CONFLICT DO NOTHING;
 
 -- ============================================================================
--- Step 2: Insert TeamDrivers (persistent driver rosters)
+-- Step 2: Per-round driver lineups (drives both TeamDrivers and LineupEntries)
 -- ============================================================================
--- Composition: 5 unique drivers per team. Total roster cost (drivers + constructors)
--- per team is shown in the comments; budget cap = 100.0M.
+-- One row per (team, round, slot). is_captain marks the captain for that race
+-- (exactly one per team per round). Rounds where a slot's driver differs from
+-- the previous round represent a mid-season swap.
+--
+-- Names and abbreviations in the VALUES list are resolved to IDs during this
+-- INSERT; the resulting temp table holds only IDs.
 
-WITH driver_data (team_name, slot, driver_abbr) AS (
-  VALUES
-    -- Red Bull Rivals — Verstappen-led, value support (77.8M total)
-    ('Red Bull Rivals', 0, 'VER'),
-    ('Red Bull Rivals', 1, 'HAD'),
-    ('Red Bull Rivals', 2, 'HUL'),
-    ('Red Bull Rivals', 3, 'GAS'),
-    ('Red Bull Rivals', 4, 'COL'),
+CREATE TEMP TABLE driver_lineups ON COMMIT DROP AS
+SELECT tl.team_id, v.round, v.slot, dl.driver_id, v.is_captain
+FROM (VALUES
+  -- ============== Red Bull Rivals ==============
+  -- Swap: R3 slot 1 HAD -> ANT. Captain VER all rounds.
+  ('Red Bull Rivals', 1, 0, 'VER', true),
+  ('Red Bull Rivals', 1, 1, 'HAD', false),
+  ('Red Bull Rivals', 1, 2, 'HUL', false),
+  ('Red Bull Rivals', 1, 3, 'GAS', false),
+  ('Red Bull Rivals', 1, 4, 'COL', false),
+  ('Red Bull Rivals', 2, 0, 'VER', true),
+  ('Red Bull Rivals', 2, 1, 'HAD', false),
+  ('Red Bull Rivals', 2, 2, 'HUL', false),
+  ('Red Bull Rivals', 2, 3, 'GAS', false),
+  ('Red Bull Rivals', 2, 4, 'COL', false),
+  ('Red Bull Rivals', 3, 0, 'VER', true),
+  ('Red Bull Rivals', 3, 1, 'ANT', false),
+  ('Red Bull Rivals', 3, 2, 'HUL', false),
+  ('Red Bull Rivals', 3, 3, 'GAS', false),
+  ('Red Bull Rivals', 3, 4, 'COL', false),
+  ('Red Bull Rivals', 4, 0, 'VER', true),
+  ('Red Bull Rivals', 4, 1, 'ANT', false),
+  ('Red Bull Rivals', 4, 2, 'HUL', false),
+  ('Red Bull Rivals', 4, 3, 'GAS', false),
+  ('Red Bull Rivals', 4, 4, 'COL', false),
+  ('Red Bull Rivals', 5, 0, 'VER', true),
+  ('Red Bull Rivals', 5, 1, 'ANT', false),
+  ('Red Bull Rivals', 5, 2, 'HUL', false),
+  ('Red Bull Rivals', 5, 3, 'GAS', false),
+  ('Red Bull Rivals', 5, 4, 'COL', false),
 
-    -- Verstappen's Victory — top-heavy drivers, bargain constructors (83.0M)
-    ('Verstappen''s Victory', 0, 'VER'),
-    ('Verstappen''s Victory', 1, 'NOR'),
-    ('Verstappen''s Victory', 2, 'HAM'),
-    ('Verstappen''s Victory', 3, 'STR'),
-    ('Verstappen''s Victory', 4, 'GAS'),
+  -- ============== Verstappen's Victory ==============
+  -- Swap: R4 slot 4 GAS -> BEA. Captain rotates: R1 VER, R2 NOR, R3 VER, R4 HAM, R5 VER.
+  ('Verstappen''s Victory', 1, 0, 'VER', true),
+  ('Verstappen''s Victory', 1, 1, 'NOR', false),
+  ('Verstappen''s Victory', 1, 2, 'HAM', false),
+  ('Verstappen''s Victory', 1, 3, 'STR', false),
+  ('Verstappen''s Victory', 1, 4, 'GAS', false),
+  ('Verstappen''s Victory', 2, 0, 'VER', false),
+  ('Verstappen''s Victory', 2, 1, 'NOR', true),
+  ('Verstappen''s Victory', 2, 2, 'HAM', false),
+  ('Verstappen''s Victory', 2, 3, 'STR', false),
+  ('Verstappen''s Victory', 2, 4, 'GAS', false),
+  ('Verstappen''s Victory', 3, 0, 'VER', true),
+  ('Verstappen''s Victory', 3, 1, 'NOR', false),
+  ('Verstappen''s Victory', 3, 2, 'HAM', false),
+  ('Verstappen''s Victory', 3, 3, 'STR', false),
+  ('Verstappen''s Victory', 3, 4, 'GAS', false),
+  ('Verstappen''s Victory', 4, 0, 'VER', false),
+  ('Verstappen''s Victory', 4, 1, 'NOR', false),
+  ('Verstappen''s Victory', 4, 2, 'HAM', true),
+  ('Verstappen''s Victory', 4, 3, 'STR', false),
+  ('Verstappen''s Victory', 4, 4, 'BEA', false),
+  ('Verstappen''s Victory', 5, 0, 'VER', true),
+  ('Verstappen''s Victory', 5, 1, 'NOR', false),
+  ('Verstappen''s Victory', 5, 2, 'HAM', false),
+  ('Verstappen''s Victory', 5, 3, 'STR', false),
+  ('Verstappen''s Victory', 5, 4, 'BEA', false),
 
-    -- Monza Mavericks — Ferrari + Aston balanced (71.6M)
-    ('Monza Mavericks', 0, 'LEC'),
-    ('Monza Mavericks', 1, 'HAM'),
-    ('Monza Mavericks', 2, 'SAI'),
-    ('Monza Mavericks', 3, 'ALO'),
-    ('Monza Mavericks', 4, 'STR'),
+  -- ============== Monza Mavericks ==============
+  -- No driver swaps. Captain rotates: R3 captain HAM, else LEC.
+  ('Monza Mavericks', 1, 0, 'LEC', true),
+  ('Monza Mavericks', 1, 1, 'HAM', false),
+  ('Monza Mavericks', 1, 2, 'SAI', false),
+  ('Monza Mavericks', 1, 3, 'ALO', false),
+  ('Monza Mavericks', 1, 4, 'STR', false),
+  ('Monza Mavericks', 2, 0, 'LEC', true),
+  ('Monza Mavericks', 2, 1, 'HAM', false),
+  ('Monza Mavericks', 2, 2, 'SAI', false),
+  ('Monza Mavericks', 2, 3, 'ALO', false),
+  ('Monza Mavericks', 2, 4, 'STR', false),
+  ('Monza Mavericks', 3, 0, 'LEC', false),
+  ('Monza Mavericks', 3, 1, 'HAM', true),
+  ('Monza Mavericks', 3, 2, 'SAI', false),
+  ('Monza Mavericks', 3, 3, 'ALO', false),
+  ('Monza Mavericks', 3, 4, 'STR', false),
+  ('Monza Mavericks', 4, 0, 'LEC', true),
+  ('Monza Mavericks', 4, 1, 'HAM', false),
+  ('Monza Mavericks', 4, 2, 'SAI', false),
+  ('Monza Mavericks', 4, 3, 'ALO', false),
+  ('Monza Mavericks', 4, 4, 'STR', false),
+  ('Monza Mavericks', 5, 0, 'LEC', true),
+  ('Monza Mavericks', 5, 1, 'HAM', false),
+  ('Monza Mavericks', 5, 2, 'SAI', false),
+  ('Monza Mavericks', 5, 3, 'ALO', false),
+  ('Monza Mavericks', 5, 4, 'STR', false),
 
-    -- Ferrari Fanatics — Ferrari core + Verstappen wildcard (90.2M)
-    ('Ferrari Fanatics', 0, 'LEC'),
-    ('Ferrari Fanatics', 1, 'HAM'),
-    ('Ferrari Fanatics', 2, 'VER'),
-    ('Ferrari Fanatics', 3, 'HAD'),
-    ('Ferrari Fanatics', 4, 'HUL'),
+  -- ============== Ferrari Fanatics ==============
+  -- Swap: R3 slot 4 HUL -> ANT. Captain LEC all rounds.
+  ('Ferrari Fanatics', 1, 0, 'LEC', true),
+  ('Ferrari Fanatics', 1, 1, 'HAM', false),
+  ('Ferrari Fanatics', 1, 2, 'VER', false),
+  ('Ferrari Fanatics', 1, 3, 'HAD', false),
+  ('Ferrari Fanatics', 1, 4, 'HUL', false),
+  ('Ferrari Fanatics', 2, 0, 'LEC', true),
+  ('Ferrari Fanatics', 2, 1, 'HAM', false),
+  ('Ferrari Fanatics', 2, 2, 'VER', false),
+  ('Ferrari Fanatics', 2, 3, 'HAD', false),
+  ('Ferrari Fanatics', 2, 4, 'HUL', false),
+  ('Ferrari Fanatics', 3, 0, 'LEC', true),
+  ('Ferrari Fanatics', 3, 1, 'HAM', false),
+  ('Ferrari Fanatics', 3, 2, 'VER', false),
+  ('Ferrari Fanatics', 3, 3, 'HAD', false),
+  ('Ferrari Fanatics', 3, 4, 'ANT', false),
+  ('Ferrari Fanatics', 4, 0, 'LEC', true),
+  ('Ferrari Fanatics', 4, 1, 'HAM', false),
+  ('Ferrari Fanatics', 4, 2, 'VER', false),
+  ('Ferrari Fanatics', 4, 3, 'HAD', false),
+  ('Ferrari Fanatics', 4, 4, 'ANT', false),
+  ('Ferrari Fanatics', 5, 0, 'LEC', true),
+  ('Ferrari Fanatics', 5, 1, 'HAM', false),
+  ('Ferrari Fanatics', 5, 2, 'VER', false),
+  ('Ferrari Fanatics', 5, 3, 'HAD', false),
+  ('Ferrari Fanatics', 5, 4, 'ANT', false),
 
-    -- Hamilton Heroes — Mercedes-flavoured (86.4M)
-    ('Hamilton Heroes', 0, 'HAM'),
-    ('Hamilton Heroes', 1, 'RUS'),
-    ('Hamilton Heroes', 2, 'ANT'),
-    ('Hamilton Heroes', 3, 'ALB'),
-    ('Hamilton Heroes', 4, 'OCO'),
+  -- ============== Hamilton Heroes ==============
+  -- Swap: R3 slot 4 OCO -> BEA. Captain rotates: R4 RUS, else HAM.
+  ('Hamilton Heroes', 1, 0, 'HAM', true),
+  ('Hamilton Heroes', 1, 1, 'RUS', false),
+  ('Hamilton Heroes', 1, 2, 'ANT', false),
+  ('Hamilton Heroes', 1, 3, 'ALB', false),
+  ('Hamilton Heroes', 1, 4, 'OCO', false),
+  ('Hamilton Heroes', 2, 0, 'HAM', true),
+  ('Hamilton Heroes', 2, 1, 'RUS', false),
+  ('Hamilton Heroes', 2, 2, 'ANT', false),
+  ('Hamilton Heroes', 2, 3, 'ALB', false),
+  ('Hamilton Heroes', 2, 4, 'OCO', false),
+  ('Hamilton Heroes', 3, 0, 'HAM', true),
+  ('Hamilton Heroes', 3, 1, 'RUS', false),
+  ('Hamilton Heroes', 3, 2, 'ANT', false),
+  ('Hamilton Heroes', 3, 3, 'ALB', false),
+  ('Hamilton Heroes', 3, 4, 'BEA', false),
+  ('Hamilton Heroes', 4, 0, 'HAM', false),
+  ('Hamilton Heroes', 4, 1, 'RUS', true),
+  ('Hamilton Heroes', 4, 2, 'ANT', false),
+  ('Hamilton Heroes', 4, 3, 'ALB', false),
+  ('Hamilton Heroes', 4, 4, 'BEA', false),
+  ('Hamilton Heroes', 5, 0, 'HAM', true),
+  ('Hamilton Heroes', 5, 1, 'RUS', false),
+  ('Hamilton Heroes', 5, 2, 'ANT', false),
+  ('Hamilton Heroes', 5, 3, 'ALB', false),
+  ('Hamilton Heroes', 5, 4, 'BEA', false),
 
-    -- Silverstone Speedsters — British-driver heavy (95.2M)
-    ('Silverstone Speedsters', 0, 'NOR'),
-    ('Silverstone Speedsters', 1, 'HAM'),
-    ('Silverstone Speedsters', 2, 'RUS'),
-    ('Silverstone Speedsters', 3, 'ALB'),
-    ('Silverstone Speedsters', 4, 'BEA'),
+  -- ============== Silverstone Speedsters ==============
+  -- No driver swaps. Captain NOR all rounds.
+  ('Silverstone Speedsters', 1, 0, 'NOR', true),
+  ('Silverstone Speedsters', 1, 1, 'HAM', false),
+  ('Silverstone Speedsters', 1, 2, 'RUS', false),
+  ('Silverstone Speedsters', 1, 3, 'ALB', false),
+  ('Silverstone Speedsters', 1, 4, 'BEA', false),
+  ('Silverstone Speedsters', 2, 0, 'NOR', true),
+  ('Silverstone Speedsters', 2, 1, 'HAM', false),
+  ('Silverstone Speedsters', 2, 2, 'RUS', false),
+  ('Silverstone Speedsters', 2, 3, 'ALB', false),
+  ('Silverstone Speedsters', 2, 4, 'BEA', false),
+  ('Silverstone Speedsters', 3, 0, 'NOR', true),
+  ('Silverstone Speedsters', 3, 1, 'HAM', false),
+  ('Silverstone Speedsters', 3, 2, 'RUS', false),
+  ('Silverstone Speedsters', 3, 3, 'ALB', false),
+  ('Silverstone Speedsters', 3, 4, 'BEA', false),
+  ('Silverstone Speedsters', 4, 0, 'NOR', true),
+  ('Silverstone Speedsters', 4, 1, 'HAM', false),
+  ('Silverstone Speedsters', 4, 2, 'RUS', false),
+  ('Silverstone Speedsters', 4, 3, 'ALB', false),
+  ('Silverstone Speedsters', 4, 4, 'BEA', false),
+  ('Silverstone Speedsters', 5, 0, 'NOR', true),
+  ('Silverstone Speedsters', 5, 1, 'HAM', false),
+  ('Silverstone Speedsters', 5, 2, 'RUS', false),
+  ('Silverstone Speedsters', 5, 3, 'ALB', false),
+  ('Silverstone Speedsters', 5, 4, 'BEA', false),
 
-    -- McLaren Masters — Piastri-led with cheap drivers to fund MCL (86.7M)
-    ('McLaren Masters', 0, 'PIA'),
-    ('McLaren Masters', 1, 'HAD'),
-    ('McLaren Masters', 2, 'GAS'),
-    ('McLaren Masters', 3, 'STR'),
-    ('McLaren Masters', 4, 'COL'),
+  -- ============== McLaren Masters ==============
+  -- Swap: R2 slot 4 COL -> BEA. Captain PIA all rounds.
+  ('McLaren Masters', 1, 0, 'PIA', true),
+  ('McLaren Masters', 1, 1, 'HAD', false),
+  ('McLaren Masters', 1, 2, 'GAS', false),
+  ('McLaren Masters', 1, 3, 'STR', false),
+  ('McLaren Masters', 1, 4, 'COL', false),
+  ('McLaren Masters', 2, 0, 'PIA', true),
+  ('McLaren Masters', 2, 1, 'HAD', false),
+  ('McLaren Masters', 2, 2, 'GAS', false),
+  ('McLaren Masters', 2, 3, 'STR', false),
+  ('McLaren Masters', 2, 4, 'BEA', false),
+  ('McLaren Masters', 3, 0, 'PIA', true),
+  ('McLaren Masters', 3, 1, 'HAD', false),
+  ('McLaren Masters', 3, 2, 'GAS', false),
+  ('McLaren Masters', 3, 3, 'STR', false),
+  ('McLaren Masters', 3, 4, 'BEA', false),
+  ('McLaren Masters', 4, 0, 'PIA', true),
+  ('McLaren Masters', 4, 1, 'HAD', false),
+  ('McLaren Masters', 4, 2, 'GAS', false),
+  ('McLaren Masters', 4, 3, 'STR', false),
+  ('McLaren Masters', 4, 4, 'BEA', false),
+  ('McLaren Masters', 5, 0, 'PIA', true),
+  ('McLaren Masters', 5, 1, 'HAD', false),
+  ('McLaren Masters', 5, 2, 'GAS', false),
+  ('McLaren Masters', 5, 3, 'STR', false),
+  ('McLaren Masters', 5, 4, 'BEA', false),
 
-    -- Norris Navigators — Norris + diverse mid-range (98.1M)
-    ('Norris Navigators', 0, 'NOR'),
-    ('Norris Navigators', 1, 'HAD'),
-    ('Norris Navigators', 2, 'HAM'),
-    ('Norris Navigators', 3, 'ALB'),
-    ('Norris Navigators', 4, 'HUL'),
+  -- ============== Norris Navigators ==============
+  -- Swap: R4 slot 4 HUL -> ANT. Captain rotates: R4 HAM (slot 2), else NOR.
+  ('Norris Navigators', 1, 0, 'NOR', true),
+  ('Norris Navigators', 1, 1, 'HAD', false),
+  ('Norris Navigators', 1, 2, 'HAM', false),
+  ('Norris Navigators', 1, 3, 'ALB', false),
+  ('Norris Navigators', 1, 4, 'HUL', false),
+  ('Norris Navigators', 2, 0, 'NOR', true),
+  ('Norris Navigators', 2, 1, 'HAD', false),
+  ('Norris Navigators', 2, 2, 'HAM', false),
+  ('Norris Navigators', 2, 3, 'ALB', false),
+  ('Norris Navigators', 2, 4, 'HUL', false),
+  ('Norris Navigators', 3, 0, 'NOR', true),
+  ('Norris Navigators', 3, 1, 'HAD', false),
+  ('Norris Navigators', 3, 2, 'HAM', false),
+  ('Norris Navigators', 3, 3, 'ALB', false),
+  ('Norris Navigators', 3, 4, 'HUL', false),
+  ('Norris Navigators', 4, 0, 'NOR', false),
+  ('Norris Navigators', 4, 1, 'HAD', false),
+  ('Norris Navigators', 4, 2, 'HAM', true),
+  ('Norris Navigators', 4, 3, 'ALB', false),
+  ('Norris Navigators', 4, 4, 'ANT', false),
+  ('Norris Navigators', 5, 0, 'NOR', true),
+  ('Norris Navigators', 5, 1, 'HAD', false),
+  ('Norris Navigators', 5, 2, 'HAM', false),
+  ('Norris Navigators', 5, 3, 'ALB', false),
+  ('Norris Navigators', 5, 4, 'ANT', false),
 
-    -- Spa Specialists — Verstappen + underdog mix (79.8M)
-    ('Spa Specialists', 0, 'VER'),
-    ('Spa Specialists', 1, 'ALO'),
-    ('Spa Specialists', 2, 'ALB'),
-    ('Spa Specialists', 3, 'GAS'),
-    ('Spa Specialists', 4, 'BEA'),
+  -- ============== Spa Specialists ==============
+  -- No driver swaps. Captain rotates: R3 ALO, else VER.
+  ('Spa Specialists', 1, 0, 'VER', true),
+  ('Spa Specialists', 1, 1, 'ALO', false),
+  ('Spa Specialists', 1, 2, 'ALB', false),
+  ('Spa Specialists', 1, 3, 'GAS', false),
+  ('Spa Specialists', 1, 4, 'BEA', false),
+  ('Spa Specialists', 2, 0, 'VER', true),
+  ('Spa Specialists', 2, 1, 'ALO', false),
+  ('Spa Specialists', 2, 2, 'ALB', false),
+  ('Spa Specialists', 2, 3, 'GAS', false),
+  ('Spa Specialists', 2, 4, 'BEA', false),
+  ('Spa Specialists', 3, 0, 'VER', false),
+  ('Spa Specialists', 3, 1, 'ALO', true),
+  ('Spa Specialists', 3, 2, 'ALB', false),
+  ('Spa Specialists', 3, 3, 'GAS', false),
+  ('Spa Specialists', 3, 4, 'BEA', false),
+  ('Spa Specialists', 4, 0, 'VER', true),
+  ('Spa Specialists', 4, 1, 'ALO', false),
+  ('Spa Specialists', 4, 2, 'ALB', false),
+  ('Spa Specialists', 4, 3, 'GAS', false),
+  ('Spa Specialists', 4, 4, 'BEA', false),
+  ('Spa Specialists', 5, 0, 'VER', true),
+  ('Spa Specialists', 5, 1, 'ALO', false),
+  ('Spa Specialists', 5, 2, 'ALB', false),
+  ('Spa Specialists', 5, 3, 'GAS', false),
+  ('Spa Specialists', 5, 4, 'BEA', false),
 
-    -- Mercedes Maniacs — full Merc lineup + Hamilton (83.0M)
-    ('Mercedes Maniacs', 0, 'RUS'),
-    ('Mercedes Maniacs', 1, 'ANT'),
-    ('Mercedes Maniacs', 2, 'HAM'),
-    ('Mercedes Maniacs', 3, 'HAD'),
-    ('Mercedes Maniacs', 4, 'STR'),
+  -- ============== Mercedes Maniacs ==============
+  -- Swap: R2 slot 4 STR -> BEA. Captain RUS all rounds.
+  ('Mercedes Maniacs', 1, 0, 'RUS', true),
+  ('Mercedes Maniacs', 1, 1, 'ANT', false),
+  ('Mercedes Maniacs', 1, 2, 'HAM', false),
+  ('Mercedes Maniacs', 1, 3, 'HAD', false),
+  ('Mercedes Maniacs', 1, 4, 'STR', false),
+  ('Mercedes Maniacs', 2, 0, 'RUS', true),
+  ('Mercedes Maniacs', 2, 1, 'ANT', false),
+  ('Mercedes Maniacs', 2, 2, 'HAM', false),
+  ('Mercedes Maniacs', 2, 3, 'HAD', false),
+  ('Mercedes Maniacs', 2, 4, 'BEA', false),
+  ('Mercedes Maniacs', 3, 0, 'RUS', true),
+  ('Mercedes Maniacs', 3, 1, 'ANT', false),
+  ('Mercedes Maniacs', 3, 2, 'HAM', false),
+  ('Mercedes Maniacs', 3, 3, 'HAD', false),
+  ('Mercedes Maniacs', 3, 4, 'BEA', false),
+  ('Mercedes Maniacs', 4, 0, 'RUS', true),
+  ('Mercedes Maniacs', 4, 1, 'ANT', false),
+  ('Mercedes Maniacs', 4, 2, 'HAM', false),
+  ('Mercedes Maniacs', 4, 3, 'HAD', false),
+  ('Mercedes Maniacs', 4, 4, 'BEA', false),
+  ('Mercedes Maniacs', 5, 0, 'RUS', true),
+  ('Mercedes Maniacs', 5, 1, 'ANT', false),
+  ('Mercedes Maniacs', 5, 2, 'HAM', false),
+  ('Mercedes Maniacs', 5, 3, 'HAD', false),
+  ('Mercedes Maniacs', 5, 4, 'BEA', false),
 
-    -- Sainz of Time — Sainz-flavoured with Ferrari/RB power (95.3M)
-    ('Sainz of Time', 0, 'SAI'),
-    ('Sainz of Time', 1, 'VER'),
-    ('Sainz of Time', 2, 'LEC'),
-    ('Sainz of Time', 3, 'HAD'),
-    ('Sainz of Time', 4, 'ALB')
-)
-INSERT INTO "TeamDrivers" ("TeamId", "DriverId", "SlotPosition", "CreatedBy", "CreatedAt", "UpdatedAt", "DeletedAt", "IsDeleted", "UpdatedBy", "DeletedBy")
+  -- ============== Sainz of Trouble ==============
+  -- Swap: R3 slot 4 ALB -> ANT. Captain rotates: R4 LEC (slot 2), else SAI.
+  ('Sainz of Trouble', 1, 0, 'SAI', true),
+  ('Sainz of Trouble', 1, 1, 'VER', false),
+  ('Sainz of Trouble', 1, 2, 'LEC', false),
+  ('Sainz of Trouble', 1, 3, 'HAD', false),
+  ('Sainz of Trouble', 1, 4, 'ALB', false),
+  ('Sainz of Trouble', 2, 0, 'SAI', true),
+  ('Sainz of Trouble', 2, 1, 'VER', false),
+  ('Sainz of Trouble', 2, 2, 'LEC', false),
+  ('Sainz of Trouble', 2, 3, 'HAD', false),
+  ('Sainz of Trouble', 2, 4, 'ALB', false),
+  ('Sainz of Trouble', 3, 0, 'SAI', true),
+  ('Sainz of Trouble', 3, 1, 'VER', false),
+  ('Sainz of Trouble', 3, 2, 'LEC', false),
+  ('Sainz of Trouble', 3, 3, 'HAD', false),
+  ('Sainz of Trouble', 3, 4, 'ANT', false),
+  ('Sainz of Trouble', 4, 0, 'SAI', false),
+  ('Sainz of Trouble', 4, 1, 'VER', false),
+  ('Sainz of Trouble', 4, 2, 'LEC', true),
+  ('Sainz of Trouble', 4, 3, 'HAD', false),
+  ('Sainz of Trouble', 4, 4, 'ANT', false),
+  ('Sainz of Trouble', 5, 0, 'SAI', true),
+  ('Sainz of Trouble', 5, 1, 'VER', false),
+  ('Sainz of Trouble', 5, 2, 'LEC', false),
+  ('Sainz of Trouble', 5, 3, 'HAD', false),
+  ('Sainz of Trouble', 5, 4, 'ANT', false)
+) AS v(team_name, round, slot, driver_abbr, is_captain)
+INNER JOIN team_lookup tl ON tl.team_name = v.team_name
+INNER JOIN driver_lookup dl ON dl.abbreviation = v.driver_abbr;
+
+-- ============================================================================
+-- Step 3: TeamDrivers (current roster = each team's round-5 driver per slot)
+-- ============================================================================
+INSERT INTO "TeamDrivers" ("TeamId", "DriverId", "SlotPosition", "CreatedBy", "CreatedAt", "IsDeleted")
 SELECT
-  t."Id" as "TeamId",
-  d."Id" as "DriverId",
-  dd.slot as "SlotPosition",
-  t."UserId" as "CreatedBy",
-  NOW() as "CreatedAt",
-  NOW() as "UpdatedAt",
-  NULL as "DeletedAt",
-  false as "IsDeleted",
-  NULL as "UpdatedBy",
-  NULL as "DeletedBy"
-FROM driver_data dd
-INNER JOIN "Teams" t ON t."Name" = dd.team_name
-INNER JOIN "Drivers" d ON d."Abbreviation" = dd.driver_abbr;
+  dl.team_id AS "TeamId",
+  dl.driver_id AS "DriverId",
+  dl.slot AS "SlotPosition",
+  tl.user_id AS "CreatedBy",
+  NOW() AS "CreatedAt",
+  false AS "IsDeleted"
+FROM driver_lineups dl
+INNER JOIN team_lookup tl ON tl.team_id = dl.team_id
+WHERE dl.round = (SELECT MAX(round) FROM driver_lineups);
 
 -- ============================================================================
--- Step 3: Insert TeamConstructors (persistent constructor rosters)
+-- Step 4: Constructor rosters (stable across all 5 rounds)
 -- ============================================================================
-WITH constructor_data (team_name, slot, constructor_abbr) AS (
-  VALUES
-    ('Red Bull Rivals', 0, 'RBR'),
-    ('Red Bull Rivals', 1, 'HAA'),
-    ('Verstappen''s Victory', 0, 'ALP'),
-    ('Verstappen''s Victory', 1, 'CAD'),
-    ('Monza Mavericks', 0, 'FER'),
-    ('Monza Mavericks', 1, 'AMR'),
-    ('Ferrari Fanatics', 0, 'FER'),
-    ('Ferrari Fanatics', 1, 'CAD'),
-    ('Hamilton Heroes', 0, 'MER'),
-    ('Hamilton Heroes', 1, 'AMR'),
-    ('Silverstone Speedsters', 0, 'WIL'),
-    ('Silverstone Speedsters', 1, 'HAA'),
-    ('McLaren Masters', 0, 'MCL'),
-    ('McLaren Masters', 1, 'AMR'),
-    ('Norris Navigators', 0, 'MCL'),
-    ('Norris Navigators', 1, 'CAD'),
-    ('Spa Specialists', 0, 'RBR'),
-    ('Spa Specialists', 1, 'AUD'),
-    ('Mercedes Maniacs', 0, 'MER'),
-    ('Mercedes Maniacs', 1, 'RBS'),
-    ('Sainz of Time', 0, 'WIL'),
-    ('Sainz of Time', 1, 'RBR')
-)
-INSERT INTO "TeamConstructors" ("TeamId", "ConstructorId", "SlotPosition", "CreatedBy", "CreatedAt", "UpdatedAt", "DeletedAt", "IsDeleted", "UpdatedBy", "DeletedBy")
+CREATE TEMP TABLE constructor_data ON COMMIT DROP AS
+SELECT tl.team_id, v.slot, cl.constructor_id
+FROM (VALUES
+  ('Red Bull Rivals', 0, 'RBR'),
+  ('Red Bull Rivals', 1, 'HAA'),
+  ('Verstappen''s Victory', 0, 'ALP'),
+  ('Verstappen''s Victory', 1, 'CAD'),
+  ('Monza Mavericks', 0, 'FER'),
+  ('Monza Mavericks', 1, 'AMR'),
+  ('Ferrari Fanatics', 0, 'FER'),
+  ('Ferrari Fanatics', 1, 'CAD'),
+  ('Hamilton Heroes', 0, 'MER'),
+  ('Hamilton Heroes', 1, 'AMR'),
+  ('Silverstone Speedsters', 0, 'WIL'),
+  ('Silverstone Speedsters', 1, 'HAA'),
+  ('McLaren Masters', 0, 'MCL'),
+  ('McLaren Masters', 1, 'AMR'),
+  ('Norris Navigators', 0, 'MCL'),
+  ('Norris Navigators', 1, 'CAD'),
+  ('Spa Specialists', 0, 'RBR'),
+  ('Spa Specialists', 1, 'AUD'),
+  ('Mercedes Maniacs', 0, 'MER'),
+  ('Mercedes Maniacs', 1, 'RBS'),
+  ('Sainz of Trouble', 0, 'WIL'),
+  ('Sainz of Trouble', 1, 'RBR')
+) AS v(team_name, slot, constructor_abbr)
+INNER JOIN team_lookup tl ON tl.team_name = v.team_name
+INNER JOIN constructor_lookup cl ON cl.abbreviation = v.constructor_abbr;
+
+INSERT INTO "TeamConstructors" ("TeamId", "ConstructorId", "SlotPosition", "CreatedBy", "CreatedAt", "IsDeleted")
 SELECT
-  t."Id" as "TeamId",
-  c."Id" as "ConstructorId",
-  cd.slot as "SlotPosition",
-  t."UserId" as "CreatedBy",
-  NOW() as "CreatedAt",
-  NOW() as "UpdatedAt",
-  NULL as "DeletedAt",
-  false as "IsDeleted",
-  NULL as "UpdatedBy",
-  NULL as "DeletedBy"
+  cd.team_id AS "TeamId",
+  cd.constructor_id AS "ConstructorId",
+  cd.slot AS "SlotPosition",
+  tl.user_id AS "CreatedBy",
+  NOW() AS "CreatedAt",
+  false AS "IsDeleted"
 FROM constructor_data cd
-INNER JOIN "Teams" t ON t."Name" = cd.team_name
-INNER JOIN "Constructors" c ON c."Abbreviation" = cd.constructor_abbr;
+INNER JOIN team_lookup tl ON tl.team_id = cd.team_id;
 
 -- ============================================================================
--- Step 4: Insert LineupEntries for rounds 1-3
+-- Step 5: LineupEntries — drivers (per-round) and constructors (same all rounds)
 -- ============================================================================
--- Driver entries (EntityType = 0). The slot-0 driver is captain for every team.
-WITH our_teams AS (
-  SELECT "Id"
-  FROM "Teams"
-  WHERE "Name" IN (
-    'Red Bull Rivals', 'Verstappen''s Victory', 'Monza Mavericks',
-    'Ferrari Fanatics', 'Hamilton Heroes', 'Silverstone Speedsters',
-    'McLaren Masters', 'Norris Navigators', 'Spa Specialists',
-    'Mercedes Maniacs', 'Sainz of Time'
-  )
-),
-target_races AS (
-  SELECT rw."Id" as race_weekend_id
-  FROM "RaceWeekends" rw
-  INNER JOIN "Seasons" s ON rw."SeasonId" = s."Id"
-  WHERE s."Year" = 2026 AND rw."Round" IN (1, 2, 3)
-)
+-- Driver entries (EntityType = 0): one row per (team, round, slot) from driver_lineups.
 INSERT INTO "LineupEntries" ("TeamId", "RaceWeekendId", "EntityId", "EntityType", "SlotPosition", "IsCaptain", "CreatedAt")
 SELECT
-  td."TeamId",
-  tr.race_weekend_id as "RaceWeekendId",
-  td."DriverId" as "EntityId",
-  0 as "EntityType",
-  td."SlotPosition",
-  (td."SlotPosition" = 0) as "IsCaptain",
-  NOW() as "CreatedAt"
-FROM "TeamDrivers" td
-INNER JOIN our_teams ot ON ot."Id" = td."TeamId"
-CROSS JOIN target_races tr;
+  dl.team_id AS "TeamId",
+  rwl.race_weekend_id AS "RaceWeekendId",
+  dl.driver_id AS "EntityId",
+  0 AS "EntityType",
+  dl.slot AS "SlotPosition",
+  dl.is_captain AS "IsCaptain",
+  NOW() AS "CreatedAt"
+FROM driver_lineups dl
+INNER JOIN race_weekend_lookup rwl ON rwl.round = dl.round;
 
--- Constructor entries (EntityType = 1). Constructors are never captain.
-WITH our_teams AS (
-  SELECT "Id"
-  FROM "Teams"
-  WHERE "Name" IN (
-    'Red Bull Rivals', 'Verstappen''s Victory', 'Monza Mavericks',
-    'Ferrari Fanatics', 'Hamilton Heroes', 'Silverstone Speedsters',
-    'McLaren Masters', 'Norris Navigators', 'Spa Specialists',
-    'Mercedes Maniacs', 'Sainz of Time'
-  )
-),
-target_races AS (
-  SELECT rw."Id" as race_weekend_id
-  FROM "RaceWeekends" rw
-  INNER JOIN "Seasons" s ON rw."SeasonId" = s."Id"
-  WHERE s."Year" = 2026 AND rw."Round" IN (1, 2, 3)
-)
+-- Constructor entries (EntityType = 1). Constructors are never captain and don't
+-- vary by round in this draft, so we expand the stable roster across every
+-- race weekend in race_weekend_lookup.
 INSERT INTO "LineupEntries" ("TeamId", "RaceWeekendId", "EntityId", "EntityType", "SlotPosition", "IsCaptain", "CreatedAt")
 SELECT
-  tc."TeamId",
-  tr.race_weekend_id as "RaceWeekendId",
-  tc."ConstructorId" as "EntityId",
-  1 as "EntityType",
-  tc."SlotPosition",
-  false as "IsCaptain",
-  NOW() as "CreatedAt"
-FROM "TeamConstructors" tc
-INNER JOIN our_teams ot ON ot."Id" = tc."TeamId"
-CROSS JOIN target_races tr;
+  cd.team_id AS "TeamId",
+  rwl.race_weekend_id AS "RaceWeekendId",
+  cd.constructor_id AS "EntityId",
+  1 AS "EntityType",
+  cd.slot AS "SlotPosition",
+  false AS "IsCaptain",
+  NOW() AS "CreatedAt"
+FROM constructor_data cd
+CROSS JOIN race_weekend_lookup rwl;
 
 -- ============================================================================
 -- Verification queries (uncomment to inspect)
 -- ============================================================================
 
--- Roster cost check (should all be <= 100,000,000)
+-- Roster cost check on the current roster (round-5 effective). Should be <= 100,000,000.
 SELECT
   t."Name",
   (SELECT COALESCE(SUM(d."Price"), 0)
@@ -331,32 +560,20 @@ SELECT
      INNER JOIN "Constructors" c ON c."Id" = tc."ConstructorId"
      WHERE tc."TeamId" = t."Id") AS total_cost
 FROM "Teams" t
-WHERE t."Name" IN (
-  'Red Bull Rivals', 'Verstappen''s Victory', 'Monza Mavericks',
-  'Ferrari Fanatics', 'Hamilton Heroes', 'Silverstone Speedsters',
-  'McLaren Masters', 'Norris Navigators', 'Spa Specialists',
-  'Mercedes Maniacs', 'Sainz of Time'
-)
+INNER JOIN team_lookup tl ON tl.team_id = t."Id"
 ORDER BY t."Name";
 
--- LineupEntry counts per team (each team should have 7 entries x 3 races = 21)
+-- LineupEntry counts per team (each team should have 7 entries x 5 races = 35,
+-- with exactly 5 captain entries — one per round).
 SELECT
   t."Name",
   COUNT(*) FILTER (WHERE le."EntityType" = 0) AS driver_entries,
   COUNT(*) FILTER (WHERE le."EntityType" = 1) AS constructor_entries,
   COUNT(*) FILTER (WHERE le."IsCaptain") AS captain_entries
 FROM "Teams" t
+INNER JOIN team_lookup tl ON tl.team_id = t."Id"
 INNER JOIN "LineupEntries" le ON le."TeamId" = t."Id"
-INNER JOIN "RaceWeekends" rw ON rw."Id" = le."RaceWeekendId"
-INNER JOIN "Seasons" s ON s."Id" = rw."SeasonId"
-WHERE t."Name" IN (
-  'Red Bull Rivals', 'Verstappen''s Victory', 'Monza Mavericks',
-  'Ferrari Fanatics', 'Hamilton Heroes', 'Silverstone Speedsters',
-  'McLaren Masters', 'Norris Navigators', 'Spa Specialists',
-  'Mercedes Maniacs', 'Sainz of Time'
-)
-  AND s."Year" = 2026
-  AND rw."Round" IN (1, 2, 3)
+INNER JOIN race_weekend_lookup rwl ON rwl.race_weekend_id = le."RaceWeekendId"
 GROUP BY t."Name"
 ORDER BY t."Name";
 
