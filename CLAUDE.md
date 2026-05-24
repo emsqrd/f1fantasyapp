@@ -273,3 +273,17 @@ Hosted on Fly.io + Supabase (free tier).
 - `docs/research/` - Research findings and design specs
 - `docs/mockups/` - Static HTML mockups (self-contained, design tokens from `web/src/index.css`)
 - `docs/plans/` - Feature implementation plans (written during plan mode)
+
+## Agent skills
+
+### Issue tracker
+
+GitHub issues in `emsqrd/f1fantasyapp` via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Canonical role names used as-is (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
