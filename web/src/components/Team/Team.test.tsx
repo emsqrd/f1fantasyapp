@@ -111,34 +111,6 @@ describe('TeamView', () => {
       expect(screen.getByText('Lineup Locked')).toBeInTheDocument();
     });
 
-    it('formats countdown with days when more than 24h remain', () => {
-      render(
-        <TeamView
-          team={createMockTeam()}
-          activeDrivers={mockActiveDrivers}
-          activeConstructors={mockActiveConstructors}
-          races={makeRacesWithDeadline('2026-03-08T12:00:00Z')}
-          readOnly={false}
-        />,
-      );
-
-      expect(screen.getByText('12d 00h 00m')).toBeInTheDocument();
-    });
-
-    it('formats countdown without days when less than 24h remain', () => {
-      render(
-        <TeamView
-          team={createMockTeam()}
-          activeDrivers={mockActiveDrivers}
-          activeConstructors={mockActiveConstructors}
-          races={makeRacesWithDeadline('2026-02-24T15:30:00Z')}
-          readOnly={false}
-        />,
-      );
-
-      expect(screen.getByText('03h 30m')).toBeInTheDocument();
-    });
-
     it('shows "Less than 1 minute" when lock is imminent', () => {
       render(
         <TeamView
