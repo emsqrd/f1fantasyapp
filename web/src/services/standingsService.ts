@@ -1,4 +1,5 @@
 import type { LeagueStandings } from '@/contracts/LeagueStandings';
+import type { MyLeagueStanding } from '@/contracts/MyLeagueStanding';
 import { apiClient } from '@/lib/api';
 import { isApiError } from '@/utils/errors';
 
@@ -14,4 +15,8 @@ export async function getLeagueStandings(leagueId: number): Promise<LeagueStandi
     }
     throw error;
   }
+}
+
+export async function getMyStandings(): Promise<MyLeagueStanding[]> {
+  return await apiClient.get<MyLeagueStanding[]>('/me/standings', 'get your league standings');
 }
