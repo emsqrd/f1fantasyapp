@@ -262,7 +262,7 @@ describe('AppSidebar', () => {
 
   describe('Active State Highlighting', () => {
     it('marks My Team as active when on team page', () => {
-      mockRouterState.location.pathname = '/team/123';
+      mockRouterState.location.pathname = '/my-team';
       const { container } = render(<AppSidebar />);
 
       const buttons = container.querySelectorAll('button[data-active="true"]');
