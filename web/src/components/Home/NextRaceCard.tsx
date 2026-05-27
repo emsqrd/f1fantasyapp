@@ -26,7 +26,7 @@ function TimeSegment({ value, unit, pad = false }: TimeSegmentProps) {
   return (
     <span>
       {display}
-      <span className="text-muted-foreground ml-0.5 text-[14px] font-semibold md:text-[18px]">
+      <span className="text-muted-foreground ml-0.5 text-sm font-semibold md:text-base">
         {unit}
       </span>
     </span>
@@ -40,7 +40,7 @@ export function NextRaceCard({ races }: NextRaceCardProps) {
     const finalRace = races.at(-1) ?? null;
     return (
       <section className="bg-card rounded-[0.65rem] border p-4 md:p-6">
-        <p className="text-muted-foreground text-[13px] md:text-[14px]">
+        <p className="text-muted-foreground text-sm">
           Season complete
           {finalRace && (
             <>
@@ -65,15 +65,15 @@ function NextRaceCardActive({ race }: { race: RaceWeekend }) {
 
   return (
     <section className="bg-card rounded-[0.65rem] border p-4 md:p-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-6">
         <div className="min-w-0 flex-1">
-          <p className="mb-1 text-[12px] font-semibold tracking-[0.14em] text-[color-mix(in_oklab,var(--primary)_70%,var(--muted-foreground))] uppercase">
+          <p className="mb-1 text-xs font-semibold tracking-[0.14em] text-[color-mix(in_oklab,var(--primary)_70%,var(--muted-foreground))] uppercase">
             Round {race.round} <span aria-hidden="true">·</span> Next up
           </p>
-          <h2 className="text-foreground truncate text-[22px] font-bold tracking-tight md:text-[32px]">
+          <h2 className="text-foreground truncate text-2xl font-bold tracking-tight md:text-3xl">
             {race.name}
           </h2>
-          <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] md:text-[13px]">
+          <div className="text-muted-foreground mt-1 flex flex-col gap-y-1 text-xs md:flex-row md:items-center md:gap-x-3 md:text-sm">
             <span className="inline-flex items-center gap-1">
               <MapPin className="size-3.5" aria-hidden="true" />
               {race.circuit.location}, {race.circuit.country}
@@ -87,19 +87,19 @@ function NextRaceCardActive({ race }: { race: RaceWeekend }) {
 
         {lockDeadline && (
           <div className="border-border border-t pt-4 md:border-t-0 md:pt-0 md:text-right">
-            <p className="text-muted-foreground text-[10px] font-medium tracking-[0.18em] uppercase">
+            <p className="text-muted-foreground text-xs font-medium tracking-[0.18em] uppercase">
               {isLocked ? 'Lineup' : 'Lineup locks in'}
             </p>
             {isLocked ? (
               <div className="text-muted-foreground mt-1 flex items-center gap-1.5 md:justify-end">
                 <Lock className="size-4" aria-hidden="true" />
-                <span className="text-[16px] font-semibold">Lineup Locked</span>
+                <span className="text-base font-semibold">Lineup Locked</span>
               </div>
             ) : lockingImminently ? (
-              <p className="mt-1 text-[16px] font-semibold">Less than 1 minute</p>
+              <p className="mt-1 text-base font-semibold">Less than 1 minute</p>
             ) : (
               remaining && (
-                <p className="mt-1 font-mono text-[24px] font-bold tabular-nums md:text-[34px]">
+                <p className="mt-1 font-mono text-2xl font-bold tabular-nums md:text-3xl">
                   <TimeSegment value={remaining.days} unit="d" />{' '}
                   <TimeSegment value={remaining.hours} unit="h" pad />{' '}
                   <TimeSegment value={remaining.minutes} unit="m" pad />

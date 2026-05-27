@@ -8,7 +8,7 @@ import type { ReactNode } from 'react';
 const routeApi = getRouteApi('/_authenticated/_team-required/league/$leagueId');
 
 const rowBase =
-  'grid w-full items-baseline gap-3 grid-cols-[32px_1fr_52px] sm:items-center sm:grid-cols-[52px_1fr_70px_96px_36px] text-left transition-colors';
+  'grid w-full items-baseline gap-3 grid-cols-[--spacing(8)_1fr_--spacing(13)] sm:items-center sm:grid-cols-[--spacing(13)_1fr_--spacing(18)_--spacing(24)_--spacing(9)] text-left transition-colors';
 const rowChrome =
   'rounded-[0.65rem] border bg-card p-3 sm:rounded-none sm:border-x-0 sm:border-t-0 sm:bg-transparent sm:px-4 sm:py-3';
 const rowHover = 'sm:hover:bg-accent';
@@ -42,7 +42,7 @@ export function Leaderboard({ actions, inlineAction }: LeaderboardProps = {}) {
       ) : (
         <div className="sm:border-border sm:bg-card sm:overflow-hidden sm:rounded-[0.65rem] sm:border">
           <div
-            className="text-muted-foreground grid grid-cols-[32px_1fr_52px] items-center gap-3 px-3 pb-2 text-[11px] font-semibold tracking-wider uppercase sm:hidden"
+            className="text-muted-foreground grid grid-cols-[--spacing(8)_1fr_--spacing(13)] items-center gap-3 px-3 pb-2 text-[11px] font-semibold tracking-wider uppercase sm:hidden"
             aria-hidden="true"
           >
             <div className="text-center">Pos</div>
@@ -50,7 +50,7 @@ export function Leaderboard({ actions, inlineAction }: LeaderboardProps = {}) {
             <div className="text-right">Pts</div>
           </div>
           <div
-            className="text-muted-foreground bg-secondary border-border hidden grid-cols-[52px_1fr_70px_96px_36px] items-center gap-3 border-b px-4 py-2.5 text-[11px] font-semibold tracking-wider uppercase sm:grid"
+            className="text-muted-foreground bg-secondary border-border hidden grid-cols-[--spacing(13)_1fr_--spacing(18)_--spacing(24)_--spacing(9)] items-center gap-3 border-b px-4 py-2.5 text-[11px] font-semibold tracking-wider uppercase sm:grid"
             aria-hidden="true"
           >
             <div className="text-center">Pos</div>
