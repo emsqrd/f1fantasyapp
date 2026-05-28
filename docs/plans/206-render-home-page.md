@@ -73,7 +73,7 @@ Two files under `web/src/components/Home/`. Single responsive component per the 
   - **Identity header** — welcome line always; team-name `<h2>` only when `team !== null`.
   - **Next-race hero** — delegates to `<NextRaceCard races={races} />`.
   - **Score-cards row** — two cards (Last Race / Season). Em-dashes when `summary?.seasonTotalPoints == null` or `summary?.lastRace == null`. Layout per `docs/mockups/home-page/design-handoff.md` §3.
-  - **Leagues list** — Leaderboard grid template literally: `grid-cols-[32px_1fr_52px] md:grid-cols-[52px_1fr_70px_96px_36px]`. The `_70px` "Move" column renders empty in this commit (Commit 7 wires `PositionDelta` into it). Each row links to `/league/$leagueId`. Em-dashes for null `position`/`totalPoints`. Chevron column hidden at `<md`. Renders nothing when `standings.length === 0`.
+  - **Leagues list** — Leaderboard grid template literally: `grid-cols-[32px_1fr_52px] md:grid-cols-[52px_1fr_70px_96px_36px]`. The `_70px` "Move" column renders empty in this commit (Commit 6 wires `PositionDelta` into it). Each row links to `/league/$leagueId`. Em-dashes for null `position`/`totalPoints`. Chevron column hidden at `<md`. Renders nothing when `standings.length === 0`.
 - `web/src/components/Home/NextRaceCard.tsx` (new) — accepts `races: RaceWeekend[]`. Picks `races.find(r => r.isCurrent) ?? null`. When null → "Season complete · Final race: {name}, {date}" card (uses `races.at(-1)` for the final race), no CTA. When non-null → race name + location + date on the left, `useLockCountdown(currentRace.lockDeadline)` countdown on the right with the `Dd HHh MMm` lockup. Mobile: stacked with `border-t` divider per the design handoff. Co-locate a private `TimeSegment({ value, unit })` sub-component inside this file so the three `remaining.days` / `remaining.hours` / `remaining.minutes` renders aren't a repeated `<span><span/></span>` pair.
 - `web/src/components/Home/NextRaceCard.test.tsx` (new) — two cases only: happy path with `isCurrent` race (asserts race name + countdown render, pick one lock state — not both); season-complete fallback (no `isCurrent` race). The locked/unlocked matrix is owned by `useLockCountdown.test.ts` per the overlap rule; re-walking it here would be waste.
 - `web/src/components/Home/Home.test.tsx` (new) — `Home` is pure presentational (props in, DOM out — no hooks, no contexts, no services). Per `web/CLAUDE.md` it's a leaf, so its prop-level conditionals belong here, not in integration. Cases: (1) team present → "Welcome back, X" + team heading; (2) no team → only the welcome heading; (3) summary with values → score numbers + "pts" suffix render; (4) null summary → em-dashes, no "pts"; (5) standings present → leagues section renders with a row link to `/league/$leagueId`; (6) empty standings → leagues section absent. Stub `Link` from `@tanstack/react-router` with `importActual` since the leaf doesn't need a real router.
@@ -88,7 +88,7 @@ The thread that pulls the previous commits together: root context exposes `team`
 
 - `web/src/router.tsx`:
   - **`rootRoute.beforeLoad`** — extend both success and error return shapes to include `team`. Change line 120 to `return { profile, currentSeason, team };` and lines 141 / 144 to `return { profile: null, currentSeason: null, team: null };`. No type change needed (`RouterContext.team` already declared).
-  - **`indexRoute`** — change `getParentRoute: () => unauthenticatedLayoutRoute` to `getParentRoute: () => rootRoute`. Add a `loader` that guards on `context.auth.user`: returns `{ home: null }` when anon; otherwise `Promise.all([getTeamSummary(), getMyStandings(), context.currentSeason ? getRaceWeekends(context.currentSeason.id) : Promise.resolve([])])` and wraps as `{ home: { summary, standings, races } }`. Replace `component: LandingPage` with a new `HomeRoute` component in `web/src/components/Home/HomeRoute.tsx` that reads `useLoaderData({ from: '/' })` + `useRouteContext({ from: '__root__' })`. Renders `<LandingPage />` when `home === null || profile === null` (the `profile === null` branch is a defensive fallback for the `rootRoute.beforeLoad` error path). Otherwise renders `<Home name={profile.firstName ?? profile.displayName} team={team} summary={home.summary} standings={home.standings} races={home.races} />`. The `??` covers the genuinely-nullable `firstName`; Commit 6 tightens the contract so `displayName` is the type-guaranteed fallback target.
+  - **`indexRoute`** — change `getParentRoute: () => unauthenticatedLayoutRoute` to `getParentRoute: () => rootRoute`. Add a `loader` that guards on `context.auth.user`: returns `{ home: null }` when anon; otherwise `Promise.all([getTeamSummary(), getMyStandings(), context.currentSeason ? getRaceWeekends(context.currentSeason.id) : Promise.resolve([])])` and wraps as `{ home: { summary, standings, races } }`. Replace `component: LandingPage` with a new `HomeRoute` component in `web/src/components/Home/HomeRoute.tsx` that reads `useLoaderData({ from: '/' })` + `useRouteContext({ from: '__root__' })`. Renders `<LandingPage />` when `home === null || profile === null` (the `profile === null` branch is a defensive fallback for the `rootRoute.beforeLoad` error path). Otherwise renders `<Home name={profile.firstName ?? profile.displayName} team={team} summary={home.summary} standings={home.standings} races={home.races} />`. The `??` covers the genuinely-nullable `firstName`, falling back to `displayName` (tightening these contracts to non-null is deferred to #179).
   - **Route tree** (`routeTree` block, ~line 737) — remove `indexRoute` from `unauthenticatedLayoutRoute.addChildren([...])`; add `indexRoute` to `rootRoute.addChildren([...])` directly. `_unauthenticated` keeps only `signInRoute` and `signUpRoute`.
 - `web/src/tests/integration/root-routing.integration.test.tsx`:
   - This layer owns routing + data wiring, not Home composition. Composition lives in `Home.test.tsx` (Commit 4). Keep assertions thin: one stable check per branch plus one assertion that the race-weekends endpoint flowed through to render.
@@ -102,32 +102,7 @@ The thread that pulls the previous commits together: root context exposes `team`
 
 ---
 
-## Commit 6 — Tighten `UserProfileResponse.DisplayName` to non-null end-to-end
-
-Commit 5 ships `HomeRoute` with `name={profile.firstName ?? profile.displayName}`. The `??` works at runtime but is dead per the current TS contract — `UserProfile.firstName` and `UserProfile.displayName` are typed `string` while the API returns `string?` for both (`api/F1CompanionApi/Api/Models/UserProfileResponse.cs`, `Data/Entities/UserProfile.cs`). The contract lies; the home page papers over the lie with a runtime fallback.
-
-`DisplayName` is set at signup (`UserProfileService.cs:122`) and is the de-facto required identity field (Account form requires it via `userProfileFormSchema.displayName.min(1)`; AppSidebar reads it for the user chip). Tighten the actual invariant rather than spreading defensive coalesces.
-
-Keep `FirstName`, `LastName`, `AvatarUrl` honestly nullable — they're truly optional.
-
-### Files
-
-- `api/F1CompanionApi/Data/Entities/UserProfile.cs` — `public string? DisplayName` → `public required string DisplayName`.
-- `api/F1CompanionApi/Api/Models/UserProfileResponse.cs` — `public string? DisplayName` → `public required string DisplayName`.
-- `api/F1CompanionApi/Api/Models/UpdateUserProfileRequest.cs` — `public string? DisplayName` → `public required string DisplayName`. Matches the existing form contract (`userProfileFormSchema.displayName.min(1)`).
-- New EF migration via `dotnet ef migrations add TightenDisplayNameNotNull` — `AlterColumn<string>(name: "DisplayName", nullable: false, ...)` in `Up()`, the inverse in `Down()`. No backfill — existing-account migration is not a concern.
-- `web/src/contracts/UserProfile.ts` — `displayName: string` stays; the type is now truthful. No code change needed.
-- `web/src/components/AppSidebar/AppSidebar.tsx` — at lines 265 and 292, drop the `|| 'User'` fallback. `displayName` is now type-guaranteed; the fallback is dead.
-- `web/src/components/Account/Account.tsx:103` — remove the `displayName = ''` default from the destructuring. The other three (`firstName`, `lastName`, `email`) keep their defaults since they remain nullable on the entity.
-
-### Tests
-
-- Backend integration test in `F1CompanionApi.IntegrationTests/` confirming `GET /me/profile` returns a non-null `DisplayName`. One assertion is enough — the type system carries the rest.
-- Frontend: no change required. The runtime `??` in `HomeRoute` stays correct (firstName is genuinely nullable at runtime; the fallback target is now type-guaranteed).
-
----
-
-## Commit 7 — Add `PositionChange` to `MyLeagueStandingResponse` + wire `<PositionDelta>` into Home
+## Commit 6 — Add `PositionChange` to `MyLeagueStandingResponse` + wire `<PositionDelta>` into Home
 
 Commit 5 shipped the Home leagues list with the Move column rendering empty (desktop) and dropped entirely (mobile), because the `/me/standings` endpoint from #205 didn't include `positionChange`. The design mockup shows a `PositionDelta` per league row — desktop in its own column, mobile inline within the league name cell, matching `Leaderboard.tsx`.
 
@@ -137,18 +112,20 @@ The data already exists at the league level: `LeagueStandingsBuilder.Build` comp
 
 - `api/F1CompanionApi/Api/Models/MyLeagueStandingResponse.cs` — add `public int? PositionChange { get; set; }`. Null when there's no prior round to compare against (first scored round of the season, or the prior round simply has no standing record for this team).
 - `api/F1CompanionApi/Api/Mappers/MyLeagueStandingResponseMapper.cs` — accept a `TeamLeagueStanding? priorStanding` parameter alongside the existing `latestStanding`, compute `PositionChange = priorStanding is not null && latestStanding is not null ? priorStanding.Position - latestStanding.Position : null`. Same formula as `LeagueStandingsBuilder.cs:43-45`.
-- `api/F1CompanionApi/Domain/Services/LeagueStandingsService.cs:GetStandingsForUserAsync` — change the per-league lookup so it materializes all of the user's standings in the current season, then groups by league, picks the latest by round as `current`, and the standing with `round = current.Round - 1` as `prior`. Don't take "second-newest by ordering" — skipped rounds (team didn't score) must not be treated as the prior round. Pass both into the mapper.
+- `api/F1CompanionApi/Domain/Services/LeagueStandingsService.cs:GetStandingsForUserAsync` — change the per-league lookup so it materializes all of the user's standings in the current season, then groups by league, picks the latest by round as `current`, and the standing with `round = current.Round - 1` as `prior`. Don't take "second-newest by ordering" — skipped rounds (team didn't score) must not be treated as the prior round. Pass both into the mapper. **Implementation note:** the method already `.ToListAsync()`s every one of the caller's current-season standings across all rounds and picks the latest in-memory (`LeagueStandingsService.cs:214-226`), so `prior` is already loaded — **no extra query**. The work is reshaping `latestByLeague` from `Dictionary<leagueId, single standing>` into per-league groups that expose both `current` and `prior`; a real restructure of that grouping, not a one-liner.
 - `web/src/contracts/MyLeagueStanding.ts` — add `positionChange: number | null`.
 - `web/src/components/Home/Home.tsx` — replace the placeholder `<div className="hidden md:block" />` in the desktop Move column with `<div className="hidden justify-center md:flex"><PositionDelta value={entry.positionChange} /></div>`. Under the league name, add a standalone `md:hidden` line containing `<PositionDelta value={entry.positionChange} variant="inline" />` (no leading text, no separator). Diverges from `Leaderboard.tsx:88-98` deliberately — Leaderboard's meta line carries `ownerName` because that's load-bearing context for a team row; Home's row already identifies the league in its name, so a teams-count or similar filler isn't worth a meta line.
 
 ### Tests
 
 - `api/F1CompanionApi.IntegrationTests/Scenarios/MeStandingsTests.cs` — extend the existing `GetMyStandings_LeagueWithScoredRounds_*` case (or add a sibling) to seed two consecutive rounds with different positions for the caller, then assert `row.PositionChange == prior.Position - current.Position`. Add one more case asserting `PositionChange` is null when only one round has scored standings.
-- Frontend: no new test required. The existing `root-routing.integration.test.tsx` keeps passing — `positionChange` is an optional render concern, not a routing assertion. If a `Home.test.tsx` lands later, the PositionDelta render is best covered there.
+- `web/src/components/Home/Home.test.tsx` (**already exists, from Commit 4**) — the existing fixture must be updated. `Home.test.tsx:88-90` builds a `MyLeagueStanding[]` literal; adding the required `positionChange` field to the contract makes that literal a TS2741 error. `web:build` runs `tsc -b`, and `tsconfig.app.json` `include`s `src` (test files are type-checked) — so the **build fails** until the fixture carries `positionChange`. While there, optionally add a `PositionDelta` assertion to the existing leagues-list case; per `web/CLAUDE.md` the leaf is the right home for that render concern.
+- Other frontend tests: no change. `root-routing.integration.test.tsx` keeps passing — its `/me/standings` handler returns `[]`, so no literal needs the new field; `positionChange` is a render concern, not a routing assertion.
 
 ### Design notes
 
 - **Skipped rounds.** If a team scored in round 5 but not in round 4, the prior-round lookup at `round = current.Round - 1` returns null. The delta renders as a flat dash via `<PositionDelta value={null} />` (`PositionDelta.tsx:10`). That's the right behavior — comparing across a skipped round would misrepresent the user's actual movement.
+- **`design-handoff.md` is stale for this list — follow the code, not the doc.** The handoff (`design-handoff.md:36`) describes a separate `components/Home/MyLeaguesList.tsx` and a 4-column mobile grid that keeps the Move column. Commit 4 actually built the leagues list inline in `Home.tsx` with a 3-column mobile grid (Pos / League / Pts) mirroring the real `Leaderboard.tsx`, where the delta sits inline under the name on mobile rather than in its own column. Commit 6's `PositionDelta` wiring follows the implemented `Home.tsx` / `Leaderboard.tsx` pattern.
 - **No new endpoint.** Same URL, same shape extended by one field. Frontend reads it via the existing `getMyStandings()` service. No service-layer change on the frontend side beyond the contract addition.
 
 ---
