@@ -69,7 +69,8 @@ test.describe('auth', () => {
     await expect(page).toHaveURL(/\/auth\/confirm/);
     await expect(page.getByRole('heading', { name: /confirm your email/i })).toBeVisible();
     await page.getByRole('button', { name: /continue/i }).click();
-    await expect(page).toHaveURL('/create-team');
+    await expect(page).toHaveURL('/');
+    await expect(page.getByRole('heading', { name: /welcome/i })).toBeVisible();
   });
 
   test('completes signup via the OTP code from the confirmation email', async ({ page }) => {
@@ -98,7 +99,8 @@ test.describe('auth', () => {
 
     await page.getByLabel('Confirmation code').fill(tokenMatch[1]);
 
-    await expect(page).toHaveURL('/create-team');
+    await expect(page).toHaveURL('/');
+    await expect(page.getByRole('heading', { name: /welcome/i })).toBeVisible();
   });
 
   test('resends the confirmation email and confirms via the resent link', async ({ page }) => {
@@ -137,7 +139,8 @@ test.describe('auth', () => {
     await expect(page).toHaveURL(/\/auth\/confirm/);
     await expect(page.getByRole('heading', { name: /confirm your email/i })).toBeVisible();
     await page.getByRole('button', { name: /continue/i }).click();
-    await expect(page).toHaveURL('/create-team');
+    await expect(page).toHaveURL('/');
+    await expect(page.getByRole('heading', { name: /welcome/i })).toBeVisible();
   });
 
   test('lands on /sign-up with the inline error when the magic link token is invalid', async ({

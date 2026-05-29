@@ -1,20 +1,34 @@
+import { HomeRoute } from '@/components/Home/HomeRoute';
 import type { TeamContextType } from '@/contexts/TeamContext';
 import { TeamContext } from '@/contexts/TeamContext';
 import type { RouterContext } from '@/lib/router-context';
+import { getRaceWeekends } from '@/services/raceWeekendService';
+import { getMyStandings } from '@/services/standingsService';
+import { getTeamSummary } from '@/services/teamService';
+import { API_BASE, server } from '@/setupTests';
 import {
-  buildStubRoute,
-  buildUnauthenticatedLayout,
   createAuthedAuth,
   createBaseRouterContext,
+  createMockTeam,
+  createMockUserProfile,
   createTeamContext,
   createUnauthAuth,
   renderWithRouter,
 } from '@/tests/test-utils';
-import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
+import { Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router';
 import { screen } from '@testing-library/react';
+import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
-function buildRootRoutingTree(teamContextValue: TeamContextType) {
+const CURRENT_SEASON = {
+  id: 42,
+  year: 2026,
+  startDate: '2026-03-01',
+  endDate: '2026-12-15',
+  isCurrent: true,
+};
+
+function buildIndexRouteTree(teamContextValue: TeamContextType) {
   const rootRoute = createRootRouteWithContext<RouterContext>()({
     component: () => (
       <TeamContext.Provider value={teamContextValue}>
@@ -23,66 +37,110 @@ function buildRootRoutingTree(teamContextValue: TeamContextType) {
     ),
   });
 
-  const unauthenticatedLayoutRoute = buildUnauthenticatedLayout(rootRoute);
-  const indexRoute = buildStubRoute(unauthenticatedLayoutRoute, {
+  const indexRoute = createRoute({
+    getParentRoute: () => rootRoute,
     path: '/',
-    heading: 'Landing Page',
+    loader: async ({ context }) => {
+      if (!context.auth.user) {
+        return { home: null };
+      }
+
+      const [summary, standings, races] = await Promise.all([
+        getTeamSummary(),
+        getMyStandings(),
+        context.currentSeason ? getRaceWeekends(context.currentSeason.id) : Promise.resolve([]),
+      ]);
+
+      return { home: { summary, standings, races } };
+    },
+    component: HomeRoute,
   });
 
-  const createTeamRoute = buildStubRoute(rootRoute, {
-    path: 'create-team',
-    heading: 'Create Team Page',
-  });
-  const leaguesRoute = buildStubRoute(rootRoute, {
-    path: 'leagues',
-    heading: 'Leagues Page',
-  });
-
-  return rootRoute.addChildren([
-    unauthenticatedLayoutRoute.addChildren([indexRoute]),
-    createTeamRoute,
-    leaguesRoute,
-  ]);
+  return rootRoute.addChildren([indexRoute]);
 }
 
 describe('routing at /', () => {
-  it('leaves unauthenticated users at /', async () => {
+  it('renders the landing page for unauthenticated users', async () => {
     const teamContext = createTeamContext();
     renderWithRouter({
-      routeTree: buildRootRoutingTree(teamContext),
+      routeTree: buildIndexRouteTree(teamContext),
       initialEntry: '/',
       auth: createUnauthAuth(),
       routerContext: createBaseRouterContext({ teamContext }),
     });
 
-    expect(await screen.findByRole('heading', { name: 'Landing Page' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Create Team Page' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Leagues Page' })).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /Race to Glory/i }),
+    ).toBeInTheDocument();
   });
 
-  it('redirects authenticated users without a team to /create-team', async () => {
-    const teamContext = createTeamContext({ myTeamId: null, hasTeam: false });
-    renderWithRouter({
-      routeTree: buildRootRoutingTree(teamContext),
-      initialEntry: '/',
-      auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext({ teamContext }),
-    });
+  it('loads team summary, standings, and race weekends and renders Home for authed users', async () => {
+    server.use(
+      http.get(`${API_BASE}/me/team/summary`, () =>
+        HttpResponse.json({ seasonTotalPoints: null, lastRace: null }),
+      ),
+      http.get(`${API_BASE}/me/standings`, () => HttpResponse.json([])),
+      http.get(`${API_BASE}/seasons/${CURRENT_SEASON.id}/race-weekends`, () =>
+        HttpResponse.json([
+          {
+            id: 7,
+            seasonId: CURRENT_SEASON.id,
+            round: 7,
+            name: 'Monaco Grand Prix',
+            circuit: {
+              id: 1,
+              name: 'Circuit de Monaco',
+              location: 'Monte Carlo',
+              country: 'Monaco',
+            },
+            raceDate: '2026-05-31',
+            lockDeadline: '2099-01-01T00:00:00Z',
+            isCurrent: true,
+            weekendFormat: 0,
+          },
+        ]),
+      ),
+    );
 
-    expect(await screen.findByRole('heading', { name: 'Create Team Page' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Landing Page' })).not.toBeInTheDocument();
-  });
-
-  it('redirects authenticated users with a team to /leagues', async () => {
     const teamContext = createTeamContext({ myTeamId: 1, hasTeam: true });
     renderWithRouter({
-      routeTree: buildRootRoutingTree(teamContext),
+      routeTree: buildIndexRouteTree(teamContext),
       initialEntry: '/',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext({ teamContext }),
+      routerContext: createBaseRouterContext({
+        teamContext,
+        profile: createMockUserProfile({ firstName: 'Ada' }),
+        team: createMockTeam({ name: 'Red Bull Racing' }),
+        currentSeason: CURRENT_SEASON,
+      }),
     });
 
-    expect(await screen.findByRole('heading', { name: 'Leagues Page' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Landing Page' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Red Bull Racing' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Monaco Grand Prix' })).toBeInTheDocument();
+  });
+
+  it('renders Home for authed users with no team without crashing', async () => {
+    server.use(
+      http.get(`${API_BASE}/me/team/summary`, () => new HttpResponse(null, { status: 404 })),
+      http.get(`${API_BASE}/me/standings`, () => HttpResponse.json([])),
+      http.get(`${API_BASE}/seasons/${CURRENT_SEASON.id}/race-weekends`, () =>
+        HttpResponse.json([]),
+      ),
+    );
+
+    const teamContext = createTeamContext();
+    renderWithRouter({
+      routeTree: buildIndexRouteTree(teamContext),
+      initialEntry: '/',
+      auth: createAuthedAuth(),
+      routerContext: createBaseRouterContext({
+        teamContext,
+        profile: createMockUserProfile({ firstName: 'Ada' }),
+        team: null,
+        currentSeason: CURRENT_SEASON,
+      }),
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Welcome, Ada' })).toBeInTheDocument();
   });
 });

@@ -2,6 +2,7 @@ import type { AddConstructorToTeamRequest } from '@/contracts/AddConstructorToTe
 import type { AddDriverToTeamRequest } from '@/contracts/AddDriverToTeamRequest';
 import type { CreateTeamRequest } from '@/contracts/CreateTeamRequest';
 import type { Team } from '@/contracts/Team';
+import type { TeamSummary } from '@/contracts/TeamSummary';
 import { apiClient } from '@/lib/api';
 import { isApiError } from '@/utils/errors';
 import * as Sentry from '@sentry/react';
@@ -91,4 +92,16 @@ export async function removeConstructorFromTeam(slotPosition: number): Promise<v
 
 export async function setCaptain(driverId: number | null): Promise<void> {
   await apiClient.put('/me/team/captain', { driverId }, 'set team captain');
+}
+
+export async function getTeamSummary(): Promise<TeamSummary | null> {
+  try {
+    return await apiClient.get<TeamSummary>('/me/team/summary', 'get team summary');
+  } catch (error) {
+    if (isApiError(error) && error.status === 404) {
+      return null;
+    }
+
+    throw error;
+  }
 }

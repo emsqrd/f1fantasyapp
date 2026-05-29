@@ -9,6 +9,7 @@ import {
   Check,
   ChevronUpIcon,
   CircleUser,
+  HomeIcon,
   Loader2,
   LogOut,
   Monitor,
@@ -78,6 +79,11 @@ export function AppSidebar() {
 
   // Get current pathname for active state
   const currentPath = routerState.location.pathname;
+
+  const handleHome = () => {
+    closeOnMobile();
+    navigate({ to: '/' });
+  };
 
   const handleBrowseLeagues = () => {
     closeOnMobile();
@@ -149,35 +155,43 @@ export function AppSidebar() {
   }, []);
 
   // Define navigation items based on whether user has a team
-  const navigationItems = hasTeam
-    ? [
-        {
-          title: 'My Team',
-          icon: TrophyIcon,
-          onClick: handleMyTeam,
-          isActive: currentPath.startsWith('/team/'),
-        },
-        {
-          title: 'My Leagues',
-          icon: UsersIcon,
-          onClick: handleMyLeagues,
-          isActive: currentPath === '/leagues',
-        },
-        {
-          title: 'Browse Leagues',
-          icon: SearchIcon,
-          onClick: handleBrowseLeagues,
-          isActive: currentPath === '/browse-leagues',
-        },
-      ]
-    : [
-        {
-          title: 'Create Team',
-          icon: PlusIcon,
-          onClick: handleCreateTeam,
-          isActive: currentPath === '/create-team',
-        },
-      ];
+  const navigationItems = [
+    {
+      title: 'Home',
+      icon: HomeIcon,
+      onClick: handleHome,
+      isActive: currentPath === '/',
+    },
+    ...(hasTeam
+      ? [
+          {
+            title: 'My Team',
+            icon: TrophyIcon,
+            onClick: handleMyTeam,
+            isActive: currentPath === '/my-team',
+          },
+          {
+            title: 'My Leagues',
+            icon: UsersIcon,
+            onClick: handleMyLeagues,
+            isActive: currentPath === '/leagues',
+          },
+          {
+            title: 'Browse Leagues',
+            icon: SearchIcon,
+            onClick: handleBrowseLeagues,
+            isActive: currentPath === '/browse-leagues',
+          },
+        ]
+      : [
+          {
+            title: 'Create Team',
+            icon: PlusIcon,
+            onClick: handleCreateTeam,
+            isActive: currentPath === '/create-team',
+          },
+        ]),
+  ];
 
   return (
     <Sidebar variant="inset" collapsible="icon">

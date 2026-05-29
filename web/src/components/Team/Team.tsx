@@ -1,16 +1,17 @@
 import type { RaceWeekend } from '@/contracts/RaceWeekend';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team } from '@/contracts/Team';
+import { useLockCountdown } from '@/hooks/useLockCountdown';
 import { formatBudget } from '@/lib/utils';
 import { setCaptain } from '@/services/teamService';
 import { useLoaderData } from '@tanstack/react-router';
-import { Lock } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { AppContainer } from '../AppContainer/AppContainer';
 import { ConstructorPicker } from '../ConstructorPicker/ConstructorPicker';
 import { DriverPicker } from '../DriverPicker/DriverPicker';
 import { InlineError } from '../InlineError/InlineError';
+import { LockCountdown } from '../LockCountdown/LockCountdown';
 
 export interface TeamViewProps {
   team: Team;
@@ -65,34 +66,8 @@ export function TeamView({
   const [captainError, setCaptainError] = useState<string | null>(null);
   const currentRace = races.find((r) => r.isCurrent) ?? races.at(-1);
 
-  const lockDeadlineStr = currentRace?.lockDeadline ?? null;
-  const lockDeadline = lockDeadlineStr ? new Date(lockDeadlineStr) : null;
-  const [now, setNow] = useState(new Date());
-
-  useEffect(() => {
-    if (!lockDeadlineStr) return;
-    const deadline = new Date(lockDeadlineStr);
-
-    const tick = () => {
-      const n = new Date();
-      setNow(n);
-      if (n >= deadline) clearInterval(intervalId);
-    };
-
-    const intervalId = setInterval(tick, 1000);
-
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') tick();
-    };
-    document.addEventListener('visibilitychange', onVisible);
-
-    return () => {
-      clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', onVisible);
-    };
-  }, [lockDeadlineStr]);
-
-  const isLocked = lockDeadline != null && now >= lockDeadline;
+  const countdown = useLockCountdown(currentRace?.lockDeadline ?? null);
+  const isLocked = countdown.isLocked;
 
   const handleSetCaptain = async (driverId: number | null) => {
     const previous = captainDriverId;
@@ -105,17 +80,6 @@ export function TeamView({
       setCaptainError(error instanceof Error ? error.message : 'Failed to update captain');
     }
   };
-
-  const msRemaining = lockDeadline && !isLocked ? lockDeadline.getTime() - now.getTime() : 0;
-  const totalMins = Math.floor(msRemaining / 60000);
-  const lockDays = Math.floor(totalMins / 1440);
-  const lockHours = Math.floor((totalMins % 1440) / 60);
-  const lockMins = totalMins % 60;
-  const lockingImminently = msRemaining > 0 && msRemaining < 60000;
-  const lockDisplay =
-    lockDays > 0
-      ? `${lockDays}d ${String(lockHours).padStart(2, '0')}h ${String(lockMins).padStart(2, '0')}m`
-      : `${String(lockHours).padStart(2, '0')}h ${String(lockMins).padStart(2, '0')}m`;
 
   return (
     <AppContainer maxWidth="md">
@@ -146,32 +110,11 @@ export function TeamView({
             <p className="text-sm font-bold">3/3</p>
           </div>
         </div>
-        {lockDeadline && (
-          <div className="w-full sm:w-auto sm:shrink-0 sm:text-right">
-            {isLocked ? (
-              <>
-                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                  Lineup
-                </p>
-                <div className="text-muted-foreground flex items-center justify-center gap-1.5">
-                  <Lock className="h-4 w-4" />
-                  <span className="text-sm font-medium">Lineup Locked</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                  Lineup Locks In
-                </p>
-                {lockingImminently ? (
-                  <p className="text-sm font-medium">Less than 1 minute</p>
-                ) : (
-                  <p className="text-sm font-bold">{lockDisplay}</p>
-                )}
-              </>
-            )}
-          </div>
-        )}
+        <LockCountdown
+          state={countdown}
+          variant="compact"
+          className="w-full sm:w-auto sm:shrink-0 sm:text-right"
+        />
       </div>
 
       {captainError && (

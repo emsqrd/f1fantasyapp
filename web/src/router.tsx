@@ -2,7 +2,7 @@ import { Account } from '@/components/Account/Account';
 import { CreateTeam } from '@/components/CreateTeam/CreateTeam';
 import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
 import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
-import { LandingPage } from '@/components/LandingPage/LandingPage';
+import { HomeRoute } from '@/components/Home/HomeRoute';
 import { Layout } from '@/components/Layout/Layout';
 import { League } from '@/components/League/League';
 import { LeagueList } from '@/components/LeagueList/LeagueList';
@@ -15,8 +15,8 @@ import type { UserProfile } from '@/contracts/UserProfile';
 import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
 import { type RouterContext, defaultAuthedDestination } from '@/lib/router-context';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
-import { getLeagueStandings } from '@/services/standingsService';
-import { getMyTeam, getTeamById } from '@/services/teamService';
+import { getLeagueStandings, getMyStandings } from '@/services/standingsService';
+import { getMyTeam, getTeamById, getTeamSummary } from '@/services/teamService';
 import { userProfileService } from '@/services/userProfileService';
 import * as Sentry from '@sentry/react';
 import {
@@ -117,7 +117,7 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
         // Sync team ID with TeamContext for components that need it
         context.teamContext.setMyTeamId(team?.id ?? null);
 
-        return { profile, currentSeason };
+        return { profile, currentSeason, team };
       } catch (error) {
         // Gracefully degrade if profile/team fetching fails
         // The app should still work without profile data
@@ -138,10 +138,10 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
         // Ensure TeamContext is in a known state
         context.teamContext.setMyTeamId(null);
 
-        return { profile: null, currentSeason: null };
+        return { profile: null, currentSeason: null, team: null };
       }
     }
-    return { profile: null, currentSeason: null };
+    return { profile: null, currentSeason: null, team: null };
   },
   component: () => (
     <>
@@ -180,18 +180,32 @@ const unauthenticatedLayoutRoute = createRoute({
 });
 
 /**
- * Landing page route - public route accessible to all users.
+ * Index route at `/` - branches on auth state.
  *
- * Displays marketing content and sign-in/sign-up options for unauthenticated users.
- * Authenticated users with teams are typically redirected elsewhere.
+ * Anonymous users see the marketing {@link LandingPage}. Authenticated users see
+ * the {@link Home} surface composed from team summary, league standings, and
+ * race weekends fetched in parallel by the loader.
  *
  * @type {import('@tanstack/react-router').Route}
  */
 const indexRoute = createRoute({
-  getParentRoute: () => unauthenticatedLayoutRoute,
+  getParentRoute: () => rootRoute,
   path: '/',
   validateSearch: redirectSearchSchema,
-  component: LandingPage,
+  loader: async ({ context }) => {
+    if (!context.auth.user) {
+      return { home: null };
+    }
+
+    const [summary, standings, races] = await Promise.all([
+      getTeamSummary(),
+      getMyStandings(),
+      context.currentSeason ? getRaceWeekends(context.currentSeason.id) : Promise.resolve([]),
+    ]);
+
+    return { home: { summary, standings, races } };
+  },
+  component: HomeRoute,
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
 
@@ -735,7 +749,8 @@ const myTeamRoute = createRoute({
  * @see {@link https://tanstack.com/router/latest/docs/framework/react/guide/route-trees | Route Trees}
  */
 const routeTree = rootRoute.addChildren([
-  unauthenticatedLayoutRoute.addChildren([indexRoute, signInRoute, signUpRoute]),
+  indexRoute,
+  unauthenticatedLayoutRoute.addChildren([signInRoute, signUpRoute]),
   authConfirmRoute,
   joinInviteRoute,
   authenticatedLayoutRoute.addChildren([
