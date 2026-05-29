@@ -47,9 +47,6 @@ describe('NextRaceCard', () => {
     expect(screen.getByRole('heading', { name: 'Monaco Grand Prix' })).toBeInTheDocument();
     expect(screen.getByText(/Round 7/)).toBeInTheDocument();
     expect(screen.getByText('Lineup locks in')).toBeInTheDocument();
-    expect(screen.getByText('d')).toBeInTheDocument();
-    expect(screen.getByText('h')).toBeInTheDocument();
-    expect(screen.getByText('m')).toBeInTheDocument();
   });
 
   it('renders the season-complete fallback when no race is current', () => {

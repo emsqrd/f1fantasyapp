@@ -2,7 +2,7 @@ import type { RaceWeekend } from '@/contracts/RaceWeekend';
 import type { Constructor, Driver } from '@/contracts/Role';
 import { createMockConstructor, createMockDriver, createMockTeam } from '@/tests/test-utils';
 import { render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { TeamView } from './Team';
 
@@ -87,57 +87,17 @@ describe('TeamView', () => {
     expect(screen.getByText('Round 2 · Saudi Arabian Grand Prix')).toBeInTheDocument();
   });
 
-  describe('Lock countdown', () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-      vi.setSystemTime(new Date('2026-02-24T12:00:00Z'));
-    });
+  it('renders the lock countdown for the current race', () => {
+    render(
+      <TeamView
+        team={createMockTeam()}
+        activeDrivers={mockActiveDrivers}
+        activeConstructors={mockActiveConstructors}
+        races={makeRacesWithDeadline('2099-01-01T00:00:00Z')}
+        readOnly={false}
+      />,
+    );
 
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    it('shows "Lineup Locked" when deadline has passed', () => {
-      render(
-        <TeamView
-          team={createMockTeam()}
-          activeDrivers={mockActiveDrivers}
-          activeConstructors={mockActiveConstructors}
-          races={makeRacesWithDeadline('2026-02-01T12:00:00Z')}
-          readOnly={false}
-        />,
-      );
-
-      expect(screen.getByText('Lineup Locked')).toBeInTheDocument();
-    });
-
-    it('shows "Less than 1 minute" when lock is imminent', () => {
-      render(
-        <TeamView
-          team={createMockTeam()}
-          activeDrivers={mockActiveDrivers}
-          activeConstructors={mockActiveConstructors}
-          races={makeRacesWithDeadline('2026-02-24T12:00:30Z')}
-          readOnly={false}
-        />,
-      );
-
-      expect(screen.getByText('Less than 1 minute')).toBeInTheDocument();
-    });
-
-    it('omits lock display when no deadline is set', () => {
-      render(
-        <TeamView
-          team={createMockTeam()}
-          activeDrivers={mockActiveDrivers}
-          activeConstructors={mockActiveConstructors}
-          races={makeRacesWithDeadline(null)}
-          readOnly={false}
-        />,
-      );
-
-      expect(screen.queryByText('Lineup Locked')).not.toBeInTheDocument();
-      expect(screen.queryByText('Lineup Locks In')).not.toBeInTheDocument();
-    });
+    expect(screen.getByText('Lineup locks in')).toBeInTheDocument();
   });
 });

@@ -5,13 +5,13 @@ import { useLockCountdown } from '@/hooks/useLockCountdown';
 import { formatBudget } from '@/lib/utils';
 import { setCaptain } from '@/services/teamService';
 import { useLoaderData } from '@tanstack/react-router';
-import { Lock } from 'lucide-react';
 import { useState } from 'react';
 
 import { AppContainer } from '../AppContainer/AppContainer';
 import { ConstructorPicker } from '../ConstructorPicker/ConstructorPicker';
 import { DriverPicker } from '../DriverPicker/DriverPicker';
 import { InlineError } from '../InlineError/InlineError';
+import { LockCountdown } from '../LockCountdown/LockCountdown';
 
 export interface TeamViewProps {
   team: Team;
@@ -66,9 +66,8 @@ export function TeamView({
   const [captainError, setCaptainError] = useState<string | null>(null);
   const currentRace = races.find((r) => r.isCurrent) ?? races.at(-1);
 
-  const { isLocked, lockingImminently, lockDeadline, remaining } = useLockCountdown(
-    currentRace?.lockDeadline ?? null,
-  );
+  const countdown = useLockCountdown(currentRace?.lockDeadline ?? null);
+  const isLocked = countdown.isLocked;
 
   const handleSetCaptain = async (driverId: number | null) => {
     const previous = captainDriverId;
@@ -111,37 +110,11 @@ export function TeamView({
             <p className="text-sm font-bold">3/3</p>
           </div>
         </div>
-        {lockDeadline && (
-          <div className="w-full sm:w-auto sm:shrink-0 sm:text-right">
-            {isLocked ? (
-              <>
-                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                  Lineup
-                </p>
-                <div className="text-muted-foreground flex items-center justify-center gap-1.5">
-                  <Lock className="h-4 w-4" />
-                  <span className="text-sm font-medium">Lineup Locked</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-                  Lineup Locks In
-                </p>
-                {lockingImminently ? (
-                  <p className="text-sm font-medium">Less than 1 minute</p>
-                ) : (
-                  remaining && (
-                    <p className="text-sm font-bold">
-                      {remaining.days}d {String(remaining.hours).padStart(2, '0')}h{' '}
-                      {String(remaining.minutes).padStart(2, '0')}m
-                    </p>
-                  )
-                )}
-              </>
-            )}
-          </div>
-        )}
+        <LockCountdown
+          state={countdown}
+          variant="compact"
+          className="w-full sm:w-auto sm:shrink-0 sm:text-right"
+        />
       </div>
 
       {captainError && (

@@ -1,6 +1,8 @@
 import type { RaceWeekend } from '@/contracts/RaceWeekend';
 import { useLockCountdown } from '@/hooks/useLockCountdown';
-import { Calendar, Lock, MapPin } from 'lucide-react';
+import { Calendar, MapPin } from 'lucide-react';
+
+import { LockCountdown } from '../LockCountdown/LockCountdown';
 
 interface NextRaceCardProps {
   races: RaceWeekend[];
@@ -13,24 +15,6 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
 
 function formatRaceDate(iso: string): string {
   return dateFormatter.format(new Date(iso));
-}
-
-interface TimeSegmentProps {
-  value: number;
-  unit: 'd' | 'h' | 'm';
-  pad?: boolean;
-}
-
-function TimeSegment({ value, unit, pad = false }: TimeSegmentProps) {
-  const display = pad ? String(value).padStart(2, '0') : String(value);
-  return (
-    <span>
-      {display}
-      <span className="text-muted-foreground ml-0.5 text-sm font-semibold md:text-base">
-        {unit}
-      </span>
-    </span>
-  );
 }
 
 export function NextRaceCard({ races }: NextRaceCardProps) {
@@ -59,9 +43,7 @@ export function NextRaceCard({ races }: NextRaceCardProps) {
 }
 
 function NextRaceCardActive({ race }: { race: RaceWeekend }) {
-  const { isLocked, lockingImminently, lockDeadline, remaining } = useLockCountdown(
-    race.lockDeadline,
-  );
+  const countdown = useLockCountdown(race.lockDeadline);
 
   return (
     <section className="bg-card rounded-[0.65rem] border p-4 md:p-6">
@@ -85,29 +67,11 @@ function NextRaceCardActive({ race }: { race: RaceWeekend }) {
           </div>
         </div>
 
-        {lockDeadline && (
-          <div className="border-border border-t pt-4 md:border-t-0 md:pt-0 md:text-right">
-            <p className="text-muted-foreground text-xs font-medium tracking-[0.18em] uppercase">
-              {isLocked ? 'Lineup' : 'Lineup locks in'}
-            </p>
-            {isLocked ? (
-              <div className="text-muted-foreground mt-1 flex items-center gap-1.5 md:justify-end">
-                <Lock className="size-4" aria-hidden="true" />
-                <span className="text-base font-semibold">Lineup Locked</span>
-              </div>
-            ) : lockingImminently ? (
-              <p className="mt-1 text-base font-semibold">Less than 1 minute</p>
-            ) : (
-              remaining && (
-                <p className="mt-1 font-mono text-2xl font-bold tabular-nums md:text-3xl">
-                  <TimeSegment value={remaining.days} unit="d" />{' '}
-                  <TimeSegment value={remaining.hours} unit="h" pad />{' '}
-                  <TimeSegment value={remaining.minutes} unit="m" pad />
-                </p>
-              )
-            )}
-          </div>
-        )}
+        <LockCountdown
+          state={countdown}
+          variant="hero"
+          className="border-border border-t pt-4 md:border-t-0 md:pt-0 md:text-right"
+        />
       </div>
     </section>
   );
