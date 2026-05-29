@@ -4,7 +4,6 @@ import type { Team } from '@/contracts/Team';
 import type { TeamSummary } from '@/contracts/TeamSummary';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
-import { ChevronRightIcon } from 'lucide-react';
 
 import { AppContainer } from '../AppContainer/AppContainer';
 import { NextRaceCard } from './NextRaceCard';
@@ -19,16 +18,15 @@ interface HomeProps {
 
 const EM_DASH = '—';
 
-const rowBase =
-  'grid w-full items-baseline gap-3 grid-cols-[--spacing(8)_1fr_--spacing(13)] md:items-center md:grid-cols-[--spacing(13)_1fr_--spacing(18)_--spacing(24)_--spacing(9)] text-left transition-colors';
+const rowBase = 'grid w-full items-center gap-3 grid-cols-[1fr_auto] text-left transition-colors';
 const rowChrome =
-  'rounded-[0.65rem] border bg-card p-3 md:rounded-none md:border-x-0 md:border-t-0 md:bg-transparent md:px-4 md:py-3';
+  'rounded-[0.65rem] border bg-card px-4 py-3 md:rounded-none md:border-x-0 md:border-t-0 md:bg-transparent md:px-6 md:py-3';
 const rowHover = 'md:hover:bg-accent';
 const rowFocus = 'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none';
 
 export function Home({ name, team, summary, standings, races }: HomeProps) {
   return (
-    <AppContainer maxWidth="lg" className="py-4 md:py-6">
+    <AppContainer maxWidth="md" className="py-4 md:py-6">
       <div className="flex flex-col gap-4 md:gap-6">
         <header>
           {team ? (
@@ -64,7 +62,7 @@ export function Home({ name, team, summary, standings, races }: HomeProps) {
           <section>
             <div className="mb-3 flex items-baseline justify-between">
               <h3 className="text-foreground text-base font-bold tracking-tight md:text-lg">
-                My leagues
+                My Leagues
               </h3>
               <Link
                 to="/leagues"
@@ -75,26 +73,22 @@ export function Home({ name, team, summary, standings, races }: HomeProps) {
             </div>
             <div className="md:border-border md:bg-card md:overflow-hidden md:rounded-[0.65rem] md:border">
               <div
-                className="text-muted-foreground grid grid-cols-[--spacing(8)_1fr_--spacing(13)] items-center gap-3 px-3 pb-2 text-xs font-semibold tracking-wider uppercase md:hidden"
+                className="text-muted-foreground grid grid-cols-[1fr_auto] items-center gap-3 px-4 pb-2 text-[11px] font-semibold tracking-wider uppercase md:hidden"
                 aria-hidden="true"
               >
-                <div className="text-center">Pos</div>
                 <div>League</div>
-                <div className="text-right">Pts</div>
+                <div className="text-right">Pos</div>
               </div>
               <div
-                className="text-muted-foreground bg-secondary border-border hidden grid-cols-[--spacing(13)_1fr_--spacing(18)_--spacing(24)_--spacing(9)] items-center gap-3 border-b px-4 py-2.5 text-xs font-semibold tracking-wider uppercase md:grid"
+                className="text-muted-foreground bg-secondary border-border hidden grid-cols-[1fr_auto] items-center gap-3 border-b px-6 py-2.5 text-[11px] font-semibold tracking-wider uppercase md:grid"
                 aria-hidden="true"
               >
-                <div className="text-center">Pos</div>
                 <div>League</div>
-                <div className="text-center">Move</div>
-                <div className="text-right">Pts</div>
-                <div />
+                <div className="text-right">Pos</div>
               </div>
               <ul
                 role="list"
-                aria-label="My leagues"
+                aria-label="My Leagues"
                 className="flex flex-col gap-2 md:gap-0 md:[&>li:last-child>a]:border-b-0"
               >
                 {standings.map((entry) => (
@@ -105,23 +99,12 @@ export function Home({ name, team, summary, standings, races }: HomeProps) {
                       className={cn(rowBase, rowChrome, rowHover, rowFocus)}
                       aria-label={`Open ${entry.leagueName}`}
                     >
-                      <div className="flex items-center justify-center">
-                        <span className="text-foreground font-mono text-sm font-semibold tabular-nums md:text-base">
-                          {entry.position ?? EM_DASH}
-                        </span>
+                      <div className="text-foreground min-w-0 truncate text-sm font-semibold">
+                        {entry.leagueName}
                       </div>
-                      <div className="min-w-0">
-                        <div className="text-foreground truncate text-sm font-semibold">
-                          {entry.leagueName}
-                        </div>
-                      </div>
-                      <div className="hidden md:block" />
-                      <div className="text-foreground text-right font-mono text-sm font-semibold tabular-nums">
-                        {entry.totalPoints != null ? entry.totalPoints.toLocaleString() : EM_DASH}
-                      </div>
-                      <div className="text-muted-foreground hidden justify-center md:flex">
-                        <ChevronRightIcon className="size-4" />
-                      </div>
+                      <span className="text-foreground text-right font-mono text-sm font-semibold tabular-nums md:text-base">
+                        {entry.position ?? EM_DASH}
+                      </span>
                     </Link>
                   </li>
                 ))}

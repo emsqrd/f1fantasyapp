@@ -87,23 +87,23 @@ describe('Home', () => {
   describe('leagues list', () => {
     const standings: MyLeagueStanding[] = [
       { leagueId: 12, leagueName: 'Cota 2026', totalTeams: 8, position: 3, totalPoints: 184 },
+      { leagueId: 34, leagueName: 'Monaco Masters', totalTeams: 12, position: 5, totalPoints: 150 },
     ];
 
-    it('renders the leagues section with a row link when standings are present', () => {
+    it('renders the leagues section with a row link and the position when standings are present', () => {
       renderHome({ standings });
 
-      expect(screen.getByRole('heading', { name: 'My leagues' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'My Leagues' })).toBeInTheDocument();
       const row = screen.getByRole('link', { name: /Open Cota 2026/i });
       expect(row).toHaveAttribute('href', '/league/12');
-      expect(screen.getByText('184')).toBeInTheDocument();
       expect(screen.getByText('3')).toBeInTheDocument();
     });
 
     it('does not render the leagues section when standings are empty', () => {
       renderHome({ standings: [] });
 
-      expect(screen.queryByRole('heading', { name: 'My leagues' })).not.toBeInTheDocument();
-      expect(screen.queryByRole('list', { name: 'My leagues' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: 'My Leagues' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('list', { name: 'My Leagues' })).not.toBeInTheDocument();
     });
   });
 });

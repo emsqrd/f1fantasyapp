@@ -102,39 +102,34 @@ The thread that pulls the previous commits together: root context exposes `team`
 
 ---
 
-## Commit 6 — Add `PositionChange` to `MyLeagueStandingResponse` + refactor the My Leagues section
+## Commit 6 — Simplify the Home "My leagues" list to league name + position
 
-Commit 4 shipped the Home leagues list as a points-oriented table (Pos / League / Move / Pts) with the Move column rendering empty, because the `/me/standings` endpoint from #205 didn't include `positionChange`. This commit reframes the section around what's actually useful at a glance: **per-league position and how it's moving**, not points. Points are near-identical across a user's leagues (they only diverge when a user joins a league mid-season), so a points column is redundant noise here.
+**As built: frontend only — no backend changes.** Commit 4 shipped the Home leagues list as a points table (Pos / League / Move / Pts / chevron) with the Move column empty. This commit reframes it as a minimal **league name + position** list.
 
-New row shape — two columns:
+Row shape — two columns, constant `grid-cols-[1fr_auto]` across breakpoints:
 
-- **Left (`1fr`)** — league name, with a `{Public|Private} · Total teams: {totalTeams}` meta line stacked underneath.
-- **Right (`auto`)** — the position number, with the change indicator inline to its right. The indicator shows **only** when `positionChange` is a non-zero number; when the change is flat or unknown, nothing renders (no placeholder dash).
+- **Left (`1fr`)** — league name, truncating.
+- **Right (`auto`)** — the position number, right-aligned (`EM_DASH` when null).
 
-No points column, no separate Move column, no chevron. The row stays a clickable `Link` to `/league/$leagueId`. The `grid-cols-[1fr_auto]` column layout is constant across breakpoints, but the row *chrome* keeps the established responsive treatment — card-per-row on mobile (border, rounded, `bg-card`), borderless table rows inside a bordered container on desktop (`md:` prefixes), matching `Leaderboard.tsx` and the list that shipped in Commit 4.
-
-The data already exists at the league level: `LeagueStandingsBuilder.Build` computes `prior.Position - current.Position` per team using the leaderboard at round `N` and round `N-1`. Mirror that calculation in `GetStandingsForUserAsync` so the caller's row in each of their leagues carries the same delta.
+`League` / `Pos` column headers are kept (plain muted label row above the cards on mobile; `bg-secondary` header strip inside the bordered container on desktop). No points, Move, or chevron column; no meta line; no change indicator. Each row stays a clickable `Link` to `/league/$leagueId`, and the `standings.length === 0` guard still renders nothing.
 
 ### Files
 
-- `api/F1CompanionApi/Api/Models/MyLeagueStandingResponse.cs` — add `public int? PositionChange { get; set; }` (null whenever the team has only one scored round in the league — the season opener, a league that started mid-season, or the round the team joined an existing league — so there's no prior round to compare against) and `public required bool IsPrivate { get; set; }`.
-- `api/F1CompanionApi/Api/Mappers/MyLeagueStandingResponseMapper.cs` — accept a `TeamLeagueStanding? priorStanding` parameter alongside the existing `latestStanding`, compute `PositionChange = priorStanding is not null && latestStanding is not null ? priorStanding.Position - latestStanding.Position : null` (same formula as `LeagueStandingsBuilder.cs:43-45`), and set `IsPrivate = membership.League.IsPrivate`. The `League` navigation is already loaded — the mapper reads `membership.League.Name` today — so `IsPrivate` costs no extra query.
-- `api/F1CompanionApi/Domain/Services/LeagueStandingsService.cs:GetStandingsForUserAsync` — change the per-league lookup so each group, ordered by round descending, yields the latest standing as `current` and the next one as `prior`. Once a team is in a league it persists a standing every subsequent round, so its standings are contiguous and the second-newest *is* the round before `current` — no gap arithmetic needed. `prior` is null when the team has only one scored round in that league. Pass both into the mapper. **Implementation note:** the method already `.ToListAsync()`s every one of the caller's current-season standings across all rounds and picks the latest in-memory (`LeagueStandingsService.cs:214-226`), so `prior` is already loaded — **no extra query**. The work is reshaping `latestByLeague` from `Dictionary<leagueId, single standing>` into per-league groups that expose both `current` and `prior`; a real restructure of that grouping, not a one-liner.
-- `web/src/contracts/MyLeagueStanding.ts` — add `positionChange: number | null` and `isPrivate: boolean`.
-- `web/src/components/Home/Home.tsx` — rebuild the league row from the current 3/5-column grid to `grid-cols-[1fr_auto]`. Left cell: league name (truncate) over a `{entry.isPrivate ? 'Private' : 'Public'} · Total teams: {totalTeams}` meta line (`text-muted-foreground`, smaller). Right cell: the position number then the change indicator to its right (`{entry.position ?? EM_DASH}{hasChange && <PositionDelta value={entry.positionChange} variant="inline" />}`), where `hasChange = entry.positionChange != null && entry.positionChange !== 0`. Drop the points column, the Move column, the chevron column, and both the mobile and desktop column-header rows (a two-column league/position list reads without headers). Update the `rowBase` grid template to `grid-cols-[1fr_auto]` and fix up the `aria-label`. Keep the `rowChrome` responsive card/table treatment as-is (it's column-count-agnostic) and the empty-state guard (`standings.length === 0` renders nothing).
-  - **Why gate the indicator instead of letting `PositionDelta` render its flat state** — `PositionDelta`'s flat/null branch renders an en-dash `–` (`PositionDelta.tsx:19-30`). That's right for Leaderboard, where every row has a Move column to fill, but here we want no-change rows to stay quiet. Gate the render in `Home.tsx`; don't change `PositionDelta` (Leaderboard still depends on the dash).
+- `web/src/components/Home/Home.tsx`:
+  - Rebuilt the league row from the Commit 4 3/5-column grid to `grid-cols-[1fr_auto]` — league name (truncate) left, position (right-aligned, `EM_DASH` for null) right. Dropped the points, Move, and chevron columns; removed the now-unused `ChevronRightIcon` import.
+  - Rewrote both column-header rows to `League` / `Pos` at `text-[11px]`.
+  - Bumped row + header horizontal padding for breathing room — mobile `px-4`, desktop `px-6` — keeping the header padding matched to the rows so the labels stay column-aligned.
+  - Narrowed the page container from `maxWidth="lg"` to `maxWidth="md"`.
+- No backend or contract changes.
 
 ### Tests
 
-- `api/F1CompanionApi.UnitTests/Api/Mappers/MyLeagueStandingResponseMapperTests.cs` (new) — owns the delta arithmetic + null-guard, the lowest layer that sees them. Follow `TeamSummaryResponseMapperTests.cs`: feed the mapper pre-selected `latestStanding`/`priorStanding` and assert `PositionChange` is `prior.Position - current.Position` when both present, null when `priorStanding` is null, and null when `latestStanding` is null. Pure, no DB.
-- `api/F1CompanionApi.IntegrationTests/Scenarios/MeStandingsTests.cs` — this layer owns the **selection**, not the arithmetic (the mapper unit test covers that). Extend the existing `GetMyStandings_LeagueWithScoredRounds_*` case (or add a sibling) to seed **three** consecutive rounds for the caller — two rounds can't distinguish "prior = round N-1" from "prior = oldest" or "prior = N-2", so they can't catch a mis-selection. Assert the returned `PositionChange` reflects round N vs N-1 (i.e. the second-newest standing, not the third). For extra confidence that the season filter holds, seed a standing in a different season and confirm it's ignored. Add a case asserting `PositionChange` is null when the team has only one scored round in the league — this proves the *service* yields a null prior (a selection concern), distinct from the mapper's null→null mapping. Assert `IsPrivate` reflects the seeded league's privacy on one existing case — one assertion is enough; it's a straight field passthrough that also confirms the `League` Include is loaded.
-- `web/src/components/Home/Home.test.tsx` (**already exists, from Commit 4**) — the existing fixture must be updated. The leagues-list case builds a `MyLeagueStanding[]` literal; adding the required `positionChange` and `isPrivate` fields to the contract makes that literal a TS2741 error. `web:build` runs `tsc -b`, and `tsconfig.app.json` `include`s `src` (test files are type-checked) — so the **build fails** until the fixture carries both fields. Replace the points assertion (no longer rendered) with assertions for the new shape: the `{Public|Private} · Total teams: N` meta line renders (cover both privacy values across the fixture's rows); a non-zero `positionChange` renders the indicator (assert by its `aria-label`, e.g. `Up 2 positions`); a `positionChange` of `0` or `null` renders **no** indicator (assert the `No position change` label is absent). Per `web/CLAUDE.md` the leaf is the right home for these render concerns.
-- Other frontend tests: no change. `root-routing.integration.test.tsx` keeps passing — its `/me/standings` handler returns `[]`, so no literal needs the new field; the row shape is a render concern, not a routing assertion.
+- `web/src/components/Home/Home.test.tsx` — leagues-list assertions trimmed to the as-built shape: the section heading renders, a row links to `/league/$leagueId`, the position renders, and the section is absent when `standings` is empty. (The Commit 4 points assertion was removed; no indicator/meta assertions.)
+- No backend tests added or changed.
 
-### Design notes
+### Notes
 
-- **`design-handoff.md` is stale for this list — follow the code, not the doc.** The handoff (`design-handoff.md:36`) describes a separate `components/Home/MyLeaguesList.tsx` and a points-bearing grid that keeps a Move column. This commit takes the list a different way: a two-column league/position layout with the change folded into the position cell. Build to this plan, not the handoff.
-- **No new endpoint.** Same URL, same shape extended by one field. Frontend reads it via the existing `getMyStandings()` service. No service-layer change on the frontend side beyond the contract addition.
+- **`design-handoff.md` is stale for this list.** The handoff (`design-handoff.md:36`) describes a `MyLeaguesList.tsx` with a points-bearing grid and a Move column; the as-built Home list is intentionally simpler (name + position). Follow the code.
 
 ---
 
