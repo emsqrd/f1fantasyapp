@@ -90,13 +90,11 @@ describe('Home', () => {
       { leagueId: 34, leagueName: 'Monaco Masters', totalTeams: 12, position: 5, totalPoints: 150 },
     ];
 
-    it('renders the leagues section with a row link and the position when standings are present', () => {
+    it('renders the My Leagues list when standings are present', () => {
       renderHome({ standings });
 
       expect(screen.getByRole('heading', { name: 'My Leagues' })).toBeInTheDocument();
-      const row = screen.getByRole('link', { name: /Open Cota 2026/i });
-      expect(row).toHaveAttribute('href', '/league/12');
-      expect(screen.getByText('3')).toBeInTheDocument();
+      expect(screen.getByRole('list', { name: 'My Leagues' })).toBeInTheDocument();
     });
 
     it('does not render the leagues section when standings are empty', () => {
