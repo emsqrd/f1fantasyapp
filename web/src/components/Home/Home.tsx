@@ -4,6 +4,8 @@ import type { Team } from '@/contracts/Team';
 import type { TeamSummary } from '@/contracts/TeamSummary';
 
 import { AppContainer } from '../AppContainer/AppContainer';
+import { CreateTeamHero } from './CreateTeamHero';
+import { LeaguesNeedTeamNotice } from './LeaguesNeedTeamNotice';
 import { MyLeaguesList } from './MyLeaguesList';
 import { NextRaceCard } from './NextRaceCard';
 
@@ -36,22 +38,26 @@ export function Home({ name, team, summary, standings, races }: HomeProps) {
           )}
         </header>
 
+        {!team && <CreateTeamHero />}
+
         <NextRaceCard races={races} />
 
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
-          <ScoreCard
-            eyebrow="Last race stats"
-            title={summary?.lastRace?.name ?? EM_DASH}
-            score={summary?.lastRace?.totalScore ?? null}
-          />
-          <ScoreCard
-            eyebrow="Season stats"
-            title="Total"
-            score={summary?.seasonTotalPoints ?? null}
-          />
-        </div>
+        {team && (
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
+            <ScoreCard
+              eyebrow="Last race stats"
+              title={summary?.lastRace?.name ?? EM_DASH}
+              score={summary?.lastRace?.totalScore ?? null}
+            />
+            <ScoreCard
+              eyebrow="Season stats"
+              title="Total"
+              score={summary?.seasonTotalPoints ?? null}
+            />
+          </div>
+        )}
 
-        <MyLeaguesList standings={standings} />
+        {team ? <MyLeaguesList standings={standings} /> : <LeaguesNeedTeamNotice />}
       </div>
     </AppContainer>
   );

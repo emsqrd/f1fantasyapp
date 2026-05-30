@@ -142,5 +142,6 @@ describe('routing at /', () => {
     });
 
     expect(await screen.findByRole('heading', { name: 'Welcome, Ada' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: /create team/i })).toBeInTheDocument();
   });
 });
