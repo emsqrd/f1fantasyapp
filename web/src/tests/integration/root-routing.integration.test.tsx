@@ -1,4 +1,4 @@
-import { HomeRoute } from '@/components/Home/HomeRoute';
+import { IndexRoute } from '@/components/IndexRoute/IndexRoute';
 import type { TeamContextType } from '@/contexts/TeamContext';
 import { TeamContext } from '@/contexts/TeamContext';
 import type { RouterContext } from '@/lib/router-context';
@@ -53,7 +53,7 @@ function buildIndexRouteTree(teamContextValue: TeamContextType) {
 
       return { home: { summary, standings, races } };
     },
-    component: HomeRoute,
+    component: IndexRoute,
   });
 
   return rootRoute.addChildren([indexRoute]);

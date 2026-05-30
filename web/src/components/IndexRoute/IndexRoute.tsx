@@ -1,9 +1,9 @@
 import { useLoaderData, useRouteContext } from '@tanstack/react-router';
 
+import { Home } from '../Home/Home';
 import { LandingPage } from '../LandingPage/LandingPage';
-import { Home } from './Home';
 
-export function HomeRoute() {
+export function IndexRoute() {
   const { home } = useLoaderData({ from: '/' });
   const { profile, team } = useRouteContext({ from: '__root__' });
 
