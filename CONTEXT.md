@@ -30,6 +30,14 @@ Both fields are nullable: a team that exists but has not yet had a scored race i
 
 The caller's position and total points within a specific league — the caller-scoped projection of `TeamLeagueStanding`. Served by `GET /me/standings`, which returns one row per league the caller belongs to: `{ leagueId, leagueName, totalTeams, position: int?, totalPoints: int? }`. The row entity is a *standing*, not a league — league metadata (name, totalTeams) is denormalized in for rendering convenience. `position` and `totalPoints` are nullable until the caller's team has a scored race in the current season while a member of that league. See [[league total points]] for why per-league totals can diverge from [[season total points]].
 
+## No-team state
+
+A signed-in user who has not yet created a team for the current season — the earliest point in the onboarding progression. Distinct from the [[No-leagues state]] (team exists, no league joined) and the [[No-scored-races state]] (team in a league, nothing scored yet). The [[Home]] surface renders a dedicated no-team variant: the identity header drops the team name, and the score and leagues areas give way to a create-team prompt and a gated-leagues notice.
+
+## No-leagues state
+
+A team that belongs to no league. Distinct from the [[No-team state]] (no team at all) and the [[No-scored-races state]] (team has leagues, nothing scored yet). The [[Home]] surface renders the full layout with the leagues list replaced by a join-or-create-a-league prompt.
+
 ## No-scored-races state
 
 A team that exists in the current season but has not yet had a scored race. Distinct from "no team yet" — the team exists and belongs to leagues; nothing has been scored yet. The [[Home]] surface renders the same layout as the scored state, with `—` em-dashes in score-bearing positions (the Last-race and Season cards' big number; the league rows' position and points columns). No "0 pts" placeholders — `0` is a real scoring outcome (DNFs, no points-finishers) and must not be conflated with "not yet scored."

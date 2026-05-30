@@ -8,6 +8,8 @@ The authed landing page for `/`. Unauthed users keep getting the marketing landi
 
 **This is a single responsive design**, not separate desktop and mobile components. The prototype's two artboards ("Desktop · 1280" and "Mobile · 390") render the same component at different viewport widths to demonstrate how it adapts.
 
+> **As-built divergence (#207 / #208).** The three-component split described below — `HomeNoTeam`, `HomeNoLeagues`, and "decide in the route, render the right component" — was not built. `Home` is a single presentational component that conditionally renders different child components based on `team` / `standings`. The route component was renamed `IndexRoute` and only switches anon → `LandingPage` vs authed → `Home`. The no-team next-race card is the same unified `NextRaceCard` as the full state, not a separate compact variant. Where this handoff disagrees with the issues or code, follow the issues and code.
+
 ## Route + data
 
 - **Path:** `/` (only when authed; existing landing page stays for anon)
