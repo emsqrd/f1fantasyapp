@@ -1,4 +1,4 @@
-import { HomeRoute } from '@/components/Home/HomeRoute';
+import { IndexRoute } from '@/components/IndexRoute/IndexRoute';
 import type { TeamContextType } from '@/contexts/TeamContext';
 import { TeamContext } from '@/contexts/TeamContext';
 import type { RouterContext } from '@/lib/router-context';
@@ -53,7 +53,7 @@ function buildIndexRouteTree(teamContextValue: TeamContextType) {
 
       return { home: { summary, standings, races } };
     },
-    component: HomeRoute,
+    component: IndexRoute,
   });
 
   return rootRoute.addChildren([indexRoute]);
@@ -79,7 +79,11 @@ describe('routing at /', () => {
       http.get(`${API_BASE}/me/team/summary`, () =>
         HttpResponse.json({ seasonTotalPoints: null, lastRace: null }),
       ),
-      http.get(`${API_BASE}/me/standings`, () => HttpResponse.json([])),
+      http.get(`${API_BASE}/me/standings`, () =>
+        HttpResponse.json([
+          { leagueId: 12, leagueName: 'Cota 2026', totalTeams: 8, position: 3, totalPoints: 184 },
+        ]),
+      ),
       http.get(`${API_BASE}/seasons/${CURRENT_SEASON.id}/race-weekends`, () =>
         HttpResponse.json([
           {
@@ -117,6 +121,7 @@ describe('routing at /', () => {
 
     expect(await screen.findByRole('heading', { name: 'Red Bull Racing' })).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'Monaco Grand Prix' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: /Open Cota 2026/i })).toBeInTheDocument();
   });
 
   it('renders Home for authed users with no team without crashing', async () => {
@@ -142,5 +147,6 @@ describe('routing at /', () => {
     });
 
     expect(await screen.findByRole('heading', { name: 'Welcome, Ada' })).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: /create team/i })).toBeInTheDocument();
   });
 });

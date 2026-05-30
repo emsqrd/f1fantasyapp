@@ -2,7 +2,7 @@ import { Account } from '@/components/Account/Account';
 import { CreateTeam } from '@/components/CreateTeam/CreateTeam';
 import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
 import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
-import { HomeRoute } from '@/components/Home/HomeRoute';
+import { IndexRoute } from '@/components/IndexRoute/IndexRoute';
 import { Layout } from '@/components/Layout/Layout';
 import { League } from '@/components/League/League';
 import { LeagueList } from '@/components/LeagueList/LeagueList';
@@ -205,7 +205,7 @@ const indexRoute = createRoute({
 
     return { home: { summary, standings, races } };
   },
-  component: HomeRoute,
+  component: IndexRoute,
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
 

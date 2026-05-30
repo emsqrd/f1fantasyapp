@@ -67,20 +67,24 @@ describe('Home', () => {
         lastRace: { round: 7, name: 'Monaco Grand Prix', totalScore: 47 },
       };
 
-      renderHome({ summary });
+      renderHome({ team: createMockTeam(), summary });
 
       expect(screen.getByText('Monaco Grand Prix')).toBeInTheDocument();
       expect(screen.getByText('47')).toBeInTheDocument();
       expect(screen.getByText('312')).toBeInTheDocument();
       expect(screen.getAllByText('pts')).toHaveLength(2);
+      expect(screen.queryByRole('link', { name: /create team/i })).not.toBeInTheDocument();
+      expect(screen.queryByText('Leagues unlock with a team')).not.toBeInTheDocument();
     });
 
     it('renders em-dashes and no "pts" suffix when summary is null', () => {
-      renderHome({ summary: null });
+      renderHome({ team: createMockTeam(), summary: null });
 
       // 1 em-dash for the last-race title + 2 for the missing scores.
       expect(screen.getAllByText('—')).toHaveLength(3);
       expect(screen.queryByText('pts')).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: /create team/i })).not.toBeInTheDocument();
+      expect(screen.queryByText('Leagues unlock with a team')).not.toBeInTheDocument();
     });
   });
 
@@ -90,18 +94,35 @@ describe('Home', () => {
       { leagueId: 34, leagueName: 'Monaco Masters', totalTeams: 12, position: 5, totalPoints: 150 },
     ];
 
-    it('renders the leagues section with a row link and the position when standings are present', () => {
-      renderHome({ standings });
+    it('renders the My Leagues list when standings are present', () => {
+      renderHome({ team: createMockTeam(), standings });
 
       expect(screen.getByRole('heading', { name: 'My Leagues' })).toBeInTheDocument();
-      const row = screen.getByRole('link', { name: /Open Cota 2026/i });
-      expect(row).toHaveAttribute('href', '/league/12');
-      expect(screen.getByText('3')).toBeInTheDocument();
+      expect(screen.getByRole('list', { name: 'My Leagues' })).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: /create team/i })).not.toBeInTheDocument();
+      expect(screen.queryByText('Leagues unlock with a team')).not.toBeInTheDocument();
     });
 
-    it('does not render the leagues section when standings are empty', () => {
-      renderHome({ standings: [] });
+    it('renders neither the leagues list nor the notice for a team with no standings', () => {
+      renderHome({ team: createMockTeam(), standings: [] });
 
+      expect(screen.queryByRole('heading', { name: 'My Leagues' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('list', { name: 'My Leagues' })).not.toBeInTheDocument();
+      expect(screen.queryByText('Leagues unlock with a team')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('no-team state', () => {
+    it('renders the create-team hero and leagues notice, and no score cards', () => {
+      renderHome({ team: null });
+
+      const createTeamLink = screen.getByRole('link', { name: /create team/i });
+      expect(createTeamLink).toHaveAttribute('href', '/create-team');
+
+      expect(screen.getByText('Leagues unlock with a team')).toBeInTheDocument();
+
+      expect(screen.queryByText('Season stats')).not.toBeInTheDocument();
+      expect(screen.queryByText('Last race stats')).not.toBeInTheDocument();
       expect(screen.queryByRole('heading', { name: 'My Leagues' })).not.toBeInTheDocument();
       expect(screen.queryByRole('list', { name: 'My Leagues' })).not.toBeInTheDocument();
     });
