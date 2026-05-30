@@ -71,6 +71,7 @@ test.describe('auth', () => {
     await page.getByRole('button', { name: /continue/i }).click();
     await expect(page).toHaveURL('/');
     await expect(page.getByRole('heading', { name: /welcome/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /create team/i })).toBeVisible();
   });
 
   test('completes signup via the OTP code from the confirmation email', async ({ page }) => {
