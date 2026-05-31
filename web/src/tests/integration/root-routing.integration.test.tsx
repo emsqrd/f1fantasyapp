@@ -124,6 +124,33 @@ describe('routing at /', () => {
     expect(await screen.findByRole('link', { name: /Open Cota 2026/i })).toBeInTheDocument();
   });
 
+  it('renders the no-leagues prompt for authed users with a team but no standings', async () => {
+    server.use(
+      http.get(`${API_BASE}/me/team/summary`, () =>
+        HttpResponse.json({ seasonTotalPoints: null, lastRace: null }),
+      ),
+      http.get(`${API_BASE}/me/standings`, () => HttpResponse.json([])),
+      http.get(`${API_BASE}/seasons/${CURRENT_SEASON.id}/race-weekends`, () =>
+        HttpResponse.json([]),
+      ),
+    );
+
+    const teamContext = createTeamContext({ myTeamId: 1, hasTeam: true });
+    renderWithRouter({
+      routeTree: buildIndexRouteTree(teamContext),
+      initialEntry: '/',
+      auth: createAuthedAuth(),
+      routerContext: createBaseRouterContext({
+        teamContext,
+        profile: createMockUserProfile({ firstName: 'Ada' }),
+        team: createMockTeam({ name: 'Red Bull Racing' }),
+        currentSeason: CURRENT_SEASON,
+      }),
+    });
+
+    expect(await screen.findByText("You're riding solo")).toBeInTheDocument();
+  });
+
   it('renders Home for authed users with no team without crashing', async () => {
     server.use(
       http.get(`${API_BASE}/me/team/summary`, () => new HttpResponse(null, { status: 404 })),

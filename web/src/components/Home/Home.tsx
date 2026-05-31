@@ -5,6 +5,7 @@ import type { TeamSummary } from '@/contracts/TeamSummary';
 
 import { AppContainer } from '../AppContainer/AppContainer';
 import { CreateTeamHero } from './CreateTeamHero';
+import { JoinLeaguesPrompt } from './JoinLeaguesPrompt';
 import { LeaguesNeedTeamNotice } from './LeaguesNeedTeamNotice';
 import { MyLeaguesList } from './MyLeaguesList';
 import { NextRaceCard } from './NextRaceCard';
@@ -57,7 +58,13 @@ export function Home({ name, team, summary, standings, races }: HomeProps) {
           </div>
         )}
 
-        {team ? <MyLeaguesList standings={standings} /> : <LeaguesNeedTeamNotice />}
+        {!team ? (
+          <LeaguesNeedTeamNotice />
+        ) : standings.length === 0 ? (
+          <JoinLeaguesPrompt />
+        ) : (
+          <MyLeaguesList standings={standings} />
+        )}
       </div>
     </AppContainer>
   );

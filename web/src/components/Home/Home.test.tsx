@@ -99,12 +99,21 @@ describe('Home', () => {
 
       expect(screen.getByRole('heading', { name: 'My Leagues' })).toBeInTheDocument();
       expect(screen.getByRole('list', { name: 'My Leagues' })).toBeInTheDocument();
+      expect(screen.queryByText("You're riding solo")).not.toBeInTheDocument();
       expect(screen.queryByRole('link', { name: /create team/i })).not.toBeInTheDocument();
       expect(screen.queryByText('Leagues unlock with a team')).not.toBeInTheDocument();
     });
+  });
 
-    it('renders neither the leagues list nor the notice for a team with no standings', () => {
+  describe('no-leagues state', () => {
+    it('renders the join-leagues prompt with a browse CTA for a team with no standings', () => {
       renderHome({ team: createMockTeam(), standings: [] });
+
+      expect(screen.getByText("You're riding solo")).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Browse leagues' })).toHaveAttribute(
+        'href',
+        '/browse-leagues',
+      );
 
       expect(screen.queryByRole('heading', { name: 'My Leagues' })).not.toBeInTheDocument();
       expect(screen.queryByRole('list', { name: 'My Leagues' })).not.toBeInTheDocument();
