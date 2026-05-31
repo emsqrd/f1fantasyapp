@@ -191,16 +191,6 @@ a team and **empty** standings:
 
 ---
 
-## Key implementation notes
-
-- **Run `npm run web:format` before each commit.** `prettier-plugin-tailwindcss` auto-sorts
-  `className` strings; unsorted classes fail `web:format:check` in CI.
-- **`src/components/ui` is vendored / eslint-ignored** — never edit `empty.tsx` or `button.tsx`;
-  compose around them.
-- **`no-unused-vars` is `error`** — keep imports tight.
-- Lucide imports in `JoinLeaguesPrompt`: `Gauge`, `Search`. No `Users` (the second CTA was dropped)
-  and no `Plus` (the issue's icon) — see the Copy & icons section.
-
 ## Testing strategy alignment
 
 - **Branch logic at the lowest layer.** The three-way `team` / `standings` conditional is
