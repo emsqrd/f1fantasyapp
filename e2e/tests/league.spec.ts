@@ -31,8 +31,8 @@ test.describe('league', () => {
     const contextA = await browser.newContext();
     const pageA = await contextA.newPage();
     await signInAs(pageA, userA);
-    await expect(pageA).toHaveURL('/leagues');
 
+    await pageA.goto('/leagues');
     await pageA.getByRole('button', { name: 'Create League' }).click();
     const createDialog = pageA.getByRole('dialog', { name: 'Create League' });
     await createDialog.getByLabel('League Name').fill(leagueName);
@@ -51,7 +51,6 @@ test.describe('league', () => {
     const contextB = await browser.newContext();
     const pageB = await contextB.newPage();
     await signInAs(pageB, userB);
-    await expect(pageB).toHaveURL('/leagues');
 
     await pageB.goto(inviteUrl);
     await expect(pageB.getByText(leagueName)).toBeVisible();
@@ -80,7 +79,6 @@ test.describe('league', () => {
     const contextB = await browser.newContext();
     const pageB = await contextB.newPage();
     await signInAs(pageB, userB);
-    await expect(pageB).toHaveURL('/leagues');
 
     await pageB.goto('/browse-leagues');
 
@@ -115,7 +113,6 @@ test.describe('league', () => {
     const teamName = `Team ${randomUUID().slice(0, 8)}`;
 
     await signInAs(page, joiner);
-    await expect(page).toHaveURL('/create-team');
 
     await page.goto(joinPath);
     await expect(page.getByText(leagueName)).toBeVisible();

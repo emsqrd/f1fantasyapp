@@ -22,9 +22,6 @@ test.describe('avatar', () => {
     const user = await createTestUser();
 
     await signInAs(page, user);
-    // Teamless user lands here; irrelevant to this test, just a sanity
-    // beat on the post-sign-in state.
-    await expect(page).toHaveURL('/create-team');
 
     await page.goto('/account');
     await expect(page.getByRole('heading', { name: 'Profile Information' })).toBeVisible();

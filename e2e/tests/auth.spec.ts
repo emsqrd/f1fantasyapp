@@ -15,7 +15,7 @@ test.describe('auth', () => {
     await clearAll();
   });
 
-  test('signs in with real credentials and lands on the leagues dashboard', async ({ page }) => {
+  test('signs in with real credentials and lands on home', async ({ page }) => {
     const user = await createTestUser();
     const season = await seedCurrentSeason();
     const grid = await seedMinimalGrid({ seasonId: season.id });
@@ -26,9 +26,9 @@ test.describe('auth', () => {
 
     await signInAs(page, user);
 
-    await expect(page).toHaveURL('/leagues');
-    await expect(page.getByRole('heading', { name: 'My Leagues' })).toBeVisible();
-    await expect(page.getByText(user.displayName)).toBeVisible();
+    await expect(page).toHaveURL('/');
+    await expect(page.getByText(/riding solo/i)).toBeVisible();
+    await expect(page.getByText(`Welcome back, ${user.displayName}`)).toBeVisible();
   });
 
   test('redirects unauthenticated visits to /my-team back to the landing page', async ({
@@ -245,12 +245,16 @@ test.describe('auth', () => {
     });
 
     await signInAs(page, user);
-    await expect(page).toHaveURL('/leagues');
+    await expect(page).toHaveURL('/');
 
     await page.getByRole('button', { name: 'Account menu' }).click();
     await page.getByRole('menuitem', { name: 'Sign Out' }).click();
 
+    // Sign-in and sign-out both land on `/`, so the URL can't confirm the
+    // session cleared. The landing page (with its Sign In button) renders
+    // only when logged out — wait for it before probing a protected route.
     await expect(page).toHaveURL('/');
+    await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();
 
     await page.goto('/my-team');
     await expect(page).toHaveURL('/');
