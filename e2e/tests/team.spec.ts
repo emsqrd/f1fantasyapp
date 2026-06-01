@@ -17,8 +17,8 @@ test.describe('team', () => {
     const teamName = `Team ${randomUUID().slice(0, 8)}`;
 
     await signInAs(page, user);
-    await expect(page).toHaveURL('/create-team');
 
+    await page.goto('/create-team');
     await page.getByLabel('Team Name').fill(teamName);
     await page.locator('form').getByRole('button', { name: 'Create Team' }).click();
 
@@ -49,7 +49,6 @@ test.describe('team', () => {
     });
 
     await signInAs(page, user);
-    await expect(page).toHaveURL('/leagues');
 
     await page.goto('/my-team');
     await expect(page.getByText(`${alex.firstName} ${alex.lastName}`)).toBeVisible();
@@ -110,7 +109,6 @@ test.describe('team', () => {
     });
 
     await signInAs(page, user);
-    await expect(page).toHaveURL('/leagues');
 
     await page.goto('/my-team');
 

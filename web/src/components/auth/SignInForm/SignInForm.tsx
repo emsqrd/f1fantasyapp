@@ -33,7 +33,7 @@ export function SignInForm() {
       if (search.redirect) {
         await navigate({ to: search.redirect });
       } else {
-        await navigate({ to: '/leagues' });
+        await navigate({ to: '/' });
       }
       completeAuthTransition();
     } catch (error) {

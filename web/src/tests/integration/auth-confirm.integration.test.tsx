@@ -1,11 +1,10 @@
 import { ConfirmEmailNotice } from '@/components/auth/ConfirmEmailNotice/ConfirmEmailNotice';
-import { type RouterContext, defaultAuthedDestination } from '@/lib/router-context';
+import type { RouterContext } from '@/lib/router-context';
 import { supabase } from '@/lib/supabase';
 import {
   buildStubRoute,
   createAuthedAuth,
   createBaseRouterContext,
-  createTeamContext,
   createUnauthAuth,
   renderWithRouter,
 } from '@/tests/test-utils';
@@ -67,7 +66,7 @@ function buildAuthConfirmRouteTree() {
       if (!search.token_hash || !search.type) {
         if (context.auth.user) {
           throw redirect({
-            to: defaultAuthedDestination(context.teamContext),
+            to: '/',
             replace: true,
           });
         }
@@ -84,26 +83,16 @@ function buildAuthConfirmRouteTree() {
     component: SignUpStub,
   });
 
-  const leaguesRoute = buildStubRoute(rootRoute, {
-    path: '/leagues',
-    heading: 'Leagues Stub',
-  });
-  const createTeamRoute = buildStubRoute(rootRoute, {
-    path: '/create-team',
-    heading: 'Create Team Stub',
+  const homeRoute = buildStubRoute(rootRoute, {
+    path: '/',
+    heading: 'Home Stub',
   });
   const joinInviteRoute = buildStubRoute(rootRoute, {
     path: '/join/$token',
     heading: 'Join Invite Stub',
   });
 
-  return rootRoute.addChildren([
-    authConfirmRoute,
-    signUpRoute,
-    leaguesRoute,
-    createTeamRoute,
-    joinInviteRoute,
-  ]);
+  return rootRoute.addChildren([authConfirmRoute, signUpRoute, homeRoute, joinInviteRoute]);
 }
 
 function mockVerifyOtpSuccess() {
@@ -125,16 +114,15 @@ describe('/auth/confirm route', () => {
     vi.mocked(supabase.auth.verifyOtp).mockReset();
   });
 
-  it('verifies the token on the Continue click and navigates to /create-team for a no-team user', async () => {
+  it('verifies the token on the Continue click and navigates to / after verification', async () => {
     mockVerifyOtpSuccess();
-    const teamContext = createTeamContext({ hasTeam: false });
     const user = userEvent.setup();
 
     renderWithRouter({
       routeTree: buildAuthConfirmRouteTree(),
       initialEntry: '/auth/confirm?token_hash=abc123&type=signup',
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext({ teamContext }),
+      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: /confirm your email/i })).toBeInTheDocument();
@@ -146,29 +134,11 @@ describe('/auth/confirm route', () => {
       token_hash: 'abc123',
       type: 'signup',
     });
-    expect(await screen.findByRole('heading', { name: 'Create Team Stub' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Home Stub' })).toBeInTheDocument();
   });
 
-  it('navigates to /leagues after verification when the user has a team', async () => {
+  it('navigates to the same-origin next param, overriding the default', async () => {
     mockVerifyOtpSuccess();
-    const teamContext = createTeamContext({ myTeamId: 1, hasTeam: true });
-    const user = userEvent.setup();
-
-    renderWithRouter({
-      routeTree: buildAuthConfirmRouteTree(),
-      initialEntry: '/auth/confirm?token_hash=abc123&type=signup',
-      auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext({ teamContext }),
-    });
-
-    await user.click(await screen.findByRole('button', { name: /continue/i }));
-
-    expect(await screen.findByRole('heading', { name: 'Leagues Stub' })).toBeInTheDocument();
-  });
-
-  it('navigates to the same-origin next param, overriding the team-state default', async () => {
-    mockVerifyOtpSuccess();
-    const teamContext = createTeamContext({ myTeamId: 1, hasTeam: true });
     const user = userEvent.setup();
 
     const sameOriginNext = `${window.location.origin}/join/abc`;
@@ -178,7 +148,7 @@ describe('/auth/confirm route', () => {
         sameOriginNext,
       )}`,
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext({ teamContext }),
+      routerContext: createBaseRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /continue/i }));
@@ -232,23 +202,20 @@ describe('/auth/confirm route', () => {
     expect(supabase.auth.verifyOtp).not.toHaveBeenCalled();
   });
 
-  it('redirects a signed-in visitor with a team and no token_hash to /leagues', async () => {
-    const teamContext = createTeamContext({ myTeamId: 1, hasTeam: true });
-
+  it('redirects a signed-in visitor with no token_hash to /', async () => {
     renderWithRouter({
       routeTree: buildAuthConfirmRouteTree(),
       initialEntry: '/auth/confirm',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext({ teamContext }),
+      routerContext: createBaseRouterContext(),
     });
 
-    expect(await screen.findByRole('heading', { name: 'Leagues Stub' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Home Stub' })).toBeInTheDocument();
     expect(supabase.auth.verifyOtp).not.toHaveBeenCalled();
   });
 
-  it('ignores a cross-origin next value and falls back to the team-state default', async () => {
+  it('ignores a cross-origin next value and falls back to the default', async () => {
     mockVerifyOtpSuccess();
-    const teamContext = createTeamContext({ myTeamId: 1, hasTeam: true });
     const user = userEvent.setup();
 
     renderWithRouter({
@@ -257,23 +224,22 @@ describe('/auth/confirm route', () => {
         'https://evil.example.com/foo',
       )}`,
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext({ teamContext }),
+      routerContext: createBaseRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /continue/i }));
 
-    expect(await screen.findByRole('heading', { name: 'Leagues Stub' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Home Stub' })).toBeInTheDocument();
   });
 
   it('does not verify the token on page load — only on the Continue click', async () => {
     mockVerifyOtpSuccess();
-    const teamContext = createTeamContext({ hasTeam: false });
 
     renderWithRouter({
       routeTree: buildAuthConfirmRouteTree(),
       initialEntry: '/auth/confirm?token_hash=abc123&type=signup',
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext({ teamContext }),
+      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: /confirm your email/i })).toBeInTheDocument();
@@ -292,19 +258,18 @@ describe('/auth/confirm route', () => {
   });
 
   it('skips verifyOtp for an already signed-in visitor and navigates straight through', async () => {
-    const teamContext = createTeamContext({ hasTeam: false });
     const user = userEvent.setup();
 
     renderWithRouter({
       routeTree: buildAuthConfirmRouteTree(),
       initialEntry: '/auth/confirm?token_hash=abc123&type=signup',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext({ teamContext }),
+      routerContext: createBaseRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /continue/i }));
 
-    expect(await screen.findByRole('heading', { name: 'Create Team Stub' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Home Stub' })).toBeInTheDocument();
     expect(supabase.auth.verifyOtp).not.toHaveBeenCalled();
   });
 });

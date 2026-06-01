@@ -13,7 +13,7 @@ import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import type { Team as TeamType } from '@/contracts/Team';
 import type { UserProfile } from '@/contracts/UserProfile';
 import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
-import { type RouterContext, defaultAuthedDestination } from '@/lib/router-context';
+import type { RouterContext } from '@/lib/router-context';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
 import { getLeagueStandings, getMyStandings } from '@/services/standingsService';
 import { getMyTeam, getTeamById, getTeamSummary } from '@/services/teamService';
@@ -171,7 +171,7 @@ const unauthenticatedLayoutRoute = createRoute({
   beforeLoad: ({ context }) => {
     if (context.auth.user) {
       throw redirect({
-        to: defaultAuthedDestination(context.teamContext),
+        to: '/',
         replace: true,
       });
     }
@@ -257,7 +257,7 @@ const authConfirmRoute = createRoute({
     if (!search.token_hash || !search.type) {
       if (context.auth.user) {
         throw redirect({
-          to: defaultAuthedDestination(context.teamContext),
+          to: '/',
           replace: true,
         });
       }

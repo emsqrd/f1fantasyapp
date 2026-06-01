@@ -108,4 +108,17 @@ describe('SignInForm', () => {
       expect(mockNavigate).toHaveBeenCalledWith({ to: '/team/123' });
     });
   });
+
+  it('navigates to / when no redirect search parameter is provided', async () => {
+    signInMock.mockResolvedValueOnce(undefined);
+    mockUseSearch.mockReturnValue({});
+    render(<SignInForm />);
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@example.com' } });
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith({ to: '/' });
+    });
+  });
 });
