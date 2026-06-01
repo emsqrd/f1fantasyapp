@@ -1,9 +1,8 @@
 import { LoadingButton } from '@/components/LoadingButton/LoadingButton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
-import { defaultAuthedDestination } from '@/lib/router-context';
 import { supabase } from '@/lib/supabase';
-import { useNavigate, useRouteContext, useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 
 function resolveNextDestination(next: string | undefined): string | null {
@@ -20,7 +19,6 @@ function resolveNextDestination(next: string | undefined): string | null {
 export function ConfirmEmailNotice() {
   const navigate = useNavigate();
   const search = useSearch({ from: '/auth/confirm' });
-  const { teamContext } = useRouteContext({ from: '/auth/confirm' });
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
 
@@ -44,7 +42,7 @@ export function ConfirmEmailNotice() {
     }
 
     const internalNext = resolveNextDestination(search.next);
-    const destination = internalNext ?? defaultAuthedDestination(teamContext);
+    const destination = internalNext ?? '/';
     await navigate({ to: destination, replace: true });
   };
 
