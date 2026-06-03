@@ -1,8 +1,8 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentAvatar } from '@/hooks/useCurrentAvatar';
-import { useTeam } from '@/hooks/useTeam';
-import { useNavigate, useRouteContext, useRouterState } from '@tanstack/react-router';
-import { ChevronUpIcon, HomeIcon, PlusIcon, SearchIcon, TrophyIcon, UsersIcon } from 'lucide-react';
+import { useNavDestinations } from '@/hooks/useNavDestinations';
+import { Link, useMatchRoute, useNavigate, useRouteContext } from '@tanstack/react-router';
+import { ChevronUpIcon, TrophyIcon } from 'lucide-react';
 
 import { AccountMenu } from '../AccountMenu/AccountMenu';
 import { UserAvatar } from '../UserAvatar/UserAvatar';
@@ -21,9 +21,9 @@ import {
 
 export function AppSidebar() {
   const { user } = useAuth();
-  const { hasTeam } = useTeam();
   const navigate = useNavigate();
-  const routerState = useRouterState();
+  const matchRoute = useMatchRoute();
+  const destinations = useNavDestinations();
   const { isMobile, setOpenMobile } = useSidebar();
   const avatar = useCurrentAvatar();
 
@@ -33,77 +33,10 @@ export function AppSidebar() {
 
   const { profile } = useRouteContext({ from: '__root__' });
 
-  // Get current pathname for active state
-  const currentPath = routerState.location.pathname;
-
-  const handleHome = () => {
-    closeOnMobile();
-    navigate({ to: '/' });
-  };
-
-  const handleBrowseLeagues = () => {
-    closeOnMobile();
-    navigate({ to: '/browse-leagues' });
-  };
-
-  const handleMyLeagues = () => {
-    closeOnMobile();
-    navigate({ to: '/leagues' });
-  };
-
-  const handleMyTeam = () => {
-    closeOnMobile();
-    navigate({ to: '/my-team' });
-  };
-
-  const handleCreateTeam = () => {
-    closeOnMobile();
-    navigate({ to: '/create-team' });
-  };
-
   const handleLogoClick = () => {
     closeOnMobile();
     navigate({ to: '/' });
   };
-
-  // Define navigation items based on whether user has a team
-  const navigationItems = [
-    {
-      title: 'Home',
-      icon: HomeIcon,
-      onClick: handleHome,
-      isActive: currentPath === '/',
-    },
-    ...(hasTeam
-      ? [
-          {
-            title: 'My Team',
-            icon: TrophyIcon,
-            onClick: handleMyTeam,
-            isActive: currentPath === '/my-team',
-          },
-          {
-            title: 'My Leagues',
-            icon: UsersIcon,
-            onClick: handleMyLeagues,
-            isActive: currentPath === '/leagues',
-          },
-          {
-            title: 'Browse Leagues',
-            icon: SearchIcon,
-            onClick: handleBrowseLeagues,
-            isActive: currentPath === '/browse-leagues',
-          },
-        ]
-      : [
-          {
-            title: 'Create Team',
-            icon: PlusIcon,
-            onClick: handleCreateTeam,
-            isActive: currentPath === '/create-team',
-          },
-        ]),
-  ];
 
   return (
     <Sidebar variant="inset" collapsible="icon">
@@ -131,15 +64,17 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+              {destinations.map((dest) => (
+                <SidebarMenuItem key={dest.key}>
                   <SidebarMenuButton
-                    onClick={item.onClick}
-                    isActive={item.isActive}
-                    tooltip={item.title}
+                    asChild
+                    isActive={!!matchRoute({ to: dest.to })}
+                    tooltip={dest.title}
                   >
-                    <item.icon />
-                    <span>{item.title}</span>
+                    <Link to={dest.to} onClick={closeOnMobile}>
+                      <dest.icon />
+                      <span>{dest.title}</span>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
