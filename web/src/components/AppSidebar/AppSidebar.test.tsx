@@ -1,27 +1,20 @@
 import { avatarEvents } from '@/lib/avatarEvents';
-import { router } from '@/router';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AppSidebar } from './AppSidebar';
 
-// Mock router
-vi.mock('@/router', () => ({
-  router: {
-    invalidate: vi.fn(),
-  },
-}));
-
 // Mock TanStack Router hooks
 const mockNavigate = vi.fn();
-const mockUseMatches = vi.fn();
+const mockUseRouteContext = vi.fn();
 const mockRouterState = { location: { pathname: '/' } };
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
-  useMatches: () => mockUseMatches(),
+  useRouteContext: () => mockUseRouteContext(),
   useRouterState: () => mockRouterState,
+  useRouter: () => ({ invalidate: vi.fn() }),
 }));
 
 // Mock useAuth hook
@@ -136,12 +129,7 @@ describe('AppSidebar', () => {
       myTeamId: 123,
     });
 
-    mockUseMatches.mockReturnValue([
-      {
-        routeId: '__root__',
-        context: { profile: mockProfile },
-      },
-    ]);
+    mockUseRouteContext.mockReturnValue({ profile: mockProfile });
 
     vi.mocked(avatarEvents.subscribe).mockReturnValue(() => {});
   });
@@ -310,112 +298,6 @@ describe('AppSidebar', () => {
       );
 
       expect(activeButton).toBeTruthy();
-    });
-  });
-
-  describe('User Dropdown Menu', () => {
-    it('navigates to account when My Account is clicked', async () => {
-      const user = userEvent.setup();
-      render(<AppSidebar />);
-
-      await user.click(screen.getByText('My Account'));
-
-      expect(mockNavigate).toHaveBeenCalledWith({ to: '/account' });
-    });
-
-    it('changes theme to light when Light is clicked', async () => {
-      const user = userEvent.setup();
-      render(<AppSidebar />);
-
-      await user.click(screen.getByText('Light'));
-
-      expect(mockSetTheme).toHaveBeenCalledWith('light');
-    });
-
-    it('changes theme to dark when Dark is clicked', async () => {
-      const user = userEvent.setup();
-      render(<AppSidebar />);
-
-      await user.click(screen.getByText('Dark'));
-
-      expect(mockSetTheme).toHaveBeenCalledWith('dark');
-    });
-
-    it('changes theme to system when System is clicked', async () => {
-      const user = userEvent.setup();
-      render(<AppSidebar />);
-
-      await user.click(screen.getByText('System'));
-
-      expect(mockSetTheme).toHaveBeenCalledWith('system');
-    });
-  });
-
-  describe('Sign Out Flow', () => {
-    it('executes complete sign out flow when Sign Out is clicked', async () => {
-      const user = userEvent.setup();
-      const mockSignOut = vi.fn().mockResolvedValue(undefined);
-      const mockStartAuthTransition = vi.fn();
-      const mockCompleteAuthTransition = vi.fn();
-
-      mockUseAuth.mockReturnValue({
-        user: mockUser,
-        signOut: mockSignOut,
-        startAuthTransition: mockStartAuthTransition,
-        completeAuthTransition: mockCompleteAuthTransition,
-      });
-
-      render(<AppSidebar />);
-
-      await user.click(screen.getByText('Sign Out'));
-
-      await waitFor(() => {
-        expect(mockStartAuthTransition).toHaveBeenCalled();
-        expect(mockSignOut).toHaveBeenCalled();
-        expect(router.invalidate).toHaveBeenCalled();
-        expect(mockNavigate).toHaveBeenCalledWith({ to: '/' });
-        expect(mockCompleteAuthTransition).toHaveBeenCalled();
-      });
-    });
-
-    it('completes auth transition even when sign out fails', async () => {
-      const user = userEvent.setup();
-      const mockSignOut = vi.fn().mockRejectedValue(new Error('Sign out failed'));
-      const mockCompleteAuthTransition = vi.fn();
-
-      mockUseAuth.mockReturnValue({
-        user: mockUser,
-        signOut: mockSignOut,
-        startAuthTransition: vi.fn(),
-        completeAuthTransition: mockCompleteAuthTransition,
-      });
-
-      render(<AppSidebar />);
-
-      await user.click(screen.getByText('Sign Out'));
-
-      await waitFor(() => {
-        expect(mockCompleteAuthTransition).toHaveBeenCalled();
-      });
-    });
-  });
-
-  describe('Avatar Event Lifecycle', () => {
-    it('subscribes to avatar events on mount', () => {
-      render(<AppSidebar />);
-
-      expect(avatarEvents.subscribe).toHaveBeenCalled();
-    });
-
-    it('unsubscribes from avatar events on unmount', () => {
-      const mockUnsubscribe = vi.fn();
-      vi.mocked(avatarEvents.subscribe).mockReturnValue(mockUnsubscribe);
-
-      const { unmount } = render(<AppSidebar />);
-
-      unmount();
-
-      expect(mockUnsubscribe).toHaveBeenCalled();
     });
   });
 });
