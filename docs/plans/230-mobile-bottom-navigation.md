@@ -38,7 +38,7 @@ Owns the "current user's avatar" logic so it isn't duplicated across the sidebar
 
 ### New `web/src/components/AccountMenu/AccountMenu.tsx`
 
-Renders `<DropdownMenu>` + `<DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>` + the shared content (header row pairing `useCurrentAvatar()` → `UserAvatar` with name/email, *My Account* → `/account`, *Theme* Light/Dark/System, *Sign Out*). Owns the behaviors: theme via `next-themes`, account navigation, and the sign-out flow lifted from `AppSidebar.tsx:113-141` — **preserve `startAuthTransition()`/`completeAuthTransition()`** (Sentry capture + `toast.error` on failure), not just `signOut` → invalidate → navigate.
+Renders `<DropdownMenu>` + `<DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>` + the shared content (header row pairing `useCurrentAvatar()` → `UserAvatar` with name/email, *My Account* → `/account`, *Theme* Light/Dark/System (reworked into a segmented control in Commit 3), *Sign Out*). Owns the behaviors: theme via `next-themes`, account navigation, and the sign-out flow lifted from `AppSidebar.tsx:113-141` — **preserve `startAuthTransition()`/`completeAuthTransition()`** (Sentry capture + `toast.error` on failure), not just `signOut` → invalidate → navigate.
 
 > **Deliberate change #2:** the sign-out flow currently calls `router.invalidate()` on the imported `@/router` **singleton** (`AppSidebar.tsx:5,119`). Switch to `const router = useRouter()` so `invalidate()` targets the router from context. This is the idiomatic TanStack pattern (the singleton is for non-component code like `main.tsx`), it lets the flow be integration-tested with **no `@/router` mock**, and it severs the existing circular import `router.tsx → Layout → AppSidebar → @/router` that the current `AppSidebar.test` mocks `@/router` to dodge.
 
@@ -129,10 +129,17 @@ Authenticated branch switches on `useIsMobile()`:
 
 In `AppSidebar`, remove `closeOnMobile`, the interim `onClick`, and the now-unused `useSidebar()`/`isMobile` read (the drawer no longer renders on mobile, so nothing needs closing).
 
+> **As-built — `AccountMenu` changed here, not just at its call sites:**
+>
+> - The theme picker moved from three `DropdownMenuItem`s with trailing checkmarks to a segmented `DropdownMenuRadioGroup` of `DropdownMenuRadioItem`s, each calling `onSelect={(e) => e.preventDefault()}` so the menu stays open on change and the active segment stays visible. `account-menu.integration` correspondingly selects the theme by the `menuitemradio` role instead of `menuitem`.
+> - The `onSelect?` prop added in Commit 1 (to close the drawer on navigation) is removed along with `closeOnMobile` — nothing passes it once the drawer is gone, so the `handleAccountClick` call drops too.
+
 ### `web/index.html` + `web/src/index.css`
 
 - `index.html:6` meta → `width=device-width, initial-scale=1.0, viewport-fit=cover` (required for `env(safe-area-inset-bottom)` to be non-zero on iOS).
 - `index.css` **`:root`** → `--bottom-nav-height: 3.5rem;` (single source for bar height + content padding). Define it in `:root` alongside `--radius`/`--primary` (`index.css:6-14`), **not** in the `@theme inline` block: with `inline` semantics Tailwind doesn't emit a runtime `:root` variable for the token, so the arbitrary `var(--bottom-nav-height)` usages would resolve to nothing. The `@theme inline` block exists only to map Tailwind utility namespaces (`--color-*`, `--radius-*`) — this token is consumed solely via `var()` in arbitrary properties, so it belongs in `:root`.
+
+> **As-built:** split into two `:root` tokens, not one. `--bottom-nav-height: 3.5rem` stays the raw height; a derived `--bottom-nav-space: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))` carries the safe-area inset. Both the `<main>` padding and `MobileBottomNav`'s height consume `--bottom-nav-space` via the Tailwind v4 shorthand `pb-(--bottom-nav-space)` / `h-(--bottom-nav-space)`, rather than inlining the `calc()` at each site as the snippets above show. `MobileBottomNav` keeps its own `pb-[env(safe-area-inset-bottom)]` to seat the tabs above the inset while the bar background fills to the edge.
 
 ### Tests
 
