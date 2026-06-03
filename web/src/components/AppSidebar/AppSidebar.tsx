@@ -1,38 +1,11 @@
 import { useAuth } from '@/hooks/useAuth';
-import { useTeam } from '@/hooks/useTeam';
-import { avatarEvents } from '@/lib/avatarEvents';
-import { router } from '@/router';
-import * as Sentry from '@sentry/react';
-import { useMatches, useNavigate, useRouterState } from '@tanstack/react-router';
-import {
-  BadgeCheck,
-  Check,
-  ChevronUpIcon,
-  CircleUser,
-  HomeIcon,
-  Loader2,
-  LogOut,
-  Monitor,
-  Moon,
-  PlusIcon,
-  SearchIcon,
-  Sun,
-  TrophyIcon,
-  UsersIcon,
-} from 'lucide-react';
-import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import { useCurrentAvatar } from '@/hooks/useCurrentAvatar';
+import { useNavDestinations } from '@/hooks/useNavDestinations';
+import { Link, useMatchRoute, useNavigate, useRouteContext } from '@tanstack/react-router';
+import { ChevronUpIcon, TrophyIcon } from 'lucide-react';
 
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
+import { AccountMenu } from '../AccountMenu/AccountMenu';
+import { UserAvatar } from '../UserAvatar/UserAvatar';
 import {
   Sidebar,
   SidebarContent,
@@ -43,155 +16,20 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from '../ui/sidebar';
 
 export function AppSidebar() {
-  const { user, signOut, startAuthTransition, completeAuthTransition } = useAuth();
-  const { hasTeam } = useTeam();
-  const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const routerState = useRouterState();
-  const { isMobile, setOpenMobile } = useSidebar();
+  const matchRoute = useMatchRoute();
+  const destinations = useNavDestinations();
+  const avatar = useCurrentAvatar();
 
-  const closeOnMobile = () => {
-    if (isMobile) setOpenMobile(false);
-  };
-
-  // Get profile from route context
-  const matches = useMatches();
-  const rootMatch = matches.find((m) => m.routeId === '__root__');
-  const profile = rootMatch?.context?.profile;
-
-  const [uploadedAvatarUrl, setUploadedAvatarUrl] = useState<string | undefined>();
-  const [isImageLoading, setIsImageLoading] = useState(false);
-
-  const avatarUrl = profile?.avatarUrl || undefined;
-  const displayAvatarUrl = uploadedAvatarUrl ?? avatarUrl;
-
-  const [prevDisplayAvatarUrl, setPrevDisplayAvatarUrl] = useState(displayAvatarUrl);
-  if (displayAvatarUrl !== prevDisplayAvatarUrl) {
-    setPrevDisplayAvatarUrl(displayAvatarUrl);
-    if (displayAvatarUrl) {
-      setIsImageLoading(true);
-    }
-  }
-
-  // Get current pathname for active state
-  const currentPath = routerState.location.pathname;
-
-  const handleHome = () => {
-    closeOnMobile();
-    navigate({ to: '/' });
-  };
-
-  const handleBrowseLeagues = () => {
-    closeOnMobile();
-    navigate({ to: '/browse-leagues' });
-  };
-
-  const handleMyLeagues = () => {
-    closeOnMobile();
-    navigate({ to: '/leagues' });
-  };
-
-  const handleMyTeam = () => {
-    closeOnMobile();
-    navigate({ to: '/my-team' });
-  };
-
-  const handleCreateTeam = () => {
-    closeOnMobile();
-    navigate({ to: '/create-team' });
-  };
-
-  const handleAccountClick = () => {
-    closeOnMobile();
-    navigate({ to: '/account' });
-  };
-
-  const handleSignOut = async () => {
-    try {
-      startAuthTransition();
-      await signOut();
-
-      // Invalidate router cache to prevent stale data fetches with invalid token
-      router.invalidate();
-
-      // Navigate to home - auth state change will trigger via onAuthStateChange
-      await navigate({ to: '/' });
-      completeAuthTransition();
-    } catch (error) {
-      completeAuthTransition();
-
-      // Log error to Sentry for monitoring
-      Sentry.captureException(error, {
-        tags: { action: 'sign_out' },
-        level: 'error',
-        contexts: {
-          auth: {
-            userId: user?.id,
-          },
-        },
-      });
-
-      // Show user feedback for critical auth failure
-      toast.error('Failed to sign out. Please try again.');
-    }
-  };
+  const { profile } = useRouteContext({ from: '__root__' });
 
   const handleLogoClick = () => {
-    closeOnMobile();
     navigate({ to: '/' });
   };
-
-  // Listen for avatar update events
-  useEffect(() => {
-    const unsubscribe = avatarEvents.subscribe((newAvatarUrl) => {
-      setUploadedAvatarUrl(newAvatarUrl);
-    });
-
-    return unsubscribe;
-  }, []);
-
-  // Define navigation items based on whether user has a team
-  const navigationItems = [
-    {
-      title: 'Home',
-      icon: HomeIcon,
-      onClick: handleHome,
-      isActive: currentPath === '/',
-    },
-    ...(hasTeam
-      ? [
-          {
-            title: 'My Team',
-            icon: TrophyIcon,
-            onClick: handleMyTeam,
-            isActive: currentPath === '/my-team',
-          },
-          {
-            title: 'My Leagues',
-            icon: UsersIcon,
-            onClick: handleMyLeagues,
-            isActive: currentPath === '/leagues',
-          },
-          {
-            title: 'Browse Leagues',
-            icon: SearchIcon,
-            onClick: handleBrowseLeagues,
-            isActive: currentPath === '/browse-leagues',
-          },
-        ]
-      : [
-          {
-            title: 'Create Team',
-            icon: PlusIcon,
-            onClick: handleCreateTeam,
-            isActive: currentPath === '/create-team',
-          },
-        ]),
-  ];
 
   return (
     <Sidebar variant="inset" collapsible="icon">
@@ -219,15 +57,17 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+              {destinations.map((dest) => (
+                <SidebarMenuItem key={dest.key}>
                   <SidebarMenuButton
-                    onClick={item.onClick}
-                    isActive={item.isActive}
-                    tooltip={item.title}
+                    asChild
+                    isActive={!!matchRoute({ to: dest.to })}
+                    tooltip={dest.title}
                   >
-                    <item.icon />
-                    <span>{item.title}</span>
+                    <Link to={dest.to}>
+                      <dest.icon />
+                      <span>{dest.title}</span>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -238,92 +78,23 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <AccountMenu
+              side="right"
+              trigger={
                 <SidebarMenuButton
                   size="lg"
                   aria-label="Account menu"
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage
-                      src={displayAvatarUrl}
-                      alt="User avatar"
-                      onLoad={() => setIsImageLoading(false)}
-                      onError={() => setIsImageLoading(false)}
-                    />
-                    <AvatarFallback className="rounded-lg">
-                      <CircleUser className="size-6" />
-                    </AvatarFallback>
-                    {isImageLoading && (
-                      <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50">
-                        <Loader2 className="h-4 w-4 animate-spin text-white" />
-                      </div>
-                    )}
-                  </Avatar>
+                  <UserAvatar {...avatar} />
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-semibold">{profile?.displayName || 'User'}</span>
                     <span className="truncate text-xs">{user?.email}</span>
                   </div>
                   <ChevronUpIcon className="ml-auto size-4" />
                 </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                side={isMobile ? 'bottom' : 'right'}
-                align="end"
-                sideOffset={4}
-              >
-                <DropdownMenuLabel className="p-0 font-normal">
-                  <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                    <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarImage
-                        src={displayAvatarUrl}
-                        alt="User avatar"
-                        onLoad={() => setIsImageLoading(false)}
-                        onError={() => setIsImageLoading(false)}
-                      />
-                      <AvatarFallback className="rounded-lg">
-                        <CircleUser className="size-6" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">
-                        {profile?.displayName || 'User'}
-                      </span>
-                      <span className="truncate text-xs">{user?.email}</span>
-                    </div>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleAccountClick}>
-                  <BadgeCheck />
-                  My Account
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Theme</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => setTheme('light')}>
-                  <Sun className="mr-2 size-4" />
-                  Light
-                  {theme === 'light' && <Check className="ml-auto size-4" />}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme('dark')}>
-                  <Moon className="mr-2 size-4" />
-                  Dark
-                  {theme === 'dark' && <Check className="ml-auto size-4" />}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme('system')}>
-                  <Monitor className="mr-2 size-4" />
-                  System
-                  {theme === 'system' && <Check className="ml-auto size-4" />}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              }
+            />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

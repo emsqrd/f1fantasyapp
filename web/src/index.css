@@ -5,6 +5,9 @@
 
 :root {
   --radius: 0.65rem;
+  /* In :root, not @theme inline — that block emits no runtime :root variable, so var() refs would resolve to nothing. */
+  --bottom-nav-height: 3.5rem;
+  --bottom-nav-space: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
   --background: #ffffff;
   --foreground: #09090b;
   --card: #ffffff;
@@ -94,19 +97,6 @@ body {
   min-height: 100vh;
   -webkit-text-size-adjust: 100%; /* Prevents iOS text scaling */
   touch-action: manipulation; /* Improves touch responsiveness */
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
 }
 
 @theme inline {
