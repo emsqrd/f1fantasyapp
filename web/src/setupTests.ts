@@ -22,6 +22,32 @@ class MockResizeObserver {
 }
 globalThis.ResizeObserver = MockResizeObserver;
 
+let mobileViewport = false;
+
+/**
+ * Drives `useIsMobile()` in tests by setting whether `matchMedia` reports the
+ * mobile breakpoint as matching. The `change` listeners are no-ops, so flip
+ * this before mount, not mid-render.
+ */
+export function setMobileViewport(value: boolean): void {
+  mobileViewport = value;
+}
+
+// jsdom has no `matchMedia`. Report the mobile breakpoint query against the
+// `mobileViewport` flag (everything else, e.g. `next-themes`'s color-scheme
+// query, stays unmatched).
+window.matchMedia = ((query: string): MediaQueryList =>
+  ({
+    matches: query.includes('max-width') ? mobileViewport : false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }) as unknown as MediaQueryList) as typeof window.matchMedia;
+
 export const server = setupServer();
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
@@ -29,6 +55,7 @@ beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 afterEach(() => {
   cleanup();
   server.resetHandlers();
+  mobileViewport = false;
 });
 
 afterAll(() => server.close());

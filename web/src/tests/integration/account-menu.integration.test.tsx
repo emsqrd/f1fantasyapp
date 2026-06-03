@@ -31,19 +31,6 @@ beforeAll(() => {
   Element.prototype.hasPointerCapture ??= () => false;
   Element.prototype.releasePointerCapture ??= () => {};
   Element.prototype.scrollIntoView ??= () => {};
-
-  // `next-themes` reads `matchMedia` on mount, which jsdom doesn't implement;
-  // stub it locally so the theme assertion can mount the provider.
-  window.matchMedia ??= ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  })) as unknown as typeof window.matchMedia;
 });
 
 afterEach(() => {
@@ -170,7 +157,7 @@ describe('Account menu', () => {
     renderMenu({ auth: createAuthedAuth(), withTheme: true });
 
     await user.click(await screen.findByRole('button', { name: 'Open account menu' }));
-    await user.click(await screen.findByRole('menuitem', { name: 'Dark' }));
+    await user.click(await screen.findByRole('menuitemradio', { name: 'Dark' }));
 
     await waitFor(() => expect(document.documentElement).toHaveClass('dark'));
   });

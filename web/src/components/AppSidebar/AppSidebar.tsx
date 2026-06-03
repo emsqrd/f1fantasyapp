@@ -16,7 +16,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from '../ui/sidebar';
 
 export function AppSidebar() {
@@ -24,17 +23,11 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const matchRoute = useMatchRoute();
   const destinations = useNavDestinations();
-  const { isMobile, setOpenMobile } = useSidebar();
   const avatar = useCurrentAvatar();
-
-  const closeOnMobile = () => {
-    if (isMobile) setOpenMobile(false);
-  };
 
   const { profile } = useRouteContext({ from: '__root__' });
 
   const handleLogoClick = () => {
-    closeOnMobile();
     navigate({ to: '/' });
   };
 
@@ -71,7 +64,7 @@ export function AppSidebar() {
                     isActive={!!matchRoute({ to: dest.to })}
                     tooltip={dest.title}
                   >
-                    <Link to={dest.to} onClick={closeOnMobile}>
+                    <Link to={dest.to}>
                       <dest.icon />
                       <span>{dest.title}</span>
                     </Link>
@@ -87,7 +80,6 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <AccountMenu
               side="right"
-              onSelect={closeOnMobile}
               trigger={
                 <SidebarMenuButton
                   size="lg"
