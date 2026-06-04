@@ -30,6 +30,7 @@ export type { RenderWithRouterOptions } from './renderWithRouter';
 export {
   buildAuthenticatedLayout,
   buildNoTeamLayout,
+  buildRootRoute,
   buildStubRoute,
   buildTeamRequiredLayout,
   buildUnauthenticatedLayout,

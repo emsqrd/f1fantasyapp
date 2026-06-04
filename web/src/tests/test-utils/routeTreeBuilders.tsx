@@ -3,7 +3,33 @@
 // `createRoute` directly — these helpers won't fit.
 import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
-import { type AnyRoute, Outlet, createRoute, redirect } from '@tanstack/react-router';
+import { getMyTeam } from '@/services/teamService';
+import {
+  type AnyRoute,
+  Outlet,
+  createRootRouteWithContext,
+  createRoute,
+  redirect,
+} from '@tanstack/react-router';
+import type { ReactNode } from 'react';
+
+/**
+ * Test utility: builds a root route that mirrors production's team-fetching root
+ * `beforeLoad` — for an authenticated user it fetches the team (satisfied by the
+ * test's `/me/team` MSW handler) into `context.team`, so guards run against the
+ * real root → context → guard path. Pass `component` when the React tree needs a
+ * provider wrapper (e.g. `TeamContext`); it defaults to a bare `<Outlet />`.
+ */
+export function buildRootRoute({ component }: { component?: () => ReactNode } = {}) {
+  return createRootRouteWithContext<RouterContext>()({
+    beforeLoad: async ({ context }: { context: RouterContext }) => {
+      if (!context.auth.user) return { team: null };
+      const team = await getMyTeam();
+      return { team };
+    },
+    component: component ?? (() => <Outlet />),
+  });
+}
 
 /**
  * Test utility: builds the production `_authenticated` pathless layout route

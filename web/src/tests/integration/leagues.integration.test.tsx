@@ -101,15 +101,9 @@ function authedRouterContext(): Omit<RouterContext, 'auth'> {
   });
 }
 
-// Handler the `requireTeam` guard needs to find a team for the authed user.
-function teamHandler() {
-  return http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam()));
-}
-
 describe('Browse leagues', () => {
   it('renders league rows with name, description, badge, and member count', async () => {
     server.use(
-      teamHandler(),
       http.get(`${API_BASE}/leagues/available`, () =>
         HttpResponse.json([
           createMockLeague({
@@ -154,7 +148,6 @@ describe('Browse leagues', () => {
 
   it('disables the join button for private leagues', async () => {
     server.use(
-      teamHandler(),
       http.get(`${API_BASE}/leagues/available`, () =>
         HttpResponse.json([createMockLeague({ id: 1, name: 'Private League', isPrivate: true })]),
       ),
@@ -174,7 +167,6 @@ describe('Browse leagues', () => {
     const user = userEvent.setup();
 
     server.use(
-      teamHandler(),
       http.get(`${API_BASE}/leagues/available`, () =>
         HttpResponse.json([createMockLeague({ id: 1, name: 'Test League', isPrivate: false })]),
       ),
@@ -199,7 +191,6 @@ describe('Browse leagues', () => {
     const user = userEvent.setup();
 
     server.use(
-      teamHandler(),
       http.get(`${API_BASE}/leagues/available`, () =>
         HttpResponse.json([
           createMockLeague({ id: 1, name: 'League One', isPrivate: false }),
@@ -229,10 +220,7 @@ describe('Browse leagues', () => {
   });
 
   it('renders the empty state when no leagues are available', async () => {
-    server.use(
-      teamHandler(),
-      http.get(`${API_BASE}/leagues/available`, () => HttpResponse.json([])),
-    );
+    server.use(http.get(`${API_BASE}/leagues/available`, () => HttpResponse.json([])));
 
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
@@ -248,7 +236,6 @@ describe('Browse leagues', () => {
 
   it('renders the route errorComponent when the loader fails', async () => {
     server.use(
-      teamHandler(),
       http.get(`${API_BASE}/leagues/available`, () => new HttpResponse(null, { status: 500 })),
     );
 
@@ -268,7 +255,6 @@ describe('Browse leagues', () => {
     const user = userEvent.setup();
 
     server.use(
-      teamHandler(),
       http.get(`${API_BASE}/leagues/available`, () =>
         HttpResponse.json([createMockLeague({ id: 42, name: 'Open Grid', isPrivate: false })]),
       ),
@@ -300,7 +286,6 @@ describe('Browse leagues', () => {
     const user = userEvent.setup();
 
     server.use(
-      teamHandler(),
       http.get(`${API_BASE}/leagues/available`, () =>
         HttpResponse.json([createMockLeague({ id: 99, name: 'Open Grid', isPrivate: false })]),
       ),
@@ -324,7 +309,6 @@ describe('Browse leagues', () => {
 describe('League page', () => {
   it('renders league details returned by the loader', async () => {
     server.use(
-      teamHandler(),
       http.get(`${API_BASE}/leagues/7`, () =>
         HttpResponse.json(createMockLeague({ id: 7, name: 'COTA Champions' })),
       ),
@@ -347,7 +331,6 @@ describe('League page', () => {
 
   it('renders the notFound component when the league does not exist', async () => {
     server.use(
-      teamHandler(),
       http.get(`${API_BASE}/leagues/123`, () => new HttpResponse(null, { status: 404 })),
       http.get(`${API_BASE}/leagues/123/standings`, () =>
         HttpResponse.json(createMockLeagueStandings({ leagueId: 123 })),
@@ -366,7 +349,6 @@ describe('League page', () => {
 
   it('renders the errorComponent when the loader fails with a server error', async () => {
     server.use(
-      teamHandler(),
       http.get(`${API_BASE}/leagues/500`, () => new HttpResponse(null, { status: 500 })),
       http.get(`${API_BASE}/leagues/500/standings`, () =>
         HttpResponse.json(createMockLeagueStandings({ leagueId: 500 })),

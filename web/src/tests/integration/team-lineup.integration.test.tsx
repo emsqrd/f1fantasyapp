@@ -326,10 +326,6 @@ describe('Viewing another team', () => {
     });
 
     server.use(
-      // requireTeam guard — caller has their own team (id 1).
-      http.get(`${API_BASE}/me/team`, () =>
-        HttpResponse.json(createMockTeam({ id: 1, ownerName: 'Caller' })),
-      ),
       http.get(`${API_BASE}/teams/2`, () => HttpResponse.json(otherTeam)),
       http.get(`${API_BASE}/drivers`, () => HttpResponse.json(allDrivers)),
       http.get(`${API_BASE}/constructors`, () => HttpResponse.json(allConstructors)),

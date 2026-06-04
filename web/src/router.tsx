@@ -389,7 +389,7 @@ const accountRoute = createRoute({
 const noTeamLayoutRoute = createRoute({
   getParentRoute: () => authenticatedLayoutRoute,
   id: '_no-team',
-  beforeLoad: async ({ context }) => requireNoTeam(context),
+  beforeLoad: ({ context }) => requireNoTeam(context),
   component: () => <Outlet />,
 });
 
@@ -397,7 +397,7 @@ const noTeamLayoutRoute = createRoute({
  * Create team route - allows users without teams to create their first team.
  *
  * Child of {@link noTeamLayoutRoute}, inherits protection against users with existing teams.
- * Users who already have a team are automatically redirected to `/leagues`.
+ * Users who already have a team are automatically redirected to `/`.
  *
  * @type {import('@tanstack/react-router').Route}
  */
@@ -441,7 +441,7 @@ const createTeamRoute = createRoute({
 const teamRequiredLayoutRoute = createRoute({
   getParentRoute: () => authenticatedLayoutRoute,
   id: '_team-required',
-  beforeLoad: async ({ context }) => await requireTeam(context),
+  beforeLoad: ({ context }) => requireTeam(context),
   component: () => <Outlet />,
 });
 

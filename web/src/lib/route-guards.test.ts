@@ -1,7 +1,7 @@
 import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { supabase } from '@/lib/supabase';
-import { getMyTeam } from '@/services/teamService';
+import { createAuthedAuth, createMockTeam, createTeamContext } from '@/tests/test-utils';
 import type { Session, User } from '@supabase/supabase-js';
 import { redirect } from '@tanstack/react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -18,11 +18,6 @@ vi.mock('@tanstack/react-router', async () => {
     }),
   };
 });
-
-// Mock teamService
-vi.mock('@/services/teamService', () => ({
-  getMyTeam: vi.fn(),
-}));
 
 // Mock Supabase — requireAuth falls back to getSession() when context.auth.user
 // is null to handle the lag between exchangeCodeForSession and React state.
@@ -162,196 +157,69 @@ describe('route-guards', () => {
   });
 
   describe('requireTeam', () => {
-    it('throws redirect when user does not have a team', async () => {
-      vi.mocked(getMyTeam).mockResolvedValue(null);
+    it('throws redirect to /create-team when there is no team in context', () => {
       const context: RouterContext = {
-        auth: {
-          user: createMockUser(),
-          session: createMockSession(),
-          loading: false,
-          isAuthTransitioning: false,
-          signIn: vi.fn(),
-          signUp: vi.fn(),
-          signOut: vi.fn(),
-          startAuthTransition: vi.fn(),
-          completeAuthTransition: vi.fn(),
-        },
-        teamContext: {
-          myTeamId: null,
-          hasTeam: false,
-          setMyTeamId: vi.fn(),
-          refreshMyTeam: vi.fn(),
-        },
+        auth: createAuthedAuth(),
+        teamContext: createTeamContext(),
         team: null,
         profile: null,
         currentSeason: null,
       };
 
-      await expect(() => requireTeam(context)).rejects.toThrow();
+      expect(() => requireTeam(context)).toThrow();
       expect(redirect).toHaveBeenCalledWith({
         to: '/create-team',
         replace: true,
       });
     });
 
-    it('does not throw when user has a team', async () => {
-      vi.mocked(getMyTeam).mockResolvedValue({
-        id: 1,
-        name: 'Test Team',
-        ownerId: 1,
-        ownerName: 'Test Owner',
-        remainingBudget: 100_000_000,
-        drivers: [],
-        constructors: [],
-      });
+    it('returns the team and syncs TeamContext when a team is present', () => {
+      const team = createMockTeam();
+      const teamContext = createTeamContext();
       const context: RouterContext = {
-        auth: {
-          user: createMockUser(),
-          session: createMockSession(),
-          loading: false,
-          isAuthTransitioning: false,
-          signIn: vi.fn(),
-          signUp: vi.fn(),
-          signOut: vi.fn(),
-          startAuthTransition: vi.fn(),
-          completeAuthTransition: vi.fn(),
-        },
-        teamContext: {
-          myTeamId: 1,
-          hasTeam: true,
-          setMyTeamId: vi.fn(),
-          refreshMyTeam: vi.fn(),
-        },
-        team: null,
+        auth: createAuthedAuth(),
+        teamContext,
+        team,
         profile: null,
         currentSeason: null,
       };
 
-      await expect(requireTeam(context)).resolves.not.toThrow();
-    });
-
-    it('delegates to requireAuth when user is not authenticated', async () => {
-      const context: RouterContext = {
-        auth: {
-          user: null,
-          session: null,
-          loading: false,
-          isAuthTransitioning: false,
-          signIn: vi.fn(),
-          signUp: vi.fn(),
-          signOut: vi.fn(),
-          startAuthTransition: vi.fn(),
-          completeAuthTransition: vi.fn(),
-        },
-        teamContext: {
-          myTeamId: null,
-          hasTeam: false,
-          setMyTeamId: vi.fn(),
-          refreshMyTeam: vi.fn(),
-        },
-        team: null,
-        profile: null,
-        currentSeason: null,
-      };
-
-      await expect(() => requireTeam(context)).rejects.toThrow();
+      expect(requireTeam(context)).toEqual({ team });
+      expect(teamContext.setMyTeamId).toHaveBeenCalledWith(team.id);
+      expect(redirect).not.toHaveBeenCalled();
     });
   });
 
   describe('requireNoTeam', () => {
-    it('throws redirect when user already has a team', async () => {
-      vi.mocked(getMyTeam).mockResolvedValue({
-        id: 1,
-        name: 'Test Team',
-        ownerId: 1,
-        ownerName: 'Test Owner',
-        remainingBudget: 100_000_000,
-        drivers: [],
-        constructors: [],
-      });
+    it('throws redirect to / when a team is present in context', () => {
       const context: RouterContext = {
-        auth: {
-          user: createMockUser(),
-          session: createMockSession(),
-          loading: false,
-          isAuthTransitioning: false,
-          signIn: vi.fn(),
-          signUp: vi.fn(),
-          signOut: vi.fn(),
-          startAuthTransition: vi.fn(),
-          completeAuthTransition: vi.fn(),
-        },
-        teamContext: {
-          myTeamId: 1,
-          hasTeam: true,
-          setMyTeamId: vi.fn(),
-          refreshMyTeam: vi.fn(),
-        },
-        team: null,
+        auth: createAuthedAuth(),
+        teamContext: createTeamContext(),
+        team: createMockTeam(),
         profile: null,
         currentSeason: null,
       };
 
-      await expect(() => requireNoTeam(context)).rejects.toThrow();
+      expect(() => requireNoTeam(context)).toThrow();
       expect(redirect).toHaveBeenCalledWith({
-        to: '/leagues',
+        to: '/',
         replace: true,
       });
     });
 
-    it('does not throw when user does not have a team', async () => {
-      vi.mocked(getMyTeam).mockResolvedValue(null);
+    it('returns null and syncs TeamContext when there is no team', () => {
+      const teamContext = createTeamContext();
       const context: RouterContext = {
-        auth: {
-          user: createMockUser(),
-          session: createMockSession(),
-          loading: false,
-          isAuthTransitioning: false,
-          signIn: vi.fn(),
-          signUp: vi.fn(),
-          signOut: vi.fn(),
-          startAuthTransition: vi.fn(),
-          completeAuthTransition: vi.fn(),
-        },
-        teamContext: {
-          myTeamId: null,
-          hasTeam: false,
-          setMyTeamId: vi.fn(),
-          refreshMyTeam: vi.fn(),
-        },
+        auth: createAuthedAuth(),
+        teamContext,
         team: null,
         profile: null,
         currentSeason: null,
       };
 
-      await expect(requireNoTeam(context)).resolves.not.toThrow();
-    });
-
-    it('delegates to requireAuth when user is not authenticated', async () => {
-      const context: RouterContext = {
-        auth: {
-          user: null,
-          session: null,
-          loading: false,
-          isAuthTransitioning: false,
-          signIn: vi.fn(),
-          signUp: vi.fn(),
-          signOut: vi.fn(),
-          startAuthTransition: vi.fn(),
-          completeAuthTransition: vi.fn(),
-        },
-        teamContext: {
-          myTeamId: 1,
-          hasTeam: true,
-          setMyTeamId: vi.fn(),
-          refreshMyTeam: vi.fn(),
-        },
-        team: null,
-        profile: null,
-        currentSeason: null,
-      };
-
-      await expect(() => requireNoTeam(context)).rejects.toThrow();
+      expect(requireNoTeam(context)).toEqual({ team: null });
+      expect(teamContext.setMyTeamId).toHaveBeenCalledWith(null);
+      expect(redirect).not.toHaveBeenCalled();
     });
   });
 });

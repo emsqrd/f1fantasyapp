@@ -63,7 +63,6 @@ function buildLeagueRouteTree() {
 
 function renderLeaguePage(standings: LeagueStandings) {
   server.use(
-    http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam())),
     http.get(`${API_BASE}/leagues/1`, () =>
       HttpResponse.json(
         createMockLeague({ id: 1, name: 'Pit Wall', description: 'A test league' }),
@@ -78,6 +77,7 @@ function renderLeaguePage(standings: LeagueStandings) {
     auth: createAuthedAuth(),
     routerContext: createBaseRouterContext({
       teamContext: createTeamContext({ myTeamId: 1, hasTeam: true }),
+      team: createMockTeam(),
       profile: createMockUserProfile({ id: VIEWER_ID }),
     }),
   });

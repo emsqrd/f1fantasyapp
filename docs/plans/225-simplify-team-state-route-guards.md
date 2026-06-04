@@ -154,9 +154,14 @@ Simplify the `buildTeamRequiredLayout` / `buildNoTeamLayout` wrappers to drop `a
 - Swap its inline root for `buildRootRoute(...)`. (The `_no-team`-under-`_authenticated` nesting was already done in Commit 1; this commit only changes the root.) The existing `/me/team` → 404 handlers now drive "no team" through root into `context.team`, so the form renders via the guard reading null. The submit-flow handler (`/me/team` for `refreshMyTeam`) stays.
 - Any "redirect when a team exists" case asserts the `/` destination.
 
-### Flow tests — no change required
+### Flow tests — inject `team` via `routerContext`, drop dead guard handlers
 
-`team-lineup`, `leagues`, and `league-loader` integration tests already inject a non-null `team` via `routerContext` (`makeRouterContext()` / `authedRouterContext()`), so the refactored `requireTeam` passes by reading that `context.team` directly — no `buildRootRoute` needed there. Their `/me/team` handlers stay where a route **loader** consumes them (e.g. `myTeamRoute`); where the handler only existed for the guard's fetch (e.g. `leagues`, whose loader calls `getMyLeagues`), it's now dead and may be removed for tidiness (strict MSW errors on unhandled *requests*, not unused handlers, so leaving it is harmless). Keeping these untouched concentrates the `buildRootRoute` wiring in the two tests whose subject *is* the guard.
+These mount routes under `_team-required` but aren't _about_ the guard, so they supply `context.team` directly instead of wiring `buildRootRoute`:
+
+- **Already injected a non-null `team`** (`team-lineup`, `leagues`, `league-invite-dialog`): the refactored `requireTeam` reads it and passes — context wiring unchanged.
+- **Relied on the old guard's `/me/team` fetch** (`league-loader`, `leaderboard`): passed `team: null` plus a `/me/team` handler that fed the guard's old fetch. With the guard reading context, that handler no longer fires, so the guard saw `null` and redirected. Fixed by injecting `team` via `routerContext`.
+
+A `/me/team` handler **stays only where a route loader consumes it** (e.g. the `/my-team` lineup tests, whose loader calls `getMyTeam()`). Handlers that existed solely for the old guard fetch are now dead — strict MSW errors on unhandled _requests_, not unused handlers, so harmless to leave — and were removed from `leagues`, `league-invite-dialog`, and the team-by-id case in `team-lineup`.
 
 **Gate:** build/lint/test/format all pass; manually verify the create-team happy path (sign in with no team → `/create-team` → create → lands on `/team/$id` without bouncing back) and that a has-team user hitting `/create-team` lands on `/`.
 
