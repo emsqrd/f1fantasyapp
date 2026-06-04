@@ -146,7 +146,9 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: () => (
     <>
       <Layout />
-      <TanStackRouterDevtools position="bottom-right" />
+      {import.meta.env.VITE_ROUTER_DEVTOOLS === 'true' && (
+        <TanStackRouterDevtools position="bottom-right" />
+      )}
     </>
   ),
   errorComponent: ({ error, reset }) => (

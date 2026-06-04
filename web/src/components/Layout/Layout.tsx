@@ -1,8 +1,11 @@
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/hooks/useAuth';
 import { Outlet, useMatches, useNavigate } from '@tanstack/react-router';
 import { Trophy } from 'lucide-react';
 
 import { AppSidebar } from '../AppSidebar/AppSidebar';
+import { MobileBottomNav } from '../MobileBottomNav/MobileBottomNav';
+import { MobileTopBar } from '../MobileTopBar/MobileTopBar';
 import { Button } from '../ui/button';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '../ui/sidebar';
 
@@ -10,6 +13,7 @@ export function Layout() {
   const { user } = useAuth();
   const matches = useMatches();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   // Get page title from the deepest route match that has staticData.pageTitle
   const matchWithTitle = [...matches]
@@ -47,6 +51,20 @@ export function Layout() {
         </header>
         <Outlet />
       </>
+    );
+  }
+
+  // Render mobile shell for authenticated users on small viewports
+  if (isMobile) {
+    return (
+      <div className="flex min-h-svh flex-col">
+        <MobileTopBar />
+        {/* Bottom padding clears the fixed MobileBottomNav (its height + safe-area inset) */}
+        <main className="flex-1 p-4 pb-(--bottom-nav-space)">
+          <Outlet />
+        </main>
+        <MobileBottomNav />
+      </div>
     );
   }
 
