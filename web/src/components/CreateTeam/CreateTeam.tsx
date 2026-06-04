@@ -19,7 +19,7 @@ export function CreateTeam() {
   const { refreshMyTeam } = useTeam();
   const [error, setError] = useState<string | null>(null);
   const { message, announce } = useLiveRegion();
-  const search = useSearch({ from: '/_no-team/create-team' });
+  const search = useSearch({ from: '/_authenticated/_no-team/create-team' });
 
   const {
     register,

@@ -387,7 +387,7 @@ const accountRoute = createRoute({
  * @type {import('@tanstack/react-router').Route}
  */
 const noTeamLayoutRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => authenticatedLayoutRoute,
   id: '_no-team',
   beforeLoad: async ({ context }) => requireNoTeam(context),
   component: () => <Outlet />,
@@ -757,6 +757,7 @@ const routeTree = rootRoute.addChildren([
   joinInviteRoute,
   authenticatedLayoutRoute.addChildren([
     accountRoute,
+    noTeamLayoutRoute.addChildren([createTeamRoute]),
     teamRequiredLayoutRoute.addChildren([
       leaguesRoute,
       browseLeaguesRoute,
@@ -765,7 +766,6 @@ const routeTree = rootRoute.addChildren([
       myTeamRoute,
     ]),
   ]),
-  noTeamLayoutRoute.addChildren([createTeamRoute]),
 ]);
 
 /**

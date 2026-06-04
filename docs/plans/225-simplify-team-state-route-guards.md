@@ -67,7 +67,11 @@ authenticatedLayoutRoute.addChildren([
 const search = useSearch({ from: '/_authenticated/_no-team/create-team' });
 ```
 
-No guard changes, no test changes — the integration tests build their own route trees and don't import the production tree. An unauthed hit to `/create-team` still redirects to `/`, now via `_authenticated`'s `requireAuth` instead of `requireNoTeam`'s.
+No guard changes. **One test change was required** (an earlier pass of this plan said none): `CreateTeam` reads `useSearch({ from: '/_authenticated/_no-team/create-team' })`, and TanStack resolves that `from` **at runtime** against whatever route tree is mounted — including a test's own tree. `create-team.integration.test.tsx` mounts the real `CreateTeam` under a tree that nested `_no-team` directly under root (route id `/_no-team/create-team`), so after the move the component threw on an unresolvable `from`. Fix: nest `_no-team` under an `_authenticated` layer there (`buildNoTeamLayout(buildAuthenticatedLayout(rootRoute))`) so the test's route id matches production. This mirrors production placement — the integration layer's contract — rather than papering over the string. (The `web:build` type-check only validates `from` against the *production* tree; runtime resolution against a test tree is invisible to it, which is why this surfaced only in `web:test`.)
+
+`route-guards.integration.test.tsx` also has a `_no-team` layer but stubs `create-team` (it never mounts the real `CreateTeam`), so it doesn't resolve `useSearch` and was left untouched in this commit — it still nests `_no-team` under root, a now-divergent placement that Commit 2 aligns. The integration tests otherwise build their own route trees and don't import the production tree.
+
+An unauthed hit to `/create-team` still redirects to `/`, now via `_authenticated`'s `requireAuth` instead of `requireNoTeam`'s.
 
 **Gate:** `npm run web:build`, `web:lint`, `web:test`, `web:format:check` all pass.
 
@@ -147,7 +151,7 @@ Simplify the `buildTeamRequiredLayout` / `buildNoTeamLayout` wrappers to drop `a
 
 ### `web/src/tests/integration/create-team.integration.test.tsx`
 
-- Swap its inline root for `buildRootRoute(...)` and nest `_no-team` under `_authenticated`. The existing `/me/team` → 404 handlers now drive "no team" through root into `context.team`, so the form renders via the guard reading null. The submit-flow handler (`/me/team` for `refreshMyTeam`) stays.
+- Swap its inline root for `buildRootRoute(...)`. (The `_no-team`-under-`_authenticated` nesting was already done in Commit 1; this commit only changes the root.) The existing `/me/team` → 404 handlers now drive "no team" through root into `context.team`, so the form renders via the guard reading null. The submit-flow handler (`/me/team` for `refreshMyTeam`) stays.
 - Any "redirect when a team exists" case asserts the `/` destination.
 
 ### Flow tests — no change required
