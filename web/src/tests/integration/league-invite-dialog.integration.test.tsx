@@ -83,10 +83,6 @@ function ownerRouterContext(): Omit<RouterContext, 'auth'> {
   });
 }
 
-function teamHandler() {
-  return http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam()));
-}
-
 function privateLeagueHandler() {
   return http.get(`${API_BASE}/leagues/${LEAGUE_ID}`, () =>
     HttpResponse.json(
@@ -146,7 +142,6 @@ describe('Share invite dialog', () => {
     );
 
     server.use(
-      teamHandler(),
       privateLeagueHandler(),
       standingsHandler(),
       http.post(`${API_BASE}/leagues/${LEAGUE_ID}/invite`, inviteFetch),
@@ -171,7 +166,6 @@ describe('Share invite dialog', () => {
     const user = userEvent.setup();
 
     server.use(
-      teamHandler(),
       privateLeagueHandler(),
       standingsHandler(),
       http.post(
@@ -205,7 +199,6 @@ describe('Share invite dialog', () => {
     );
 
     server.use(
-      teamHandler(),
       privateLeagueHandler(),
       standingsHandler(),
       http.post(`${API_BASE}/leagues/${LEAGUE_ID}/invite`, inviteFetch),
@@ -237,7 +230,6 @@ describe('Share invite dialog', () => {
     const writeText = stubClipboard();
 
     server.use(
-      teamHandler(),
       privateLeagueHandler(),
       standingsHandler(),
       http.post(`${API_BASE}/leagues/${LEAGUE_ID}/invite`, () =>
@@ -269,7 +261,6 @@ describe('Share invite dialog', () => {
     const user = userEvent.setup();
 
     server.use(
-      teamHandler(),
       privateLeagueHandler(),
       standingsHandler(),
       http.post(`${API_BASE}/leagues/${LEAGUE_ID}/invite`, () =>

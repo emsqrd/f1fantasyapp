@@ -3,10 +3,11 @@ import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
 import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
 import type { TeamContextType } from '@/contexts/TeamContext';
 import { TeamContext } from '@/contexts/TeamContext';
-import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/setupTests';
 import {
+  buildAuthenticatedLayout,
   buildNoTeamLayout,
+  buildRootRoute,
   buildStubRoute,
   createAuthedAuth,
   createBaseRouterContext,
@@ -14,23 +15,25 @@ import {
   createTeamContext,
   renderWithRouter,
 } from '@/tests/test-utils';
-import { Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router';
+import { Outlet, createRoute } from '@tanstack/react-router';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-// `/create-team` lives under the `_no-team` layout in `router.tsx`. The
-// integration tree mirrors that chain so the real `requireNoTeam` guard runs
-// (GET /me/team must return 404 for the form to render). `CreateTeam` calls
-// `useTeam`, which reads from the React `TeamContext`, not router context, so
-// the root wraps `<Outlet />` in a `TeamContext.Provider`. Stub destination
-// routes (`/team/$teamId`, `/leagues`) exist as bare placeholders so navigation
-// targets are resolvable; their rendered titles are how the tests assert
-// post-submit navigation landed on the right URL.
+// `/create-team` lives under the `_authenticated` → `_no-team` layout chain in
+// `router.tsx`. The integration tree mirrors that chain, and the root
+// `beforeLoad` (via `buildRootRoute`) fetches the team into `context.team` —
+// `requireNoTeam` reads it, so GET /me/team must return 404 for the form to
+// render. `CreateTeam` calls `useTeam`, which reads from the React
+// `TeamContext`, not router context, so the root wraps `<Outlet />` in a
+// `TeamContext.Provider`. Stub destination routes (`/team/$teamId`, `/leagues`)
+// exist as bare placeholders so navigation targets are resolvable; their
+// rendered titles are how the tests assert post-submit navigation landed on the
+// right URL.
 function buildCreateTeamRouteTree(teamContextValue: TeamContextType) {
-  const rootRoute = createRootRouteWithContext<RouterContext>()({
+  const rootRoute = buildRootRoute({
     component: () => (
       <TeamContext.Provider value={teamContextValue}>
         <Outlet />
@@ -38,7 +41,8 @@ function buildCreateTeamRouteTree(teamContextValue: TeamContextType) {
     ),
   });
 
-  const noTeamLayoutRoute = buildNoTeamLayout(rootRoute);
+  const authenticatedLayoutRoute = buildAuthenticatedLayout(rootRoute);
+  const noTeamLayoutRoute = buildNoTeamLayout(authenticatedLayoutRoute);
 
   const redirectSearchSchema = z.object({
     redirect: z
@@ -64,7 +68,7 @@ function buildCreateTeamRouteTree(teamContextValue: TeamContextType) {
   const leaguesRoute = buildStubRoute(rootRoute, { path: 'leagues', heading: 'Leagues Page' });
 
   return rootRoute.addChildren([
-    noTeamLayoutRoute.addChildren([createTeamRoute]),
+    authenticatedLayoutRoute.addChildren([noTeamLayoutRoute.addChildren([createTeamRoute])]),
     teamByIdRoute,
     leaguesRoute,
   ]);

@@ -77,21 +77,13 @@ function renderLeagueRoute() {
     routeTree: buildLeagueRouteTree(),
     initialEntry: '/league/1',
     auth: createAuthedAuth(),
-    routerContext: createBaseRouterContext({ teamContext }),
+    routerContext: createBaseRouterContext({ teamContext, team: createMockTeam() }),
   });
-}
-
-// Shared `/me/team` handler — the `_team-required` layout's `requireTeam`
-// guard fetches it on every navigation. Each test layers its own
-// `/leagues/{id}` and `/leagues/{id}/standings` handlers on top.
-function mockMyTeam() {
-  return http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam()));
 }
 
 describe('League route loader', () => {
   it('renders not-found when the league lookup returns 404', async () => {
     server.use(
-      mockMyTeam(),
       http.get(`${API_BASE}/leagues/1`, () => new HttpResponse(null, { status: 404 })),
       http.get(`${API_BASE}/leagues/1/standings`, () =>
         HttpResponse.json(createMockLeagueStandings()),
@@ -105,7 +97,6 @@ describe('League route loader', () => {
 
   it('renders not-found when the standings lookup returns 404', async () => {
     server.use(
-      mockMyTeam(),
       http.get(`${API_BASE}/leagues/1`, () => HttpResponse.json(createMockLeague())),
       http.get(`${API_BASE}/leagues/1/standings`, () => new HttpResponse(null, { status: 404 })),
     );
@@ -117,7 +108,6 @@ describe('League route loader', () => {
 
   it('renders the league page when both endpoints succeed', async () => {
     server.use(
-      mockMyTeam(),
       http.get(`${API_BASE}/leagues/1`, () =>
         HttpResponse.json(createMockLeague({ name: 'Test League' })),
       ),
