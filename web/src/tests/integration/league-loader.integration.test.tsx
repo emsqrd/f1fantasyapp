@@ -13,7 +13,6 @@ import {
   createMockLeague,
   createMockLeagueStandings,
   createMockTeam,
-  createTeamContext,
   renderWithRouter,
 } from '@/tests/test-utils';
 import { Outlet, createRootRouteWithContext, createRoute, notFound } from '@tanstack/react-router';
@@ -72,12 +71,11 @@ function buildLeagueRouteTree() {
 }
 
 function renderLeagueRoute() {
-  const teamContext = createTeamContext({ myTeamId: 1, hasTeam: true });
   renderWithRouter({
     routeTree: buildLeagueRouteTree(),
     initialEntry: '/league/1',
     auth: createAuthedAuth(),
-    routerContext: createBaseRouterContext({ teamContext, team: createMockTeam() }),
+    routerContext: createBaseRouterContext({ team: createMockTeam() }),
   });
 }
 

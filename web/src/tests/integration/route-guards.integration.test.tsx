@@ -1,5 +1,3 @@
-import type { TeamContextType } from '@/contexts/TeamContext';
-import { TeamContext } from '@/contexts/TeamContext';
 import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
@@ -10,11 +8,9 @@ import {
   createAuthedAuth,
   createBaseRouterContext,
   createMockTeam,
-  createTeamContext,
   createUnauthAuth,
   renderWithRouter,
 } from '@/tests/test-utils';
-import { Outlet } from '@tanstack/react-router';
 import { screen } from '@testing-library/react';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -27,14 +23,8 @@ import { describe, expect, it } from 'vitest';
 // and `_authenticated` → `_no-team` (requireNoTeam) for /create-team. Destination
 // routes are bare stubs so a redirect lands on something renderable; their
 // headings are how each test confirms which redirect fired.
-function buildGuardRouteTree(teamContextValue: TeamContextType) {
-  const rootRoute = buildRootRoute({
-    component: () => (
-      <TeamContext.Provider value={teamContextValue}>
-        <Outlet />
-      </TeamContext.Provider>
-    ),
-  });
+function buildGuardRouteTree() {
+  const rootRoute = buildRootRoute();
 
   const homeRoute = buildStubRoute(rootRoute, { path: '/', heading: 'Home Page' });
   const authenticatedLayoutRoute = buildAuthenticatedLayout(rootRoute);
@@ -60,12 +50,11 @@ function buildGuardRouteTree(teamContextValue: TeamContextType) {
 
 describe('route guard wiring', () => {
   it('redirects unauthenticated users from /my-team to /', async () => {
-    const teamContext = createTeamContext();
     renderWithRouter({
-      routeTree: buildGuardRouteTree(teamContext),
+      routeTree: buildGuardRouteTree(),
       initialEntry: '/my-team',
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext({ teamContext }),
+      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Home Page' })).toBeInTheDocument();
@@ -75,12 +64,11 @@ describe('route guard wiring', () => {
   it('redirects authenticated users without a team from /my-team to /create-team', async () => {
     server.use(http.get(`${API_BASE}/me/team`, () => new HttpResponse(null, { status: 404 })));
 
-    const teamContext = createTeamContext();
     renderWithRouter({
-      routeTree: buildGuardRouteTree(teamContext),
+      routeTree: buildGuardRouteTree(),
       initialEntry: '/my-team',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext({ teamContext }),
+      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Create Team Page' })).toBeInTheDocument();
@@ -90,12 +78,11 @@ describe('route guard wiring', () => {
   it('redirects authenticated users with a team from /create-team to /', async () => {
     server.use(http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam())));
 
-    const teamContext = createTeamContext();
     renderWithRouter({
-      routeTree: buildGuardRouteTree(teamContext),
+      routeTree: buildGuardRouteTree(),
       initialEntry: '/create-team',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext({ teamContext }),
+      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Home Page' })).toBeInTheDocument();

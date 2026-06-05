@@ -782,7 +782,6 @@ export const router = createRouter({
   context: {
     // Context will be provided by the RouterProvider in main.tsx
     auth: undefined!,
-    teamContext: undefined!,
     team: undefined!,
     profile: undefined!,
     currentSeason: undefined!,

@@ -18,7 +18,7 @@ import type { ReactNode } from 'react';
  * `beforeLoad` — for an authenticated user it fetches the team (satisfied by the
  * test's `/me/team` MSW handler) into `context.team`, so guards run against the
  * real root → context → guard path. Pass `component` when the React tree needs a
- * provider wrapper (e.g. `TeamContext`); it defaults to a bare `<Outlet />`.
+ * provider wrapper; it defaults to a bare `<Outlet />`.
  */
 export function buildRootRoute({ component }: { component?: () => ReactNode } = {}) {
   return createRootRouteWithContext<RouterContext>()({

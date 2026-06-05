@@ -1,5 +1,4 @@
 import type { AuthContextType } from '@/contexts/AuthContext';
-import type { TeamContextType } from '@/contexts/TeamContext';
 import type { Season } from '@/contracts/Season';
 import type { Team } from '@/contracts/Team';
 import type { UserProfile } from '@/contracts/UserProfile';
@@ -13,9 +12,6 @@ import type { UserProfile } from '@/contracts/UserProfile';
 export interface RouterContext {
   /** Authentication state and methods from AuthContext */
   auth: AuthContextType;
-
-  /** Team state and methods from TeamContext */
-  teamContext: TeamContextType;
 
   /** Actual team data from route */
   team: Team | null;

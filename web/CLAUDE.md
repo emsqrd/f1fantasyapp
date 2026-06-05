@@ -27,12 +27,9 @@ TanStack Router uses **guard-based route protection** with pathless layout route
 
 ### State Management
 
-**Two primary React contexts:**
+**Pattern:** Put state where its reader reaches it. If a guard or loader needs it, it goes in **router context** — `beforeLoad`/`loader` run outside React and can't read a React context. If the component tree needs it, it goes in a **React context**, which distributes app-wide values (auth, theme) down the tree. Auth needs both.
 
-1. **AuthContext** - Authentication state (user, session, loading)
-2. **TeamContext** (`src/contexts/TeamContext.tsx`) - Current user's team-id helpers and a refresh, synced by `requireTeam` in route loaders
-
-**Pattern:** Router context stores data fetched by loaders, React contexts store identity/auth state only. This prevents unnecessary re-renders.
+The user's team lives in router context (`context.team`, fetched by the root `beforeLoad`) — the single source of truth, deliberately not a React context.
 
 ### API/Service Layer
 
@@ -101,7 +98,7 @@ See root `CLAUDE.md` `## Testing Strategy` for cross-cutting rules (unit vs inte
 **Unit-testing route guards** — call guard functions directly, not through components. (Integration tests cover guard wiring by mounting layouts with the real guard attached — see "Frontend Integration Tests" below.)
 
 ```typescript
-const context = { auth: { user: null, loading: false }, teamContext: { hasTeam: false } };
+const context = { auth: { user: null, loading: false }, team: null };
 await expect(requireAuth(context)).rejects.toThrow();
 ```
 
@@ -147,7 +144,7 @@ renderWithRouter({
   routeTree: buildAccountRouteTree(),
   initialEntry: '/account',
   auth: authedAuth,
-  routerContext: { teamContext, team: null, profile: null, currentSeason: null },
+  routerContext: { team: null, profile: null, currentSeason: null },
 });
 ```
 

@@ -15,7 +15,6 @@ import {
   createMockLeagueStandings,
   createMockTeam,
   createMockUserProfile,
-  createTeamContext,
   renderWithRouter,
 } from '@/tests/test-utils';
 import { Outlet, createRootRouteWithContext, createRoute, notFound } from '@tanstack/react-router';
@@ -95,7 +94,6 @@ function buildLeagueRouteTree() {
 
 function authedRouterContext(): Omit<RouterContext, 'auth'> {
   return createBaseRouterContext({
-    teamContext: createTeamContext({ myTeamId: 1, hasTeam: true }),
     team: createMockTeam(),
     profile: createMockUserProfile(),
   });
