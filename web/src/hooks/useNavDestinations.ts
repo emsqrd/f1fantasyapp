@@ -1,4 +1,4 @@
-import { useTeam } from '@/hooks/useTeam';
+import { useRouteContext } from '@tanstack/react-router';
 import { ChartNoAxesGantt, Home, type LucideIcon, Search, Users } from 'lucide-react';
 
 export interface NavDestination {
@@ -10,7 +10,8 @@ export interface NavDestination {
 }
 
 export function useNavDestinations(): NavDestination[] {
-  const { hasTeam } = useTeam();
+  const { team } = useRouteContext({ from: '__root__' });
+  const hasTeam = team !== null;
 
   const destinations: NavDestination[] = [
     { key: 'home', title: 'Home', short: 'Home', icon: Home, to: '/' },

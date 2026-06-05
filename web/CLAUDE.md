@@ -79,7 +79,7 @@ See root `CLAUDE.md` `## Testing Strategy` for cross-cutting rules (unit vs inte
 
 2. **Hooks** (`useLineupPicker`, `useAvatarUpload`, `useLiveRegion`)
    - Use a direct hook test only when the hook has enough internal logic (state machine, async branches, error rollback) that testing through a consumer would mean more setup than assertions.
-   - Trivial passthroughs (`useAuth`, `useTeam`) are honestly covered by integration tests of their consumers — don't add a direct test just to assert "context returns context."
+   - Trivial passthroughs (`useAuth`) are honestly covered by integration tests of their consumers — don't add a direct test just to assert "context returns context."
 
 **Container / parent components are not a separate layer.** Their behavior — hook-state drives UI, callbacks wired through children, dialog roles, multi-component round-trips — belongs in the integration layer where the real hook and real children run together. Mocking a hook to assert "given hook state X, render UI Y" is shallow rendering by another name; it ties tests to implementation and doesn't catch the wiring bugs it claims to.
 
