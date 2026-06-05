@@ -38,7 +38,7 @@ So `refreshMyTeam()` is replaced by **nothing** — not by `router.invalidate()`
 - **`CreateTeam` refresh:** **drop `refreshMyTeam` with no replacement.** No `router.invalidate()`. Rely on the post-create `navigate()` re-running the root `beforeLoad`. Diverges from the issue's "router invalidation" wording, which the issue itself invites ("validate the approach independently").
 - **`TeamContext`:** **removed entirely** — every field is derivable from `context.team`, and after dropping the side-effects and `refreshMyTeam` it serves no purpose.
 - **`teamRoute.beforeLoad` self-redirect:** read `context.team?.id` instead of `context.teamContext.myTeamId`.
-- **Commits:** two, gated — **sever the mirror, then delete it.** Commit 1 routes all team reads/writes through router context, leaving the `TeamContext` code inert; Commit 2 deletes the inert code and its test scaffolding. (See the `InnerApp` note below for why the `setMyTeamId` removal must land in Commit 1, not Commit 2.)
+- **Commits:** two, gated — **sever the mirror, then delete it.** Commit 1 routes all team reads/writes through router context, leaving the `TeamContext` code inert; Commit 2 deletes the inert code and its test scaffolding. (See the `InnerApp` note below for why the `setMyTeamId` removal must land in Commit 1, not Commit 2. Deleting `TeamContext.test.tsx` lands in Commit 1 for the same reason — it drives the retired `useTeam` contract, so re-backing `useTeam` breaks its compilation immediately.)
 - **Docs:** **no ADR, no `CONTEXT.md` change** (mirrors #225) — this is routing/state implementation reaching the *less*-surprising idiomatic shape (the mirror was the deviation), not a domain term or a hard-to-reverse trade-off. Update web `CLAUDE.md`'s State Management section + the guard unit-test example in Commit 2.
 
 ### The `InnerApp` bridge (gap found in review)
@@ -52,7 +52,7 @@ This is why **Commit 1 must also remove the `setMyTeamId` writes** (both guards 
 The `teamRoute.beforeLoad` self-redirect (`myTeamId === teamId → /my-team`) is **currently untested at the unit/integration level** — `team-lineup`'s mirrored `team/$teamId` route has no `beforeLoad`, so its "viewing another team" test passes purely via the loader and its `myTeamId: 1` override is dead. Two facts shape the coverage plan:
 
 - **E2E `team.spec.ts:15`** ("new user creates a team and lands on /my-team") already exercises the full create → self-redirect journey through the real stack. This is the **primary regression guard** for dropping `refreshMyTeam`: it passes only if the self-redirect fires post-create without the manual refresh.
-- Changing the `beforeLoad`'s left operand (`myTeamId` → `context.team?.id`) warrants a **fast** test too. Add the production `beforeLoad` to `team-lineup`'s `buildTeamByIdRouteTree` and assert both branches (own team → `/my-team`; another team → renders read-only). This also retroactively closes the pre-existing gap.
+- Changing the `beforeLoad`'s left operand (`myTeamId` → `context.team?.id`) warrants a **fast** test too. Both branches (own team → `/my-team`; another team → renders read-only) are asserted in the new `view-team` integration file (see Commit 1 — the `/team/$teamId` tests were split out of `team-lineup` during implementation). This also retroactively closes the pre-existing gap.
 
 No elaborate stateful-handler test is added to `create-team` — that would duplicate E2E `team.spec.ts:15` on the same path (the redundant-overlap anti-pattern in the testing strategy).
 
@@ -82,7 +82,7 @@ After this commit, the user's team flows only through `context.team`. `TeamConte
   ```
   Drop the `TeamContext` import and the provider-guard throw. `useNavDestinations` and `JoinInvite` keep destructuring `hasTeam` unchanged.
 - **`web/src/router.tsx`**
-  - `teamRoute.beforeLoad` (~line 614): `context.team?.id === validationResult.data.teamId` (was `context.teamContext.myTeamId === …`).
+  - `teamRoute.beforeLoad` (~line 608): `context.team?.id === validationResult.data.teamId` (was `context.teamContext.myTeamId === …`).
   - Root `beforeLoad`: delete both `context.teamContext.setMyTeamId(...)` calls (success + degraded-catch paths) and their `// Sync … TeamContext` comments. The returned `{ profile, currentSeason, team }` is unchanged.
 - **`web/src/lib/route-guards.ts`** — delete the `context.teamContext.setMyTeamId(...)` line and its comment from both `requireTeam` and `requireNoTeam`. Guards stay synchronous `context.team` readers; their return types are unchanged.
 - **`web/src/components/CreateTeam/CreateTeam.tsx`** — remove the `useTeam` import, `const { refreshMyTeam } = useTeam()`, and the `await refreshMyTeam()` call. The `createTeam()` → `navigate()` sequence is otherwise unchanged.
@@ -91,19 +91,22 @@ After this commit, the user's team flows only through `context.team`. `TeamConte
 ### Tests
 
 - **`web/src/hooks/useNavDestinations.test.tsx`** — **delete.** It renders the hook under a bare `TeamContext.Provider`, which no longer feeds `useTeam`; rebuilding its harness to stand up a router would just to assert "`hasTeam` gates three nav items" duplicates `navigation.integration.test.tsx`, which verifies both branches through the real sidebar. (Web `CLAUDE.md`: trivial passthroughs are covered by consumer integration tests.)
+- **`web/src/contexts/TeamContext.test.tsx`** — **delete (pulled forward from Commit 2).** It drives the old `useTeam`/`TeamProvider` contract (`myTeamId`/`setMyTeamId`/`refreshMyTeam`); re-backing `useTeam` here makes it neither compile (those fields are gone from the return type) nor run (it would call `useRouteContext` with no router). Same rationale as the `InnerApp` bridge — anything the `useTeam` rewrite breaks must land in Commit 1.
 - **`web/src/tests/integration/navigation.integration.test.tsx`** — drop the `TeamContext.Provider` wrapper and `teamContextValue` param from `buildNavRouteTree`; the nav reads `context.team` now. Inject `team: createMockTeam()` (has-team) / `team: null` (no-team) via `routerContext`; the `hasTeam` option toggles `team`. (This tree currently relies solely on the Provider — it injects no `team` today, so this is a required change.)
 - **`web/src/tests/integration/join-invite.integration.test.tsx`** — same: drop the Provider wrapper from `buildJoinInviteRouteTree`; in `makeRouterContext`, replace `createTeamContext({ myTeamId: 1, hasTeam: true })` with `team: createMockTeam()` and the no-team cases with `team: null`. (Also currently injects no `team`.)
 - **`web/src/tests/integration/create-team.integration.test.tsx`** — `CreateTeam` no longer reads `useTeam`, so drop the `TeamContext.Provider` wrapper, the `teamContextValue` param, and the `createTeamContext`/`TeamContext` imports; use `createBaseRouterContext()` for `routerContext`. The existing assertions hold: GET `/me/team` → 404 renders the form (root `beforeLoad` → `context.team` null → `requireNoTeam`); the success test still lands on the `team/$teamId` stub (a bare stub with no self-redirect); the redirect-search-param test still lands on `/leagues`.
-- **`web/src/tests/integration/team-lineup.integration.test.tsx`** — add the production self-redirect to `buildTeamByIdRouteTree`'s `team/$teamId` route and a `/my-team` stub sibling:
-  ```ts
-  beforeLoad: ({ context, params }) => {
-    const teamId = Number(params.teamId);
-    if (Number.isInteger(teamId) && context.team?.id === teamId) {
-      throw redirect({ to: '/my-team', replace: true });
-    }
-  },
-  ```
-  Add a **positive** case (`initialEntry: '/team/1'` with `context.team` id 1 → asserts the `/my-team` stub; no `/teams/1` handler needed — the `beforeLoad` redirect short-circuits the loader) and keep the **negative** "viewing another team" case (`/team/2`, `context.team` id 1 → renders read-only), which now genuinely exercises the guard. Drop the dead `makeRouterContext({ myTeamId: 1 })` override → `makeRouterContext()`.
+- **`team-lineup.integration.test.tsx` → split into two files.** The file was carrying both the `/my-team` lineup tests and the `/team/$teamId` tests; the name only described the former (filed as issue #243). Split during implementation:
+  - **`web/src/tests/integration/team-lineup.integration.test.tsx`** keeps the `/my-team` lineup tests (picker filtering, budget, lock, captain), unchanged except for the fixture/render plumbing below.
+  - **`web/src/tests/integration/view-team.integration.test.tsx`** (new) owns the `/team/$teamId` route: the production self-redirect `beforeLoad` on `buildTeamByIdRouteTree` (+ a `/my-team` stub sibling), a **positive** case (`/team/1`, `context.team` id 1 → `/my-team` stub; no `/teams/1` handler needed — the redirect short-circuits the loader) and the **negative** "viewing another team" case (`/team/2` → read-only), which now genuinely exercises the guard:
+    ```ts
+    beforeLoad: ({ context, params }) => {
+      const teamId = Number(params.teamId);
+      if (Number.isInteger(teamId) && context.team?.id === teamId) {
+        throw redirect({ to: '/my-team', replace: true });
+      }
+    },
+    ```
+- **Test-utils (this commit, not Commit 2).** `mockFactories.ts` was missing factories for the only two core entities that lacked them — add `createMockSeason` + `createMockRaceWeekend`, and barrel-export them (plus the pre-existing `createMockDriverList`/`createMockConstructorList`) from `test-utils/index.ts`. With those primitives, the two team files build their driver/constructor pools and races inline and share nothing through a bespoke module: each defines a local `renderMyTeam()` / `renderTeamById(initialEntry)` helper (mirroring `navigation`'s `renderNav`) whose router context is just `createBaseRouterContext({ team: createMockTeam(), currentSeason: createMockSeason() })`. No `teamFixtures` module, no team-specific context preset, no `makeRouterContext`.
 - **`web/src/lib/route-guards.test.ts`** — delete the two `expect(teamContext.setMyTeamId).toHaveBeenCalledWith(...)` assertions (guards no longer write). Keep `teamContext` in the inline context objects for now (still a required `RouterContext` field until Commit 2). Keep the `context.team`-varying redirect/return cases.
 - **`web/src/InnerApp.test.tsx`** — `InnerApp` no longer calls `useTeam`; remove the `vi.mock('./hooks/useTeam')`, `mockUseTeam`, and `createMockTeamContext` machinery. The loading/transition-state assertions are otherwise unaffected.
 
@@ -130,10 +133,8 @@ Pure removal of the now-dead context, its type, and test scaffolding. Nothing re
 
 ### Tests
 
-- **Delete** `web/src/contexts/TeamContext.test.tsx`.
 - **`web/src/lib/route-guards.test.ts`** — remove `teamContext` from the inline context objects (the field is gone from `RouterContext`) and the `createTeamContext` import.
-- **`web/src/InnerApp.test.tsx`** — remove the residual `TeamContextType` import / any leftover teamContext references.
-- **Provider-wrapper / `teamContext`-field cleanup** — drop the now-vestigial `TeamContext.Provider` wrappers and/or `teamContext` `routerContext` fields (and the `createTeamContext`/`TeamContext`/`TeamContextType` imports) from: `route-guards.integration` (Provider was only scaffolding for the removed `setMyTeamId`), `root-routing.integration` (Provider is vestigial; `IndexRoute` reads router context and `team` is already injected), `leaderboard`, `leagues`, `league-invite-dialog`, `league-loader`, and `team-lineup` (also drop its now-unused `teamContextOverrides` param). All of these already inject a non-null `team`, so removing `teamContext` is the only change.
+- **Provider-wrapper / `teamContext`-field cleanup** — drop the now-vestigial `TeamContext.Provider` wrappers and/or `teamContext` `routerContext` fields (and the `createTeamContext`/`TeamContext`/`TeamContextType` imports) from: `route-guards.integration` (Provider was only scaffolding for the removed `setMyTeamId`), `root-routing.integration` (Provider is vestigial; `IndexRoute` reads router context and `team` is already injected), `leaderboard`, `leagues`, `league-invite-dialog`, and `league-loader`. All of these already inject a non-null `team`, so removing `teamContext` is the only change. (`team-lineup`/`view-team` need no change — their render helpers call `createBaseRouterContext` without `teamContext`. `TeamContext.test.tsx` and `InnerApp.test.tsx`'s `teamContext` machinery were already removed in Commit 1.)
 
 ### Docs
 

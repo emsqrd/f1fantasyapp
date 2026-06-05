@@ -1,5 +1,4 @@
 import { useLiveRegion } from '@/hooks/useLiveRegion';
-import { useTeam } from '@/hooks/useTeam';
 import { createTeam } from '@/services/teamService';
 import { type CreateTeamFormData, createTeamFormSchema } from '@/validations/teamSchemas';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,7 +15,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 export function CreateTeam() {
   const navigate = useNavigate();
-  const { refreshMyTeam } = useTeam();
   const [error, setError] = useState<string | null>(null);
   const { message, announce } = useLiveRegion();
   const search = useSearch({ from: '/_authenticated/_no-team/create-team' });
@@ -40,9 +38,6 @@ export function CreateTeam() {
       const createdTeam = await createTeam({
         name: formData.teamName,
       });
-
-      // Refresh context to update myTeamId
-      await refreshMyTeam();
 
       // Navigate - TanStack Router handles navigation transitions
       if (search.redirect) {

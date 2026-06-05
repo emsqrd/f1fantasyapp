@@ -114,9 +114,6 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
           getCurrentSeason(),
         ]);
 
-        // Sync team ID with TeamContext for components that need it
-        context.teamContext.setMyTeamId(team?.id ?? null);
-
         return { profile, currentSeason, team };
       } catch (error) {
         // Gracefully degrade if profile/team fetching fails
@@ -134,9 +131,6 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
             },
           },
         });
-
-        // Ensure TeamContext is in a known state
-        context.teamContext.setMyTeamId(null);
 
         return { profile: null, currentSeason: null, team: null };
       }
@@ -611,7 +605,7 @@ const teamRoute = createRoute({
   beforeLoad: async ({ context, params }) => {
     // Redirect to /my-team if viewing own team (runs before loader/render)
     const validationResult = teamIdParamsSchema.safeParse(params);
-    if (validationResult.success && context.teamContext.myTeamId === validationResult.data.teamId) {
+    if (validationResult.success && context.team?.id === validationResult.data.teamId) {
       throw redirect({ to: '/my-team', replace: true });
     }
   },

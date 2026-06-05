@@ -173,19 +173,17 @@ describe('route-guards', () => {
       });
     });
 
-    it('returns the team and syncs TeamContext when a team is present', () => {
+    it('returns the team when a team is present', () => {
       const team = createMockTeam();
-      const teamContext = createTeamContext();
       const context: RouterContext = {
         auth: createAuthedAuth(),
-        teamContext,
+        teamContext: createTeamContext(),
         team,
         profile: null,
         currentSeason: null,
       };
 
       expect(requireTeam(context)).toEqual({ team });
-      expect(teamContext.setMyTeamId).toHaveBeenCalledWith(team.id);
       expect(redirect).not.toHaveBeenCalled();
     });
   });
@@ -207,18 +205,16 @@ describe('route-guards', () => {
       });
     });
 
-    it('returns null and syncs TeamContext when there is no team', () => {
-      const teamContext = createTeamContext();
+    it('returns null when there is no team', () => {
       const context: RouterContext = {
         auth: createAuthedAuth(),
-        teamContext,
+        teamContext: createTeamContext(),
         team: null,
         profile: null,
         currentSeason: null,
       };
 
       expect(requireNoTeam(context)).toEqual({ team: null });
-      expect(teamContext.setMyTeamId).toHaveBeenCalledWith(null);
       expect(redirect).not.toHaveBeenCalled();
     });
   });

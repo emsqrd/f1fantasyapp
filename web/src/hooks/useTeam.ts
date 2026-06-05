@@ -1,12 +1,6 @@
-import { TeamContext } from '@/contexts/TeamContext.ts';
-import { useContext } from 'react';
+import { useRouteContext } from '@tanstack/react-router';
 
 export function useTeam() {
-  const context = useContext(TeamContext);
-
-  if (context === undefined) {
-    throw new Error('useTeam must be used within a TeamProvider');
-  }
-
-  return context;
+  const { team } = useRouteContext({ from: '__root__' });
+  return { team, hasTeam: team !== null };
 }

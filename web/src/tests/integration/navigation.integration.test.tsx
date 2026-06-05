@@ -1,6 +1,4 @@
 import { Layout } from '@/components/Layout/Layout';
-import type { TeamContextType } from '@/contexts/TeamContext';
-import { TeamContext } from '@/contexts/TeamContext';
 import type { UserProfile } from '@/contracts/UserProfile';
 import type { RouterContext } from '@/lib/router-context';
 import { setMobileViewport } from '@/setupTests';
@@ -8,8 +6,8 @@ import {
   buildStubRoute,
   createAuthedAuth,
   createBaseRouterContext,
+  createMockTeam,
   createMockUserProfile,
-  createTeamContext,
   renderWithRouter,
 } from '@/tests/test-utils';
 import { createRootRouteWithContext } from '@tanstack/react-router';
@@ -25,15 +23,9 @@ beforeAll(() => {
   Element.prototype.scrollIntoView ??= () => {};
 });
 
-// `useNavDestinations` reads team presence from the React `TeamContext`, not
-// router context, so it must wrap the root component as production does.
-function buildNavRouteTree(teamContextValue: TeamContextType) {
+function buildNavRouteTree() {
   const rootRoute = createRootRouteWithContext<RouterContext>()({
-    component: () => (
-      <TeamContext.Provider value={teamContextValue}>
-        <Layout />
-      </TeamContext.Provider>
-    ),
+    component: () => <Layout />,
   });
 
   return rootRoute.addChildren([
@@ -52,14 +44,12 @@ function renderNav(options: {
 }) {
   setMobileViewport(options.mobile);
 
-  const teamContext = createTeamContext(options.hasTeam ? { myTeamId: 1, hasTeam: true } : {});
-
   return renderWithRouter({
-    routeTree: buildNavRouteTree(teamContext),
+    routeTree: buildNavRouteTree(),
     initialEntry: options.initialEntry ?? '/',
     auth: createAuthedAuth(),
     routerContext: createBaseRouterContext({
-      teamContext,
+      team: options.hasTeam ? createMockTeam() : null,
       profile: options.profile ?? createMockUserProfile(),
     }),
   });

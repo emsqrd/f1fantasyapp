@@ -3,15 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { InnerApp } from './InnerApp';
 import type { AuthContextType } from './contexts/AuthContext';
-import type { TeamContextType } from './contexts/TeamContext';
 // Import after mocks are set up
 import { useAuth } from './hooks/useAuth';
-import { useTeam } from './hooks/useTeam';
 import { router } from './router';
 
 // Mock dependencies
 vi.mock('./hooks/useAuth');
-vi.mock('./hooks/useTeam');
 vi.mock('./router', () => ({
   router: {
     invalidate: vi.fn(),
@@ -24,7 +21,6 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 const mockUseAuth = vi.mocked(useAuth);
-const mockUseTeam = vi.mocked(useTeam);
 const mockRouterInvalidate = vi.mocked(router.invalidate);
 
 const createMockAuthContext = (
@@ -43,17 +39,9 @@ const createMockAuthContext = (
   completeAuthTransition: vi.fn(),
 });
 
-const createMockTeamContext = (): TeamContextType => ({
-  hasTeam: false,
-  myTeamId: null,
-  setMyTeamId: vi.fn(),
-  refreshMyTeam: vi.fn(),
-});
-
 describe('InnerApp', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseTeam.mockReturnValue(createMockTeamContext());
   });
 
   afterEach(() => {

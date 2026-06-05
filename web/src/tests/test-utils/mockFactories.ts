@@ -1,6 +1,8 @@
 import type { League } from '@/contracts/League';
 import type { LeagueStandings } from '@/contracts/LeagueStandings';
+import type { RaceWeekend } from '@/contracts/RaceWeekend';
 import type { Constructor, Driver } from '@/contracts/Role';
+import type { Season } from '@/contracts/Season';
 import type { Team, TeamConstructor, TeamDriver } from '@/contracts/Team';
 import type { UserProfile } from '@/contracts/UserProfile';
 
@@ -357,6 +359,45 @@ export function createMockUserProfile(overrides: Partial<UserProfile> = {}): Use
     lastName: 'User',
     displayName: 'Test User',
     avatarUrl: '',
+    ...overrides,
+  };
+}
+
+/**
+ * Test utility: Creates a mock Season with sensible defaults (the current season).
+ *
+ * @example
+ * const season = createMockSeason({ year: 2025, isCurrent: false });
+ */
+export function createMockSeason(overrides: Partial<Season> = {}): Season {
+  return {
+    id: 1,
+    year: 2026,
+    startDate: '2026-03-01',
+    endDate: '2026-12-01',
+    isCurrent: true,
+    ...overrides,
+  };
+}
+
+/**
+ * Test utility: Creates a mock RaceWeekend with sensible defaults (a current,
+ * not-yet-locked weekend). Pass past `raceDate`/`lockDeadline` for a locked one.
+ *
+ * @example
+ * const locked = createMockRaceWeekend({ raceDate: '2020-06-01', lockDeadline: '2020-05-31T12:00:00Z' });
+ */
+export function createMockRaceWeekend(overrides: Partial<RaceWeekend> = {}): RaceWeekend {
+  return {
+    id: 1,
+    seasonId: 1,
+    round: 5,
+    name: 'Spanish Grand Prix',
+    circuit: { id: 1, name: 'Circuit de Catalunya', location: 'Barcelona', country: 'Spain' },
+    raceDate: '2030-06-01',
+    lockDeadline: '2030-05-31T12:00:00Z',
+    isCurrent: true,
+    weekendFormat: 0,
     ...overrides,
   };
 }
