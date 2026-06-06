@@ -1,7 +1,7 @@
 import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { supabase } from '@/lib/supabase';
-import { createAuthedAuth, createMockTeam, createTeamContext } from '@/tests/test-utils';
+import { createAuthedAuth, createMockTeam } from '@/tests/test-utils';
 import type { Session, User } from '@supabase/supabase-js';
 import { redirect } from '@tanstack/react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -72,12 +72,6 @@ describe('route-guards', () => {
           startAuthTransition: vi.fn(),
           completeAuthTransition: vi.fn(),
         },
-        teamContext: {
-          myTeamId: null,
-          hasTeam: false,
-          setMyTeamId: vi.fn(),
-          refreshMyTeam: vi.fn(),
-        },
         team: null,
         profile: null,
         currentSeason: null,
@@ -102,12 +96,6 @@ describe('route-guards', () => {
           signOut: vi.fn(),
           startAuthTransition: vi.fn(),
           completeAuthTransition: vi.fn(),
-        },
-        teamContext: {
-          myTeamId: null,
-          hasTeam: false,
-          setMyTeamId: vi.fn(),
-          refreshMyTeam: vi.fn(),
         },
         team: null,
         profile: null,
@@ -140,12 +128,6 @@ describe('route-guards', () => {
           startAuthTransition: vi.fn(),
           completeAuthTransition: vi.fn(),
         },
-        teamContext: {
-          myTeamId: null,
-          hasTeam: false,
-          setMyTeamId: vi.fn(),
-          refreshMyTeam: vi.fn(),
-        },
         team: null,
         profile: null,
         currentSeason: null,
@@ -160,7 +142,6 @@ describe('route-guards', () => {
     it('throws redirect to /create-team when there is no team in context', () => {
       const context: RouterContext = {
         auth: createAuthedAuth(),
-        teamContext: createTeamContext(),
         team: null,
         profile: null,
         currentSeason: null,
@@ -173,19 +154,16 @@ describe('route-guards', () => {
       });
     });
 
-    it('returns the team and syncs TeamContext when a team is present', () => {
+    it('returns the team when a team is present', () => {
       const team = createMockTeam();
-      const teamContext = createTeamContext();
       const context: RouterContext = {
         auth: createAuthedAuth(),
-        teamContext,
         team,
         profile: null,
         currentSeason: null,
       };
 
       expect(requireTeam(context)).toEqual({ team });
-      expect(teamContext.setMyTeamId).toHaveBeenCalledWith(team.id);
       expect(redirect).not.toHaveBeenCalled();
     });
   });
@@ -194,7 +172,6 @@ describe('route-guards', () => {
     it('throws redirect to / when a team is present in context', () => {
       const context: RouterContext = {
         auth: createAuthedAuth(),
-        teamContext: createTeamContext(),
         team: createMockTeam(),
         profile: null,
         currentSeason: null,
@@ -207,18 +184,15 @@ describe('route-guards', () => {
       });
     });
 
-    it('returns null and syncs TeamContext when there is no team', () => {
-      const teamContext = createTeamContext();
+    it('returns null when there is no team', () => {
       const context: RouterContext = {
         auth: createAuthedAuth(),
-        teamContext,
         team: null,
         profile: null,
         currentSeason: null,
       };
 
       expect(requireNoTeam(context)).toEqual({ team: null });
-      expect(teamContext.setMyTeamId).toHaveBeenCalledWith(null);
       expect(redirect).not.toHaveBeenCalled();
     });
   });

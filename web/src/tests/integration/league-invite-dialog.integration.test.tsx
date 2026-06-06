@@ -14,7 +14,6 @@ import {
   createMockLeagueStandings,
   createMockTeam,
   createMockUserProfile,
-  createTeamContext,
   renderWithRouter,
 } from '@/tests/test-utils';
 import type { User } from '@supabase/supabase-js';
@@ -77,7 +76,6 @@ const ownerAuth = () => createAuthedAuth({ user: { id: 'user-owner' } as User })
 // (the button only shows for the owner of a private league).
 function ownerRouterContext(): Omit<RouterContext, 'auth'> {
   return createBaseRouterContext({
-    teamContext: createTeamContext({ myTeamId: 1, hasTeam: true }),
     team: createMockTeam(),
     profile: createMockUserProfile({ id: OWNER_ID }),
   });

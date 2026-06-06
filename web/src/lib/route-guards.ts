@@ -39,9 +39,6 @@ export function requireTeam(context: RouterContext): { team: Team } {
     });
   }
 
-  // Sync with TeamContext for components that need it
-  context.teamContext.setMyTeamId(context.team.id);
-
   return { team: context.team };
 }
 
@@ -57,9 +54,6 @@ export function requireNoTeam(context: RouterContext): { team: null } {
       replace: true,
     });
   }
-
-  // Sync with TeamContext for components that need it
-  context.teamContext.setMyTeamId(null);
 
   return { team: null };
 }

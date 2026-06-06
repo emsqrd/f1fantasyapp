@@ -1,6 +1,4 @@
 import { IndexRoute } from '@/components/IndexRoute/IndexRoute';
-import type { TeamContextType } from '@/contexts/TeamContext';
-import { TeamContext } from '@/contexts/TeamContext';
 import type { RouterContext } from '@/lib/router-context';
 import { getRaceWeekends } from '@/services/raceWeekendService';
 import { getMyStandings } from '@/services/standingsService';
@@ -11,7 +9,6 @@ import {
   createBaseRouterContext,
   createMockTeam,
   createMockUserProfile,
-  createTeamContext,
   createUnauthAuth,
   renderWithRouter,
 } from '@/tests/test-utils';
@@ -28,13 +25,9 @@ const CURRENT_SEASON = {
   isCurrent: true,
 };
 
-function buildIndexRouteTree(teamContextValue: TeamContextType) {
+function buildIndexRouteTree() {
   const rootRoute = createRootRouteWithContext<RouterContext>()({
-    component: () => (
-      <TeamContext.Provider value={teamContextValue}>
-        <Outlet />
-      </TeamContext.Provider>
-    ),
+    component: () => <Outlet />,
   });
 
   const indexRoute = createRoute({
@@ -61,12 +54,11 @@ function buildIndexRouteTree(teamContextValue: TeamContextType) {
 
 describe('routing at /', () => {
   it('renders the landing page for unauthenticated users', async () => {
-    const teamContext = createTeamContext();
     renderWithRouter({
-      routeTree: buildIndexRouteTree(teamContext),
+      routeTree: buildIndexRouteTree(),
       initialEntry: '/',
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext({ teamContext }),
+      routerContext: createBaseRouterContext(),
     });
 
     expect(
@@ -106,13 +98,11 @@ describe('routing at /', () => {
       ),
     );
 
-    const teamContext = createTeamContext({ myTeamId: 1, hasTeam: true });
     renderWithRouter({
-      routeTree: buildIndexRouteTree(teamContext),
+      routeTree: buildIndexRouteTree(),
       initialEntry: '/',
       auth: createAuthedAuth(),
       routerContext: createBaseRouterContext({
-        teamContext,
         profile: createMockUserProfile({ firstName: 'Ada' }),
         team: createMockTeam({ name: 'Red Bull Racing' }),
         currentSeason: CURRENT_SEASON,
@@ -135,13 +125,11 @@ describe('routing at /', () => {
       ),
     );
 
-    const teamContext = createTeamContext({ myTeamId: 1, hasTeam: true });
     renderWithRouter({
-      routeTree: buildIndexRouteTree(teamContext),
+      routeTree: buildIndexRouteTree(),
       initialEntry: '/',
       auth: createAuthedAuth(),
       routerContext: createBaseRouterContext({
-        teamContext,
         profile: createMockUserProfile({ firstName: 'Ada' }),
         team: createMockTeam({ name: 'Red Bull Racing' }),
         currentSeason: CURRENT_SEASON,
@@ -160,13 +148,11 @@ describe('routing at /', () => {
       ),
     );
 
-    const teamContext = createTeamContext();
     renderWithRouter({
-      routeTree: buildIndexRouteTree(teamContext),
+      routeTree: buildIndexRouteTree(),
       initialEntry: '/',
       auth: createAuthedAuth(),
       routerContext: createBaseRouterContext({
-        teamContext,
         profile: createMockUserProfile({ firstName: 'Ada' }),
         team: null,
         currentSeason: CURRENT_SEASON,

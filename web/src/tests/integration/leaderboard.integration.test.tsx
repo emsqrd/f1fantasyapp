@@ -15,7 +15,6 @@ import {
   createMockLeagueStandings,
   createMockTeam,
   createMockUserProfile,
-  createTeamContext,
   renderWithRouter,
 } from '@/tests/test-utils';
 import { Outlet, createRootRouteWithContext, createRoute, notFound } from '@tanstack/react-router';
@@ -76,7 +75,6 @@ function renderLeaguePage(standings: LeagueStandings) {
     initialEntry: '/league/1',
     auth: createAuthedAuth(),
     routerContext: createBaseRouterContext({
-      teamContext: createTeamContext({ myTeamId: 1, hasTeam: true }),
       team: createMockTeam(),
       profile: createMockUserProfile({ id: VIEWER_ID }),
     }),

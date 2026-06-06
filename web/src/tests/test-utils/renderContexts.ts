@@ -1,5 +1,4 @@
 import type { AuthContextType } from '@/contexts/AuthContext';
-import type { TeamContextType } from '@/contexts/TeamContext';
 import type { RouterContext } from '@/lib/router-context';
 import type { Session, User } from '@supabase/supabase-js';
 import { vi } from 'vitest';
@@ -41,33 +40,13 @@ export function createAuthedAuth(overrides: Partial<AuthContextType> = {}): Auth
 }
 
 /**
- * Test utility: Creates a `TeamContextType` value for `renderWithRouter`.
- *
- * Defaults to no team. Pass `{ myTeamId: 1, hasTeam: true }` for team-required flows.
- */
-export function createTeamContext(overrides: Partial<TeamContextType> = {}): TeamContextType {
-  return {
-    myTeamId: null,
-    hasTeam: false,
-    setMyTeamId: vi.fn(),
-    refreshMyTeam: vi.fn(),
-    ...overrides,
-  };
-}
-
-/**
  * Test utility: Creates the `routerContext` arg for `renderWithRouter`
  * (`Omit<RouterContext, 'auth'>` — auth is wired separately via the `auth` field).
- *
- * Defaults nest a fresh `createTeamContext()`. Override `teamContext` directly
- * when the same value also needs to flow through a `TeamContext.Provider` in
- * the route-tree root.
  */
 export function createBaseRouterContext(
   overrides: Partial<Omit<RouterContext, 'auth'>> = {},
 ): Omit<RouterContext, 'auth'> {
   return {
-    teamContext: createTeamContext(),
     team: null,
     profile: null,
     currentSeason: null,

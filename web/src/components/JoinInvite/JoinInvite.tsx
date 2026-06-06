@@ -6,10 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import type { LeagueInvitePreviewResponse } from '@/contracts/LeagueInvitePreviewResponse';
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
-import { useTeam } from '@/hooks/useTeam';
 import { joinViaInvite } from '@/services/leagueInviteService';
 import * as Sentry from '@sentry/react';
-import { Link, useLoaderData, useNavigate, useParams } from '@tanstack/react-router';
+import {
+  Link,
+  useLoaderData,
+  useNavigate,
+  useParams,
+  useRouteContext,
+} from '@tanstack/react-router';
 import { AlertCircle, InfoIcon, Lock, Users } from 'lucide-react';
 import { useState } from 'react';
 
@@ -41,7 +46,8 @@ export function JoinInvite() {
 
   // Auth and team state
   const { user } = useAuth();
-  const { hasTeam } = useTeam();
+  const { team } = useRouteContext({ from: '__root__' });
+  const hasTeam = team !== null;
 
   // Join operation state
   const [isJoining, setIsJoining] = useState(false);
@@ -122,7 +128,7 @@ export function JoinInvite() {
                   className="bg-destructive/10 text-destructive flex items-center gap-2 rounded-md p-3 text-sm"
                   role="alert"
                 >
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                  <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                   <p>This league is full and cannot accept new members.</p>
                 </div>
               )}
@@ -151,7 +157,7 @@ export function JoinInvite() {
                     // Authenticated but no team: Show create team button
                     <>
                       <div className="bg-muted flex items-start gap-2 rounded-md p-3 text-sm">
-                        <InfoIcon className="mt-0.5 h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                        <InfoIcon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                         <div className="space-y-1">
                           <p className="font-medium">Create a team to continue</p>
                           <p className="text-muted-foreground">

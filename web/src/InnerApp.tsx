@@ -2,7 +2,6 @@ import { RouterProvider } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 
 import { useAuth } from './hooks/useAuth';
-import { useTeam } from './hooks/useTeam';
 import { router } from './router';
 
 /**
@@ -35,12 +34,10 @@ function useInvalidateOnUserChange(userId: string | undefined, loading: boolean)
 }
 
 /**
- * InnerApp component provides router context after auth and team are initialized.
- * This component is separated to satisfy fast refresh requirements.
+ * Separated into its own component to satisfy React Fast Refresh requirements.
  */
 export function InnerApp() {
   const auth = useAuth();
-  const teamContext = useTeam();
 
   useInvalidateOnUserChange(auth.user?.id, auth.loading);
 
@@ -59,7 +56,7 @@ export function InnerApp() {
 
   return (
     <>
-      <RouterProvider router={router} context={{ auth, teamContext, team: null }} />
+      <RouterProvider router={router} context={{ auth, team: null }} />
       {auth.isAuthTransitioning && (
         <div
           role="status"

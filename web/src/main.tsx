@@ -6,7 +6,6 @@ import { createRoot } from 'react-dom/client';
 
 import { InnerApp } from './InnerApp.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
-import { TeamProvider } from './contexts/TeamContext.tsx';
 import './index.css';
 import { router } from './router.tsx';
 
@@ -70,9 +69,7 @@ root.render(
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
       <Toaster position="top-center" />
       <AuthProvider>
-        <TeamProvider>
-          <InnerApp />
-        </TeamProvider>
+        <InnerApp />
       </AuthProvider>
     </ThemeProvider>
   </StrictMode>,
