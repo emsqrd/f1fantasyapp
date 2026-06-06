@@ -34,8 +34,7 @@ function useInvalidateOnUserChange(userId: string | undefined, loading: boolean)
 }
 
 /**
- * InnerApp component provides router context after auth and team are initialized.
- * This component is separated to satisfy fast refresh requirements.
+ * Separated into its own component to satisfy React Fast Refresh requirements.
  */
 export function InnerApp() {
   const auth = useAuth();
