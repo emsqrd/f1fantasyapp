@@ -55,9 +55,9 @@ The automated suite stays on the correctness failure modes the migration could b
 
 ## Commit 1 — Backend: `/me/profile` returns `hasTeam`, sheds the embedded team
 
-- `UserProfileResponse`: drop `TeamResponse? Team`, add `bool HasTeam`. `UserProfileResponseMapper`: `HasTeam = userProfile.Team != null`. The profile read projects team **existence** rather than `.Include`-ing the full graph (otherwise the over-fetch just moves to the DB).
-- Frontend `src/contracts/UserProfile.ts`: add `hasTeam: boolean` (the embedded team was never typed, so nothing else changes).
-- **Tests:** integration (WebApplicationFactory + Testcontainers) — `/me/profile` returns `hasTeam` and no `team`; `UserProfileResponseMapper` unit; update any test asserting the embedded-team shape.
+- `UserProfileResponse`: drop `TeamResponse? Team`, add `bool HasTeam`. `UserProfileResponseMapper`: `HasTeam = userProfile.Team != null` — the read keeps `.Include(x => x.Team)` and the mapper derives existence from the loaded nav. (Projecting only existence in SQL was considered and dropped: `.Include(x => x.Team)` loads one small team row, and #247's request-dedup goal is a frontend concern, untouched by this DB read.)
+- Frontend `src/contracts/UserProfile.ts`: add `hasTeam: boolean`. It's a required field, so also seed the `createMockUserProfile` default and the raw `UserProfile` literals in `userProfileService.test.ts` (`tsc -b` type-checks tests under `src`).
+- **Tests:** `UserProfileResponseMapper` unit owns the `HasTeam` true/false matrix + field copy; one integration test (WebApplicationFactory + Testcontainers) for the contract — a user with a team gets `hasTeam: true` and no `team` field (the false branch isn't re-walked at HTTP). No existing test asserted the embedded-team shape.
 - **Check:** no other server-side consumer relies on `UserProfileResponse.Team` — `RegisterUserAsync` returns the same DTO (no team exists at registration, so it's safe, but confirm).
 - **Gate:** backward-compatible — the current frontend already ignores the embedded team; `hasTeam` is additive.
 
