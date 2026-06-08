@@ -85,10 +85,11 @@ The automated suite stays on the correctness failure modes the migration could b
 ## Commit 5 — Migrate `profile` to a query
 
 - `userProfileService`: add `profileQuery`. `rootRoute` gains a loader that primes profile, auth-gated and failure-tolerant: `if (context.auth.user) await context.queryClient.ensureQueryData(profileQuery).catch(() => null)`. Remove profile from `rootRoute.beforeLoad`. (On a cold cache this blocks behind the default pending component — same as today's blocking `beforeLoad`.)
-- Chrome consumers — `AppSidebar`, `AccountMenu`, `useCurrentAvatar`, and `IndexRoute`'s greeting name — switch from `useRouteContext` to `useQuery(profileQuery, { enabled: !!user })`.
+- Chrome consumers — `AppSidebar`, `AccountMenu`, `useCurrentAvatar`, and `IndexRoute`'s greeting name — switch from `useRouteContext` to `useQuery({ ...profileQuery, enabled: !!user })`.
+- Identity consumers — `Leaderboard` (marks the viewer's own row by `profile.id`) and `League` (gates the owner-only invite button on `profile.id === league.ownerId`) — also move from `useRouteContext` to `useQuery({ ...profileQuery, enabled: !!user })`, since `profile` is leaving `RouterContext`.
 - Existence consumers move off the team object: `useNavDestinations` and `JoinInvite` read `profile.hasTeam`; `Home` takes existence + name from the loader-ensured summary (`home.summary === null` → no-team variant; else `summary.teamName`); drop the `profile === null` clause from `IndexRoute`'s LandingPage branch (anon is `home === null`).
 - Account: the loader `ensureQueryData(profileQuery)` and the `Account` component reads `useSuspenseQuery(profileQuery)` (was `useLoaderData`). On profile save, `invalidateQueries(profileQuery)` — the sidebar `useQuery` is persistent (it doesn't remount on navigation), so without this the updated name lags up to `staleTime`. Avatar upload keeps its `avatarEvents` optimistic display but also invalidates `profileQuery` for consistency. Remove `profile` from `RouterContext` (and `renderWithRouter`).
-- **Tests:** extract `src/mocks/handlers.ts` with the now-common profile/team/season defaults; existence-from-summary integration test (incl. a transient profile failure not demoting `Home`); chrome component behavior through the `QueryClientProvider`.
+- **Tests:** extract `src/mocks/handlers.ts` + `src/mocks/server.ts` with the now-common profile/team/season defaults; existence-from-summary integration test (incl. a transient profile failure not demoting `Home`); chrome component behavior through the `QueryClientProvider`.
 - **Gate:** profile is read through the query everywhere; team is still in context for the guards.
 
 ## Commit 6 — Migrate `team` to a query (guards → `void`, create-team bounce fix)
@@ -112,6 +113,16 @@ The automated suite stays on the correctness failure modes the migration could b
 - **E2E:** confirm existing journeys cover the contract — `team.spec`'s create-team→`/my-team` already guards the bounce fix; `avatar.spec` + `auth.spec` traverse `/me/profile`. Add one same-session **switch-user-no-leak** spec: sign in as A (with team) → sign out → sign in as B → assert B's identity/team, not A's. No migration or seeding-fixture changes (computed `hasTeam`, pre-existing `teamName`).
 - **Gate:** docs match shipped code; E2E green.
 
+## Commit 9 — Test-infra follow-up: `mocks/` import surface + side-effect-only setup file
+
+Cleanup surfaced by Commit 5. That commit extracted `src/mocks/handlers.ts` + `src/mocks/server.ts`, but left `setupTests.ts` re-exporting `server`/`API_BASE` so the ~14 existing `import { … } from '@/setupTests'` sites kept working. That re-export is a back-compat shim, against the grain of both tools: Vitest [`setupFiles`](https://vitest.dev/config/setupfiles) are for side effects that run before each test file (extend `expect`, polyfills, lifecycle hooks), not a module tests import values from; MSW's [Node integration](https://mswjs.io/docs/integrations/node) keeps `server` in a dedicated `mocks/` module that tests import from directly, with the setup file only consuming it to wire `listen`/`resetHandlers`/`close`.
+
+- Add `src/mocks/index.ts` barrel — `export { API_BASE } from './handlers'; export { server } from './server'` — so tests do `import { server, API_BASE } from '@/mocks'`.
+- Relocate `setMobileViewport` + its `matchMedia` stub out of `setupTests.ts` into `src/tests/test-utils/matchMedia.ts` (`setMobileViewport` for tests + `installMatchMediaMock` for setup); `setupTests` calls `installMatchMediaMock()` for its side effect and resets via `setMobileViewport(false)` in `afterEach`.
+- Repoint the ~14 `@/setupTests` importers: `server`/`API_BASE` → `@/mocks`, `setMobileViewport` → `@/tests/test-utils`. `setupTests.ts` then **exports nothing** — purely the Vitest setup entry (jest-dom, env stubs, `ResizeObserver`, matchMedia install, MSW lifecycle).
+- **Tests:** pure refactor, no behavior change — the existing suite is the regression guard; build, lint, format, test stay green.
+- **Gate:** `setupTests.ts` exports nothing; tests import shared fixtures from `@/mocks` / `@/tests/test-utils`, never from the setup file.
+
 ---
 
-**Dependency order:** 1, 2 (backend contract) → 3 (foundation) → 4 → 5 → 6 (read-site migration; 5 before 6 so nav/join touch `profile.hasTeam` once) → 7 → 8. Commits 1–2 and 4–6 each leave the app in a working, shippable state.
+**Dependency order:** 1, 2 (backend contract) → 3 (foundation) → 4 → 5 → 6 (read-site migration; 5 before 6 so nav/join touch `profile.hasTeam` once) → 7 → 8. Commits 1–2 and 4–6 each leave the app in a working, shippable state. Commit 9 is an independent test-infra follow-up: it depends only on Commit 5's `mocks/` extraction and can land any time after.
