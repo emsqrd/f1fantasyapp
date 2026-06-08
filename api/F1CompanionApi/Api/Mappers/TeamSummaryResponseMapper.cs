@@ -7,11 +7,13 @@ public static class TeamSummaryResponseMapper
 {
     public static TeamSummaryResponse ToResponseModel(
         this IReadOnlyList<TeamRaceWeekendScore> scoredRaces,
-        TeamRaceWeekendScore? latest
+        TeamRaceWeekendScore? latest,
+        string teamName
     )
     {
         return new TeamSummaryResponse
         {
+            TeamName = teamName,
             SeasonTotalPoints = latest is null ? null : scoredRaces.Sum(s => s.TotalPoints),
             LastRace = latest?.ToResponseModel(),
         };

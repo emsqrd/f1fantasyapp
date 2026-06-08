@@ -8,8 +8,11 @@ public class TeamSummaryResponseMapperTests
     [Fact]
     public void ToResponseModel_NullLatest_ReturnsNullFields()
     {
-        var response = Array.Empty<TeamRaceWeekendScore>().ToResponseModel(latest: null);
+        var response = Array
+            .Empty<TeamRaceWeekendScore>()
+            .ToResponseModel(latest: null, teamName: "Grid Gladiators");
 
+        Assert.Equal("Grid Gladiators", response.TeamName);
         Assert.Null(response.SeasonTotalPoints);
         Assert.Null(response.LastRace);
     }
@@ -25,8 +28,9 @@ public class TeamSummaryResponseMapperTests
         };
         var latest = scores[2];
 
-        var response = scores.ToResponseModel(latest);
+        var response = scores.ToResponseModel(latest, teamName: "Grid Gladiators");
 
+        Assert.Equal("Grid Gladiators", response.TeamName);
         Assert.Equal(25 + 40 + 18, response.SeasonTotalPoints);
         Assert.NotNull(response.LastRace);
         Assert.Equal(3, response.LastRace!.Round);

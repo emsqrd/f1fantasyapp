@@ -63,6 +63,7 @@ describe('Home', () => {
   describe('score cards', () => {
     it('renders last-race and season values when summary has data', () => {
       const summary: TeamSummary = {
+        teamName: 'Grid Gladiators',
         seasonTotalPoints: 312,
         lastRace: { round: 7, name: 'Monaco Grand Prix', totalScore: 47 },
       };

@@ -145,7 +145,7 @@ public class TeamService : ITeamService
             .ToListAsync();
 
         var latest = scoredRaces.OrderByDescending(s => s.RaceWeekend.Round).FirstOrDefault();
-        return scoredRaces.ToResponseModel(latest);
+        return scoredRaces.ToResponseModel(latest, team.Name);
     }
 
     public async Task AddDriverToTeamAsync(int teamId, int driverId, int slotPosition, int userId)

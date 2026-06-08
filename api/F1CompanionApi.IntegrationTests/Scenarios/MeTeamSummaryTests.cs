@@ -48,7 +48,7 @@ public class MeTeamSummaryTests : IntegrationTestBase
             db.Seasons.Add(priorSeason);
             await db.SaveChangesAsync();
 
-            var team = await db.CreateTeamAsync(profile.Id);
+            var team = await db.CreateTeamAsync(profile.Id, name: "Grid Gladiators");
 
             // Three current-season scored rounds, out of insertion order, so the test
             // verifies "latest by Round" rather than insertion or RaceDate order.
@@ -90,7 +90,8 @@ public class MeTeamSummaryTests : IntegrationTestBase
         var summary = await client.GetFromJsonAsync<TeamSummaryResponse>("/api/me/team/summary");
 
         Assert.NotNull(summary);
-        Assert.Equal(25 + 40 + 18, summary!.SeasonTotalPoints);
+        Assert.Equal("Grid Gladiators", summary!.TeamName);
+        Assert.Equal(25 + 40 + 18, summary.SeasonTotalPoints);
         Assert.NotNull(summary.LastRace);
         Assert.Equal(3, summary.LastRace!.Round);
         Assert.Equal("Round Three GP", summary.LastRace.Name);
