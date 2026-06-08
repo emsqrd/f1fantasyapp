@@ -2,15 +2,17 @@ import type { UserProfile } from '@/contracts/UserProfile';
 import { useCurrentAvatar } from '@/hooks/useCurrentAvatar';
 import { avatarEvents } from '@/lib/avatarEvents';
 import type { RouterContext } from '@/lib/router-context';
+import { API_BASE, server } from '@/setupTests';
 import {
+  createAuthedAuth,
   createBaseRouterContext,
   createMockUserProfile,
-  createUnauthAuth,
   renderWithRouter,
 } from '@/tests/test-utils';
 import { Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router';
 import { act, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
+import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 function AvatarProbe() {
@@ -29,10 +31,13 @@ function AvatarProbe() {
   );
 }
 
-// The hook reads `profile` from the root route context, so it needs a real
-// router rather than a mock — provide profile via the router context the same
-// way production does, and read the hook's output back through the probe.
-function renderProbe(profile: UserProfile | null) {
+// The hook reads `profile` from the profile query, so it needs a real router
+// (for the QueryClient) and an authenticated user to enable the fetch. Serve the
+// profile via MSW the same way production does, and read the hook's output back
+// through the probe.
+function renderProbe(profile: UserProfile) {
+  server.use(http.get(`${API_BASE}/me/profile`, () => HttpResponse.json(profile)));
+
   const rootRoute = createRootRouteWithContext<RouterContext>()({
     component: () => <Outlet />,
   });
@@ -45,8 +50,8 @@ function renderProbe(profile: UserProfile | null) {
   return renderWithRouter({
     routeTree: rootRoute.addChildren([indexRoute]),
     initialEntry: '/',
-    auth: createUnauthAuth(),
-    routerContext: createBaseRouterContext({ profile }),
+    auth: createAuthedAuth(),
+    routerContext: createBaseRouterContext(),
   });
 }
 
@@ -54,7 +59,7 @@ describe('useCurrentAvatar', () => {
   it('resolves the avatar url from the profile', async () => {
     renderProbe(createMockUserProfile({ avatarUrl: 'https://example.com/me.jpg' }));
 
-    expect(await screen.findByTestId('avatar-url')).toHaveTextContent('https://example.com/me.jpg');
+    expect(await screen.findByText('https://example.com/me.jpg')).toBeInTheDocument();
   });
 
   it('treats an empty profile avatar as no avatar', async () => {
@@ -65,7 +70,7 @@ describe('useCurrentAvatar', () => {
 
   it('lets an uploaded url override the profile avatar', async () => {
     renderProbe(createMockUserProfile({ avatarUrl: 'https://example.com/me.jpg' }));
-    await screen.findByTestId('avatar-url');
+    await screen.findByText('https://example.com/me.jpg');
 
     act(() => avatarEvents.emit('https://example.com/fresh.jpg'));
 

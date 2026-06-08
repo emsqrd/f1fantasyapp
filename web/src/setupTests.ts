@@ -1,14 +1,14 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 
-/**
- * Base URL the test suite's apiClient targets. Exported so MSW handlers in
- * integration tests can build full URLs from a single source of truth instead
- * of repeating the literal across every `server.use(...)`.
- */
-export const API_BASE = 'http://localhost/api';
+import { API_BASE } from './mocks/handlers';
+import { server } from './mocks/server';
+
+// Re-exported so existing tests can import `API_BASE` / `server` from
+// `@/setupTests`; the shared default handlers live in `mocks/`.
+export { API_BASE } from './mocks/handlers';
+export { server } from './mocks/server';
 
 vi.stubEnv('VITE_SUPABASE_URL', 'http://localhost');
 vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'test-anon-key');
@@ -47,8 +47,6 @@ window.matchMedia = ((query: string): MediaQueryList =>
     removeEventListener: () => {},
     dispatchEvent: () => false,
   }) as unknown as MediaQueryList) as typeof window.matchMedia;
-
-export const server = setupServer();
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 

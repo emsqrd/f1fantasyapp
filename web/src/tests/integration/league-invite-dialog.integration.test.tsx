@@ -72,13 +72,16 @@ const INVITE_TOKEN = 'abc123xyz';
 
 const ownerAuth = () => createAuthedAuth({ user: { id: 'user-owner' } as User });
 
-// Profile id matches the league's ownerId so the Invite button renders
-// (the button only shows for the owner of a private league).
+// Profile id matches the league's ownerId so the Invite button renders (it only
+// shows for the owner of a private league); served via the profile query. The
+// team satisfies the `requireTeam` guard on the layout.
 function ownerRouterContext(): Omit<RouterContext, 'auth' | 'queryClient'> {
-  return createBaseRouterContext({
-    team: createMockTeam(),
-    profile: createMockUserProfile({ id: OWNER_ID }),
-  });
+  server.use(
+    http.get(`${API_BASE}/me/profile`, () =>
+      HttpResponse.json(createMockUserProfile({ id: OWNER_ID })),
+    ),
+  );
+  return createBaseRouterContext({ team: createMockTeam() });
 }
 
 function privateLeagueHandler() {

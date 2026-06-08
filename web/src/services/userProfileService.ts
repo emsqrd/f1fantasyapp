@@ -1,6 +1,7 @@
 import type { CreateProfileData } from '@/contracts/CreateProfileData';
 import type { UserProfile } from '@/contracts/UserProfile';
 import { apiClient } from '@/lib/api';
+import { queryOptions } from '@tanstack/react-query';
 
 export const userProfileService = {
   async registerUser(data: CreateProfileData): Promise<UserProfile> {
@@ -19,3 +20,11 @@ export const userProfileService = {
     );
   },
 };
+
+export const profileKeys = { all: ['me', 'profile'] as const };
+
+export const profileQuery = queryOptions({
+  queryKey: profileKeys.all,
+  queryFn: () => userProfileService.getCurrentProfile(),
+  staleTime: 5 * 60_000,
+});

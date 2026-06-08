@@ -77,7 +77,6 @@ describe('route-guards', () => {
           completeAuthTransition: vi.fn(),
         },
         team: null,
-        profile: null,
         queryClient,
       };
 
@@ -102,7 +101,6 @@ describe('route-guards', () => {
           completeAuthTransition: vi.fn(),
         },
         team: null,
-        profile: null,
         queryClient,
       };
 
@@ -133,7 +131,6 @@ describe('route-guards', () => {
           completeAuthTransition: vi.fn(),
         },
         team: null,
-        profile: null,
         queryClient,
       };
 
@@ -147,7 +144,6 @@ describe('route-guards', () => {
       const context: RouterContext = {
         auth: createAuthedAuth(),
         team: null,
-        profile: null,
         queryClient,
       };
 
@@ -163,7 +159,6 @@ describe('route-guards', () => {
       const context: RouterContext = {
         auth: createAuthedAuth(),
         team,
-        profile: null,
         queryClient,
       };
 
@@ -177,7 +172,6 @@ describe('route-guards', () => {
       const context: RouterContext = {
         auth: createAuthedAuth(),
         team: createMockTeam(),
-        profile: null,
         queryClient,
       };
 
@@ -192,7 +186,6 @@ describe('route-guards', () => {
       const context: RouterContext = {
         auth: createAuthedAuth(),
         team: null,
-        profile: null,
         queryClient,
       };
 

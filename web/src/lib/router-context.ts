@@ -1,6 +1,5 @@
 import type { AuthContextType } from '@/contexts/AuthContext';
 import type { Team } from '@/contracts/Team';
-import type { UserProfile } from '@/contracts/UserProfile';
 import type { QueryClient } from '@tanstack/react-query';
 
 /**
@@ -17,6 +16,4 @@ export interface RouterContext {
 
   /** Actual team data from route */
   team: Team | null;
-
-  profile: UserProfile | null;
 }

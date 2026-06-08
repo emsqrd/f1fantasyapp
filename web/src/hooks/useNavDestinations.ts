@@ -1,4 +1,6 @@
-import { useRouteContext } from '@tanstack/react-router';
+import { useAuth } from '@/hooks/useAuth';
+import { profileQuery } from '@/services/userProfileService';
+import { useQuery } from '@tanstack/react-query';
 import { ChartNoAxesGantt, Home, type LucideIcon, Search, Users } from 'lucide-react';
 
 export interface NavDestination {
@@ -10,8 +12,9 @@ export interface NavDestination {
 }
 
 export function useNavDestinations(): NavDestination[] {
-  const { team } = useRouteContext({ from: '__root__' });
-  const hasTeam = team !== null;
+  const { user } = useAuth();
+  const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
+  const hasTeam = profile?.hasTeam ?? false;
 
   const destinations: NavDestination[] = [
     { key: 'home', title: 'Home', short: 'Home', icon: Home, to: '/' },

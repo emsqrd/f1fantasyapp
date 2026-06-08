@@ -1,7 +1,9 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentAvatar } from '@/hooks/useCurrentAvatar';
+import { profileQuery } from '@/services/userProfileService';
 import * as Sentry from '@sentry/react';
-import { useNavigate, useRouteContext, useRouter } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate, useRouter } from '@tanstack/react-router';
 import { BadgeCheck, LogOut, Monitor, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import type { ReactNode } from 'react';
@@ -38,7 +40,7 @@ export function AccountMenu({ trigger, side }: AccountMenuProps) {
   const router = useRouter();
   const avatar = useCurrentAvatar();
 
-  const { profile } = useRouteContext({ from: '__root__' });
+  const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
 
   const handleAccountClick = () => {
     navigate({ to: '/account' });

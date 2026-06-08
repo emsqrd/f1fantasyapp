@@ -1,20 +1,23 @@
-import { useLoaderData, useRouteContext } from '@tanstack/react-router';
+import { useAuth } from '@/hooks/useAuth';
+import { profileQuery } from '@/services/userProfileService';
+import { useQuery } from '@tanstack/react-query';
+import { useLoaderData } from '@tanstack/react-router';
 
 import { Home } from '../Home/Home';
 import { LandingPage } from '../LandingPage/LandingPage';
 
 export function IndexRoute() {
+  const { user } = useAuth();
   const { home } = useLoaderData({ from: '/' });
-  const { profile, team } = useRouteContext({ from: '__root__' });
+  const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
 
-  if (home === null || profile === null) {
+  if (home === null) {
     return <LandingPage />;
   }
 
   return (
     <Home
-      name={profile.firstName ?? profile.displayName}
-      team={team}
+      name={profile?.firstName ?? profile?.displayName ?? ''}
       summary={home.summary}
       standings={home.standings}
       races={home.races}

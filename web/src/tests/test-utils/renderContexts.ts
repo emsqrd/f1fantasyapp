@@ -49,7 +49,6 @@ export function createBaseRouterContext(
 ): Omit<RouterContext, 'auth' | 'queryClient'> {
   return {
     team: null,
-    profile: null,
     ...overrides,
   };
 }

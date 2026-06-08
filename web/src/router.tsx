@@ -11,13 +11,12 @@ import { ConfirmEmailNotice } from '@/components/auth/ConfirmEmailNotice/Confirm
 import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import type { Team as TeamType } from '@/contracts/Team';
-import type { UserProfile } from '@/contracts/UserProfile';
 import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
 import { getLeagueStandings, getMyStandings } from '@/services/standingsService';
 import { getMyTeam, getTeamById, getTeamSummary } from '@/services/teamService';
-import { userProfileService } from '@/services/userProfileService';
+import { profileQuery } from '@/services/userProfileService';
 import * as Sentry from '@sentry/react';
 import {
   ErrorComponent,
@@ -104,19 +103,16 @@ const redirectSearchSchema = z.object({
  */
 const rootRoute = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async ({ context }) => {
-    // Fetch profile and team for authenticated users at root level
-    // This makes them available to all routes (both public and authenticated)
+    // Fetch the team for authenticated users at root level so the guards can read
+    // it from context on every navigation (both public and authenticated routes).
     if (context.auth.user) {
       try {
-        const [profile, team] = await Promise.all([
-          userProfileService.getCurrentProfile(),
-          getMyTeam(),
-        ]);
-
-        return { profile, team };
+        const team = await getMyTeam();
+        return { team };
       } catch (error) {
-        // Gracefully degrade if profile/team fetching fails
-        // The app should still work without profile data
+        // Fall back to team: null on failure (captured below). The guards can't
+        // tell this apart from a genuine no-team user, so a transient failure can
+        // bounce a real owner to /create-team until the next navigation succeeds.
         const fetchError = error instanceof Error ? error : new Error('Failed to fetch user data');
 
         Sentry.captureException(fetchError, {
@@ -131,10 +127,17 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
           },
         });
 
-        return { profile: null, team: null };
+        return { team: null };
       }
     }
-    return { profile: null, team: null };
+    return { team: null };
+  },
+  loader: async ({ context }) => {
+    // Prime the profile query so the app shell and the index greeting serve it
+    // from cache. Tolerate a failure — a profile blip must not fail the whole tree.
+    if (context.auth.user) {
+      await context.queryClient.ensureQueryData(profileQuery).catch(() => null);
+    }
   },
   component: () => (
     <>
@@ -348,9 +351,8 @@ const accountRoute = createRoute({
   staticData: {
     pageTitle: 'Account Settings',
   },
-  loader: async (): Promise<{ userProfile: UserProfile | null }> => {
-    const userProfile = await userProfileService.getCurrentProfile();
-    return { userProfile };
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(profileQuery);
   },
   component: Account,
   pendingComponent: () => (
@@ -785,7 +787,6 @@ export const router = createRouter({
     auth: undefined!,
     queryClient: undefined!,
     team: undefined!,
-    profile: undefined!,
   },
   defaultPendingComponent: () => (
     <div role="status" className="flex min-h-screen items-center justify-center">

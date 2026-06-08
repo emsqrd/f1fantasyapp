@@ -1,12 +1,19 @@
 import type { MyLeagueStanding } from '@/contracts/MyLeagueStanding';
 import type { RaceWeekend } from '@/contracts/RaceWeekend';
 import type { TeamSummary } from '@/contracts/TeamSummary';
-import { createMockTeam } from '@/tests/test-utils';
 import { render, screen } from '@testing-library/react';
 import type { ComponentProps, ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { Home } from './Home';
+
+// A present summary means the user has a team; its fields may still be null
+// before any race is scored. A null summary means no team.
+const noScoresSummary: TeamSummary = {
+  teamName: 'Red Bull Racing',
+  seasonTotalPoints: null,
+  lastRace: null,
+};
 
 vi.mock('@tanstack/react-router', async () => {
   const actual =
@@ -34,7 +41,6 @@ function renderHome(overrides: Partial<ComponentProps<typeof Home>> = {}) {
   return render(
     <Home
       name="Ada"
-      team={null}
       summary={null}
       standings={[] as MyLeagueStanding[]}
       races={[] as RaceWeekend[]}
@@ -45,15 +51,15 @@ function renderHome(overrides: Partial<ComponentProps<typeof Home>> = {}) {
 
 describe('Home', () => {
   describe('identity header', () => {
-    it('renders "Welcome back" and the team name when a team is present', () => {
-      renderHome({ team: createMockTeam({ name: 'Red Bull Racing' }) });
+    it('renders "Welcome back" and the team name when the user has a team', () => {
+      renderHome({ summary: noScoresSummary });
 
       expect(screen.getByText('Welcome back, Ada')).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: 'Red Bull Racing' })).toBeInTheDocument();
     });
 
-    it('renders only the welcome heading when no team is present', () => {
-      renderHome({ team: null });
+    it('renders only the welcome heading when the user has no team', () => {
+      renderHome({ summary: null });
 
       expect(screen.getByRole('heading', { name: 'Welcome, Ada' })).toBeInTheDocument();
       expect(screen.queryByText(/Welcome back/)).not.toBeInTheDocument();
@@ -68,7 +74,7 @@ describe('Home', () => {
         lastRace: { round: 7, name: 'Monaco Grand Prix', totalScore: 47 },
       };
 
-      renderHome({ team: createMockTeam(), summary });
+      renderHome({ summary });
 
       expect(screen.getByText('Monaco Grand Prix')).toBeInTheDocument();
       expect(screen.getByText('47')).toBeInTheDocument();
@@ -78,8 +84,8 @@ describe('Home', () => {
       expect(screen.queryByText('Leagues unlock with a team')).not.toBeInTheDocument();
     });
 
-    it('renders em-dashes and no "pts" suffix when summary is null', () => {
-      renderHome({ team: createMockTeam(), summary: null });
+    it('renders em-dashes and no "pts" suffix when the team has no scores yet', () => {
+      renderHome({ summary: noScoresSummary });
 
       // 1 em-dash for the last-race title + 2 for the missing scores.
       expect(screen.getAllByText('—')).toHaveLength(3);
@@ -96,7 +102,7 @@ describe('Home', () => {
     ];
 
     it('renders the My Leagues list when standings are present', () => {
-      renderHome({ team: createMockTeam(), standings });
+      renderHome({ summary: noScoresSummary, standings });
 
       expect(screen.getByRole('heading', { name: 'My Leagues' })).toBeInTheDocument();
       expect(screen.getByRole('list', { name: 'My Leagues' })).toBeInTheDocument();
@@ -108,7 +114,7 @@ describe('Home', () => {
 
   describe('no-leagues state', () => {
     it('renders the join-leagues prompt with a browse CTA for a team with no standings', () => {
-      renderHome({ team: createMockTeam(), standings: [] });
+      renderHome({ summary: noScoresSummary, standings: [] });
 
       expect(screen.getByText("You're riding solo")).toBeInTheDocument();
       expect(screen.getByRole('link', { name: 'Browse leagues' })).toHaveAttribute(
@@ -124,7 +130,7 @@ describe('Home', () => {
 
   describe('no-team state', () => {
     it('renders the create-team hero and leagues notice, and no score cards', () => {
-      renderHome({ team: null });
+      renderHome({ summary: null });
 
       const createTeamLink = screen.getByRole('link', { name: /create team/i });
       expect(createTeamLink).toHaveAttribute('href', '/create-team');

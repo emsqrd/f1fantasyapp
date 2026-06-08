@@ -2,6 +2,7 @@ import { AccountMenu } from '@/components/AccountMenu/AccountMenu';
 import type { AuthContextType } from '@/contexts/AuthContext';
 import type { UserProfile } from '@/contracts/UserProfile';
 import type { RouterContext } from '@/lib/router-context';
+import { API_BASE, server } from '@/setupTests';
 import {
   buildStubRoute,
   createAuthedAuth,
@@ -14,6 +15,7 @@ import type { User } from '@supabase/supabase-js';
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
 import { screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
+import { HttpResponse, http } from 'msw';
 import { ThemeProvider } from 'next-themes';
 import { toast } from 'sonner';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -72,13 +74,14 @@ function renderMenu(options: {
   withTheme?: boolean;
   profile?: UserProfile | null;
 }) {
+  const profile = options.profile ?? createMockUserProfile();
+  server.use(http.get(`${API_BASE}/me/profile`, () => HttpResponse.json(profile)));
+
   return renderWithRouter({
     routeTree: buildMenuTree(options.withTheme),
     initialEntry: options.initialEntry ?? '/',
     auth: options.auth,
-    routerContext: createBaseRouterContext({
-      profile: options.profile ?? createMockUserProfile(),
-    }),
+    routerContext: createBaseRouterContext(),
   });
 }
 
