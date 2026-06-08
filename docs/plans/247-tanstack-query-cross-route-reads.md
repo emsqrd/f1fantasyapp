@@ -16,7 +16,7 @@ new QueryClient({
 });
 ```
 
-**`queryOptions` colocated in the service modules**, with key factories — `['me', …]` for user-scoped, bare for global. The `['me']` prefix is load-bearing: it's the namespace the user-switch reset (Commit 7) clears with one `removeQueries({ queryKey: ['me'] })`, which is why season and (later) reference data stay *outside* it. Per-resource overrides:
+**`queryOptions` colocated in the service modules**, with key factories — `['me', …]` for user-scoped, bare for global. The `['me']` prefix is load-bearing: it's the namespace the user-switch reset (Commit 7) clears with one `removeQueries({ queryKey: ['me'] })`, which is why season and (later) reference data stay *outside* it. Per-resource definitions:
 
 ```ts
 // userProfileService.ts
@@ -25,10 +25,12 @@ export const profileQuery = queryOptions({ queryKey: profileKeys.all, queryFn: (
 // teamService.ts
 export const teamKeys = { all: ['me', 'team'] as const };
 export const teamQuery = queryOptions({ queryKey: teamKeys.all, queryFn: getMyTeam, staleTime: 5 * 60_000 });
-// seasonService.ts
+// seasonService.ts — inherits client defaults (staleTime 60s, gcTime 5min)
 export const seasonKeys = { current: ['season', 'current'] as const };
-export const seasonQuery = queryOptions({ queryKey: seasonKeys.current, queryFn: getCurrentSeason, staleTime: Infinity, gcTime: Infinity });
+export const seasonQuery = queryOptions({ queryKey: seasonKeys.current, queryFn: getCurrentSeason });
 ```
+
+Season takes **no** freshness override (unlike profile/team). It's read only in loaders via `ensureQueryData`, which returns cached data without consulting `staleTime` (it only revalidates with `revalidateIfStale`, which we don't pass) — so a `staleTime` override would be inert, and `gcTime: Infinity` would pin the season for the tab's life, making an end-of-season transition invisible until a hard refresh. The defaults still dedup within a navigation (the #247 win) while letting a transition surface after a short idle. When an end-of-season UI is built, it decides between deriving from `season.endDate` (clock-based, like roster lock) or subscribing with `useQuery` + a finite `staleTime`.
 
 **Read patterns** — guards/loaders call `ensureQueryData`; components call `useSuspenseQuery` for loader-guaranteed data and `useQuery({ enabled: !!user })` for the dual-auth `Layout` chrome (renders for anon too; Suspense has no `enabled`). A `queryFn` returning `null` (the no-team / no-profile case) is valid and caches as data; one returning `undefined` throws in v5 — the services already return `null`, just don't let one slip to `undefined`.
 
@@ -46,7 +48,7 @@ Each commit below is a gate: it includes its own tests and independently passes 
 
 #247's AC — no re-request of unchanged profile/team/season, nothing fetched twice per navigation, revisit serves from cache — is **not** checked with a request-count test: dedup-by-shared-key and `staleTime` caching are TanStack Query guarantees (the strategy's "don't test third-party internals"), and exact-count assertions are brittle. It's verified instead by:
 
-- **construction + review** — each read goes through the one colocated `queryOptions` (single key by definition), `staleTime` is set, and *no stray direct `getMyTeam` / `getCurrentProfile` / `getCurrentSeason` remains in a loader* (the double-call #247 measured); and
+- **construction + review** — each read goes through the one colocated `queryOptions` (single key by definition), its freshness is intentional (profile/team set `staleTime: 5 * 60_000`; season inherits the client defaults — see Conventions), and *no stray direct `getMyTeam` / `getCurrentProfile` / `getCurrentSeason` remains in a loader* (the double-call #247 measured); and
 - **re-running #247's network capture** once Commit 6 lands (manually or via the `verify` skill against a prod-like build) — confirming profile/team/season each drop to once-per-navigation and serve from cache.
 
 The automated suite stays on the correctness failure modes the migration could break — existence-from-summary, the create-team no-bounce, #249's no-misroute, the user-switch reset — per the strategy's "failure modes, not scenarios."
@@ -77,7 +79,7 @@ The automated suite stays on the correctness failure modes the migration could b
 ## Commit 4 — Migrate `season` to a query
 
 - `seasonService`: add `seasonQuery`. Index / `my-team` / `team/$id` loaders `ensureQueryData(seasonQuery)` instead of reading `context.currentSeason`. Remove the season fetch from `rootRoute.beforeLoad` and `currentSeason` from `RouterContext` (and `renderWithRouter`). The index loader keeps `summary`/`standings`/`races` as route-owned loader data — only `season` moves to the query.
-- **Tests:** the three route tests get a `/seasons/current` MSW handler and drop `currentSeason` from `routerContext`.
+- **Tests:** the three route tests get a `/seasons/current` MSW handler and drop `currentSeason` from `routerContext`. The narrowed `RouterContext` also forces `createBaseRouterContext` and the guard unit-test context literals (`route-guards.test.ts`) to drop `currentSeason`.
 - **Gate:** season is read entirely through the query; nothing else touched.
 
 ## Commit 5 — Migrate `profile` to a query
