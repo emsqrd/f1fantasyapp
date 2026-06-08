@@ -41,11 +41,12 @@ export function createAuthedAuth(overrides: Partial<AuthContextType> = {}): Auth
 
 /**
  * Test utility: Creates the `routerContext` arg for `renderWithRouter`
- * (`Omit<RouterContext, 'auth'>` — auth is wired separately via the `auth` field).
+ * (`Omit<RouterContext, 'auth' | 'queryClient'>` — auth and the per-test
+ * queryClient are wired separately by `renderWithRouter`).
  */
 export function createBaseRouterContext(
-  overrides: Partial<Omit<RouterContext, 'auth'>> = {},
-): Omit<RouterContext, 'auth'> {
+  overrides: Partial<Omit<RouterContext, 'auth' | 'queryClient'>> = {},
+): Omit<RouterContext, 'auth' | 'queryClient'> {
   return {
     team: null,
     profile: null,

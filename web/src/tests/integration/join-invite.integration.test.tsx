@@ -80,7 +80,7 @@ function buildJoinInviteRouteTree() {
   return rootRoute.addChildren([joinInviteRoute, signInRoute, signUpRoute, createTeamRoute]);
 }
 
-function makeRouterContext(team: Team | null): Omit<RouterContext, 'auth'> {
+function makeRouterContext(team: Team | null): Omit<RouterContext, 'auth' | 'queryClient'> {
   return createBaseRouterContext({ team, profile: createMockUserProfile() });
 }
 

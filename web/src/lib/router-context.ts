@@ -2,6 +2,7 @@ import type { AuthContextType } from '@/contexts/AuthContext';
 import type { Season } from '@/contracts/Season';
 import type { Team } from '@/contracts/Team';
 import type { UserProfile } from '@/contracts/UserProfile';
+import type { QueryClient } from '@tanstack/react-query';
 
 /**
  * Router context interface that will be available to all routes via TanStack Router.
@@ -12,6 +13,8 @@ import type { UserProfile } from '@/contracts/UserProfile';
 export interface RouterContext {
   /** Authentication state and methods from AuthContext */
   auth: AuthContextType;
+
+  queryClient: QueryClient;
 
   /** Actual team data from route */
   team: Team | null;

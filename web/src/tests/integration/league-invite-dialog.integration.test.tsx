@@ -74,7 +74,7 @@ const ownerAuth = () => createAuthedAuth({ user: { id: 'user-owner' } as User })
 
 // Profile id matches the league's ownerId so the Invite button renders
 // (the button only shows for the owner of a private league).
-function ownerRouterContext(): Omit<RouterContext, 'auth'> {
+function ownerRouterContext(): Omit<RouterContext, 'auth' | 'queryClient'> {
   return createBaseRouterContext({
     team: createMockTeam(),
     profile: createMockUserProfile({ id: OWNER_ID }),

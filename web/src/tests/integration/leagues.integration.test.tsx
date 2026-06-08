@@ -92,7 +92,7 @@ function buildLeagueRouteTree() {
   ]);
 }
 
-function authedRouterContext(): Omit<RouterContext, 'auth'> {
+function authedRouterContext(): Omit<RouterContext, 'auth' | 'queryClient'> {
   return createBaseRouterContext({
     team: createMockTeam(),
     profile: createMockUserProfile(),

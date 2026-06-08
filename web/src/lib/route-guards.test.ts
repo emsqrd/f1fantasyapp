@@ -3,6 +3,7 @@ import type { RouterContext } from '@/lib/router-context';
 import { supabase } from '@/lib/supabase';
 import { createAuthedAuth, createMockTeam } from '@/tests/test-utils';
 import type { Session, User } from '@supabase/supabase-js';
+import { QueryClient } from '@tanstack/react-query';
 import { redirect } from '@tanstack/react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -49,6 +50,9 @@ const createMockSession = (): Session => ({
   user: createMockUser(),
 });
 
+// Guards don't read the client; it satisfies the RouterContext shape.
+const queryClient = new QueryClient();
+
 describe('route-guards', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -75,6 +79,7 @@ describe('route-guards', () => {
         team: null,
         profile: null,
         currentSeason: null,
+        queryClient,
       };
 
       await expect(() => requireAuth(context)).rejects.toThrow();
@@ -100,6 +105,7 @@ describe('route-guards', () => {
         team: null,
         profile: null,
         currentSeason: null,
+        queryClient,
       };
 
       await expect(requireAuth(context)).resolves.not.toThrow();
@@ -131,6 +137,7 @@ describe('route-guards', () => {
         team: null,
         profile: null,
         currentSeason: null,
+        queryClient,
       };
 
       await expect(requireAuth(context)).resolves.not.toThrow();
@@ -145,6 +152,7 @@ describe('route-guards', () => {
         team: null,
         profile: null,
         currentSeason: null,
+        queryClient,
       };
 
       expect(() => requireTeam(context)).toThrow();
@@ -161,6 +169,7 @@ describe('route-guards', () => {
         team,
         profile: null,
         currentSeason: null,
+        queryClient,
       };
 
       expect(requireTeam(context)).toEqual({ team });
@@ -175,6 +184,7 @@ describe('route-guards', () => {
         team: createMockTeam(),
         profile: null,
         currentSeason: null,
+        queryClient,
       };
 
       expect(() => requireNoTeam(context)).toThrow();
@@ -190,6 +200,7 @@ describe('route-guards', () => {
         team: null,
         profile: null,
         currentSeason: null,
+        queryClient,
       };
 
       expect(requireNoTeam(context)).toEqual({ team: null });
