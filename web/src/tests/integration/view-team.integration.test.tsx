@@ -5,6 +5,7 @@ import type { RouterContext } from '@/lib/router-context';
 import { getConstructors } from '@/services/constructorService';
 import { getDrivers } from '@/services/driverService';
 import { getRaceWeekends } from '@/services/raceWeekendService';
+import { seasonQuery } from '@/services/seasonService';
 import { getTeamById } from '@/services/teamService';
 import { API_BASE, server } from '@/setupTests';
 import {
@@ -56,13 +57,13 @@ function buildTeamByIdRouteTree() {
       }
     },
     loader: async ({ params, context }) => {
-      const seasonId = context.currentSeason?.id;
+      const season = await context.queryClient.ensureQueryData(seasonQuery);
       const teamId = Number(params.teamId);
       const [team, activeDrivers, activeConstructors, races] = await Promise.all([
         getTeamById(teamId),
         getDrivers(),
         getConstructors(),
-        seasonId !== undefined ? getRaceWeekends(seasonId) : Promise.resolve([]),
+        season ? getRaceWeekends(season.id) : Promise.resolve([]),
       ]);
       if (!team) {
         throw notFound({ routeId: '/_authenticated/_team-required/team/$teamId' });
@@ -97,7 +98,6 @@ function renderTeamById(initialEntry: string) {
     auth: createAuthedAuth(),
     routerContext: createBaseRouterContext({
       team: createMockTeam(),
-      currentSeason: createMockSeason(),
     }),
   });
 }
@@ -119,6 +119,7 @@ describe('Viewing a team', () => {
       http.get(`${API_BASE}/teams/2`, () => HttpResponse.json(otherTeam)),
       http.get(`${API_BASE}/drivers`, () => HttpResponse.json(createMockDriverList(2))),
       http.get(`${API_BASE}/constructors`, () => HttpResponse.json(createMockConstructorList(2))),
+      http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(createMockSeason())),
       http.get(`${API_BASE}/seasons/1/race-weekends`, () =>
         HttpResponse.json([createMockRaceWeekend()]),
       ),

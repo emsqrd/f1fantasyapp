@@ -1,5 +1,4 @@
 import type { AuthContextType } from '@/contexts/AuthContext';
-import type { Season } from '@/contracts/Season';
 import type { Team } from '@/contracts/Team';
 import type { UserProfile } from '@/contracts/UserProfile';
 import type { QueryClient } from '@tanstack/react-query';
@@ -20,6 +19,4 @@ export interface RouterContext {
   team: Team | null;
 
   profile: UserProfile | null;
-
-  currentSeason: Season | null;
 }

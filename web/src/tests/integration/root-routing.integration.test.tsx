@@ -1,6 +1,7 @@
 import { IndexRoute } from '@/components/IndexRoute/IndexRoute';
 import type { RouterContext } from '@/lib/router-context';
 import { getRaceWeekends } from '@/services/raceWeekendService';
+import { seasonQuery } from '@/services/seasonService';
 import { getMyStandings } from '@/services/standingsService';
 import { getTeamSummary } from '@/services/teamService';
 import { API_BASE, server } from '@/setupTests';
@@ -38,10 +39,12 @@ function buildIndexRouteTree() {
         return { home: null };
       }
 
+      const season = await context.queryClient.ensureQueryData(seasonQuery);
+
       const [summary, standings, races] = await Promise.all([
         getTeamSummary(),
         getMyStandings(),
-        context.currentSeason ? getRaceWeekends(context.currentSeason.id) : Promise.resolve([]),
+        season ? getRaceWeekends(season.id) : Promise.resolve([]),
       ]);
 
       return { home: { summary, standings, races } };
@@ -76,6 +79,7 @@ describe('routing at /', () => {
           { leagueId: 12, leagueName: 'Cota 2026', totalTeams: 8, position: 3, totalPoints: 184 },
         ]),
       ),
+      http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(CURRENT_SEASON)),
       http.get(`${API_BASE}/seasons/${CURRENT_SEASON.id}/race-weekends`, () =>
         HttpResponse.json([
           {
@@ -105,7 +109,6 @@ describe('routing at /', () => {
       routerContext: createBaseRouterContext({
         profile: createMockUserProfile({ firstName: 'Ada' }),
         team: createMockTeam({ name: 'Red Bull Racing' }),
-        currentSeason: CURRENT_SEASON,
       }),
     });
 
@@ -120,6 +123,7 @@ describe('routing at /', () => {
         HttpResponse.json({ seasonTotalPoints: null, lastRace: null }),
       ),
       http.get(`${API_BASE}/me/standings`, () => HttpResponse.json([])),
+      http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(CURRENT_SEASON)),
       http.get(`${API_BASE}/seasons/${CURRENT_SEASON.id}/race-weekends`, () =>
         HttpResponse.json([]),
       ),
@@ -132,7 +136,6 @@ describe('routing at /', () => {
       routerContext: createBaseRouterContext({
         profile: createMockUserProfile({ firstName: 'Ada' }),
         team: createMockTeam({ name: 'Red Bull Racing' }),
-        currentSeason: CURRENT_SEASON,
       }),
     });
 
@@ -143,6 +146,7 @@ describe('routing at /', () => {
     server.use(
       http.get(`${API_BASE}/me/team/summary`, () => new HttpResponse(null, { status: 404 })),
       http.get(`${API_BASE}/me/standings`, () => HttpResponse.json([])),
+      http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(CURRENT_SEASON)),
       http.get(`${API_BASE}/seasons/${CURRENT_SEASON.id}/race-weekends`, () =>
         HttpResponse.json([]),
       ),
@@ -155,7 +159,6 @@ describe('routing at /', () => {
       routerContext: createBaseRouterContext({
         profile: createMockUserProfile({ firstName: 'Ada' }),
         team: null,
-        currentSeason: CURRENT_SEASON,
       }),
     });
 

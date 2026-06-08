@@ -50,7 +50,6 @@ export function createBaseRouterContext(
   return {
     team: null,
     profile: null,
-    currentSeason: null,
     ...overrides,
   };
 }

@@ -39,7 +39,7 @@ import { getConstructors } from './services/constructorService';
 import { getDrivers } from './services/driverService';
 import { previewInvite } from './services/leagueInviteService';
 import { getRaceWeekends } from './services/raceWeekendService';
-import { getCurrentSeason } from './services/seasonService';
+import { seasonQuery } from './services/seasonService';
 
 /**
  * Zod schema for validating league ID route parameter.
@@ -108,13 +108,12 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
     // This makes them available to all routes (both public and authenticated)
     if (context.auth.user) {
       try {
-        const [profile, team, currentSeason] = await Promise.all([
+        const [profile, team] = await Promise.all([
           userProfileService.getCurrentProfile(),
           getMyTeam(),
-          getCurrentSeason(),
         ]);
 
-        return { profile, currentSeason, team };
+        return { profile, team };
       } catch (error) {
         // Gracefully degrade if profile/team fetching fails
         // The app should still work without profile data
@@ -132,10 +131,10 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
           },
         });
 
-        return { profile: null, currentSeason: null, team: null };
+        return { profile: null, team: null };
       }
     }
-    return { profile: null, currentSeason: null, team: null };
+    return { profile: null, team: null };
   },
   component: () => (
     <>
@@ -193,10 +192,12 @@ const indexRoute = createRoute({
       return { home: null };
     }
 
+    const season = await context.queryClient.ensureQueryData(seasonQuery);
+
     const [summary, standings, races] = await Promise.all([
       getTeamSummary(),
       getMyStandings(),
-      context.currentSeason ? getRaceWeekends(context.currentSeason.id) : Promise.resolve([]),
+      season ? getRaceWeekends(season.id) : Promise.resolve([]),
     ]);
 
     return { home: { summary, standings, races } };
@@ -630,14 +631,14 @@ const teamRoute = createRoute({
     }
 
     const { teamId } = validationResult.data;
-    const seasonId = context.currentSeason?.id;
+    const season = await context.queryClient.ensureQueryData(seasonQuery);
 
     // Fetch all data in parallel
     const [team, activeDrivers, activeConstructors, races] = await Promise.all([
       getTeamById(teamId),
       getDrivers(),
       getConstructors(),
-      seasonId !== undefined ? getRaceWeekends(seasonId) : Promise.resolve([]),
+      season ? getRaceWeekends(season.id) : Promise.resolve([]),
     ]);
 
     // Return 404 if team doesn't exist
@@ -689,14 +690,14 @@ const myTeamRoute = createRoute({
     activeConstructors: Constructor[];
     races: RaceWeekend[];
   }> => {
-    const seasonId = context.currentSeason?.id;
+    const season = await context.queryClient.ensureQueryData(seasonQuery);
 
     // Fetch all data in parallel
     const [team, activeDrivers, activeConstructors, races] = await Promise.all([
       getMyTeam(),
       getDrivers(),
       getConstructors(),
-      seasonId !== undefined ? getRaceWeekends(seasonId) : Promise.resolve([]),
+      season ? getRaceWeekends(season.id) : Promise.resolve([]),
     ]);
 
     if (!team) {
@@ -785,7 +786,6 @@ export const router = createRouter({
     queryClient: undefined!,
     team: undefined!,
     profile: undefined!,
-    currentSeason: undefined!,
   },
   defaultPendingComponent: () => (
     <div role="status" className="flex min-h-screen items-center justify-center">

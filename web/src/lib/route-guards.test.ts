@@ -78,7 +78,6 @@ describe('route-guards', () => {
         },
         team: null,
         profile: null,
-        currentSeason: null,
         queryClient,
       };
 
@@ -104,7 +103,6 @@ describe('route-guards', () => {
         },
         team: null,
         profile: null,
-        currentSeason: null,
         queryClient,
       };
 
@@ -136,7 +134,6 @@ describe('route-guards', () => {
         },
         team: null,
         profile: null,
-        currentSeason: null,
         queryClient,
       };
 
@@ -151,7 +148,6 @@ describe('route-guards', () => {
         auth: createAuthedAuth(),
         team: null,
         profile: null,
-        currentSeason: null,
         queryClient,
       };
 
@@ -168,7 +164,6 @@ describe('route-guards', () => {
         auth: createAuthedAuth(),
         team,
         profile: null,
-        currentSeason: null,
         queryClient,
       };
 
@@ -183,7 +178,6 @@ describe('route-guards', () => {
         auth: createAuthedAuth(),
         team: createMockTeam(),
         profile: null,
-        currentSeason: null,
         queryClient,
       };
 
@@ -199,7 +193,6 @@ describe('route-guards', () => {
         auth: createAuthedAuth(),
         team: null,
         profile: null,
-        currentSeason: null,
         queryClient,
       };
 

@@ -6,6 +6,7 @@ import type { RouterContext } from '@/lib/router-context';
 import { getConstructors } from '@/services/constructorService';
 import { getDrivers } from '@/services/driverService';
 import { getRaceWeekends } from '@/services/raceWeekendService';
+import { seasonQuery } from '@/services/seasonService';
 import { getMyTeam } from '@/services/teamService';
 import { API_BASE, server } from '@/setupTests';
 import {
@@ -45,12 +46,12 @@ function buildMyTeamRouteTree() {
     getParentRoute: () => teamRequiredLayoutRoute,
     path: 'my-team',
     loader: async ({ context }) => {
-      const seasonId = context.currentSeason?.id;
+      const season = await context.queryClient.ensureQueryData(seasonQuery);
       const [team, activeDrivers, activeConstructors, races] = await Promise.all([
         getMyTeam(),
         getDrivers(),
         getConstructors(),
-        seasonId !== undefined ? getRaceWeekends(seasonId) : Promise.resolve([]),
+        season ? getRaceWeekends(season.id) : Promise.resolve([]),
       ]);
       if (!team) throw redirect({ to: '/' });
       return { team, activeDrivers, activeConstructors, races };
@@ -91,6 +92,7 @@ function teamHandlers(team: Team) {
     http.get(`${API_BASE}/me/team`, () => HttpResponse.json(team)),
     http.get(`${API_BASE}/drivers`, () => HttpResponse.json(allDrivers)),
     http.get(`${API_BASE}/constructors`, () => HttpResponse.json(allConstructors)),
+    http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(createMockSeason())),
     http.get(`${API_BASE}/seasons/1/race-weekends`, () => HttpResponse.json([futureRace])),
   ];
 }
@@ -102,7 +104,6 @@ function renderMyTeam() {
     auth: createAuthedAuth(),
     routerContext: createBaseRouterContext({
       team: createMockTeam(),
-      currentSeason: createMockSeason(),
     }),
   });
 }
@@ -173,6 +174,7 @@ describe('My team lineup', () => {
       http.get(`${API_BASE}/me/team`, () => HttpResponse.json(team)),
       http.get(`${API_BASE}/drivers`, () => HttpResponse.json(allDrivers)),
       http.get(`${API_BASE}/constructors`, () => HttpResponse.json(allConstructors)),
+      http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(createMockSeason())),
       http.get(`${API_BASE}/seasons/1/race-weekends`, () => HttpResponse.json([lockedRace])),
     );
 
