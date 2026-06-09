@@ -1,6 +1,7 @@
 import { requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { supabase } from '@/lib/supabase';
+import { teamKeys } from '@/services/teamService';
 import { createAuthedAuth, createMockTeam } from '@/tests/test-utils';
 import type { Session, User } from '@supabase/supabase-js';
 import { QueryClient } from '@tanstack/react-query';
@@ -76,7 +77,6 @@ describe('route-guards', () => {
           startAuthTransition: vi.fn(),
           completeAuthTransition: vi.fn(),
         },
-        team: null,
         queryClient,
       };
 
@@ -100,7 +100,6 @@ describe('route-guards', () => {
           startAuthTransition: vi.fn(),
           completeAuthTransition: vi.fn(),
         },
-        team: null,
         queryClient,
       };
 
@@ -130,7 +129,6 @@ describe('route-guards', () => {
           startAuthTransition: vi.fn(),
           completeAuthTransition: vi.fn(),
         },
-        team: null,
         queryClient,
       };
 
@@ -140,29 +138,30 @@ describe('route-guards', () => {
   });
 
   describe('requireTeam', () => {
-    it('throws redirect to /create-team when there is no team in context', () => {
+    it('throws redirect to /create-team when the team query resolves to null', async () => {
+      const teamlessClient = new QueryClient();
+      teamlessClient.setQueryData(teamKeys.all, null);
       const context: RouterContext = {
         auth: createAuthedAuth(),
-        team: null,
-        queryClient,
+        queryClient: teamlessClient,
       };
 
-      expect(() => requireTeam(context)).toThrow();
+      await expect(() => requireTeam(context)).rejects.toThrow();
       expect(redirect).toHaveBeenCalledWith({
         to: '/create-team',
         replace: true,
       });
     });
 
-    it('returns the team when a team is present', () => {
-      const team = createMockTeam();
+    it('resolves without redirecting when the team query has a team', async () => {
+      const teamClient = new QueryClient();
+      teamClient.setQueryData(teamKeys.all, createMockTeam());
       const context: RouterContext = {
         auth: createAuthedAuth(),
-        team,
-        queryClient,
+        queryClient: teamClient,
       };
 
-      expect(requireTeam(context)).toEqual({ team });
+      await expect(requireTeam(context)).resolves.toBeUndefined();
       expect(redirect).not.toHaveBeenCalled();
     });
   });

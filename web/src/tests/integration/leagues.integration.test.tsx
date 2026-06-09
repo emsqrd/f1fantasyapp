@@ -92,9 +92,10 @@ function buildLeagueRouteTree() {
 }
 
 function authedRouterContext(): Omit<RouterContext, 'auth' | 'queryClient'> {
-  // The League page reads profile through the query (seeded by the default
-  // handler); the team here satisfies the `requireTeam` guard on the layout.
-  return createBaseRouterContext({ team: createMockTeam() });
+  // The League/BrowseLeagues pages read profile through the query (default
+  // handler); the `/me/team` handler satisfies the `requireTeam` guard.
+  server.use(http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam())));
+  return createBaseRouterContext();
 }
 
 describe('Browse leagues', () => {

@@ -3,7 +3,6 @@
 // `createRoute` directly — these helpers won't fit.
 import { requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
-import { getMyTeam } from '@/services/teamService';
 import {
   type AnyRoute,
   Outlet,
@@ -14,19 +13,13 @@ import {
 import type { ReactNode } from 'react';
 
 /**
- * Test utility: builds a root route that mirrors production's team-fetching root
- * `beforeLoad` — for an authenticated user it fetches the team (satisfied by the
- * test's `/me/team` MSW handler) into `context.team`, so guards run against the
- * real root → context → guard path. Pass `component` when the React tree needs a
- * provider wrapper; it defaults to a bare `<Outlet />`.
+ * Test utility: builds a root route typed with `RouterContext`. Profile/team are
+ * read through the Query cache (primed by loaders/guards), so the root doesn't
+ * fetch them — it just hosts the route tree. Pass `component` when the React
+ * tree needs a provider wrapper; it defaults to a bare `<Outlet />`.
  */
 export function buildRootRoute({ component }: { component?: () => ReactNode } = {}) {
   return createRootRouteWithContext<RouterContext>()({
-    beforeLoad: async ({ context }: { context: RouterContext }) => {
-      if (!context.auth.user) return { team: null };
-      const team = await getMyTeam();
-      return { team };
-    },
     component: component ?? (() => <Outlet />),
   });
 }
@@ -50,8 +43,9 @@ export function buildAuthenticatedLayout(rootRoute: AnyRoute) {
 
 /**
  * Test utility: builds the production `_team-required` pathless layout route
- * with the real `requireTeam` guard attached. Pass the parent — typically the
- * route returned by {@link buildAuthenticatedLayout}.
+ * with the real `requireTeam` guard attached. The guard reads the team through
+ * the Query cache, so tests must seed it via the `/me/team` MSW handler. Pass
+ * the parent — typically the route returned by {@link buildAuthenticatedLayout}.
  */
 export function buildTeamRequiredLayout(parent: AnyRoute) {
   return createRoute({

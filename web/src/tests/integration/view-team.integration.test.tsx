@@ -6,14 +6,13 @@ import { getConstructors } from '@/services/constructorService';
 import { getDrivers } from '@/services/driverService';
 import { getRaceWeekends } from '@/services/raceWeekendService';
 import { seasonQuery } from '@/services/seasonService';
-import { getTeamById } from '@/services/teamService';
+import { getTeamById, myTeamQuery } from '@/services/teamService';
 import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
   buildStubRoute,
   buildTeamRequiredLayout,
   createAuthedAuth,
-  createBaseRouterContext,
   createMockConstructorList,
   createMockDriverList,
   createMockRaceWeekend,
@@ -50,9 +49,11 @@ function buildTeamByIdRouteTree() {
   const teamByIdRoute = createRoute({
     getParentRoute: () => teamRequiredLayoutRoute,
     path: 'team/$teamId',
-    beforeLoad: ({ context, params }) => {
+    beforeLoad: async ({ context, params }) => {
       const teamId = Number(params.teamId);
-      if (Number.isInteger(teamId) && context.team?.id === teamId) {
+      if (!Number.isInteger(teamId)) return;
+      const team = await context.queryClient.ensureQueryData(myTeamQuery);
+      if (team?.id === teamId) {
         throw redirect({ to: '/my-team', replace: true });
       }
     },
@@ -92,13 +93,13 @@ function buildTeamByIdRouteTree() {
 }
 
 function renderTeamById(initialEntry: string) {
+  // The `requireTeam` guard and the own-team redirect both read the team through
+  // the query; seed it (id 1) so /team/1 self-redirects and /team/2 does not.
+  server.use(http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam())));
   return renderWithRouter({
     routeTree: buildTeamByIdRouteTree(),
     initialEntry,
     auth: createAuthedAuth(),
-    routerContext: createBaseRouterContext({
-      team: createMockTeam(),
-    }),
   });
 }
 

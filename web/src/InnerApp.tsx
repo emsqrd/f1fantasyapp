@@ -57,7 +57,7 @@ export function InnerApp() {
 
   return (
     <>
-      <RouterProvider router={router} context={{ auth, queryClient, team: null }} />
+      <RouterProvider router={router} context={{ auth, queryClient }} />
       {auth.isAuthTransitioning && (
         <div
           role="status"

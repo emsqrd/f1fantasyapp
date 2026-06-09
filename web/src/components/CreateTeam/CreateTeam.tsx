@@ -1,10 +1,10 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
-import { createTeam } from '@/services/teamService';
+import { createTeam, myTeamQuery } from '@/services/teamService';
 import { profileQuery } from '@/services/userProfileService';
 import { type CreateTeamFormData, createTeamFormSchema } from '@/validations/teamSchemas';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -23,6 +23,7 @@ export function CreateTeam() {
   const search = useSearch({ from: '/_authenticated/create-team' });
 
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
 
   const {
@@ -44,6 +45,11 @@ export function CreateTeam() {
       const createdTeam = await createTeam({
         name: formData.teamName,
       });
+
+      // Seed the team cache so the destination guard reads it without a refetch,
+      // and refresh the profile so `hasTeam` flips for the sidebar and invite CTAs.
+      queryClient.setQueryData(myTeamQuery.queryKey, createdTeam);
+      queryClient.invalidateQueries(profileQuery);
 
       // Navigate - TanStack Router handles navigation transitions
       if (search.redirect) {

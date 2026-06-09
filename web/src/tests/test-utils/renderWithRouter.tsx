@@ -15,13 +15,13 @@ export interface RenderWithRouterOptions {
   initialEntry: string;
   auth: AuthContextType;
   /**
-   * Router-level context for `createRouter`. `auth` and `queryClient` are wired
-   * automatically — `auth` from the option above, `queryClient` as a fresh
-   * per-test client — so route guards (e.g. `requireAuth`) and the React tree
-   * always see the same values. Callers supply the rest of `RouterContext` so
-   * tests stay explicit about which router state they're exercising.
+   * Router-level context for `createRouter` beyond `auth` and `queryClient`
+   * (both wired automatically — `auth` from the option above, `queryClient` as a
+   * fresh per-test client — so route guards and the React tree always see the
+   * same values). Profile/team/season are read through the Query cache, so
+   * nothing else remains in `RouterContext` to supply — hence optional.
    */
-  routerContext: Omit<RouterContext, 'auth' | 'queryClient'>;
+  routerContext?: Omit<RouterContext, 'auth' | 'queryClient'>;
 }
 
 /**
@@ -43,7 +43,7 @@ export function renderWithRouter({
   routeTree,
   initialEntry,
   auth,
-  routerContext,
+  routerContext = {},
 }: RenderWithRouterOptions) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },

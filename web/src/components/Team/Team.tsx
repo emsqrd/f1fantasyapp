@@ -3,8 +3,9 @@ import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team } from '@/contracts/Team';
 import { useLockCountdown } from '@/hooks/useLockCountdown';
 import { formatBudget } from '@/lib/utils';
-import { setCaptain } from '@/services/teamService';
-import { useLoaderData } from '@tanstack/react-router';
+import { myTeamQuery, setCaptain } from '@/services/teamService';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { notFound, useLoaderData } from '@tanstack/react-router';
 import { useState } from 'react';
 
 import { AppContainer } from '../AppContainer/AppContainer';
@@ -22,9 +23,14 @@ export interface TeamViewProps {
 }
 
 export function MyTeamRoute() {
-  const { team, activeDrivers, activeConstructors, races } = useLoaderData({
+  const { data: team } = useSuspenseQuery(myTeamQuery);
+  const { activeDrivers, activeConstructors, races } = useLoaderData({
     from: '/_authenticated/_team-required/my-team',
   });
+
+  // requireTeam guarantees a team at runtime; this narrows the nullable queryFn
+  // result and falls back to the route's Create-Team notFoundComponent.
+  if (!team) throw notFound();
 
   return (
     <TeamView

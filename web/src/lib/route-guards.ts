@@ -1,6 +1,6 @@
-import type { Team } from '@/contracts/Team';
 import type { RouterContext } from '@/lib/router-context';
 import { supabase } from '@/lib/supabase';
+import { myTeamQuery } from '@/services/teamService';
 import { redirect } from '@tanstack/react-router';
 
 /**
@@ -28,16 +28,17 @@ export async function requireAuth(context: RouterContext): Promise<void> {
 /**
  * Route guard for team-gated routes. Auth is enforced by the enclosing
  * `_authenticated` layout, so this guard does not re-check it.
+ *
+ * A `null` team is a genuine no-team user → redirect to create. A fetch failure
+ * is left to throw rather than be caught back to `null`, which would misroute a
+ * real owner to /create-team on a transient blip.
  */
-export function requireTeam(context: RouterContext): { team: Team } {
-  // context.team is set fresh by the root beforeLoad on every navigation, so
-  // reading it here is as current as a re-fetch.
-  if (!context.team) {
+export async function requireTeam(context: RouterContext): Promise<void> {
+  const team = await context.queryClient.ensureQueryData(myTeamQuery);
+  if (!team) {
     throw redirect({
       to: '/create-team',
       replace: true,
     });
   }
-
-  return { team: context.team };
 }

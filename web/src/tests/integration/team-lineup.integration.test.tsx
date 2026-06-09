@@ -7,13 +7,12 @@ import { getConstructors } from '@/services/constructorService';
 import { getDrivers } from '@/services/driverService';
 import { getRaceWeekends } from '@/services/raceWeekendService';
 import { seasonQuery } from '@/services/seasonService';
-import { getMyTeam } from '@/services/teamService';
+import { myTeamQuery } from '@/services/teamService';
 import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
   buildTeamRequiredLayout,
   createAuthedAuth,
-  createBaseRouterContext,
   createMockConstructorList,
   createMockDriverList,
   createMockRaceWeekend,
@@ -23,7 +22,7 @@ import {
   createMockTeamDriver,
   renderWithRouter,
 } from '@/tests/test-utils';
-import { Outlet, createRootRouteWithContext, createRoute, redirect } from '@tanstack/react-router';
+import { Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
@@ -47,14 +46,13 @@ function buildMyTeamRouteTree() {
     path: 'my-team',
     loader: async ({ context }) => {
       const season = await context.queryClient.ensureQueryData(seasonQuery);
-      const [team, activeDrivers, activeConstructors, races] = await Promise.all([
-        getMyTeam(),
+      await context.queryClient.ensureQueryData(myTeamQuery);
+      const [activeDrivers, activeConstructors, races] = await Promise.all([
         getDrivers(),
         getConstructors(),
         season ? getRaceWeekends(season.id) : Promise.resolve([]),
       ]);
-      if (!team) throw redirect({ to: '/' });
-      return { team, activeDrivers, activeConstructors, races };
+      return { activeDrivers, activeConstructors, races };
     },
     component: MyTeamRoute,
     errorComponent: ({ error }) => (
@@ -102,9 +100,6 @@ function renderMyTeam() {
     routeTree: buildMyTeamRouteTree(),
     initialEntry: '/my-team',
     auth: createAuthedAuth(),
-    routerContext: createBaseRouterContext({
-      team: createMockTeam(),
-    }),
   });
 }
 

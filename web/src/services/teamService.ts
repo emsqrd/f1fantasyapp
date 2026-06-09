@@ -6,6 +6,7 @@ import type { TeamSummary } from '@/contracts/TeamSummary';
 import { apiClient } from '@/lib/api';
 import { isApiError } from '@/utils/errors';
 import * as Sentry from '@sentry/react';
+import { queryOptions } from '@tanstack/react-query';
 
 export async function createTeam(data: CreateTeamRequest): Promise<Team> {
   const team = await apiClient.post<Team, CreateTeamRequest>('/teams', data, 'create team');
@@ -105,3 +106,11 @@ export async function getTeamSummary(): Promise<TeamSummary | null> {
     throw error;
   }
 }
+
+export const teamKeys = { all: ['me', 'team'] as const };
+
+export const myTeamQuery = queryOptions({
+  queryKey: teamKeys.all,
+  queryFn: getMyTeam,
+  staleTime: 5 * 60_000,
+});

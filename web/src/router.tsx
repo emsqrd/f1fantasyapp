@@ -15,9 +15,8 @@ import { requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
 import { getLeagueStandings, getMyStandings } from '@/services/standingsService';
-import { getMyTeam, getTeamById, getTeamSummary } from '@/services/teamService';
+import { getTeamById, getTeamSummary, myTeamQuery } from '@/services/teamService';
 import { profileQuery } from '@/services/userProfileService';
-import * as Sentry from '@sentry/react';
 import {
   ErrorComponent,
   Outlet,
@@ -90,39 +89,9 @@ const redirectSearchSchema = z.object({
  * Root route with context - wraps all routes in the application.
  *
  * Provides the base layout with {@link Layout} component and dev tools.
- * All child routes inherit context containing auth and team state.
+ * All child routes inherit context containing auth and the query client.
  */
 const rootRoute = createRootRouteWithContext<RouterContext>()({
-  beforeLoad: async ({ context }) => {
-    // Fetch the team for authenticated users at root level so the guards can read
-    // it from context on every navigation (both public and authenticated routes).
-    if (context.auth.user) {
-      try {
-        const team = await getMyTeam();
-        return { team };
-      } catch (error) {
-        // Fall back to team: null on failure (captured below). The guards can't
-        // tell this apart from a genuine no-team user, so a transient failure can
-        // bounce a real owner to /create-team until the next navigation succeeds.
-        const fetchError = error instanceof Error ? error : new Error('Failed to fetch user data');
-
-        Sentry.captureException(fetchError, {
-          tags: {
-            component: 'rootRoute',
-            operation: 'beforeLoad',
-          },
-          contexts: {
-            user: {
-              userId: context.auth.user.id,
-            },
-          },
-        });
-
-        return { team: null };
-      }
-    }
-    return { team: null };
-  },
   loader: async ({ context }) => {
     // Prime the profile query so the app shell and the index greeting serve it
     // from cache. Tolerate a failure — a profile blip must not fail the whole tree.
@@ -310,11 +279,17 @@ const joinInviteRoute = createRoute({
 const authenticatedLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: '_authenticated',
-  beforeLoad: async ({ context }) => {
-    await requireAuth(context);
-    // Profile is now fetched at root route level and available via context
-  },
+  beforeLoad: ({ context }) => requireAuth(context),
   component: () => <Outlet />,
+  // Catches the `requireTeam` fetch failure thrown by the `_team-required`
+  // child guard. Placed on this ancestor — inside the root Layout outlet, so the
+  // chrome stays and the user gets a retry — because a route's own errorComponent
+  // doesn't reliably catch its own beforeLoad throw on a hard load.
+  errorComponent: ({ error, reset }) => (
+    <ErrorBoundary level="page">
+      <ErrorFallback error={error} onReset={reset} level="page" />
+    </ErrorBoundary>
+  ),
 });
 
 /**
@@ -553,9 +528,12 @@ const teamRoute = createRoute({
     pageTitle: 'Team Details',
   },
   beforeLoad: async ({ context, params }) => {
-    // Redirect to /my-team if viewing own team (runs before loader/render)
+    // Redirect to /my-team if viewing own team (runs before loader/render).
     const validationResult = teamIdParamsSchema.safeParse(params);
-    if (validationResult.success && context.team?.id === validationResult.data.teamId) {
+    if (!validationResult.success) return;
+
+    const team = await context.queryClient.ensureQueryData(myTeamQuery);
+    if (team?.id === validationResult.data.teamId) {
       throw redirect({ to: '/my-team', replace: true });
     }
   },
@@ -634,26 +612,22 @@ const myTeamRoute = createRoute({
   loader: async ({
     context,
   }): Promise<{
-    team: TeamType;
     activeDrivers: Driver[];
     activeConstructors: Constructor[];
     races: RaceWeekend[];
   }> => {
     const season = await context.queryClient.ensureQueryData(seasonQuery);
+    // Warm-cache hit after the `_team-required` guard; pairs with the component's
+    // useSuspenseQuery(myTeamQuery).
+    await context.queryClient.ensureQueryData(myTeamQuery);
 
-    // Fetch all data in parallel
-    const [team, activeDrivers, activeConstructors, races] = await Promise.all([
-      getMyTeam(),
+    const [activeDrivers, activeConstructors, races] = await Promise.all([
       getDrivers(),
       getConstructors(),
       season ? getRaceWeekends(season.id) : Promise.resolve([]),
     ]);
 
-    if (!team) {
-      throw redirect({ to: '/create-team' });
-    }
-
-    return { team, activeDrivers, activeConstructors, races };
+    return { activeDrivers, activeConstructors, races };
   },
   component: MyTeamRoute,
   pendingComponent: () => (
@@ -713,7 +687,7 @@ const routeTree = rootRoute.addChildren([
  *
  * Configured with:
  * - Route tree structure
- * - Router context (auth, team)
+ * - Router context (auth, queryClient)
  * - Default pending/error/not-found components
  * - {@link ErrorBoundary} integration for error handling
  *
@@ -726,7 +700,6 @@ export const router = createRouter({
     // Context will be provided by the RouterProvider in main.tsx
     auth: undefined!,
     queryClient: undefined!,
-    team: undefined!,
   },
   defaultPendingComponent: () => (
     <div role="status" className="flex min-h-screen items-center justify-center">

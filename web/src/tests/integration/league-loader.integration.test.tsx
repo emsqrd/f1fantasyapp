@@ -71,11 +71,13 @@ function buildLeagueRouteTree() {
 }
 
 function renderLeagueRoute() {
+  // The `/me/team` handler satisfies the `requireTeam` guard on the layout.
+  server.use(http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam())));
   renderWithRouter({
     routeTree: buildLeagueRouteTree(),
     initialEntry: '/league/1',
     auth: createAuthedAuth(),
-    routerContext: createBaseRouterContext({ team: createMockTeam() }),
+    routerContext: createBaseRouterContext(),
   });
 }
 
