@@ -11,7 +11,7 @@ import { ConfirmEmailNotice } from '@/components/auth/ConfirmEmailNotice/Confirm
 import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import type { Team as TeamType } from '@/contracts/Team';
-import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
+import { requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
 import { getLeagueStandings, getMyStandings } from '@/services/standingsService';
@@ -47,8 +47,6 @@ import { seasonQuery } from './services/seasonService';
  * - Coerced from string to number
  * - An integer
  * - A positive value (> 0)
- *
- * @see {@link https://zod.dev/?id=coercion-for-primitives | Zod Coercion}
  */
 const leagueIdParamsSchema = z.object({
   leagueId: z.coerce
@@ -64,8 +62,6 @@ const leagueIdParamsSchema = z.object({
  * - Coerced from string to number
  * - An integer
  * - A positive value (> 0)
- *
- * @see {@link https://zod.dev/?id=coercion-for-primitives | Zod Coercion}
  */
 const teamIdParamsSchema = z.object({
   teamId: z.coerce
@@ -81,8 +77,6 @@ const teamIdParamsSchema = z.object({
  * Invalid redirect values fall back to undefined instead of throwing errors.
  *
  * Security: Only allows internal paths starting with '/' to prevent open redirects.
- *
- * @see {@link https://tanstack.com/router/latest/docs/framework/react/how-to/validate-search-params | Validate Search Parameters}
  */
 const redirectSearchSchema = z.object({
   redirect: z
@@ -97,9 +91,6 @@ const redirectSearchSchema = z.object({
  *
  * Provides the base layout with {@link Layout} component and dev tools.
  * All child routes inherit context containing auth and team state.
- *
- * @type {import('@tanstack/react-router').RootRoute<RouterContext>}
- * @see {@link https://tanstack.com/router/latest/docs/framework/react/api/router/createRootRouteWithContextFunction | createRootRouteWithContext}
  */
 const rootRoute = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async ({ context }) => {
@@ -183,8 +174,6 @@ const unauthenticatedLayoutRoute = createRoute({
  * Anonymous users see the marketing {@link LandingPage}. Authenticated users see
  * the {@link Home} surface composed from team summary, league standings, and
  * race weekends fetched in parallel by the loader.
- *
- * @type {import('@tanstack/react-router').Route}
  */
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -211,8 +200,6 @@ const indexRoute = createRoute({
 
 /**
  * Sign-in route - public route for user authentication.
- *
- * @type {import('@tanstack/react-router').Route}
  */
 const signInRoute = createRoute({
   getParentRoute: () => unauthenticatedLayoutRoute,
@@ -228,8 +215,6 @@ const signUpSearchSchema = redirectSearchSchema.extend({
 
 /**
  * Sign-up route - public route for user registration.
- *
- * @type {import('@tanstack/react-router').Route}
  */
 const signUpRoute = createRoute({
   getParentRoute: () => unauthenticatedLayoutRoute,
@@ -276,8 +261,6 @@ const authConfirmRoute = createRoute({
  *
  * **Note:** Returns 404 for invalid or expired tokens. Users can be authenticated or
  * unauthenticated - authentication is handled by the {@link JoinInvite} component.
- *
- * @type {import('@tanstack/react-router').Route}
  */
 const joinInviteRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -323,8 +306,6 @@ const joinInviteRoute = createRoute({
  *
  * **Note:** The underscore prefix (`_authenticated`) is TanStack Router convention for
  * {@link https://tanstack.com/router/latest/docs/framework/react/guide/route-trees#pathless-layout-routes | pathless layout routes}.
- *
- * @type {import('@tanstack/react-router').Route}
  */
 const authenticatedLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -342,8 +323,6 @@ const authenticatedLayoutRoute = createRoute({
  * Child of {@link authenticatedLayoutRoute}, inherits auth protection.
  * Uses {@link https://tanstack.com/router/latest/docs/framework/react/guide/data-loading | loader}
  * to fetch profile data before component renders.
- *
- * @type {import('@tanstack/react-router').Route}
  */
 const accountRoute = createRoute({
   getParentRoute: () => authenticatedLayoutRoute,
@@ -372,34 +351,10 @@ const accountRoute = createRoute({
 });
 
 /**
- * No-team layout route - parent route for routes requiring no existing team.
- *
- * Uses {@link requireNoTeam} guard in
- * {@link https://tanstack.com/router/latest/docs/framework/react/api/router/RouteOptionsType#beforeload-method | beforeLoad}
- * to redirect users who already have teams. Child routes automatically inherit this protection.
- *
- * **Note:** The underscore prefix (`_no-team`) is TanStack Router convention for
- * {@link https://tanstack.com/router/latest/docs/framework/react/guide/route-trees#pathless-layout-routes | pathless layout routes}.
- *
- * @type {import('@tanstack/react-router').Route}
- */
-const noTeamLayoutRoute = createRoute({
-  getParentRoute: () => authenticatedLayoutRoute,
-  id: '_no-team',
-  beforeLoad: ({ context }) => requireNoTeam(context),
-  component: () => <Outlet />,
-});
-
-/**
- * Create team route - allows users without teams to create their first team.
- *
- * Child of {@link noTeamLayoutRoute}, inherits protection against users with existing teams.
- * Users who already have a team are automatically redirected to `/`.
- *
- * @type {import('@tanstack/react-router').Route}
+ * Create team route - lets an authenticated user create their team.
  */
 const createTeamRoute = createRoute({
-  getParentRoute: () => noTeamLayoutRoute,
+  getParentRoute: () => authenticatedLayoutRoute,
   path: 'create-team',
   validateSearch: redirectSearchSchema,
   staticData: {
@@ -432,8 +387,6 @@ const createTeamRoute = createRoute({
  *
  * **Note:** The underscore prefix (`_team-required`) is TanStack Router convention for
  * {@link https://tanstack.com/router/latest/docs/framework/react/guide/route-trees#pathless-layout-routes | pathless layout routes}.
- *
- * @type {import('@tanstack/react-router').Route}
  */
 const teamRequiredLayoutRoute = createRoute({
   getParentRoute: () => authenticatedLayoutRoute,
@@ -452,8 +405,6 @@ const teamRequiredLayoutRoute = createRoute({
  * Implements
  * {@link https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#stale-while-revalidate-caching | SWR caching}
  * with `staleTime` and `gcTime` for optimal performance.
- *
- * @type {import('@tanstack/react-router').Route}
  */
 const leaguesRoute = createRoute({
   getParentRoute: () => teamRequiredLayoutRoute,
@@ -523,8 +474,6 @@ const browseLeaguesRoute = createRoute({
  * Implements
  * {@link https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#stale-while-revalidate-caching | SWR caching}
  * with `staleTime` and `gcTime` for optimal performance.
- *
- * @type {import('@tanstack/react-router').Route}
  */
 const leagueRoute = createRoute({
   getParentRoute: () => teamRequiredLayoutRoute,
@@ -596,8 +545,6 @@ const leagueRoute = createRoute({
  * Implements
  * {@link https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#stale-while-revalidate-caching | SWR caching}
  * with `staleTime` and `gcTime` for optimal performance.
- *
- * @type {import('@tanstack/react-router').Route}
  */
 const teamRoute = createRoute({
   getParentRoute: () => teamRequiredLayoutRoute,
@@ -742,10 +689,6 @@ const myTeamRoute = createRoute({
  * Organized with layout routes for shared logic:
  * - {@link authenticatedLayoutRoute} - auth protection
  * - {@link teamRequiredLayoutRoute} - auth + team protection
- * - {@link noTeamLayoutRoute} - auth + no team protection
- *
- * @type {import('@tanstack/react-router').RootRoute<RouterContext>}
- * @see {@link https://tanstack.com/router/latest/docs/framework/react/guide/route-trees | Route Trees}
  */
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -754,7 +697,7 @@ const routeTree = rootRoute.addChildren([
   joinInviteRoute,
   authenticatedLayoutRoute.addChildren([
     accountRoute,
-    noTeamLayoutRoute.addChildren([createTeamRoute]),
+    createTeamRoute,
     teamRequiredLayoutRoute.addChildren([
       leaguesRoute,
       browseLeaguesRoute,
@@ -776,9 +719,6 @@ const routeTree = rootRoute.addChildren([
  *
  * **Note:** Sentry integration is configured in `main.tsx` via
  * `tanStackRouterBrowserTracingIntegration` for performance monitoring.
- *
- * @type {import('@tanstack/react-router').Router<typeof routeTree, 'never'>}
- * @see {@link https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction | createRouter}
  */
 export const router = createRouter({
   routeTree,
@@ -818,8 +758,6 @@ export const router = createRouter({
  * - Search params
  * - Loader data
  * - Router context
- *
- * @see {@link https://tanstack.com/router/latest/docs/framework/react/guide/type-safety | Type Safety}
  */
 declare module '@tanstack/react-router' {
   interface Register {

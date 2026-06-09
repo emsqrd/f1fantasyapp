@@ -1,7 +1,7 @@
 // All helpers in this file assume routes are composed under a root route typed
 // with `RouterContext`. If a test needs a different context shape, drop down to
 // `createRoute` directly — these helpers won't fit.
-import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
+import { requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { getMyTeam } from '@/services/teamService';
 import {
@@ -74,22 +74,6 @@ export function buildUnauthenticatedLayout(rootRoute: AnyRoute) {
         });
       }
     },
-    component: () => <Outlet />,
-  });
-}
-
-/**
- * Test utility: builds the production `_no-team` pathless layout route with
- * the real `requireNoTeam` guard attached.
- *
- * Used by integration tests that exercise routes only available before a user
- * has created a team (e.g. `/create-team`).
- */
-export function buildNoTeamLayout(rootRoute: AnyRoute) {
-  return createRoute({
-    getParentRoute: () => rootRoute,
-    id: '_no-team',
-    beforeLoad: ({ context }: { context: RouterContext }) => requireNoTeam(context),
     component: () => <Outlet />,
   });
 }

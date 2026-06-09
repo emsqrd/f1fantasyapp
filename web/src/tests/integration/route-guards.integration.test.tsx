@@ -1,13 +1,11 @@
 import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
-  buildNoTeamLayout,
   buildRootRoute,
   buildStubRoute,
   buildTeamRequiredLayout,
   createAuthedAuth,
   createBaseRouterContext,
-  createMockTeam,
   createUnauthAuth,
   renderWithRouter,
 } from '@/tests/test-utils';
@@ -20,9 +18,10 @@ import { describe, expect, it } from 'vitest';
 // `/me/team` MSW handler drives `context.team` through the real
 // root → context → guard path the production tree uses. Mirror the layout chain:
 // `_authenticated` (requireAuth) → `_team-required` (requireTeam) for /my-team,
-// and `_authenticated` → `_no-team` (requireNoTeam) for /create-team. Destination
-// routes are bare stubs so a redirect lands on something renderable; their
-// headings are how each test confirms which redirect fired.
+// with `/create-team` sitting directly under `_authenticated` as the no-team
+// redirect target. Destination routes are bare stubs so a redirect lands on
+// something renderable; their headings are how each test confirms which redirect
+// fired.
 function buildGuardRouteTree() {
   const rootRoute = buildRootRoute();
 
@@ -33,8 +32,7 @@ function buildGuardRouteTree() {
     path: 'my-team',
     heading: 'My Team Page',
   });
-  const noTeamLayoutRoute = buildNoTeamLayout(authenticatedLayoutRoute);
-  const createTeamRoute = buildStubRoute(noTeamLayoutRoute, {
+  const createTeamRoute = buildStubRoute(authenticatedLayoutRoute, {
     path: 'create-team',
     heading: 'Create Team Page',
   });
@@ -43,7 +41,7 @@ function buildGuardRouteTree() {
     homeRoute,
     authenticatedLayoutRoute.addChildren([
       teamRequiredLayoutRoute.addChildren([myTeamRoute]),
-      noTeamLayoutRoute.addChildren([createTeamRoute]),
+      createTeamRoute,
     ]),
   ]);
 }
@@ -73,19 +71,5 @@ describe('route guard wiring', () => {
 
     expect(await screen.findByRole('heading', { name: 'Create Team Page' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'My Team Page' })).not.toBeInTheDocument();
-  });
-
-  it('redirects authenticated users with a team from /create-team to /', async () => {
-    server.use(http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam())));
-
-    renderWithRouter({
-      routeTree: buildGuardRouteTree(),
-      initialEntry: '/create-team',
-      auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
-    });
-
-    expect(await screen.findByRole('heading', { name: 'Home Page' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Create Team Page' })).not.toBeInTheDocument();
   });
 });

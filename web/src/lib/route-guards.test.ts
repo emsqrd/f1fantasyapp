@@ -1,4 +1,4 @@
-import { requireAuth, requireNoTeam, requireTeam } from '@/lib/route-guards';
+import { requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { supabase } from '@/lib/supabase';
 import { createAuthedAuth, createMockTeam } from '@/tests/test-utils';
@@ -163,33 +163,6 @@ describe('route-guards', () => {
       };
 
       expect(requireTeam(context)).toEqual({ team });
-      expect(redirect).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('requireNoTeam', () => {
-    it('throws redirect to / when a team is present in context', () => {
-      const context: RouterContext = {
-        auth: createAuthedAuth(),
-        team: createMockTeam(),
-        queryClient,
-      };
-
-      expect(() => requireNoTeam(context)).toThrow();
-      expect(redirect).toHaveBeenCalledWith({
-        to: '/',
-        replace: true,
-      });
-    });
-
-    it('returns null when there is no team', () => {
-      const context: RouterContext = {
-        auth: createAuthedAuth(),
-        team: null,
-        queryClient,
-      };
-
-      expect(requireNoTeam(context)).toEqual({ team: null });
       expect(redirect).not.toHaveBeenCalled();
     });
   });

@@ -1,7 +1,10 @@
+import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
 import { createTeam } from '@/services/teamService';
+import { profileQuery } from '@/services/userProfileService';
 import { type CreateTeamFormData, createTeamFormSchema } from '@/validations/teamSchemas';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -17,7 +20,10 @@ export function CreateTeam() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const { message, announce } = useLiveRegion();
-  const search = useSearch({ from: '/_authenticated/_no-team/create-team' });
+  const search = useSearch({ from: '/_authenticated/create-team' });
+
+  const { user } = useAuth();
+  const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
 
   const {
     register,
@@ -53,6 +59,23 @@ export function CreateTeam() {
       announce(errorMessage);
     }
   };
+
+  if (profile?.hasTeam) {
+    return (
+      <AppContainer maxWidth="md">
+        <div className="flex w-full items-center justify-center p-8 md:min-h-screen">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="text-center text-3xl font-bold">Pump the Brakes</CardTitle>
+              <p className="text-muted-foreground text-center">
+                You can only have one team per season and you've already got one.
+              </p>
+            </CardHeader>
+          </Card>
+        </div>
+      </AppContainer>
+    );
+  }
 
   return (
     <AppContainer maxWidth="md">

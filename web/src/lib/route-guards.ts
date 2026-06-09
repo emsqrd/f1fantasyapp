@@ -41,19 +41,3 @@ export function requireTeam(context: RouterContext): { team: Team } {
 
   return { team: context.team };
 }
-
-/**
- * Route guard for routes that require the user NOT to have a team (e.g.
- * `/create-team`). Auth is enforced by the enclosing `_authenticated` layout, so
- * this guard does not re-check it.
- */
-export function requireNoTeam(context: RouterContext): { team: null } {
-  if (context.team) {
-    throw redirect({
-      to: '/',
-      replace: true,
-    });
-  }
-
-  return { team: null };
-}

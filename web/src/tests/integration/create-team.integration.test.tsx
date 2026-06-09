@@ -1,15 +1,13 @@
 import { CreateTeam } from '@/components/CreateTeam/CreateTeam';
-import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
-import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
 import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
-  buildNoTeamLayout,
   buildRootRoute,
   buildStubRoute,
   createAuthedAuth,
   createBaseRouterContext,
   createMockTeam,
+  createMockUserProfile,
   renderWithRouter,
 } from '@/tests/test-utils';
 import { createRoute } from '@tanstack/react-router';
@@ -19,18 +17,18 @@ import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-// `/create-team` lives under the `_authenticated` → `_no-team` layout chain in
-// `router.tsx`. The integration tree mirrors that chain, and the root
-// `beforeLoad` (via `buildRootRoute`) fetches the team into `context.team` —
-// `requireNoTeam` reads it, so GET /me/team must return 404 for the form to
-// render. Stub destination routes (`/team/$teamId`, `/leagues`) exist as bare
+// `/create-team` lives directly under the `_authenticated` layout in
+// `router.tsx` — the one-team-per-user rule is enforced by the backend, and
+// `CreateTeam` itself decides between the form and an already-have-a-team state
+// from `profile.hasTeam`. The default MSW handlers seed a no-team profile, so the
+// form renders without per-test setup; the has-team case overrides `/me/profile`.
+// Stub destination routes (`/team/$teamId`, `/leagues`) exist as bare
 // placeholders so navigation targets are resolvable; their rendered titles are
-// how the tests assert post-submit navigation landed on the right URL.
+// how the tests assert navigation landed on the right URL.
 function buildCreateTeamRouteTree() {
   const rootRoute = buildRootRoute();
 
   const authenticatedLayoutRoute = buildAuthenticatedLayout(rootRoute);
-  const noTeamLayoutRoute = buildNoTeamLayout(authenticatedLayoutRoute);
 
   const redirectSearchSchema = z.object({
     redirect: z
@@ -41,31 +39,24 @@ function buildCreateTeamRouteTree() {
   });
 
   const createTeamRoute = createRoute({
-    getParentRoute: () => noTeamLayoutRoute,
+    getParentRoute: () => authenticatedLayoutRoute,
     path: 'create-team',
     validateSearch: redirectSearchSchema,
     component: CreateTeam,
-    errorComponent: ({ error }) => (
-      <ErrorBoundary level="page">
-        <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-      </ErrorBoundary>
-    ),
   });
 
   const teamByIdRoute = buildStubRoute(rootRoute, { path: 'team/$teamId', heading: 'Team Page' });
   const leaguesRoute = buildStubRoute(rootRoute, { path: 'leagues', heading: 'Leagues Page' });
 
   return rootRoute.addChildren([
-    authenticatedLayoutRoute.addChildren([noTeamLayoutRoute.addChildren([createTeamRoute])]),
+    authenticatedLayoutRoute.addChildren([createTeamRoute]),
     teamByIdRoute,
     leaguesRoute,
   ]);
 }
 
 describe('Create team', () => {
-  it('renders the form when the requireNoTeam guard sees no existing team', async () => {
-    server.use(http.get(`${API_BASE}/me/team`, () => new HttpResponse(null, { status: 404 })));
-
+  it('renders the form for a user without a team', async () => {
     renderWithRouter({
       routeTree: buildCreateTeamRouteTree(),
       initialEntry: '/create-team',
@@ -77,13 +68,30 @@ describe('Create team', () => {
     expect(screen.getByRole('button', { name: /create team/i })).toBeInTheDocument();
   });
 
+  it('shows the already-have-a-team state instead of the form for a user with a team', async () => {
+    server.use(
+      http.get(`${API_BASE}/me/profile`, () =>
+        HttpResponse.json(createMockUserProfile({ hasTeam: true })),
+      ),
+    );
+
+    renderWithRouter({
+      routeTree: buildCreateTeamRouteTree(),
+      initialEntry: '/create-team',
+      auth: createAuthedAuth(),
+      routerContext: createBaseRouterContext(),
+    });
+
+    expect(await screen.findByText(/only have one team per season/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/team name/i)).not.toBeInTheDocument();
+  });
+
   it('creates the team and navigates to /team/$teamId on success', async () => {
     const user = userEvent.setup();
     const createdTeam = createMockTeam({ id: 42, name: 'My Racing Team' });
     let capturedBody: unknown = null;
 
     server.use(
-      http.get(`${API_BASE}/me/team`, () => new HttpResponse(null, { status: 404 })),
       http.post(`${API_BASE}/teams`, async ({ request }) => {
         capturedBody = await request.json();
         return HttpResponse.json(createdTeam);
@@ -108,10 +116,7 @@ describe('Create team', () => {
   it('surfaces an InlineError when team creation fails', async () => {
     const user = userEvent.setup();
 
-    server.use(
-      http.get(`${API_BASE}/me/team`, () => new HttpResponse(null, { status: 404 })),
-      http.post(`${API_BASE}/teams`, () => new HttpResponse(null, { status: 500 })),
-    );
+    server.use(http.post(`${API_BASE}/teams`, () => new HttpResponse(null, { status: 500 })));
 
     renderWithRouter({
       routeTree: buildCreateTeamRouteTree(),
@@ -133,8 +138,6 @@ describe('Create team', () => {
 
     // No POST handler on purpose — MSW runs in strict mode (see `setupTests.ts`),
     // so any unexpected POST /teams would fail the test loudly.
-    server.use(http.get(`${API_BASE}/me/team`, () => new HttpResponse(null, { status: 404 })));
-
     renderWithRouter({
       routeTree: buildCreateTeamRouteTree(),
       initialEntry: '/create-team',
@@ -150,10 +153,7 @@ describe('Create team', () => {
   it('navigates to the redirect search param when provided', async () => {
     const user = userEvent.setup();
 
-    server.use(
-      http.get(`${API_BASE}/me/team`, () => new HttpResponse(null, { status: 404 })),
-      http.post(`${API_BASE}/teams`, () => HttpResponse.json(createMockTeam({ id: 7 }))),
-    );
+    server.use(http.post(`${API_BASE}/teams`, () => HttpResponse.json(createMockTeam({ id: 7 }))));
 
     renderWithRouter({
       routeTree: buildCreateTeamRouteTree(),
