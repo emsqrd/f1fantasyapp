@@ -1,8 +1,8 @@
 # Plan: TanStack Query for Cross-Route Reads (#247)
 
-Implementation plan for #247, following the decision in [ADR 006](../adr/006-tanstack-query-for-cross-route-reads.md) — the ADR holds the *why*, this plan the *how*. Tracking: #254.
+Implementation plan for #247, following the decision in [ADR 006](../adr/006-tanstack-query-for-cross-route-reads.md) — the ADR holds the _why_, this plan the _how_. Tracking: #254.
 
-The same commits carry the fix for **#249** (a transient load failure misread as "no team"): deleting the catch-all-to-`null` `beforeLoad` removes its cause, and Commits 5 and 7 implement the throw-vs-`null` handling. But the code alone doesn't *guarantee* it — a guard that swallowed the throw back to `null` would silently reintroduce #249 — so it closes only when its regression tests (Commits 5 and 7: transient-failure-doesn't-misroute, profile-blip-doesn't-demote-Home) are green. Closable here, not closed by the migration.
+The same commits carry the fix for **#249** (a transient load failure misread as "no team"): deleting the catch-all-to-`null` `beforeLoad` removes its cause, and Commits 5 and 7 implement the throw-vs-`null` handling. But the code alone doesn't _guarantee_ it — a guard that swallowed the throw back to `null` would silently reintroduce #249 — so it closes only when its regression tests (Commits 5 and 7: transient-failure-doesn't-misroute, profile-blip-doesn't-demote-Home) are green. Closable here, not closed by the migration.
 
 ## Conventions (used across commits)
 
@@ -10,13 +10,18 @@ The same commits carry the fix for **#249** (a transient load failure misread as
 
 ```ts
 new QueryClient({
-  defaultOptions: { queries: {
-    staleTime: 60_000, gcTime: 5 * 60_000, refetchOnWindowFocus: false, retry: 1,
-  }},
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
 });
 ```
 
-**`queryOptions` colocated in the service modules**, with key factories — `['me', …]` for user-scoped, bare for global. The `['me']` prefix is load-bearing: it's the namespace the user-switch reset (Commit 8) clears with one `removeQueries({ queryKey: ['me'] })`, which is why season and (later) reference data stay *outside* it. Per-resource definitions:
+**`queryOptions` colocated in the service modules**, with key factories — `['me', …]` for user-scoped, bare for global. The `['me']` prefix is load-bearing: it's the namespace the user-switch reset (Commit 8) clears with one `removeQueries({ queryKey: ['me'] })`, which is why season and (later) reference data stay _outside_ it. Per-resource definitions:
 
 ```ts
 // userProfileService.ts
@@ -24,7 +29,7 @@ export const profileKeys = { all: ['me', 'profile'] as const };
 export const profileQuery = queryOptions({ queryKey: profileKeys.all, queryFn: () => userProfileService.getCurrentProfile(), staleTime: 5 * 60_000 });
 // teamService.ts
 export const teamKeys = { all: ['me', 'team'] as const };
-export const teamQuery = queryOptions({ queryKey: teamKeys.all, queryFn: getMyTeam, staleTime: 5 * 60_000 });
+export const myTeamQuery = queryOptions({ queryKey: teamKeys.all, queryFn: getMyTeam, staleTime: 5 * 60_000 });
 // seasonService.ts — inherits client defaults (staleTime 60s, gcTime 5min)
 export const seasonKeys = { current: ['season', 'current'] as const };
 export const seasonQuery = queryOptions({ queryKey: seasonKeys.current, queryFn: getCurrentSeason });
@@ -41,14 +46,14 @@ Each commit below is a gate: it includes its own tests and independently passes 
 ## Scope — not in this plan
 
 - **Route-owned loader `staleTime`** — #247's evidence notes it's absent on `index`/`leagues`/`account`. Those loaders hold single-route data (summary/standings, my-leagues), not profile/team/season; normalizing their cache settings is separate from this migration and stays out.
-- **Preloading / waterfall elimination** — #247's impact notes a two-stage waterfall (beforeLoad wave → loader wave). This work removes the *redundant requests*; collapsing the remaining waterfall via intent preloading is **#248**, which it unblocks.
+- **Preloading / waterfall elimination** — #247's impact notes a two-stage waterfall (beforeLoad wave → loader wave). This work removes the _redundant requests_; collapsing the remaining waterfall via intent preloading is **#248**, which it unblocks.
 - **Reference-data dedup** (drivers / constructors / race-weekends) — **#255**, sequenced onto this foundation.
 
 ## Verifying #247's acceptance
 
 #247's AC — no re-request of unchanged profile/team/season, nothing fetched twice per navigation, revisit serves from cache — is **not** checked with a request-count test: dedup-by-shared-key and `staleTime` caching are TanStack Query guarantees (the strategy's "don't test third-party internals"), and exact-count assertions are brittle. It's verified instead by:
 
-- **construction + review** — each read goes through the one colocated `queryOptions` (single key by definition), its freshness is intentional (profile/team set `staleTime: 5 * 60_000`; season inherits the client defaults — see Conventions), and *no stray direct `getMyTeam` / `getCurrentProfile` / `getCurrentSeason` remains in a loader* (the double-call #247 measured); and
+- **construction + review** — each read goes through the one colocated `queryOptions` (single key by definition), its freshness is intentional (profile/team set `staleTime: 5 * 60_000`; season inherits the client defaults — see Conventions), and _no stray direct `getMyTeam` / `getCurrentProfile` / `getCurrentSeason` remains in a loader_ (the double-call #247 measured); and
 - **re-running #247's network capture** once Commit 7 lands (manually or via the `verify` skill against a prod-like build) — confirming profile/team/season each drop to once-per-navigation and serve from cache.
 
 The automated suite stays on the correctness failure modes the migration could break — existence-from-summary, create-team's has-team gating, #249's no-misroute, the user-switch reset — per the strategy's "failure modes, not scenarios."
@@ -103,25 +108,28 @@ Independent of the team→query migration: it relies only on Commit 5's `profile
 
 ## Commit 7 — Migrate `team` to a query (fix "/my-team fetched twice")
 
-- **`teamService` + `RouterContext` teardown.** Add `teamQuery` (see Conventions). `requireTeam` and `teamRoute.beforeLoad` become async and read the team via `ensureQueryData(teamQuery)`, returning `void` — same happy path, different jobs:
+- **`teamService` + `RouterContext` teardown.** Add `myTeamQuery` (see Conventions). `requireTeam` and `teamRoute.beforeLoad` become async and read the team via `ensureQueryData(myTeamQuery)`, returning `void` — same happy path, different jobs:
   - `requireTeam` (on `_team-required`): `null` → redirect `/create-team`; **throw** → propagate (honest error — the #249 fix); team present → continue.
-  - `teamRoute.beforeLoad` (`team/$teamId`): reads the team via `ensureQueryData(teamQuery)` for the own-team → `/my-team` redirect. It runs after `requireTeam`, so this is a warm-cache read, not a second fetch.
+  - `teamRoute.beforeLoad` (`team/$teamId`): validates the `teamId` param (early-return on a bad one), then reads the team via `ensureQueryData(myTeamQuery)` for the own-team → `/my-team` redirect. It runs after `requireTeam`, so this is a warm-cache read, not a second fetch.
 
   Delete the now-empty root `beforeLoad` (the profile-priming `loader` from Commit 5 stays). Remove `team` from `RouterContext` → `{ auth, queryClient }`; `createBaseRouterContext` returns `{}` and the `routerContext` arg becomes droppable. Update `buildRootRoute` (drop the `context.team` seed) and `buildTeamRequiredLayout` (the guard now reads the query, primed via the `/me/team` MSW handler).
-- **My-team read migration.** *MyTeamRoute* switches its team read from `useLoaderData` to `useSuspenseQuery(teamQuery)`. The `queryFn` is `Team | null`, so narrow with `if (!team) throw notFound()` — the route already has a fitting `notFoundComponent` (→ Create Team), and `requireTeam` guarantees non-null at runtime, so this is the type-honest backstop, not a live branch. The my-team loader keeps drivers/constructors/races/season **and** adds `ensureQueryData(teamQuery)` (the documented loader-primes + component-`useSuspenseQuery` pairing; a warm-cache hit after the guard). *TeamRoute* (`team/$teamId`) is otherwise untouched — it reads `getTeamById(id)`, a *different* team, route-owned via `useLoaderData`.
+
+- **My-team read migration.** _MyTeamRoute_ switches its team read from `useLoaderData` to `useSuspenseQuery(myTeamQuery)`. The `queryFn` is `Team | null`, so narrow with `if (!team) throw notFound()` — the route already has a fitting `notFoundComponent` (→ Create Team), and `requireTeam` guarantees non-null at runtime, so this is the type-honest backstop, not a live branch. The my-team loader keeps drivers/constructors/races/season **and** adds `ensureQueryData(myTeamQuery)` (the documented loader-primes + component-`useSuspenseQuery` pairing; a warm-cache hit after the guard). _TeamRoute_ (`team/$teamId`) is otherwise untouched — it reads `getTeamById(id)`, a _different_ team, route-owned via `useLoaderData`.
 
   _Why the gate stays in `beforeLoad`, not a loader:_ loaders for the matched chain run in parallel, so a redirect thrown from the `_team-required` loader wouldn't stop the leaf loader from firing — only `beforeLoad` short-circuits the subtree. The `beforeLoad` fetch is gating logic; the leaf-loader fetch is the render read; they share one cache key, so there's no double fetch.
-- **Lineup-edit refresh.** Re-point `useLineupPicker`'s `router.invalidate()` to `queryClient.invalidateQueries({ queryKey: teamQuery.queryKey })` (via `useQueryClient()`). Once the read is the query, `router.invalidate()` no longer refreshes it (`ensureQueryData` returns the stale cache), so add/remove driver/constructor would silently stop reflecting. Captain (`Team.handleSetCaptain`) keeps its local optimistic state and stays **#252** (once team is a query, that fix is a one-line `invalidateQueries`).
-- **`CreateTeam.onSubmit`.** After `createTeam`, `queryClient.setQueryData(teamQuery.queryKey, created)` + invalidate `profileQuery` (its `hasTeam` flips — also what makes Commit 6's back-button case show the message, and what un-reds the create-then-join e2e `league.spec.ts:97`: `JoinInvite` re-reads `profile.hasTeam` and shows "Join League"), then navigate to `/team/$teamId` as today. With `requireNoTeam` already gone there's no stale `null` to bounce on, so `setQueryData` is an optimization (skips a redundant `/me/team` after the POST) — the destination's `requireTeam` reads the team from cache.
+
+- **Lineup-edit refresh.** Re-point `useLineupPicker`'s `router.invalidate()` to `queryClient.invalidateQueries({ queryKey: myTeamQuery.queryKey })` (via `useQueryClient()`). Once the read is the query, `router.invalidate()` no longer refreshes it (`ensureQueryData` returns the stale cache), so add/remove driver/constructor would silently stop reflecting. Captain (`Team.handleSetCaptain`) keeps its local optimistic state and stays **#252** (once team is a query, that fix is a one-line `invalidateQueries`).
+- **`CreateTeam.onSubmit`.** After `createTeam`, `queryClient.setQueryData(myTeamQuery.queryKey, created)` + invalidate `profileQuery` (its `hasTeam` flips — also what makes Commit 6's back-button case show the message, and what un-reds the create-then-join e2e `league.spec.ts:97`: `JoinInvite` re-reads `profile.hasTeam` and shows "Join League"), then navigate to `/team/$teamId` as today. With `requireNoTeam` already gone there's no stale `null` to bounce on, so `setQueryData` is an optimization (skips a redundant `/me/team` after the POST) — the destination's `requireTeam` reads the team from cache.
 - **Error surface (scoped).** Add an `errorComponent` to the `_authenticated` layout route (reusing `ErrorBoundary`/`ErrorFallback`, `onReset={reset}`). The `requireTeam` team-fetch throw (the #249 case) renders there — inside the root `Layout` outlet, so the sidebar stays and the user gets a retry. Placed on the ancestor, not `_team-required` itself, because a route's own `errorComponent` doesn't reliably catch its own `beforeLoad` throw on a hard load (TanStack Router #3462). Leaf routes keep their own `errorComponent`s, so this only catches the layout-guard throw.
 - **Tests.**
   - `route-guards.test.ts`: `requireTeam` is async and reads the query — seed the per-test `QueryClient` (`setQueryData(teamKeys.all, mockTeam | null)`), assert redirect-vs-`void`; delete the old `{ team }` return assertions. (`requireNoTeam` cases already removed in Commit 6.)
-  - `useLineupPicker.test.ts`: **update** the two `router.invalidate()` assertions — provide a `QueryClient` and assert `invalidateQueries` fires with `teamQuery.queryKey`. This is the real regression guard for the re-point; the team-lineup integration test never completes an add/remove, so it does not cover it.
+  - `useLineupPicker.test.ts`: **update** the two `router.invalidate()` assertions — provide a `QueryClient` and assert `invalidateQueries` fires with `myTeamQuery.queryKey`. This is the real regression guard for the re-point; the team-lineup integration test never completes an add/remove, so it does not cover it.
   - `routeTreeBuilders.tsx`: drop the `context.team` seed from `buildRootRoute` (the guards read the query now).
   - `team-lineup.integration.test.tsx`: update the mirrored my-team route to the new shape (guard primes the query, component `useSuspenseQuery`); stays green as the lineup-**render** regression guard.
-  - `create-team.integration.test.tsx`: the create → `/team/$teamId` happy path stays green (`onSubmit` now also primes `teamQuery`).
-  - New integration: **#249 transient-500-does-not-misroute** — authed, `/me/team` → 500, navigating to a team route renders the `_authenticated` `errorComponent` (with retry), not `/create-team`.
-  - `/me/team` already seeded in the default MSW handlers.
+  - `create-team.integration.test.tsx`: the create → `/team/$teamId` happy path stays green (`onSubmit` now also primes `myTeamQuery`).
+  - New integration (`route-guards.integration.test.tsx`): **#249 transient-500-does-not-misroute** — authed, `/me/team` → 500, navigating to a team route renders the `_authenticated` `errorComponent` (with retry), not `/create-team`.
+  - `view-team.integration.test.tsx`: mirror the new `teamRoute.beforeLoad` — validate the id, early-return on a bad one, else `ensureQueryData(myTeamQuery)` for the own-team redirect; seed `/me/team` so `/team/1` self-redirects and `/team/2` doesn't.
+  - **Integration fixtures.** The default `/me/team` handler returns 404 (a no-team user) — it does _not_ hand a team to tests that render a `_team-required` page. Each such test now seeds a present team through `/me/team` instead of the old `context.team`: `leaderboard`, `leagues`, `league-invite-dialog`, `league-loader` (and `view-team` above) swap `createBaseRouterContext({ team: … })` for `server.use(/me/team)` + `createBaseRouterContext()`. (`renderContexts.ts` drops the helper's `overrides` param so it returns `{}`; `renderWithRouter`'s `routerContext` becomes optional.)
 - **Gate:** `RouterContext` is `{ auth, queryClient }`; the root `beforeLoad` is gone. **#247 acceptance:** run `/verify` against a prod-like build — each of `/me/profile`, `/me/team`, `/seasons/current` fetched at most once per navigation and served from cache on revisit; and review confirms no stray direct `getMyTeam` / `getCurrentProfile` / `getCurrentSeason` is left in a loader. (Rationale in "Verifying #247's acceptance" above.)
 
 ## Commit 8 — User-switch cache reset
@@ -140,12 +148,30 @@ Cleanup surfaced by Commit 5. That commit extracted `src/mocks/handlers.ts` + `s
 - **Tests:** pure refactor, no behavior change — the existing suite is the regression guard; build, lint, format, test stay green.
 - **Gate:** `setupTests.ts` exports nothing; tests import shared fixtures from `@/mocks` / `@/tests/test-utils`, never from the setup file.
 
-## Commit 10 — Docs + E2E
+## Commit 10 — Rename `profile` / `season` query exports to match their `queryFn`
+
+Naming cleanup, no behavior change. Commit 7 introduced the team read as `myTeamQuery` — the name mirrors its `queryFn` (`getMyTeam`) and disambiguates it from the domain's other team notions (a team by id, the summary). The two earlier exports were born terse (`profileQuery` in Commit 5, `seasonQuery` in Commit 4); fine in isolation, inconsistent beside `myTeamQuery`. Bring them in line, name matching `queryFn`:
+
+- `userProfileService.ts`: `profileQuery` → `currentProfileQuery` (mirrors `getCurrentProfile`).
+- `seasonService.ts`: `seasonQuery` → `currentSeasonQuery` (mirrors `getCurrentSeason`).
+
+Pure identifier rename across every importer — the `rootRoute` / `account` / index / `my-team` / `team/$id` loaders and guards in `router.tsx`, the chrome and identity consumers from Commit 5, and their tests. Key factories (`profileKeys` / `seasonKeys`) keep their names — they're resource-grouped and `.all` / `.current` already disambiguate. (`team` was named `myTeamQuery` at birth in Commit 7, so it's untouched here.)
+
+- **Tests:** none added — pure rename; the existing suite is the regression guard. Build, lint, format, test stay green.
+- **Gate:** no `profileQuery` / `seasonQuery` identifier remains; every read imports the renamed export.
+
+## Commit 11 — Drop the vestigial `createBaseRouterContext` test helper
+
+Cleanup surfaced by Commit 7. Once `RouterContext` narrowed to `{ auth, queryClient }` — both wired by `renderWithRouter` — `createBaseRouterContext` returns `{}` and `renderWithRouter`'s `routerContext` is optional, so `routerContext: createBaseRouterContext()` is equivalent to omitting the arg. The helper supplies nothing.
+
+- Delete `createBaseRouterContext` from `renderContexts.ts` and its `@/tests/test-utils` re-export.
+- Drop the `routerContext: createBaseRouterContext()` line at its ~30 call sites — `renderWithRouter` already defaults `routerContext` to `{}`.
+- Collapse the per-file wrappers that only delegated to it — `authedRouterContext` (`leagues`), `ownerRouterContext` (`league-invite-dialog`), `makeRouterContext` (`join-invite`) — to seed-only functions: they exist for their `server.use(...)` side effect (seeding `/me/team` or `/me/profile`), not a return value, so the test calls the seed and omits `routerContext`.
+- **Tests:** pure refactor, no behavior change — the existing suite is the regression guard; build, lint, format, test stay green.
+- **Gate:** `createBaseRouterContext` is gone; a test passes `routerContext` only when it has a non-default value to supply (today: none).
+
+## Commit 12 — Docs + E2E
 
 - **Land-time docs:** `web/CLAUDE.md` — State Management (router context is `{ auth, queryClient }`; profile/team/season in the Query cache), Data Loading Pattern (`ensureQueryData` in loaders/guards + `useSuspenseQuery`/`useQuery` for those reads; route-owned stays on `useLoaderData`), Frontend Integration Tests (`renderWithRouter` signature + the extracted profile/team/season MSW handlers). Root `CLAUDE.md` — the "initial page load fires three concurrent requests" note. `docs/adr/003` — a one-line "see ADR 006" pointer on the `context.currentSeason!.id` snippet (don't rewrite the body). _CONTEXT.md (Team summary) and ADR 006 are already updated._
 - **E2E:** confirm existing journeys cover the contract — `team.spec`'s create-team→`/my-team` already covers the create happy path; `avatar.spec` + `auth.spec` traverse `/me/profile`; `league.spec`'s create-then-join (`league.spec.ts:97`) exercises the Commit 7 `onSubmit` `profileQuery` invalidation and is red until it lands. Add one same-session **switch-user-no-leak** spec: sign in as A (with team) → sign out → sign in as B → assert B's identity/team, not A's. No migration or seeding-fixture changes (computed `hasTeam`, pre-existing `teamName`).
 - **Gate:** docs match the landed code; E2E green.
-
----
-
-**Dependency order:** 1, 2 (backend contract) → 3 (foundation) → 4 → 5 → 6 → 7 → 8, then 10 (docs) last. The read-site migration spans 5–7: profile (5) before the create-team `hasTeam` state (6, which needs it) before the team→query migration (7, which strips `context.team`, so the no-team guard must already be gone). The one cross-commit regression: the create-then-join flow (`league.spec.ts:97`) breaks at Commit 5 (`JoinInvite` moves to `profile.hasTeam`, which nothing refreshes on team create) and recovers at Commit 7 (`onSubmit` invalidates `profileQuery`) — red across 5–6. Commit 9 is an independent test-infra follow-up: it depends only on Commit 5's `mocks/` extraction and can land any time after.
