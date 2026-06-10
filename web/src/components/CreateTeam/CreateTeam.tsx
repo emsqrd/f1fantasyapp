@@ -46,9 +46,12 @@ export function CreateTeam() {
         name: formData.teamName,
       });
 
-      // Seed the team cache so the destination guard reads it without a refetch,
-      // and refresh the profile so `hasTeam` flips for the sidebar and invite CTAs.
-      queryClient.setQueryData(myTeamQuery.queryKey, createdTeam);
+      // POST /teams returns a slimmer team than GET /me/team (no drivers/
+      // constructors), so it must not be cached as the team query's value.
+      // Evict instead — including the `null` cached for a no-team user — and
+      // the destination's requireTeam fetches the full shape. The profile
+      // refresh flips `hasTeam` for the sidebar and invite CTAs.
+      queryClient.removeQueries({ queryKey: myTeamQuery.queryKey });
       queryClient.invalidateQueries(profileQuery);
 
       // Navigate - TanStack Router handles navigation transitions

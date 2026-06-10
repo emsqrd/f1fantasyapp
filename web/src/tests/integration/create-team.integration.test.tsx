@@ -1,4 +1,5 @@
 import { CreateTeam } from '@/components/CreateTeam/CreateTeam';
+import { myTeamQuery } from '@/services/teamService';
 import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
@@ -98,7 +99,7 @@ describe('Create team', () => {
       }),
     );
 
-    renderWithRouter({
+    const { queryClient } = renderWithRouter({
       routeTree: buildCreateTeamRouteTree(),
       initialEntry: '/create-team',
       auth: createAuthedAuth(),
@@ -111,6 +112,9 @@ describe('Create team', () => {
     expect(await screen.findByRole('heading', { name: 'Team Page' })).toBeInTheDocument();
     // Wire contract: schema trims whitespace; CreateTeam sends `{ name }`.
     expect(capturedBody).toEqual({ name: 'My Racing Team' });
+    // The POST response is slimmer than GET /me/team, so the team query must be
+    // evicted, not seeded with it — the next guard read fetches the full shape.
+    expect(queryClient.getQueryData(myTeamQuery.queryKey)).toBeUndefined();
   });
 
   it('surfaces an InlineError when team creation fails', async () => {
