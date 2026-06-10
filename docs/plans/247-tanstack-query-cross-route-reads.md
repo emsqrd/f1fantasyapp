@@ -160,37 +160,9 @@ The reset is only timing-correct against an auth source that updates synchronous
 - **Tests:** gating matrix in `authStore.test.ts` (initial no-op; sign-in / sign-out / A→B fire; refresh no-op); `authReactions.test.ts` (query cache fully emptied and router cache cleared, both before `invalidate` runs); the 8a integration test extends to assert the reaction fires exactly once per real sign-in/out round-trip; `InnerApp.test.tsx` drops its invalidation block but keeps a minimal `vi.mock('./router', () => ({ router: {} }))` — unmocked, that unit test would load the app's whole route tree. The no-flash property itself has no automated pin (a frame-timing E2E would be flaky); the eviction-order unit test pins the mechanism, and Commit 12's switch-user spec covers the user-visible consequence.
 - **Gate:** an identity change wipes both caches and re-runs the matched routes against the new user; nothing fetched or rendered for the previous identity survives.
 
-## Commit 9 — Test-infra follow-up: `mocks/` import surface + side-effect-only setup file
+## Commits 9–11 — moved to #263
 
-Cleanup surfaced by Commit 5. That commit extracted `src/mocks/handlers.ts` + `src/mocks/server.ts`, but left `setupTests.ts` re-exporting `server`/`API_BASE` so the ~14 existing `import { … } from '@/setupTests'` sites kept working. That re-export is a back-compat shim, against the grain of both tools: Vitest [`setupFiles`](https://vitest.dev/config/setupfiles) are for side effects that run before each test file (extend `expect`, polyfills, lifecycle hooks), not a module tests import values from; MSW's [Node integration](https://mswjs.io/docs/integrations/node) keeps `server` in a dedicated `mocks/` module that tests import from directly, with the setup file only consuming it to wire `listen`/`resetHandlers`/`close`.
-
-- Add `src/mocks/index.ts` barrel — `export { API_BASE } from './handlers'; export { server } from './server'` — so tests do `import { server, API_BASE } from '@/mocks'`.
-- Relocate `setMobileViewport` + its `matchMedia` stub out of `setupTests.ts` into `src/tests/test-utils/matchMedia.ts` (`setMobileViewport` for tests + `installMatchMediaMock` for setup); `setupTests` calls `installMatchMediaMock()` for its side effect and resets via `setMobileViewport(false)` in `afterEach`.
-- Repoint the ~14 `@/setupTests` importers: `server`/`API_BASE` → `@/mocks`, `setMobileViewport` → `@/tests/test-utils`. `setupTests.ts` then **exports nothing** — purely the Vitest setup entry (jest-dom, env stubs, `ResizeObserver`, matchMedia install, MSW lifecycle).
-- **Tests:** pure refactor, no behavior change — the existing suite is the regression guard; build, lint, format, test stay green.
-- **Gate:** `setupTests.ts` exports nothing; tests import shared fixtures from `@/mocks` / `@/tests/test-utils`, never from the setup file.
-
-## Commit 10 — Rename `profile` / `season` query exports to match their `queryFn`
-
-Naming cleanup, no behavior change. Commit 7 introduced the team read as `myTeamQuery` — the name mirrors its `queryFn` (`getMyTeam`) and disambiguates it from the domain's other team notions (a team by id, the summary). The two earlier exports were born terse (`profileQuery` in Commit 5, `seasonQuery` in Commit 4); fine in isolation, inconsistent beside `myTeamQuery`. Bring them in line, name matching `queryFn`:
-
-- `userProfileService.ts`: `profileQuery` → `currentProfileQuery` (mirrors `getCurrentProfile`).
-- `seasonService.ts`: `seasonQuery` → `currentSeasonQuery` (mirrors `getCurrentSeason`).
-
-Pure identifier rename across every importer — the `rootRoute` / `account` / index / `my-team` / `team/$id` loaders and guards in `router.tsx`, the chrome and identity consumers from Commit 5, and their tests. Key factories (`profileKeys` / `seasonKeys`) keep their names — they're resource-grouped and `.all` / `.current` already disambiguate. (`team` was named `myTeamQuery` at birth in Commit 7, so it's untouched here.)
-
-- **Tests:** none added — pure rename; the existing suite is the regression guard. Build, lint, format, test stay green.
-- **Gate:** no `profileQuery` / `seasonQuery` identifier remains; every read imports the renamed export.
-
-## Commit 11 — Drop the vestigial `createBaseRouterContext` test helper
-
-Cleanup surfaced by Commit 7. Once `RouterContext` narrowed to `{ auth, queryClient }` — both wired by `renderWithRouter` — `createBaseRouterContext` returns `{}` and `renderWithRouter`'s `routerContext` is optional, so `routerContext: createBaseRouterContext()` is equivalent to omitting the arg. The helper supplies nothing.
-
-- Delete `createBaseRouterContext` from `renderContexts.ts` and its `@/tests/test-utils` re-export.
-- Drop the `routerContext: createBaseRouterContext()` line at its ~30 call sites — `renderWithRouter` already defaults `routerContext` to `{}`.
-- Collapse the per-file wrappers that only delegated to it — `authedRouterContext` (`leagues`), `ownerRouterContext` (`league-invite-dialog`), `makeRouterContext` (`join-invite`) — to seed-only functions: they exist for their `server.use(...)` side effect (seeding `/me/team` or `/me/profile`), not a return value, so the test calls the seed and omits `routerContext`.
-- **Tests:** pure refactor, no behavior change — the existing suite is the regression guard; build, lint, format, test stay green.
-- **Gate:** `createBaseRouterContext` is gone; a test passes `routerContext` only when it has a non-default value to supply (today: none).
+The three behavior-neutral cleanups originally planned here — the `mocks/` import surface + side-effect-only setup file, the `profileQuery`/`seasonQuery` → `currentProfileQuery`/`currentSeasonQuery` renames, and dropping the vestigial `createBaseRouterContext` helper — are split to follow-up **#263** (child of #254) to keep this PR reviewable. Their full specs live in that issue. Commit 12 keeps its number; it's referenced above.
 
 ## Commit 12 — Docs + E2E
 
