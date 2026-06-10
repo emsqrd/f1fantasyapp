@@ -1,4 +1,4 @@
-import { type Auth, seedAuthStore } from '@/lib/authStore';
+import { type Auth, routerAuth, seedAuthStore } from '@/lib/authStore';
 import type { RouterContext } from '@/lib/router-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
@@ -25,9 +25,9 @@ export interface RenderWithRouterOptions {
 
 /**
  * Mounts a TanStack Router instance over a caller-supplied route tree for
- * frontend integration tests. The `auth` value seeds the auth store (read by
- * `useAuth` consumers) and is passed to the router context (read by guards), so
- * both surfaces see the same state.
+ * frontend integration tests. The `auth` value seeds the auth store; `useAuth`
+ * consumers and the router context (a live view over the store, as in
+ * production) both read that seeded state.
  *
  * The caller owns the route tree so each test can mount the smallest viable
  * subset of routes. The auth value and router context must be supplied in full
@@ -55,7 +55,7 @@ export function renderWithRouter({
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
-    context: { ...routerContext, auth, queryClient },
+    context: { ...routerContext, auth: routerAuth, queryClient },
   });
 
   return {

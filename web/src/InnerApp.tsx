@@ -2,7 +2,6 @@ import { RouterProvider } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 
 import { useAuth } from './hooks/useAuth';
-import { queryClient } from './lib/queryClient';
 import { router } from './router';
 
 /**
@@ -57,7 +56,7 @@ export function InnerApp() {
 
   return (
     <>
-      <RouterProvider router={router} context={{ auth, queryClient }} />
+      <RouterProvider router={router} />
       {auth.isAuthTransitioning && (
         <div
           role="status"

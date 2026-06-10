@@ -96,6 +96,21 @@ export function getAuthActions(): AuthActions {
   return actions;
 }
 
+export interface RouterAuth {
+  user: User | null;
+}
+
+/**
+ * Live view for the router context: reads go through to the current snapshot,
+ * so guards and loaders evaluate auth at execution time, never a copy captured
+ * at render time.
+ */
+export const routerAuth: RouterAuth = {
+  get user() {
+    return snapshot.user;
+  },
+};
+
 let teardownInit: (() => void) | null = null;
 
 /**

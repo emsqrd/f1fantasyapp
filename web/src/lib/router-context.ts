@@ -1,4 +1,4 @@
-import type { Auth } from '@/lib/authStore';
+import type { RouterAuth } from '@/lib/authStore';
 import type { QueryClient } from '@tanstack/react-query';
 
 /**
@@ -8,8 +8,8 @@ import type { QueryClient } from '@tanstack/react-query';
  * @see {@link https://tanstack.com/router/latest/docs/framework/react/guide/route-trees#router-context TanStack Router Context Documentation}
  */
 export interface RouterContext {
-  /** Authentication state and methods from the auth store */
-  auth: Auth;
+  /** Live view over the auth store — guards and loaders read the current user */
+  auth: RouterAuth;
 
   queryClient: QueryClient;
 }

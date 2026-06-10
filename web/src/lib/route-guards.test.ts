@@ -1,9 +1,8 @@
 import { requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
-import { supabase } from '@/lib/supabase';
 import { teamKeys } from '@/services/teamService';
 import { createAuthedAuth, createMockTeam } from '@/tests/test-utils';
-import type { Session, User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 import { QueryClient } from '@tanstack/react-query';
 import { redirect } from '@tanstack/react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,16 +20,6 @@ vi.mock('@tanstack/react-router', async () => {
   };
 });
 
-// Mock Supabase — requireAuth falls back to getSession() when context.auth.user
-// is null to handle the lag between exchangeCodeForSession and React state.
-vi.mock('@/lib/supabase', () => ({
-  supabase: {
-    auth: {
-      getSession: vi.fn(),
-    },
-  },
-}));
-
 // Helper to create a mock user
 const createMockUser = (): User => ({
   id: '123',
@@ -41,98 +30,35 @@ const createMockUser = (): User => ({
   created_at: new Date().toISOString(),
 });
 
-// Helper to create a mock session
-const createMockSession = (): Session => ({
-  access_token: 'mock-token',
-  token_type: 'bearer',
-  expires_in: 3600,
-  expires_at: Math.floor(Date.now() / 1000) + 3600,
-  refresh_token: 'mock-refresh-token',
-  user: createMockUser(),
-});
-
 // Guards don't read the client; it satisfies the RouterContext shape.
 const queryClient = new QueryClient();
 
 describe('route-guards', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({
-      data: { session: null },
-      error: null,
-    } as Awaited<ReturnType<typeof supabase.auth.getSession>>);
   });
 
   describe('requireAuth', () => {
-    it('throws redirect when user is not authenticated', async () => {
+    it('throws redirect when user is not authenticated', () => {
       const context: RouterContext = {
-        auth: {
-          user: null,
-          session: null,
-          loading: false,
-          isAuthTransitioning: false,
-          signIn: vi.fn(),
-          signUp: vi.fn(),
-          signOut: vi.fn(),
-          startAuthTransition: vi.fn(),
-          completeAuthTransition: vi.fn(),
-        },
+        auth: { user: null },
         queryClient,
       };
 
-      await expect(() => requireAuth(context)).rejects.toThrow();
+      expect(() => requireAuth(context)).toThrow();
       expect(redirect).toHaveBeenCalledWith({
         to: '/',
         replace: true,
       });
     });
 
-    it('does not throw when user is authenticated', async () => {
+    it('does not throw when user is authenticated', () => {
       const context: RouterContext = {
-        auth: {
-          user: createMockUser(),
-          session: createMockSession(),
-          loading: false,
-          isAuthTransitioning: false,
-          signIn: vi.fn(),
-          signUp: vi.fn(),
-          signOut: vi.fn(),
-          startAuthTransition: vi.fn(),
-          completeAuthTransition: vi.fn(),
-        },
+        auth: { user: createMockUser() },
         queryClient,
       };
 
-      await expect(requireAuth(context)).resolves.not.toThrow();
-    });
-
-    it('does not throw when context lags but Supabase has a session', async () => {
-      // Simulates the moment right after the email-confirmation callback
-      // signs the user in: Supabase has persisted the session (so
-      // getSession() returns it), but AuthContext hasn't re-rendered yet,
-      // so context.auth.user is still null. The guard should fall back to
-      // getSession() and let the navigation through instead of redirecting.
-      vi.mocked(supabase.auth.getSession).mockResolvedValue({
-        data: { session: createMockSession() },
-        error: null,
-      } as Awaited<ReturnType<typeof supabase.auth.getSession>>);
-
-      const context: RouterContext = {
-        auth: {
-          user: null,
-          session: null,
-          loading: false,
-          isAuthTransitioning: false,
-          signIn: vi.fn(),
-          signUp: vi.fn(),
-          signOut: vi.fn(),
-          startAuthTransition: vi.fn(),
-          completeAuthTransition: vi.fn(),
-        },
-        queryClient,
-      };
-
-      await expect(requireAuth(context)).resolves.not.toThrow();
+      expect(() => requireAuth(context)).not.toThrow();
       expect(redirect).not.toHaveBeenCalled();
     });
   });

@@ -33,6 +33,8 @@ import { BrowseLeagues } from './components/BrowseLeagues/BrowseLeagues';
 import { JoinInvite } from './components/JoinInvite/JoinInvite';
 import type { RaceWeekend } from './contracts/RaceWeekend';
 import type { Constructor, Driver } from './contracts/Role';
+import { routerAuth } from './lib/authStore';
+import { queryClient } from './lib/queryClient';
 import { getConstructors } from './services/constructorService';
 import { getDrivers } from './services/driverService';
 import { previewInvite } from './services/leagueInviteService';
@@ -697,9 +699,8 @@ const routeTree = rootRoute.addChildren([
 export const router = createRouter({
   routeTree,
   context: {
-    // Context will be provided by the RouterProvider in main.tsx
-    auth: undefined!,
-    queryClient: undefined!,
+    auth: routerAuth,
+    queryClient,
   },
   defaultPendingComponent: () => (
     <div role="status" className="flex min-h-screen items-center justify-center">

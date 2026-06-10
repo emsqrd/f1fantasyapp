@@ -247,14 +247,22 @@ test.describe('auth', () => {
     await signInAs(page, user);
     await expect(page).toHaveURL('/');
 
+    // Sign out from a guarded page: its loaders are the ones the sign-out
+    // re-runs, which is the surface that used to fire 401s with the cleared
+    // session and dead-end on the error fallback.
+    await page.goto('/my-team');
+    await expect(page.getByRole('button', { name: 'Account menu' })).toBeVisible();
+
     await page.getByRole('button', { name: 'Account menu' }).click();
     await page.getByRole('menuitem', { name: 'Sign Out' }).click();
 
     // Sign-in and sign-out both land on `/`, so the URL can't confirm the
-    // session cleared. The landing page (with its Sign In button) renders
-    // only when logged out — wait for it before probing a protected route.
+    // session cleared. The landing page hero renders only when logged out —
+    // wait for it before probing a protected route. The Sign In button alone
+    // is not enough: the error fallback's banner also shows one.
     await expect(page).toHaveURL('/');
-    await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /race to glory/i })).toBeVisible();
+    await expect(page.getByText('Something went wrong!')).not.toBeVisible();
 
     await page.goto('/my-team');
     await expect(page).toHaveURL('/');

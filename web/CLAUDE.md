@@ -28,9 +28,7 @@ TanStack Router uses **guard-based route protection** with pathless layout route
 
 ### State Management
 
-**Pattern:** Put state where its reader reaches it. If a guard or loader needs it, it goes in **router context** — `beforeLoad`/`loader` run outside React and can't read a React context. If the component tree needs it, it goes in a **React context**, which distributes app-wide values (auth, theme) down the tree. Auth needs both.
-
-The user's team lives in router context (`context.team`, fetched by the root `beforeLoad`) — the single source of truth, deliberately not a React context.
+**Pattern:** Put state where its reader reaches it. `beforeLoad`/`loader` run outside React, so anything a guard or loader needs goes in **router context** — `{ auth, queryClient }`. `auth` is a live view over the auth store (reads evaluate at guard/loader execution time, never a render-time copy); `queryClient` reaches the TanStack Query cache, where cross-route reads live — each defined as a `queryOptions` in its service module. The component tree reads the same sources through hooks: `useAuth()` for the store, `useQuery`/`useSuspenseQuery` for the cache.
 
 ### API/Service Layer
 
@@ -99,8 +97,8 @@ See root `CLAUDE.md` `## Testing Strategy` for cross-cutting rules (unit vs inte
 **Unit-testing route guards** — call guard functions directly, not through components. (Integration tests cover guard wiring by mounting layouts with the real guard attached — see "Frontend Integration Tests" below.)
 
 ```typescript
-const context = { auth: { user: null, loading: false }, team: null };
-await expect(requireAuth(context)).rejects.toThrow();
+const context = { auth: { user: null }, queryClient: new QueryClient() };
+expect(() => requireAuth(context)).toThrow();
 ```
 
 **Mock factories:** `createMockTeam`, `createMockDriver` from `@/tests/test-utils`.
