@@ -50,10 +50,18 @@ window.matchMedia = ((query: string): MediaQueryList =>
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 
-afterEach(() => {
+afterEach(async () => {
   cleanup();
   server.resetHandlers();
   mobileViewport = false;
+
+  // Imported lazily: a static import would evaluate `lib/supabase` before the
+  // env stubs above run and would pin the real module ahead of per-file
+  // `vi.mock('@/lib/supabase')` registrations. The catch covers suites that
+  // deliberately break the supabase env (supabase.test.ts) — if the module
+  // graph can't load, there is no store instance to reset.
+  const authStore = await import('./lib/authStore').catch(() => null);
+  authStore?.resetAuthStore();
 });
 
 afterAll(() => server.close());

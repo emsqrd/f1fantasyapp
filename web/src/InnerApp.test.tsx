@@ -2,9 +2,9 @@ import { render, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { InnerApp } from './InnerApp';
-import type { AuthContextType } from './contexts/AuthContext';
 // Import after mocks are set up
 import { useAuth } from './hooks/useAuth';
+import type { Auth } from './lib/authStore';
 import { router } from './router';
 
 // Mock dependencies
@@ -27,8 +27,8 @@ const createMockAuthContext = (
   user: { id: string } | null,
   loading = false,
   isAuthTransitioning = false,
-): AuthContextType => ({
-  user: user as AuthContextType['user'],
+): Auth => ({
+  user: user as Auth['user'],
   session: null,
   loading,
   isAuthTransitioning,

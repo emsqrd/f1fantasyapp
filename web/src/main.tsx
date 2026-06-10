@@ -6,8 +6,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { InnerApp } from './InnerApp.tsx';
-import { AuthProvider } from './contexts/AuthContext.tsx';
 import './index.css';
+import { initAuthStore } from './lib/authStore.ts';
 import { queryClient } from './lib/queryClient.ts';
 import { router } from './router.tsx';
 
@@ -57,6 +57,8 @@ Sentry.init({
   enableLogs: import.meta.env.PROD,
 });
 
+initAuthStore();
+
 const container = document.getElementById('root');
 if (!container) throw new Error('Root container not found');
 
@@ -71,9 +73,7 @@ root.render(
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
       <Toaster position="top-center" />
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <InnerApp />
-        </AuthProvider>
+        <InnerApp />
       </QueryClientProvider>
     </ThemeProvider>
   </StrictMode>,

@@ -1,4 +1,4 @@
-import type { AuthContextType } from '@/contexts/AuthContext';
+import type { Auth } from '@/lib/authStore';
 import type { QueryClient } from '@tanstack/react-query';
 
 /**
@@ -8,8 +8,8 @@ import type { QueryClient } from '@tanstack/react-query';
  * @see {@link https://tanstack.com/router/latest/docs/framework/react/guide/route-trees#router-context TanStack Router Context Documentation}
  */
 export interface RouterContext {
-  /** Authentication state and methods from AuthContext */
-  auth: AuthContextType;
+  /** Authentication state and methods from the auth store */
+  auth: Auth;
 
   queryClient: QueryClient;
 }

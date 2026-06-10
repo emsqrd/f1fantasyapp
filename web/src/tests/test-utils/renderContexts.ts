@@ -1,15 +1,15 @@
-import type { AuthContextType } from '@/contexts/AuthContext';
+import type { Auth } from '@/lib/authStore';
 import type { RouterContext } from '@/lib/router-context';
 import type { Session, User } from '@supabase/supabase-js';
 import { vi } from 'vitest';
 
 /**
- * Test utility: Creates an unauthenticated `AuthContextType` for `renderWithRouter`.
+ * Test utility: Creates an unauthenticated `Auth` value for `renderWithRouter`.
  *
  * Each call returns a fresh object with new `vi.fn()` instances so tests don't
  * inherit mock state across files.
  */
-export function createUnauthAuth(overrides: Partial<AuthContextType> = {}): AuthContextType {
+export function createUnauthAuth(overrides: Partial<Auth> = {}): Auth {
   return {
     user: null,
     session: null,
@@ -25,12 +25,12 @@ export function createUnauthAuth(overrides: Partial<AuthContextType> = {}): Auth
 }
 
 /**
- * Test utility: Creates an authenticated `AuthContextType` for `renderWithRouter`.
+ * Test utility: Creates an authenticated `Auth` value for `renderWithRouter`.
  *
  * Defaults to `user: { id: 'user-123' }`. Pass `{ user: { id: '...' } as User }`
  * when a test keys off a specific user id (e.g. league-owner scenarios).
  */
-export function createAuthedAuth(overrides: Partial<AuthContextType> = {}): AuthContextType {
+export function createAuthedAuth(overrides: Partial<Auth> = {}): Auth {
   return {
     ...createUnauthAuth(),
     user: { id: 'user-123' } as User,

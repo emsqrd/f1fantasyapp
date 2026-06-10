@@ -1,6 +1,6 @@
 import { AccountMenu } from '@/components/AccountMenu/AccountMenu';
-import type { AuthContextType } from '@/contexts/AuthContext';
 import type { UserProfile } from '@/contracts/UserProfile';
+import type { Auth } from '@/lib/authStore';
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/setupTests';
 import {
@@ -69,7 +69,7 @@ function buildMenuTree(withTheme = false) {
 }
 
 function renderMenu(options: {
-  auth: AuthContextType;
+  auth: Auth;
   initialEntry?: string;
   withTheme?: boolean;
   profile?: UserProfile | null;

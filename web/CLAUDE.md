@@ -18,10 +18,11 @@ TanStack Router uses **guard-based route protection** with pathless layout route
 
 ### Authentication Flow
 
-**Files:** `src/contexts/AuthContext.tsx`, `src/lib/supabase.ts`, `src/hooks/useAuth.ts`
+**Files:** `src/lib/authStore.ts`, `src/lib/supabase.ts`, `src/hooks/useAuth.ts`
 
-- `AuthProvider` wraps entire app in `main.tsx`
-- Provides `user`, `session`, `loading`, `signIn`, `signUp`, `signOut`
+- Auth state lives in a module-level store (`authStore.ts`), written synchronously inside Supabase's `onAuthStateChange`; `main.tsx` calls `initAuthStore()` once. There is no AuthProvider.
+- Components read it via `useAuth()` (backed by `useSyncExternalStore`): `user`, `session`, `loading`, `signIn`, `signUp`, `signOut`
+- Supabase awaits its auth listeners, so the store is already current when `signIn()`/`signOut()` resolve
 - Route guards check auth state before allowing navigation
 - `InnerApp.tsx` waits for `auth.loading` to complete before rendering routes
 
@@ -126,8 +127,8 @@ See root `CLAUDE.md` `## Testing Strategy` for when to reach for this layer vs. 
 
 **Auth:**
 
-- Pass a complete `AuthContextType` value to `renderWithRouter`. The helper provides it to `AuthContext.Provider` (for component-tree consumers like `useAuth`) and to the router context (for guards like `requireAuth`).
-- `apiClient` reads its bearer token from `supabase.auth.getSession()`, not from `AuthContext`. With no real Supabase session in tests, no `Authorization` header is sent — handlers must not assert on it. If a future test needs a real bearer header, seed the Supabase client's session at that point; don't pre-build that machinery now.
+- Pass a complete `Auth` value to `renderWithRouter`. The helper seeds the auth store with it (for component-tree consumers like `useAuth`) and passes the same value to the router context (for guards like `requireAuth`).
+- `apiClient` reads its bearer token from `supabase.auth.getSession()`, not from the auth store. With no real Supabase session in tests, no `Authorization` header is sent — handlers must not assert on it. If a future test needs a real bearer header, seed the Supabase client's session at that point; don't pre-build that machinery now.
 
 **MSW handlers:**
 
