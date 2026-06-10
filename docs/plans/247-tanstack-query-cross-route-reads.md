@@ -21,7 +21,7 @@ new QueryClient({
 });
 ```
 
-**`queryOptions` colocated in the service modules**, with key factories — `['me', …]` for user-scoped, bare for global. The `['me']` prefix is load-bearing: it's the namespace the user-switch reset (Commit 8) clears with one `removeQueries({ queryKey: ['me'] })`, which is why season and (later) reference data stay _outside_ it. Per-resource definitions:
+**`queryOptions` colocated in the service modules**, with key factories — `['me', …]` for user-scoped, bare for global. The prefix is organizational, not load-bearing: the user-switch reset (Commit 8c) wipes the whole query cache rather than the `['me']` namespace, so a user-scoped query keyed outside the prefix can't leak across identities. Per-resource definitions:
 
 ```ts
 // userProfileService.ts
@@ -155,9 +155,10 @@ The reset is only timing-correct against an auth source that updates synchronous
 
 ## Commit 8c — user-switch cache reset
 
-- `initAuthStore({ onUserChange })`: fires only on a user-id change after first population (the initial session restore is the baseline; `TOKEN_REFRESHED` / `USER_UPDATED` / same-id re-emits are no-ops). New `src/lib/authReactions.ts` exports `resetUserScopedState(queryClient, router)` — `removeQueries({ queryKey: ['me'] })` **then** `router.invalidate()` (order load-bearing: invalidated loaders must not read stale `['me']` entries). `main.tsx` wires it. Delete `InnerApp.useInvalidateOnUserChange`; drop `AccountMenu.handleSignOut`'s explicit `router.invalidate()` (the reaction runs before `signOut()` even resolves).
-- **Tests:** gating matrix in `authStore.test.ts` (initial no-op; sign-in / sign-out / A→B fire; refresh no-op); `authReactions.test.ts` (me-scoped removed, season retained, invalidate-after-removal order); the 8a integration test extends to assert the reaction fires exactly once per real sign-in/out round-trip; `InnerApp.test.tsx` drops its invalidation block.
-- **Gate:** switching users wipes user-scoped data; global queries (season, later reference data) survive.
+- `initAuthStore({ onUserChange })`: fires only on a user-id change after first population (the initial session restore is the baseline; `TOKEN_REFRESHED` / `USER_UPDATED` / same-id re-emits are no-ops). New `src/lib/authReactions.ts` exports `resetCaches(queryClient, router)` — `queryClient.clear()`, `router.clearCache()`, **then** `router.invalidate()` (order load-bearing: the re-run loaders must not read the previous identity's entries). `main.tsx` wires it. Delete `InnerApp.useInvalidateOnUserChange`; drop `AccountMenu.handleSignOut`'s explicit `router.invalidate()` (the reaction runs before `signOut()` even resolves).
+- **Both wipes are deliberately blunt.** The originally planned `removeQueries({ queryKey: ['me'] })` carries a forever-convention — every user-scoped query must be keyed under `['me']` — whose violation is a silent cross-user leak; `clear()`'s worst case is a few refetches on a rare event (one serial `seasons/current` fetch inside the sign-in transition). `router.clearCache()` is the router-side analogue, and it also fixes the sign-in flash: with the anonymous `/` match still servable, the `_unauthenticated` guard's redirect SWR-committed the stale landing page and resolved the form's awaited `navigate` early, dropping the transition overlay before the home loader finished. With the match cache empty, the navigate can only resolve at the fresh commit, so the overlay covers the whole load.
+- **Tests:** gating matrix in `authStore.test.ts` (initial no-op; sign-in / sign-out / A→B fire; refresh no-op); `authReactions.test.ts` (query cache fully emptied and router cache cleared, both before `invalidate` runs); the 8a integration test extends to assert the reaction fires exactly once per real sign-in/out round-trip; `InnerApp.test.tsx` drops its invalidation block but keeps a minimal `vi.mock('./router', () => ({ router: {} }))` — unmocked, that unit test would load the app's whole route tree. The no-flash property itself has no automated pin (a frame-timing E2E would be flaky); the eviction-order unit test pins the mechanism, and Commit 12's switch-user spec covers the user-visible consequence.
+- **Gate:** an identity change wipes both caches and re-runs the matched routes against the new user; nothing fetched or rendered for the previous identity survives.
 
 ## Commit 9 — Test-infra follow-up: `mocks/` import surface + side-effect-only setup file
 
