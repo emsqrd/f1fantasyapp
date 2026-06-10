@@ -7,6 +7,7 @@ import { createRoot } from 'react-dom/client';
 
 import { InnerApp } from './InnerApp.tsx';
 import './index.css';
+import { resetCaches } from './lib/authReactions.ts';
 import { initAuthStore } from './lib/authStore.ts';
 import { queryClient } from './lib/queryClient.ts';
 import { router } from './router.tsx';
@@ -57,7 +58,7 @@ Sentry.init({
   enableLogs: import.meta.env.PROD,
 });
 
-initAuthStore();
+initAuthStore({ onUserChange: () => resetCaches(queryClient, router) });
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Root container not found');

@@ -26,15 +26,19 @@ describe('authStore listener timing (real supabase client)', () => {
     localStorage.clear();
   });
 
+  function stubAuthEndpoints() {
+    server.use(
+      http.post(`${SUPABASE_AUTH_BASE}/token`, () => HttpResponse.json(sessionPayload)),
+      http.post(`${SUPABASE_AUTH_BASE}/logout`, () => new HttpResponse(null, { status: 204 })),
+    );
+  }
+
   // The store's design rests on supabase-js awaiting its onAuthStateChange
   // listeners inside signIn/signOut, so guards and loaders that run right after
   // an awaited auth call read the new state. The assertions deliberately use no
   // waitFor: if a supabase-js upgrade stops awaiting listeners, this fails.
   it('exposes the new auth state the moment signIn and signOut resolve', async () => {
-    server.use(
-      http.post(`${SUPABASE_AUTH_BASE}/token`, () => HttpResponse.json(sessionPayload)),
-      http.post(`${SUPABASE_AUTH_BASE}/logout`, () => new HttpResponse(null, { status: 204 })),
-    );
+    stubAuthEndpoints();
 
     const teardown = initAuthStore();
     try {
@@ -47,6 +51,26 @@ describe('authStore listener timing (real supabase client)', () => {
       await getAuthActions().signOut();
       expect(getAuthSnapshot().user).toBeNull();
       expect(getAuthSnapshot().session).toBeNull();
+    } finally {
+      teardown();
+    }
+  });
+
+  // Guards against supabase emitting duplicate events for one auth call —
+  // each extra firing would be a redundant cache wipe and router reload.
+  it('fires onUserChange exactly once per sign-in and once per sign-out', async () => {
+    stubAuthEndpoints();
+    const onUserChange = vi.fn();
+
+    const teardown = initAuthStore({ onUserChange });
+    try {
+      await vi.waitFor(() => expect(getAuthSnapshot().loading).toBe(false));
+
+      await getAuthActions().signIn('timing@example.com', 'password');
+      expect(onUserChange).toHaveBeenCalledTimes(1);
+
+      await getAuthActions().signOut();
+      expect(onUserChange).toHaveBeenCalledTimes(2);
     } finally {
       teardown();
     }

@@ -112,6 +112,7 @@ export const routerAuth: RouterAuth = {
 };
 
 let teardownInit: (() => void) | null = null;
+let lastUserId: string | null | undefined;
 
 /**
  * Wires the store to Supabase: seeds from `getSession()` and tracks every
@@ -119,22 +120,42 @@ let teardownInit: (() => void) | null = null;
  * existing teardown. Supabase awaits its auth listeners inside `signIn`/`signOut`,
  * so the snapshot is already current when those calls resolve — readers never
  * see a stale user after an awaited auth call.
+ *
+ * `onUserChange` fires after the snapshot updates whenever the signed-in user's
+ * id changes — sign-in, sign-out, or a different user. The first population
+ * (initial session restore) only sets the baseline, and same-user re-emits
+ * (token refresh, user update) don't fire.
  */
-export function initAuthStore(): () => void {
+export function initAuthStore(options?: { onUserChange?: () => void }): () => void {
   if (teardownInit) return teardownInit;
 
-  supabase.auth.getSession().then(({ data: { session } }) => {
+  const applySession = (session: Session | null) => {
     setSnapshot({ session, user: session?.user ?? null, loading: false });
+
+    const userId = session?.user?.id ?? null;
+    if (lastUserId === undefined) {
+      lastUserId = userId;
+      return;
+    }
+    if (userId !== lastUserId) {
+      lastUserId = userId;
+      options?.onUserChange?.();
+    }
+  };
+
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    applySession(session);
   });
 
   const {
     data: { subscription },
   } = supabase.auth.onAuthStateChange((_event, session) => {
-    setSnapshot({ session, user: session?.user ?? null, loading: false });
+    applySession(session);
   });
 
   teardownInit = () => {
     subscription.unsubscribe();
+    lastUserId = undefined;
     teardownInit = null;
   };
   return teardownInit;

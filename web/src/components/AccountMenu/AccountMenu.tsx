@@ -3,7 +3,7 @@ import { useCurrentAvatar } from '@/hooks/useCurrentAvatar';
 import { profileQuery } from '@/services/userProfileService';
 import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate, useRouter } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { BadgeCheck, LogOut, Monitor, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import type { ReactNode } from 'react';
@@ -37,7 +37,6 @@ export function AccountMenu({ trigger, side }: AccountMenuProps) {
   const { user, signOut, startAuthTransition, completeAuthTransition } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
-  const router = useRouter();
   const avatar = useCurrentAvatar();
 
   const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
@@ -50,11 +49,6 @@ export function AccountMenu({ trigger, side }: AccountMenuProps) {
     try {
       startAuthTransition();
       await signOut();
-
-      // Invalidate router cache to prevent stale data fetches with invalid token
-      router.invalidate();
-
-      // Auth state change propagates via onAuthStateChange
       await navigate({ to: '/' });
       completeAuthTransition();
     } catch (error) {

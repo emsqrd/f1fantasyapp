@@ -1,19 +1,15 @@
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { InnerApp } from './InnerApp';
 // Import after mocks are set up
 import { useAuth } from './hooks/useAuth';
 import type { Auth } from './lib/authStore';
-import { router } from './router';
 
-// Mock dependencies
+// Mock dependencies. The router module is stubbed to a bare object so this
+// unit test doesn't load the app's whole route tree.
 vi.mock('./hooks/useAuth');
-vi.mock('./router', () => ({
-  router: {
-    invalidate: vi.fn(),
-  },
-}));
+vi.mock('./router', () => ({ router: {} }));
 vi.mock('@tanstack/react-router', () => ({
   RouterProvider: ({ children }: { children?: React.ReactNode }) => (
     <div data-testid="router-provider">{children}</div>
@@ -21,7 +17,6 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 const mockUseAuth = vi.mocked(useAuth);
-const mockRouterInvalidate = vi.mocked(router.invalidate);
 
 const createMockAuthContext = (
   user: { id: string } | null,
@@ -224,44 +219,6 @@ describe('InnerApp', () => {
       rerender(<InnerApp />);
       expect(queryByRole('status')).not.toBeInTheDocument();
       expect(getByTestId('router-provider')).toBeInTheDocument();
-    });
-  });
-
-  describe('router cache invalidation', () => {
-    it('does not invalidate on initial render', () => {
-      mockUseAuth.mockReturnValue(createMockAuthContext({ id: 'user-a' }));
-
-      render(<InnerApp />);
-
-      expect(mockRouterInvalidate).not.toHaveBeenCalled();
-    });
-
-    it('invalidates when user signs out', async () => {
-      mockUseAuth.mockReturnValue(createMockAuthContext({ id: 'user-a' }));
-
-      const { rerender } = render(<InnerApp />);
-
-      // Simulate sign out
-      mockUseAuth.mockReturnValue(createMockAuthContext(null));
-      rerender(<InnerApp />);
-
-      await waitFor(() => {
-        expect(mockRouterInvalidate).toHaveBeenCalledOnce();
-      });
-    });
-
-    it('invalidates when switching between users', async () => {
-      mockUseAuth.mockReturnValue(createMockAuthContext({ id: 'user-a' }));
-
-      const { rerender } = render(<InnerApp />);
-
-      // User A signs out, User B signs in
-      mockUseAuth.mockReturnValue(createMockAuthContext({ id: 'user-b' }));
-      rerender(<InnerApp />);
-
-      await waitFor(() => {
-        expect(mockRouterInvalidate).toHaveBeenCalledOnce();
-      });
     });
   });
 });

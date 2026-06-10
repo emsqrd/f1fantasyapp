@@ -269,6 +269,96 @@ describe('authStore', () => {
     });
   });
 
+  describe('onUserChange gating', () => {
+    it('does not fire for the initial session restore', async () => {
+      const onUserChange = vi.fn();
+      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
+
+      initAuthStore({ onUserChange });
+
+      await vi.waitFor(() => {
+        expect(getAuthSnapshot().loading).toBe(false);
+      });
+      authCallback!('INITIAL_SESSION', mockSession);
+
+      expect(onUserChange).not.toHaveBeenCalled();
+    });
+
+    it('fires once on sign-in, after the snapshot holds the new user', async () => {
+      const idsSeenByReaction: (string | undefined)[] = [];
+      const onUserChange = vi.fn(() => {
+        idsSeenByReaction.push(getAuthSnapshot().user?.id);
+      });
+
+      initAuthStore({ onUserChange });
+      await vi.waitFor(() => {
+        expect(getAuthSnapshot().loading).toBe(false);
+      });
+
+      authCallback!('SIGNED_IN', mockSession);
+
+      expect(onUserChange).toHaveBeenCalledTimes(1);
+      expect(idsSeenByReaction).toEqual(['test-user-id']);
+    });
+
+    it('fires on sign-out', async () => {
+      const onUserChange = vi.fn();
+      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
+
+      initAuthStore({ onUserChange });
+      await vi.waitFor(() => {
+        expect(getAuthSnapshot().loading).toBe(false);
+      });
+
+      authCallback!('SIGNED_OUT', null);
+
+      expect(onUserChange).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not fire for a same-user token refresh', async () => {
+      const onUserChange = vi.fn();
+      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
+
+      initAuthStore({ onUserChange });
+      await vi.waitFor(() => {
+        expect(getAuthSnapshot().loading).toBe(false);
+      });
+
+      authCallback!('TOKEN_REFRESHED', { ...mockSession, access_token: 'rotated-token' });
+
+      expect(onUserChange).not.toHaveBeenCalled();
+    });
+
+    it('fires once when switching users', async () => {
+      const onUserChange = vi.fn();
+      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      });
+
+      initAuthStore({ onUserChange });
+      await vi.waitFor(() => {
+        expect(getAuthSnapshot().loading).toBe(false);
+      });
+
+      authCallback!('SIGNED_IN', {
+        ...mockSession,
+        user: { ...mockUser, id: 'other-user-id' },
+      });
+
+      expect(onUserChange).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('test seams', () => {
     it('seedAuthStore sets state fields and swaps in provided actions', async () => {
       const fakeSignOut = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
