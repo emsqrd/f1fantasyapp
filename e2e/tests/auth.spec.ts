@@ -267,4 +267,39 @@ test.describe('auth', () => {
     await page.goto('/my-team');
     await expect(page).toHaveURL('/');
   });
+
+  test('switching users in the same session shows the new identity, never the old', async ({
+    page,
+  }) => {
+    const userA = await createTestUser({ emailPrefix: 'switch-a' });
+    const userB = await createTestUser({ emailPrefix: 'switch-b' });
+    const season = await seedCurrentSeason();
+    const grid = await seedMinimalGrid({ seasonId: season.id });
+    const driverIds = grid.drivers.slice(0, 5).map((d) => d.id);
+    const constructorIds = grid.constructors.slice(0, 2).map((c) => c.id);
+    const teamNameA = `Team A ${randomUUID().slice(0, 8)}`;
+    const teamNameB = `Team B ${randomUUID().slice(0, 8)}`;
+    await seedTeamForUser(userA, { name: teamNameA, driverIds, constructorIds });
+    await seedTeamForUser(userB, { name: teamNameB, driverIds, constructorIds });
+
+    // Visit the profile- and team-reading surfaces as A so both caches are
+    // populated — exactly what must not survive into B's session.
+    await signInAs(page, userA);
+    await expect(page.getByText(`Welcome back, ${userA.displayName}`)).toBeVisible();
+    await page.goto('/my-team');
+    await expect(page.getByRole('heading', { name: teamNameA })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Account menu' }).click();
+    await page.getByRole('menuitem', { name: 'Sign Out' }).click();
+    await expect(page.getByRole('heading', { name: /race to glory/i })).toBeVisible();
+
+    await signInAs(page, userB);
+
+    await expect(page.getByText(`Welcome back, ${userB.displayName}`)).toBeVisible();
+    await expect(page.getByText(`Welcome back, ${userA.displayName}`)).toBeHidden();
+
+    await page.goto('/my-team');
+    await expect(page.getByRole('heading', { name: teamNameB })).toBeVisible();
+    await expect(page.getByRole('heading', { name: teamNameA })).toBeHidden();
+  });
 });

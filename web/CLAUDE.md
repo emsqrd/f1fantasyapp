@@ -44,7 +44,14 @@ Centralized `ApiClient` class handles all HTTP requests:
 
 ### Data Loading Pattern
 
-Route loaders fetch data before the component renders, so components read via `Route.useLoaderData()` without loading states. Loaders throw `notFound({ routeId })` on missing resources; the route's `errorComponent` handles the failure path.
+Two kinds of reads:
+
+- **Route-owned data** (league detail, standings, drivers/constructors/race weekends for a view) — the route's loader fetches it before the component renders; the component reads `Route.useLoaderData()` without loading states.
+- **Cross-route reads** (profile, team, season) — each defined once as a `queryOptions` in its service module (`profileQuery`, `myTeamQuery`, `seasonQuery`). Guards and loaders prime them with `context.queryClient.ensureQueryData(...)`; components read `useSuspenseQuery(...)` when a loader guarantees the data, or `useQuery({ ...profileQuery, enabled: !!user })` for chrome that also renders for anonymous users (sidebar, account menu).
+
+A mutation that changes a query-cached resource must `queryClient.invalidateQueries(...)` (or `setQueryData`) — `router.invalidate()` only re-runs loaders, and `ensureQueryData` then serves the stale cache entry.
+
+Loaders throw `notFound({ routeId })` on missing resources; the route's `errorComponent` handles the failure path.
 
 ### Error Handling
 
@@ -113,7 +120,7 @@ See root `CLAUDE.md` `## Testing Strategy` for when to reach for this layer vs. 
 
 **Run:** `npm run web:test:integration` (focused) or `npm run web:test` (full suite).
 
-**Stack:** Vitest + jsdom + MSW intercepting at the `fetch` boundary. Tests exercise the real router, real loaders, real components, and the real `apiClient` — only the network is mocked. The MSW server is exported from `setupTests.ts` as `server`, runs in strict mode (`onUnhandledRequest: 'error'`), and resets handlers after each test.
+**Stack:** Vitest + jsdom + MSW intercepting at the `fetch` boundary. Tests exercise the real router, real loaders, real components, and the real `apiClient` — only the network is mocked. The MSW server lives in `src/mocks/server.ts` with the shared default handlers in `src/mocks/handlers.ts` (both re-exported from `setupTests.ts` as `server` / `API_BASE`); it runs in strict mode (`onUnhandledRequest: 'error'`) and resets handlers after each test.
 
 **Reference test:** `src/tests/integration/account.integration.test.tsx`. Copy its shape for new flows.
 
@@ -131,19 +138,18 @@ See root `CLAUDE.md` `## Testing Strategy` for when to reach for this layer vs. 
 **MSW handlers:**
 
 - Build URLs from `API_BASE` exported by `setupTests.ts`: ``http.get(`${API_BASE}/me/profile`, ...)``. Don't hardcode the base.
-- Declare handlers per test via `server.use(...)`. There are no shared default handlers today, on purpose — strict mode forces every test to spell out its network surface.
-- **Trigger to extract a default:** when you find yourself copy-pasting the same handler across three or more flow tests (likely `/me/profile`, `/me/team`, `/seasons/current` once authenticated flows accumulate), introduce `src/mocks/handlers.ts` + `src/mocks/server.ts`, seed the duplicates as defaults, and let tests override per-flow with `server.use(...)`. Until that trigger fires, keep handlers per-test.
+- **Defaults cover the cross-route reads** every authenticated tree touches: `src/mocks/handlers.ts` seeds `/me/profile` (a profile with `hasTeam: false`), `/me/team` (404 — no team), and `/seasons/current`. They model a freshly-authenticated user without a team; a test mounting a `_team-required` route overrides `/me/team` with a present team via `server.use(...)`.
+- Declare everything else per test via `server.use(...)` — strict mode forces each test to spell out the rest of its network surface. Promote a handler to a default only once it's copy-pasted across three or more flow tests.
 - **Don't introduce per-service path constants** (e.g. `USER_PROFILE_PATH = '/me/profile'`). The service module is already the single source of truth for each path. Strict-mode MSW reports the exact unhandled URL on a typo or rename, so drift is caught loudly — constants would just add a second place to maintain.
 - For 4xx/5xx, use `new HttpResponse(null, { status })`. For success bodies, use `HttpResponse.json(factoryOutput)` so the response shape is typed via the factory.
 
-**`renderWithRouter` signature:** `routeTree`, `initialEntry`, `auth`, `routerContext` (the latter is `Omit<RouterContext, 'auth'>` — `auth` is wired automatically from the `auth` field).
+**`renderWithRouter` signature:** `routeTree`, `initialEntry`, `auth`, and an optional `routerContext` (rarely needed — `auth` and `queryClient` are wired automatically, and nothing else remains in `RouterContext`). The helper creates a fresh per-test `QueryClient`, wraps the tree in its provider, and returns it, so tests can seed or assert the Query cache directly (e.g. `queryClient.setQueryData(teamKeys.all, mockTeam)`).
 
 ```typescript
-renderWithRouter({
+const { queryClient } = renderWithRouter({
   routeTree: buildAccountRouteTree(),
   initialEntry: '/account',
   auth: authedAuth,
-  routerContext: { team: null, profile: null, currentSeason: null },
 });
 ```
 

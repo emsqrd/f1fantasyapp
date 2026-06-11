@@ -30,8 +30,8 @@ export interface RenderWithRouterOptions {
  * production) both read that seeded state.
  *
  * The caller owns the route tree so each test can mount the smallest viable
- * subset of routes. The auth value and router context must be supplied in full
- * — no defaults — so tests stay explicit about which state they're exercising.
+ * subset of routes. The auth value must be supplied in full — no default — so
+ * tests stay explicit about which auth state they're exercising.
  *
  * Route trees that exercise route guards or loaders that read context should
  * be created with `createRootRouteWithContext<RouterContext>()` so guards run
