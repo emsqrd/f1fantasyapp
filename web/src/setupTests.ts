@@ -1,14 +1,14 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 
-/**
- * Base URL the test suite's apiClient targets. Exported so MSW handlers in
- * integration tests can build full URLs from a single source of truth instead
- * of repeating the literal across every `server.use(...)`.
- */
-export const API_BASE = 'http://localhost/api';
+import { API_BASE } from './mocks/handlers';
+import { server } from './mocks/server';
+
+// Re-exported so existing tests can import `API_BASE` / `server` from
+// `@/setupTests`; the shared default handlers live in `mocks/`.
+export { API_BASE } from './mocks/handlers';
+export { server } from './mocks/server';
 
 vi.stubEnv('VITE_SUPABASE_URL', 'http://localhost');
 vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'test-anon-key');
@@ -48,14 +48,20 @@ window.matchMedia = ((query: string): MediaQueryList =>
     dispatchEvent: () => false,
   }) as unknown as MediaQueryList) as typeof window.matchMedia;
 
-export const server = setupServer();
-
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 
-afterEach(() => {
+afterEach(async () => {
   cleanup();
   server.resetHandlers();
   mobileViewport = false;
+
+  // Imported lazily: a static import would evaluate `lib/supabase` before the
+  // env stubs above run and would pin the real module ahead of per-file
+  // `vi.mock('@/lib/supabase')` registrations. The catch covers suites that
+  // deliberately break the supabase env (supabase.test.ts) — if the module
+  // graph can't load, there is no store instance to reset.
+  const authStore = await import('./lib/authStore').catch(() => null);
+  authStore?.resetAuthStore();
 });
 
 afterAll(() => server.close());

@@ -1,18 +1,18 @@
 import { Layout } from '@/components/Layout/Layout';
 import type { UserProfile } from '@/contracts/UserProfile';
 import type { RouterContext } from '@/lib/router-context';
-import { setMobileViewport } from '@/setupTests';
+import { API_BASE, server, setMobileViewport } from '@/setupTests';
 import {
   buildStubRoute,
   createAuthedAuth,
   createBaseRouterContext,
-  createMockTeam,
   createMockUserProfile,
   renderWithRouter,
 } from '@/tests/test-utils';
 import { createRootRouteWithContext } from '@tanstack/react-router';
 import { screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
+import { HttpResponse, http } from 'msw';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 beforeAll(() => {
@@ -44,14 +44,16 @@ function renderNav(options: {
 }) {
   setMobileViewport(options.mobile);
 
+  // The sidebar reads team existence from `profile.hasTeam`, fetched via the
+  // profile query — so the nav shape is driven by this handler, not context.
+  const profile = options.profile ?? createMockUserProfile({ hasTeam: options.hasTeam });
+  server.use(http.get(`${API_BASE}/me/profile`, () => HttpResponse.json(profile)));
+
   return renderWithRouter({
     routeTree: buildNavRouteTree(),
     initialEntry: options.initialEntry ?? '/',
     auth: createAuthedAuth(),
-    routerContext: createBaseRouterContext({
-      team: options.hasTeam ? createMockTeam() : null,
-      profile: options.profile ?? createMockUserProfile(),
-    }),
+    routerContext: createBaseRouterContext(),
   });
 }
 
@@ -61,7 +63,8 @@ describe('Navigation shell', () => {
 
     const bottomNav = await screen.findByRole('navigation', { name: 'Primary' });
     expect(within(bottomNav).getByRole('link', { name: 'Home' })).toBeInTheDocument();
-    expect(within(bottomNav).getByRole('link', { name: 'Team' })).toBeInTheDocument();
+    // The team-gated destinations appear once the profile query resolves.
+    expect(await within(bottomNav).findByRole('link', { name: 'Team' })).toBeInTheDocument();
     expect(within(bottomNav).getByRole('link', { name: 'Leagues' })).toBeInTheDocument();
     expect(within(bottomNav).getByRole('link', { name: 'Browse' })).toBeInTheDocument();
 
@@ -86,7 +89,7 @@ describe('Navigation shell', () => {
     renderNav({ hasTeam: true, mobile: true, initialEntry: '/leagues' });
 
     const bottomNav = await screen.findByRole('navigation', { name: 'Primary' });
-    expect(within(bottomNav).getByRole('link', { name: 'Leagues' })).toHaveAttribute(
+    expect(await within(bottomNav).findByRole('link', { name: 'Leagues' })).toHaveAttribute(
       'aria-current',
       'page',
     );

@@ -359,6 +359,7 @@ export function createMockUserProfile(overrides: Partial<UserProfile> = {}): Use
     lastName: 'User',
     displayName: 'Test User',
     avatarUrl: '',
+    hasTeam: false,
     ...overrides,
   };
 }

@@ -1,3 +1,4 @@
+import { myTeamQuery } from '@/services/teamService';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,13 +11,16 @@ vi.mock('@sentry/react', () => ({
   },
 }));
 
-// Mock TanStack Router
-const mockInvalidate = vi.fn();
-vi.mock('@tanstack/react-router', () => ({
-  useRouter: () => ({
-    invalidate: mockInvalidate,
-  }),
-}));
+// Mock the query client the hook calls to refresh the team after a mutation.
+// importActual keeps queryOptions real so myTeamQuery.queryKey is the production key.
+const mockInvalidateQueries = vi.fn();
+vi.mock('@tanstack/react-query', async () => {
+  const actual = await vi.importActual('@tanstack/react-query');
+  return {
+    ...actual,
+    useQueryClient: () => ({ invalidateQueries: mockInvalidateQueries }),
+  };
+});
 
 interface TestItem {
   id: number;
@@ -37,7 +41,7 @@ describe('useLineupPicker', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockInvalidate.mockResolvedValue(undefined);
+    mockInvalidateQueries.mockResolvedValue(undefined);
     mockAddToTeam.mockResolvedValue(undefined);
     mockRemoveFromTeam.mockResolvedValue(undefined);
   });
@@ -174,7 +178,7 @@ describe('useLineupPicker', () => {
       expect(mockAddToTeam).toHaveBeenCalledWith(mockItems[2].id, 1);
     });
 
-    it('invalidates router after successful add', async () => {
+    it('invalidates the team query after successful add', async () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
@@ -189,7 +193,7 @@ describe('useLineupPicker', () => {
         await result.current.handleAdd(0, mockItems[0]);
       });
 
-      expect(mockInvalidate).toHaveBeenCalled();
+      expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: myTeamQuery.queryKey });
     });
 
     it('closes picker after successful add', async () => {
@@ -346,7 +350,7 @@ describe('useLineupPicker', () => {
       expect(mockRemoveFromTeam).toHaveBeenCalledWith(0);
     });
 
-    it('invalidates router after successful remove', async () => {
+    it('invalidates the team query after successful remove', async () => {
       const { result } = renderHook(() =>
         useLineupPicker({
           items: mockItems,
@@ -361,7 +365,7 @@ describe('useLineupPicker', () => {
         await result.current.handleRemove(0);
       });
 
-      expect(mockInvalidate).toHaveBeenCalled();
+      expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: myTeamQuery.queryKey });
     });
 
     it('sets isPending during remove operation', async () => {

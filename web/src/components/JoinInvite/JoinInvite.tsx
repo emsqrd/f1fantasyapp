@@ -7,14 +7,10 @@ import type { LeagueInvitePreviewResponse } from '@/contracts/LeagueInvitePrevie
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
 import { joinViaInvite } from '@/services/leagueInviteService';
+import { profileQuery } from '@/services/userProfileService';
 import * as Sentry from '@sentry/react';
-import {
-  Link,
-  useLoaderData,
-  useNavigate,
-  useParams,
-  useRouteContext,
-} from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { Link, useLoaderData, useNavigate, useParams } from '@tanstack/react-router';
 import { AlertCircle, InfoIcon, Lock, Users } from 'lucide-react';
 import { useState } from 'react';
 
@@ -46,8 +42,8 @@ export function JoinInvite() {
 
   // Auth and team state
   const { user } = useAuth();
-  const { team } = useRouteContext({ from: '__root__' });
-  const hasTeam = team !== null;
+  const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
+  const hasTeam = profile?.hasTeam ?? false;
 
   // Join operation state
   const [isJoining, setIsJoining] = useState(false);

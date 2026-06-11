@@ -1,5 +1,6 @@
+import { myTeamQuery } from '@/services/teamService';
 import * as Sentry from '@sentry/react';
-import { useRouter } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
 interface UseLineupPickerOptions<T extends { id: number }> {
@@ -21,7 +22,7 @@ export function useLineupPicker<T extends { id: number }>({
   addToTeam,
   removeFromTeam,
 }: UseLineupPickerOptions<T>) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +44,7 @@ export function useLineupPicker<T extends { id: number }>({
 
     try {
       await addToTeam(item.id, position);
-      await router.invalidate();
+      await queryClient.invalidateQueries({ queryKey: myTeamQuery.queryKey });
     } catch (err) {
       Sentry.logger.error(`Failed to add ${itemType} to lineup`, {
         itemType,
@@ -68,7 +69,7 @@ export function useLineupPicker<T extends { id: number }>({
 
     try {
       await removeFromTeam(position);
-      await router.invalidate();
+      await queryClient.invalidateQueries({ queryKey: myTeamQuery.queryKey });
     } catch (err) {
       Sentry.logger.error(`Failed to remove ${itemType} from lineup`, {
         itemType,

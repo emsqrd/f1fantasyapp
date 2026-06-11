@@ -61,7 +61,14 @@ function buildLeagueRouteTree() {
 }
 
 function renderLeaguePage(standings: LeagueStandings) {
+  // The leaderboard marks the viewer's own row by matching `profile.id` (read
+  // through the query) against each row's ownerId; the `/me/team` handler
+  // satisfies the `requireTeam` guard on the layout.
   server.use(
+    http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam())),
+    http.get(`${API_BASE}/me/profile`, () =>
+      HttpResponse.json(createMockUserProfile({ id: VIEWER_ID })),
+    ),
     http.get(`${API_BASE}/leagues/1`, () =>
       HttpResponse.json(
         createMockLeague({ id: 1, name: 'Pit Wall', description: 'A test league' }),
@@ -74,10 +81,7 @@ function renderLeaguePage(standings: LeagueStandings) {
     routeTree: buildLeagueRouteTree(),
     initialEntry: '/league/1',
     auth: createAuthedAuth(),
-    routerContext: createBaseRouterContext({
-      team: createMockTeam(),
-      profile: createMockUserProfile({ id: VIEWER_ID }),
-    }),
+    routerContext: createBaseRouterContext(),
   });
 }
 

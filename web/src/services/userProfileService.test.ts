@@ -34,6 +34,7 @@ describe('userProfileService', () => {
       lastName: 'Doe',
       displayName: 'John Doe',
       avatarUrl: 'https://example.com/avatar.jpg',
+      hasTeam: false,
     };
 
     it('should successfully register a user with display name', async () => {
@@ -143,6 +144,7 @@ describe('userProfileService', () => {
       lastName: 'Smith',
       displayName: 'Jane Smith',
       avatarUrl: 'https://example.com/jane-avatar.jpg',
+      hasTeam: false,
     };
 
     it('should successfully retrieve current user profile', async () => {
@@ -218,6 +220,7 @@ describe('userProfileService', () => {
       lastName: 'Johnson',
       displayName: 'Bob Johnson',
       avatarUrl: 'https://example.com/bob-old-avatar.jpg',
+      hasTeam: false,
     };
 
     it('should successfully update user profile with all fields', async () => {
@@ -373,6 +376,7 @@ describe('userProfileService', () => {
         lastName: 'User',
         displayName: 'Test User',
         avatarUrl: '',
+        hasTeam: false,
       };
 
       mockApiClient.post.mockResolvedValueOnce(registeredProfile);
@@ -409,6 +413,7 @@ describe('userProfileService', () => {
         lastName: 'User',
         displayName: 'Consistent User',
         avatarUrl: 'https://example.com/consistent.jpg',
+        hasTeam: false,
       };
 
       mockApiClient.get.mockResolvedValue(baseProfile);
@@ -433,6 +438,7 @@ describe('userProfileService', () => {
         lastName: '',
         displayName: '',
         avatarUrl: '',
+        hasTeam: false,
       };
 
       mockApiClient.patch.mockResolvedValue(profileWithEmptyStrings);
@@ -453,6 +459,7 @@ describe('userProfileService', () => {
         lastName: 'Name',
         displayName: longDisplayName,
         avatarUrl: '',
+        hasTeam: false,
       };
 
       mockApiClient.patch.mockResolvedValue(profileWithLongName);
@@ -470,6 +477,7 @@ describe('userProfileService', () => {
         lastName: 'Test',
         displayName: 'Concurrent Test',
         avatarUrl: '',
+        hasTeam: false,
       };
 
       mockApiClient.get.mockResolvedValue(profile);

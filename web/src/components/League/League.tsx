@@ -1,8 +1,11 @@
 import type { LeagueInvite } from '@/contracts/LeagueInvite';
+import { useAuth } from '@/hooks/useAuth';
 import { useClipboard } from '@/hooks/useClipboard';
 import { getOrCreateLeagueInvite } from '@/services/leagueInviteService';
+import { profileQuery } from '@/services/userProfileService';
 import * as Sentry from '@sentry/react';
-import { getRouteApi, useRouteContext } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { getRouteApi } from '@tanstack/react-router';
 import { Check, Copy, Share, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
@@ -17,9 +20,8 @@ import { Label } from '../ui/label';
 const routeApi = getRouteApi('/_authenticated/_team-required/league/$leagueId');
 
 export function League() {
-  const { profile } = useRouteContext({
-    from: '/_authenticated/_team-required/league/$leagueId',
-  });
+  const { user } = useAuth();
+  const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
   const { league } = routeApi.useLoaderData();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);

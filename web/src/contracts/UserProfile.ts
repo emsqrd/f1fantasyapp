@@ -5,4 +5,5 @@ export interface UserProfile {
   lastName: string;
   displayName: string;
   avatarUrl: string;
+  hasTeam: boolean;
 }

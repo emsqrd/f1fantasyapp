@@ -22,9 +22,9 @@ The authed landing surface at `/`. Aggregates cross-domain state (team identity,
 
 ## Team summary
 
-A point-in-time rollup of how the team is performing in the current season — currently the [[season total points]] and the team's score in the most recently scored race. Served by `GET /me/team/summary`. Distinct from [[league total points]], which is per-league.
+A point-in-time rollup of a team in the current season: the team's **name** and how it's performing — the [[season total points]] and its score in the most recently scored race. Served by `GET /me/team/summary`. Distinct from [[league total points]], which is per-league.
 
-Both fields are nullable: a team that exists but has not yet had a scored race in the current season has neither a season total nor a last-race score.
+The two score fields are nullable: a team that exists but has not yet had a scored race in the current season has neither a season total nor a last-race score. The team name is always present when the summary exists.
 
 ## My league standing
 

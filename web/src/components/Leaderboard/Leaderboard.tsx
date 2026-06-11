@@ -1,7 +1,10 @@
 import { LeaderboardHeader } from '@/components/LeaderboardHeader/LeaderboardHeader';
 import { PositionDelta } from '@/components/PositionDelta/PositionDelta';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
-import { Link, getRouteApi, useRouteContext } from '@tanstack/react-router';
+import { profileQuery } from '@/services/userProfileService';
+import { useQuery } from '@tanstack/react-query';
+import { Link, getRouteApi } from '@tanstack/react-router';
 import { ChevronRightIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -23,7 +26,8 @@ interface LeaderboardProps {
 
 export function Leaderboard({ actions, inlineAction }: LeaderboardProps = {}) {
   const { league, standings } = routeApi.useLoaderData();
-  const { profile } = useRouteContext({ from: '/_authenticated' });
+  const { user } = useAuth();
+  const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
 
   const entries = standings.standings;
 

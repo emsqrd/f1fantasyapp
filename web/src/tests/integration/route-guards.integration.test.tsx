@@ -1,16 +1,19 @@
+import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
+import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
+import { requireAuth, requireTeam } from '@/lib/route-guards';
+import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
-  buildNoTeamLayout,
   buildRootRoute,
   buildStubRoute,
   buildTeamRequiredLayout,
   createAuthedAuth,
   createBaseRouterContext,
-  createMockTeam,
   createUnauthAuth,
   renderWithRouter,
 } from '@/tests/test-utils';
+import { Outlet, createRoute } from '@tanstack/react-router';
 import { screen } from '@testing-library/react';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -20,9 +23,10 @@ import { describe, expect, it } from 'vitest';
 // `/me/team` MSW handler drives `context.team` through the real
 // root → context → guard path the production tree uses. Mirror the layout chain:
 // `_authenticated` (requireAuth) → `_team-required` (requireTeam) for /my-team,
-// and `_authenticated` → `_no-team` (requireNoTeam) for /create-team. Destination
-// routes are bare stubs so a redirect lands on something renderable; their
-// headings are how each test confirms which redirect fired.
+// with `/create-team` sitting directly under `_authenticated` as the no-team
+// redirect target. Destination routes are bare stubs so a redirect lands on
+// something renderable; their headings are how each test confirms which redirect
+// fired.
 function buildGuardRouteTree() {
   const rootRoute = buildRootRoute();
 
@@ -33,8 +37,7 @@ function buildGuardRouteTree() {
     path: 'my-team',
     heading: 'My Team Page',
   });
-  const noTeamLayoutRoute = buildNoTeamLayout(authenticatedLayoutRoute);
-  const createTeamRoute = buildStubRoute(noTeamLayoutRoute, {
+  const createTeamRoute = buildStubRoute(authenticatedLayoutRoute, {
     path: 'create-team',
     heading: 'Create Team Page',
   });
@@ -43,7 +46,7 @@ function buildGuardRouteTree() {
     homeRoute,
     authenticatedLayoutRoute.addChildren([
       teamRequiredLayoutRoute.addChildren([myTeamRoute]),
-      noTeamLayoutRoute.addChildren([createTeamRoute]),
+      createTeamRoute,
     ]),
   ]);
 }
@@ -74,18 +77,65 @@ describe('route guard wiring', () => {
     expect(await screen.findByRole('heading', { name: 'Create Team Page' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'My Team Page' })).not.toBeInTheDocument();
   });
+});
 
-  it('redirects authenticated users with a team from /create-team to /', async () => {
-    server.use(http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam())));
+// The `_authenticated` layout carries an errorComponent in production; mirror it
+// here. A transient `/me/team` failure makes `requireTeam` throw, and that throw
+// must surface in this boundary (with a retry) rather than be misread as
+// "no team" and redirect to /create-team. The boundary sits on `_authenticated`,
+// not `_team-required`, because a route's own errorComponent doesn't reliably
+// catch its own beforeLoad throw on a hard load.
+function buildTeamErrorRouteTree() {
+  const rootRoute = buildRootRoute();
+
+  const authenticatedLayoutRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    id: '_authenticated',
+    beforeLoad: ({ context }: { context: RouterContext }) => requireAuth(context),
+    component: () => <Outlet />,
+    errorComponent: ({ error, reset }) => (
+      <ErrorBoundary level="page">
+        <ErrorFallback error={error} onReset={reset} level="page" />
+      </ErrorBoundary>
+    ),
+  });
+
+  const teamRequiredLayoutRoute = createRoute({
+    getParentRoute: () => authenticatedLayoutRoute,
+    id: '_team-required',
+    beforeLoad: ({ context }: { context: RouterContext }) => requireTeam(context),
+    component: () => <Outlet />,
+  });
+
+  const myTeamRoute = buildStubRoute(teamRequiredLayoutRoute, {
+    path: 'my-team',
+    heading: 'My Team Page',
+  });
+  const createTeamRoute = buildStubRoute(authenticatedLayoutRoute, {
+    path: 'create-team',
+    heading: 'Create Team Page',
+  });
+
+  return rootRoute.addChildren([
+    authenticatedLayoutRoute.addChildren([
+      teamRequiredLayoutRoute.addChildren([myTeamRoute]),
+      createTeamRoute,
+    ]),
+  ]);
+}
+
+describe('team-required error surface', () => {
+  it('surfaces a transient team-fetch failure in the authenticated error boundary, not /create-team', async () => {
+    server.use(http.get(`${API_BASE}/me/team`, () => new HttpResponse(null, { status: 500 })));
 
     renderWithRouter({
-      routeTree: buildGuardRouteTree(),
-      initialEntry: '/create-team',
+      routeTree: buildTeamErrorRouteTree(),
+      initialEntry: '/my-team',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
-    expect(await screen.findByRole('heading', { name: 'Home Page' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /try again/i })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Create Team Page' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'My Team Page' })).not.toBeInTheDocument();
   });
 });

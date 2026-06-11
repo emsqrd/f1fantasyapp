@@ -1,12 +1,7 @@
-import { useContext } from 'react';
+import { type Auth, getAuthActions, getAuthSnapshot, subscribeAuth } from '@/lib/authStore';
+import { useSyncExternalStore } from 'react';
 
-import { AuthContext } from '../contexts/AuthContext.ts';
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-
-  return context;
+export const useAuth = (): Auth => {
+  const snapshot = useSyncExternalStore(subscribeAuth, getAuthSnapshot);
+  return { ...snapshot, ...getAuthActions() };
 };

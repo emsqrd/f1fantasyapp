@@ -80,8 +80,17 @@ function buildJoinInviteRouteTree() {
   return rootRoute.addChildren([joinInviteRoute, signInRoute, signUpRoute, createTeamRoute]);
 }
 
-function makeRouterContext(team: Team | null): Omit<RouterContext, 'auth'> {
-  return createBaseRouterContext({ team, profile: createMockUserProfile() });
+// JoinInvite reads team existence from `profile.hasTeam` (fetched via the profile
+// query on the authed branches), not from context — so seed the profile here and
+// keep the `team` arg as the test's has-team intent. Unauthenticated renders
+// never fetch it, so the handler is harmless there.
+function makeRouterContext(team: Team | null): Omit<RouterContext, 'auth' | 'queryClient'> {
+  server.use(
+    http.get(`${API_BASE}/me/profile`, () =>
+      HttpResponse.json(createMockUserProfile({ hasTeam: team !== null })),
+    ),
+  );
+  return createBaseRouterContext();
 }
 
 const TOKEN = 'abc-token';

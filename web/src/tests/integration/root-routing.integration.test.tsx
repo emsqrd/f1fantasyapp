@@ -1,13 +1,13 @@
 import { IndexRoute } from '@/components/IndexRoute/IndexRoute';
 import type { RouterContext } from '@/lib/router-context';
 import { getRaceWeekends } from '@/services/raceWeekendService';
+import { seasonQuery } from '@/services/seasonService';
 import { getMyStandings } from '@/services/standingsService';
 import { getTeamSummary } from '@/services/teamService';
 import { API_BASE, server } from '@/setupTests';
 import {
   createAuthedAuth,
   createBaseRouterContext,
-  createMockTeam,
   createMockUserProfile,
   createUnauthAuth,
   renderWithRouter,
@@ -38,10 +38,12 @@ function buildIndexRouteTree() {
         return { home: null };
       }
 
+      const season = await context.queryClient.ensureQueryData(seasonQuery);
+
       const [summary, standings, races] = await Promise.all([
         getTeamSummary(),
         getMyStandings(),
-        context.currentSeason ? getRaceWeekends(context.currentSeason.id) : Promise.resolve([]),
+        season ? getRaceWeekends(season.id) : Promise.resolve([]),
       ]);
 
       return { home: { summary, standings, races } };
@@ -68,14 +70,18 @@ describe('routing at /', () => {
 
   it('loads team summary, standings, and race weekends and renders Home for authed users', async () => {
     server.use(
+      http.get(`${API_BASE}/me/profile`, () =>
+        HttpResponse.json(createMockUserProfile({ firstName: 'Ada', hasTeam: true })),
+      ),
       http.get(`${API_BASE}/me/team/summary`, () =>
-        HttpResponse.json({ seasonTotalPoints: null, lastRace: null }),
+        HttpResponse.json({ teamName: 'Red Bull Racing', seasonTotalPoints: null, lastRace: null }),
       ),
       http.get(`${API_BASE}/me/standings`, () =>
         HttpResponse.json([
           { leagueId: 12, leagueName: 'Cota 2026', totalTeams: 8, position: 3, totalPoints: 184 },
         ]),
       ),
+      http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(CURRENT_SEASON)),
       http.get(`${API_BASE}/seasons/${CURRENT_SEASON.id}/race-weekends`, () =>
         HttpResponse.json([
           {
@@ -102,11 +108,7 @@ describe('routing at /', () => {
       routeTree: buildIndexRouteTree(),
       initialEntry: '/',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext({
-        profile: createMockUserProfile({ firstName: 'Ada' }),
-        team: createMockTeam({ name: 'Red Bull Racing' }),
-        currentSeason: CURRENT_SEASON,
-      }),
+      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Red Bull Racing' })).toBeInTheDocument();
@@ -116,10 +118,14 @@ describe('routing at /', () => {
 
   it('renders the no-leagues prompt for authed users with a team but no standings', async () => {
     server.use(
+      http.get(`${API_BASE}/me/profile`, () =>
+        HttpResponse.json(createMockUserProfile({ firstName: 'Ada', hasTeam: true })),
+      ),
       http.get(`${API_BASE}/me/team/summary`, () =>
-        HttpResponse.json({ seasonTotalPoints: null, lastRace: null }),
+        HttpResponse.json({ teamName: 'Red Bull Racing', seasonTotalPoints: null, lastRace: null }),
       ),
       http.get(`${API_BASE}/me/standings`, () => HttpResponse.json([])),
+      http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(CURRENT_SEASON)),
       http.get(`${API_BASE}/seasons/${CURRENT_SEASON.id}/race-weekends`, () =>
         HttpResponse.json([]),
       ),
@@ -129,11 +135,7 @@ describe('routing at /', () => {
       routeTree: buildIndexRouteTree(),
       initialEntry: '/',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext({
-        profile: createMockUserProfile({ firstName: 'Ada' }),
-        team: createMockTeam({ name: 'Red Bull Racing' }),
-        currentSeason: CURRENT_SEASON,
-      }),
+      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByText("You're riding solo")).toBeInTheDocument();
@@ -141,8 +143,12 @@ describe('routing at /', () => {
 
   it('renders Home for authed users with no team without crashing', async () => {
     server.use(
+      http.get(`${API_BASE}/me/profile`, () =>
+        HttpResponse.json(createMockUserProfile({ firstName: 'Ada', hasTeam: false })),
+      ),
       http.get(`${API_BASE}/me/team/summary`, () => new HttpResponse(null, { status: 404 })),
       http.get(`${API_BASE}/me/standings`, () => HttpResponse.json([])),
+      http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(CURRENT_SEASON)),
       http.get(`${API_BASE}/seasons/${CURRENT_SEASON.id}/race-weekends`, () =>
         HttpResponse.json([]),
       ),
@@ -152,14 +158,37 @@ describe('routing at /', () => {
       routeTree: buildIndexRouteTree(),
       initialEntry: '/',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext({
-        profile: createMockUserProfile({ firstName: 'Ada' }),
-        team: null,
-        currentSeason: CURRENT_SEASON,
-      }),
+      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Welcome, Ada' })).toBeInTheDocument();
     expect(await screen.findByRole('link', { name: /create team/i })).toBeInTheDocument();
+  });
+
+  it('keeps Home on the team variant when the profile fetch fails but the summary loads', async () => {
+    // A transient profile failure must not demote a team-owner to the no-team Home:
+    // existence is read from the team summary, not the profile.
+    server.use(
+      http.get(`${API_BASE}/me/profile`, () => new HttpResponse(null, { status: 500 })),
+      http.get(`${API_BASE}/me/team/summary`, () =>
+        HttpResponse.json({ teamName: 'Red Bull Racing', seasonTotalPoints: 312, lastRace: null }),
+      ),
+      http.get(`${API_BASE}/me/standings`, () => HttpResponse.json([])),
+      http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(CURRENT_SEASON)),
+      http.get(`${API_BASE}/seasons/${CURRENT_SEASON.id}/race-weekends`, () =>
+        HttpResponse.json([]),
+      ),
+    );
+
+    renderWithRouter({
+      routeTree: buildIndexRouteTree(),
+      initialEntry: '/',
+      auth: createAuthedAuth(),
+      routerContext: createBaseRouterContext(),
+    });
+
+    // The team name still comes from the summary; the greeting name is just blank.
+    expect(await screen.findByRole('heading', { name: 'Red Bull Racing' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /create team/i })).not.toBeInTheDocument();
   });
 });

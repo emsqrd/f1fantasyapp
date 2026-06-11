@@ -1,6 +1,5 @@
-import type { Team } from '@/contracts/Team';
 import type { RouterContext } from '@/lib/router-context';
-import { supabase } from '@/lib/supabase';
+import { myTeamQuery } from '@/services/teamService';
 import { redirect } from '@tanstack/react-router';
 
 /**
@@ -9,15 +8,8 @@ import { redirect } from '@tanstack/react-router';
  * Assumes auth has finished loading: `InnerApp` only mounts the router once auth
  * is ready, so this guard never runs mid-load.
  */
-export async function requireAuth(context: RouterContext): Promise<void> {
+export function requireAuth(context: RouterContext): void {
   if (context.auth.user) return;
-
-  // context.auth.user is a React-state snapshot; it lags Supabase right after
-  // a session is established. Check getSession() before redirecting.
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (session?.user) return;
 
   throw redirect({
     to: '/',
@@ -28,32 +20,17 @@ export async function requireAuth(context: RouterContext): Promise<void> {
 /**
  * Route guard for team-gated routes. Auth is enforced by the enclosing
  * `_authenticated` layout, so this guard does not re-check it.
+ *
+ * A `null` team is a genuine no-team user → redirect to create. A fetch failure
+ * is left to throw rather than be caught back to `null`, which would misroute a
+ * real owner to /create-team on a transient blip.
  */
-export function requireTeam(context: RouterContext): { team: Team } {
-  // context.team is set fresh by the root beforeLoad on every navigation, so
-  // reading it here is as current as a re-fetch.
-  if (!context.team) {
+export async function requireTeam(context: RouterContext): Promise<void> {
+  const team = await context.queryClient.ensureQueryData(myTeamQuery);
+  if (!team) {
     throw redirect({
       to: '/create-team',
       replace: true,
     });
   }
-
-  return { team: context.team };
-}
-
-/**
- * Route guard for routes that require the user NOT to have a team (e.g.
- * `/create-team`). Auth is enforced by the enclosing `_authenticated` layout, so
- * this guard does not re-check it.
- */
-export function requireNoTeam(context: RouterContext): { team: null } {
-  if (context.team) {
-    throw redirect({
-      to: '/',
-      replace: true,
-    });
-  }
-
-  return { team: null };
 }

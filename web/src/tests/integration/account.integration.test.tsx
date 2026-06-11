@@ -1,8 +1,9 @@
 import { Account } from '@/components/Account/Account';
 import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
 import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
+import type { UserProfile } from '@/contracts/UserProfile';
 import type { RouterContext } from '@/lib/router-context';
-import { userProfileService } from '@/services/userProfileService';
+import { profileQuery } from '@/services/userProfileService';
 import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
@@ -13,6 +14,7 @@ import {
 } from '@/tests/test-utils';
 import { Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router';
 import { screen } from '@testing-library/react';
+import { userEvent } from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
@@ -34,7 +36,9 @@ function buildAccountRouteTree() {
   const accountRoute = createRoute({
     getParentRoute: () => authenticatedLayoutRoute,
     path: 'account',
-    loader: async () => ({ userProfile: await userProfileService.getCurrentProfile() }),
+    loader: async ({ context }) => {
+      await context.queryClient.ensureQueryData(profileQuery);
+    },
     component: Account,
     errorComponent: ({ error }) => (
       <ErrorBoundary level="page">
@@ -77,5 +81,35 @@ describe('Account page', () => {
     expect(
       await screen.findByRole('heading', { name: /something went wrong/i }),
     ).toBeInTheDocument();
+  });
+
+  it('refetches the profile after a save so persistent consumers see the update', async () => {
+    const user = userEvent.setup();
+    let stored = createMockUserProfile({ displayName: 'Original' });
+    server.use(
+      http.get(`${API_BASE}/me/profile`, () => HttpResponse.json(stored)),
+      http.patch(`${API_BASE}/me/profile`, async ({ request }) => {
+        stored = (await request.json()) as UserProfile;
+        return HttpResponse.json(stored);
+      }),
+    );
+
+    const { queryClient } = renderWithRouter({
+      routeTree: buildAccountRouteTree(),
+      initialEntry: '/account',
+      auth: createAuthedAuth(),
+      routerContext: createBaseRouterContext(),
+    });
+
+    const displayName = await screen.findByDisplayValue('Original');
+    await user.clear(displayName);
+    await user.type(displayName, 'Updated');
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    await screen.findAllByText(/profile updated successfully/i);
+    // The query cache — read by the always-mounted sidebar — now holds the new name.
+    expect(queryClient.getQueryData(profileQuery.queryKey)).toMatchObject({
+      displayName: 'Updated',
+    });
   });
 });

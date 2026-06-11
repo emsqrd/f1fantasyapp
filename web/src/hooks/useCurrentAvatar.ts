@@ -1,5 +1,7 @@
+import { useAuth } from '@/hooks/useAuth';
 import { avatarEvents } from '@/lib/avatarEvents';
-import { useRouteContext } from '@tanstack/react-router';
+import { profileQuery } from '@/services/userProfileService';
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 export interface CurrentAvatar {
@@ -10,12 +12,13 @@ export interface CurrentAvatar {
 }
 
 /**
- * Layers an uploaded avatar (broadcast via `avatarEvents`) over the profile on
- * the root route context, so a just-uploaded image shows before the route
- * reloads. `isLoading` tracks the decode of a newly-changed URL.
+ * Layers an uploaded avatar (broadcast via `avatarEvents`) over the profile
+ * query, so a just-uploaded image shows before the query refetches. `isLoading`
+ * tracks the decode of a newly-changed URL.
  */
 export function useCurrentAvatar(): CurrentAvatar {
-  const { profile } = useRouteContext({ from: '__root__' });
+  const { user } = useAuth();
+  const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
 
   const [uploadedAvatarUrl, setUploadedAvatarUrl] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);

@@ -1,6 +1,5 @@
 import type { MyLeagueStanding } from '@/contracts/MyLeagueStanding';
 import type { RaceWeekend } from '@/contracts/RaceWeekend';
-import type { Team } from '@/contracts/Team';
 import type { TeamSummary } from '@/contracts/TeamSummary';
 
 import { AppContainer } from '../AppContainer/AppContainer';
@@ -12,7 +11,6 @@ import { NextRaceCard } from './NextRaceCard';
 
 interface HomeProps {
   name: string;
-  team: Team | null;
   summary: TeamSummary | null;
   standings: MyLeagueStanding[];
   races: RaceWeekend[];
@@ -20,16 +18,16 @@ interface HomeProps {
 
 const EM_DASH = '—';
 
-export function Home({ name, team, summary, standings, races }: HomeProps) {
+export function Home({ name, summary, standings, races }: HomeProps) {
   return (
     <AppContainer maxWidth="md" className="py-4 md:py-6">
       <div className="flex flex-col gap-4 md:gap-6">
         <header>
-          {team ? (
+          {summary ? (
             <>
               <p className="text-muted-foreground text-xs md:text-sm">Welcome back, {name}</p>
               <h2 className="text-foreground truncate text-xl font-bold tracking-tight md:text-2xl">
-                {team.name}
+                {summary.teamName}
               </h2>
             </>
           ) : (
@@ -39,26 +37,26 @@ export function Home({ name, team, summary, standings, races }: HomeProps) {
           )}
         </header>
 
-        {!team && <CreateTeamHero />}
+        {!summary && <CreateTeamHero />}
 
         <NextRaceCard races={races} />
 
-        {team && (
+        {summary && (
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
             <ScoreCard
               eyebrow="Last race stats"
-              title={summary?.lastRace?.name ?? EM_DASH}
-              score={summary?.lastRace?.totalScore ?? null}
+              title={summary.lastRace?.name ?? EM_DASH}
+              score={summary.lastRace?.totalScore ?? null}
             />
             <ScoreCard
               eyebrow="Season stats"
               title="Total"
-              score={summary?.seasonTotalPoints ?? null}
+              score={summary.seasonTotalPoints ?? null}
             />
           </div>
         )}
 
-        {!team ? (
+        {!summary ? (
           <LeaguesNeedTeamNotice />
         ) : standings.length === 0 ? (
           <JoinLeaguesPrompt />

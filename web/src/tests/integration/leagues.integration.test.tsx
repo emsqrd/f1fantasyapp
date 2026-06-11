@@ -14,7 +14,6 @@ import {
   createMockLeague,
   createMockLeagueStandings,
   createMockTeam,
-  createMockUserProfile,
   renderWithRouter,
 } from '@/tests/test-utils';
 import { Outlet, createRootRouteWithContext, createRoute, notFound } from '@tanstack/react-router';
@@ -92,11 +91,11 @@ function buildLeagueRouteTree() {
   ]);
 }
 
-function authedRouterContext(): Omit<RouterContext, 'auth'> {
-  return createBaseRouterContext({
-    team: createMockTeam(),
-    profile: createMockUserProfile(),
-  });
+function authedRouterContext(): Omit<RouterContext, 'auth' | 'queryClient'> {
+  // The League/BrowseLeagues pages read profile through the query (default
+  // handler); the `/me/team` handler satisfies the `requireTeam` guard.
+  server.use(http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam())));
+  return createBaseRouterContext();
 }
 
 describe('Browse leagues', () => {

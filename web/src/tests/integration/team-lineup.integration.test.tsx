@@ -6,13 +6,13 @@ import type { RouterContext } from '@/lib/router-context';
 import { getConstructors } from '@/services/constructorService';
 import { getDrivers } from '@/services/driverService';
 import { getRaceWeekends } from '@/services/raceWeekendService';
-import { getMyTeam } from '@/services/teamService';
+import { seasonQuery } from '@/services/seasonService';
+import { myTeamQuery } from '@/services/teamService';
 import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
   buildTeamRequiredLayout,
   createAuthedAuth,
-  createBaseRouterContext,
   createMockConstructorList,
   createMockDriverList,
   createMockRaceWeekend,
@@ -22,7 +22,7 @@ import {
   createMockTeamDriver,
   renderWithRouter,
 } from '@/tests/test-utils';
-import { Outlet, createRootRouteWithContext, createRoute, redirect } from '@tanstack/react-router';
+import { Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
@@ -45,15 +45,14 @@ function buildMyTeamRouteTree() {
     getParentRoute: () => teamRequiredLayoutRoute,
     path: 'my-team',
     loader: async ({ context }) => {
-      const seasonId = context.currentSeason?.id;
-      const [team, activeDrivers, activeConstructors, races] = await Promise.all([
-        getMyTeam(),
+      const season = await context.queryClient.ensureQueryData(seasonQuery);
+      await context.queryClient.ensureQueryData(myTeamQuery);
+      const [activeDrivers, activeConstructors, races] = await Promise.all([
         getDrivers(),
         getConstructors(),
-        seasonId !== undefined ? getRaceWeekends(seasonId) : Promise.resolve([]),
+        season ? getRaceWeekends(season.id) : Promise.resolve([]),
       ]);
-      if (!team) throw redirect({ to: '/' });
-      return { team, activeDrivers, activeConstructors, races };
+      return { activeDrivers, activeConstructors, races };
     },
     component: MyTeamRoute,
     errorComponent: ({ error }) => (
@@ -91,6 +90,7 @@ function teamHandlers(team: Team) {
     http.get(`${API_BASE}/me/team`, () => HttpResponse.json(team)),
     http.get(`${API_BASE}/drivers`, () => HttpResponse.json(allDrivers)),
     http.get(`${API_BASE}/constructors`, () => HttpResponse.json(allConstructors)),
+    http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(createMockSeason())),
     http.get(`${API_BASE}/seasons/1/race-weekends`, () => HttpResponse.json([futureRace])),
   ];
 }
@@ -100,10 +100,6 @@ function renderMyTeam() {
     routeTree: buildMyTeamRouteTree(),
     initialEntry: '/my-team',
     auth: createAuthedAuth(),
-    routerContext: createBaseRouterContext({
-      team: createMockTeam(),
-      currentSeason: createMockSeason(),
-    }),
   });
 }
 
@@ -173,6 +169,7 @@ describe('My team lineup', () => {
       http.get(`${API_BASE}/me/team`, () => HttpResponse.json(team)),
       http.get(`${API_BASE}/drivers`, () => HttpResponse.json(allDrivers)),
       http.get(`${API_BASE}/constructors`, () => HttpResponse.json(allConstructors)),
+      http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(createMockSeason())),
       http.get(`${API_BASE}/seasons/1/race-weekends`, () => HttpResponse.json([lockedRace])),
     );
 

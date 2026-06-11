@@ -5,14 +5,14 @@ import type { RouterContext } from '@/lib/router-context';
 import { getConstructors } from '@/services/constructorService';
 import { getDrivers } from '@/services/driverService';
 import { getRaceWeekends } from '@/services/raceWeekendService';
-import { getTeamById } from '@/services/teamService';
+import { seasonQuery } from '@/services/seasonService';
+import { getTeamById, myTeamQuery } from '@/services/teamService';
 import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
   buildStubRoute,
   buildTeamRequiredLayout,
   createAuthedAuth,
-  createBaseRouterContext,
   createMockConstructorList,
   createMockDriverList,
   createMockRaceWeekend,
@@ -49,20 +49,22 @@ function buildTeamByIdRouteTree() {
   const teamByIdRoute = createRoute({
     getParentRoute: () => teamRequiredLayoutRoute,
     path: 'team/$teamId',
-    beforeLoad: ({ context, params }) => {
+    beforeLoad: async ({ context, params }) => {
       const teamId = Number(params.teamId);
-      if (Number.isInteger(teamId) && context.team?.id === teamId) {
+      if (!Number.isInteger(teamId)) return;
+      const team = await context.queryClient.ensureQueryData(myTeamQuery);
+      if (team?.id === teamId) {
         throw redirect({ to: '/my-team', replace: true });
       }
     },
     loader: async ({ params, context }) => {
-      const seasonId = context.currentSeason?.id;
+      const season = await context.queryClient.ensureQueryData(seasonQuery);
       const teamId = Number(params.teamId);
       const [team, activeDrivers, activeConstructors, races] = await Promise.all([
         getTeamById(teamId),
         getDrivers(),
         getConstructors(),
-        seasonId !== undefined ? getRaceWeekends(seasonId) : Promise.resolve([]),
+        season ? getRaceWeekends(season.id) : Promise.resolve([]),
       ]);
       if (!team) {
         throw notFound({ routeId: '/_authenticated/_team-required/team/$teamId' });
@@ -91,14 +93,13 @@ function buildTeamByIdRouteTree() {
 }
 
 function renderTeamById(initialEntry: string) {
+  // The `requireTeam` guard and the own-team redirect both read the team through
+  // the query; seed it (id 1) so /team/1 self-redirects and /team/2 does not.
+  server.use(http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam())));
   return renderWithRouter({
     routeTree: buildTeamByIdRouteTree(),
     initialEntry,
     auth: createAuthedAuth(),
-    routerContext: createBaseRouterContext({
-      team: createMockTeam(),
-      currentSeason: createMockSeason(),
-    }),
   });
 }
 
@@ -119,6 +120,7 @@ describe('Viewing a team', () => {
       http.get(`${API_BASE}/teams/2`, () => HttpResponse.json(otherTeam)),
       http.get(`${API_BASE}/drivers`, () => HttpResponse.json(createMockDriverList(2))),
       http.get(`${API_BASE}/constructors`, () => HttpResponse.json(createMockConstructorList(2))),
+      http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(createMockSeason())),
       http.get(`${API_BASE}/seasons/1/race-weekends`, () =>
         HttpResponse.json([createMockRaceWeekend()]),
       ),

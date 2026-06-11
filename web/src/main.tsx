@@ -1,12 +1,15 @@
 import { Toaster } from '@/components/ui/sonner';
 import * as Sentry from '@sentry/react';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { InnerApp } from './InnerApp.tsx';
-import { AuthProvider } from './contexts/AuthContext.tsx';
 import './index.css';
+import { resetCaches } from './lib/authReactions.ts';
+import { initAuthStore } from './lib/authStore.ts';
+import { queryClient } from './lib/queryClient.ts';
 import { router } from './router.tsx';
 
 // Initialize Sentry for error tracking and performance monitoring
@@ -55,6 +58,8 @@ Sentry.init({
   enableLogs: import.meta.env.PROD,
 });
 
+initAuthStore({ onUserChange: () => resetCaches(queryClient, router) });
+
 const container = document.getElementById('root');
 if (!container) throw new Error('Root container not found');
 
@@ -68,9 +73,9 @@ root.render(
   <StrictMode>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true}>
       <Toaster position="top-center" />
-      <AuthProvider>
+      <QueryClientProvider client={queryClient}>
         <InnerApp />
-      </AuthProvider>
+      </QueryClientProvider>
     </ThemeProvider>
   </StrictMode>,
 );

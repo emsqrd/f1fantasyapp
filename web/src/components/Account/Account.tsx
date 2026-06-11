@@ -2,13 +2,13 @@ import type { UserProfile } from '@/contracts/UserProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
 import { avatarEvents } from '@/lib/avatarEvents';
-import { userProfileService } from '@/services/userProfileService';
+import { profileQuery, userProfileService } from '@/services/userProfileService';
 import {
   type UserProfileFormData,
   userProfileFormSchema,
 } from '@/validations/userProfileFormSchema';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getRouteApi } from '@tanstack/react-router';
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -22,31 +22,18 @@ import { LiveRegion } from '../LiveRegion/LiveRegion';
 import { LoadingButton } from '../LoadingButton/LoadingButton';
 import { Card, CardContent, CardHeader } from '../ui/card';
 
-const routeApi = getRouteApi('/_authenticated/account');
-
 export function Account() {
   const { user } = useAuth();
-  const { userProfile: initialProfile } = routeApi.useLoaderData();
-
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(initialProfile);
-  const [prevInitialProfile, setPrevInitialProfile] = useState(initialProfile);
-
-  if (initialProfile !== prevInitialProfile) {
-    setPrevInitialProfile(initialProfile);
-    setUserProfile(initialProfile);
-  }
+  const queryClient = useQueryClient();
+  const { data: userProfile } = useSuspenseQuery(profileQuery);
 
   const handleAvatarChange = async (avatarUrl: string) => {
     if (!userProfile) return;
 
     try {
-      const updatedProfile = await userProfileService.updateUserProfile({
-        ...userProfile,
-        avatarUrl,
-      });
-
-      setUserProfile(updatedProfile);
+      await userProfileService.updateUserProfile({ ...userProfile, avatarUrl });
       avatarEvents.emit(avatarUrl);
+      await queryClient.invalidateQueries(profileQuery);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update avatar';
       toast.error(message);
@@ -56,12 +43,8 @@ export function Account() {
   const handleProfileSubmit = async (formData: UserProfileFormData) => {
     if (!userProfile) return;
 
-    const updatedProfile = await userProfileService.updateUserProfile({
-      ...userProfile,
-      ...formData,
-    });
-
-    setUserProfile(updatedProfile);
+    await userProfileService.updateUserProfile({ ...userProfile, ...formData });
+    await queryClient.invalidateQueries(profileQuery);
   };
 
   return (

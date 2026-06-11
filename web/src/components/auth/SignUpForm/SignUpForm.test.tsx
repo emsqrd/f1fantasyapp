@@ -1,4 +1,4 @@
-import type { AuthContextType } from '@/contexts/AuthContext';
+import type { Auth } from '@/lib/authStore';
 import type { Session } from '@supabase/supabase-js';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -33,13 +33,13 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 describe('SignUpForm', () => {
-  let mockSignUp: ReturnType<typeof vi.fn<AuthContextType['signUp']>>;
+  let mockSignUp: ReturnType<typeof vi.fn<Auth['signUp']>>;
   let mockStartAuthTransition: ReturnType<typeof vi.fn<() => void>>;
   let mockCompleteAuthTransition: ReturnType<typeof vi.fn<() => void>>;
   let useAuth: typeof import('@/hooks/useAuth').useAuth;
 
   beforeEach(async () => {
-    mockSignUp = vi.fn<AuthContextType['signUp']>();
+    mockSignUp = vi.fn<Auth['signUp']>();
     mockStartAuthTransition = vi.fn<() => void>();
     mockCompleteAuthTransition = vi.fn<() => void>();
     useAuth = (await import('@/hooks/useAuth')).useAuth;

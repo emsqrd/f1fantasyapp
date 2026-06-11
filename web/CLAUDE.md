@@ -18,18 +18,17 @@ TanStack Router uses **guard-based route protection** with pathless layout route
 
 ### Authentication Flow
 
-**Files:** `src/contexts/AuthContext.tsx`, `src/lib/supabase.ts`, `src/hooks/useAuth.ts`
+**Files:** `src/lib/authStore.ts`, `src/lib/supabase.ts`, `src/hooks/useAuth.ts`
 
-- `AuthProvider` wraps entire app in `main.tsx`
-- Provides `user`, `session`, `loading`, `signIn`, `signUp`, `signOut`
+- Auth state lives in a module-level store (`authStore.ts`), written synchronously inside Supabase's `onAuthStateChange`; `main.tsx` calls `initAuthStore()` once. There is no AuthProvider.
+- Components read it via `useAuth()` (backed by `useSyncExternalStore`): `user`, `session`, `loading`, `signIn`, `signUp`, `signOut`
+- Supabase awaits its auth listeners, so the store is already current when `signIn()`/`signOut()` resolve
 - Route guards check auth state before allowing navigation
 - `InnerApp.tsx` waits for `auth.loading` to complete before rendering routes
 
 ### State Management
 
-**Pattern:** Put state where its reader reaches it. If a guard or loader needs it, it goes in **router context** — `beforeLoad`/`loader` run outside React and can't read a React context. If the component tree needs it, it goes in a **React context**, which distributes app-wide values (auth, theme) down the tree. Auth needs both.
-
-The user's team lives in router context (`context.team`, fetched by the root `beforeLoad`) — the single source of truth, deliberately not a React context.
+**Pattern:** Put state where its reader reaches it. `beforeLoad`/`loader` run outside React, so anything a guard or loader needs goes in **router context** — `{ auth, queryClient }`. `auth` is a live view over the auth store (reads evaluate at guard/loader execution time, never a render-time copy); `queryClient` reaches the TanStack Query cache, where cross-route reads live — each defined as a `queryOptions` in its service module. The component tree reads the same sources through hooks: `useAuth()` for the store, `useQuery`/`useSuspenseQuery` for the cache.
 
 ### API/Service Layer
 
@@ -45,7 +44,14 @@ Centralized `ApiClient` class handles all HTTP requests:
 
 ### Data Loading Pattern
 
-Route loaders fetch data before the component renders, so components read via `Route.useLoaderData()` without loading states. Loaders throw `notFound({ routeId })` on missing resources; the route's `errorComponent` handles the failure path.
+Two kinds of reads:
+
+- **Route-owned data** (league detail, standings, drivers/constructors/race weekends for a view) — the route's loader fetches it before the component renders; the component reads `Route.useLoaderData()` without loading states.
+- **Cross-route reads** (profile, team, season) — each defined once as a `queryOptions` in its service module (`profileQuery`, `myTeamQuery`, `seasonQuery`). Guards and loaders prime them with `context.queryClient.ensureQueryData(...)`; components read `useSuspenseQuery(...)` when a loader guarantees the data, or `useQuery({ ...profileQuery, enabled: !!user })` for chrome that also renders for anonymous users (sidebar, account menu).
+
+A mutation that changes a query-cached resource must `queryClient.invalidateQueries(...)` (or `setQueryData`) — `router.invalidate()` only re-runs loaders, and `ensureQueryData` then serves the stale cache entry.
+
+Loaders throw `notFound({ routeId })` on missing resources; the route's `errorComponent` handles the failure path.
 
 ### Error Handling
 
@@ -98,8 +104,8 @@ See root `CLAUDE.md` `## Testing Strategy` for cross-cutting rules (unit vs inte
 **Unit-testing route guards** — call guard functions directly, not through components. (Integration tests cover guard wiring by mounting layouts with the real guard attached — see "Frontend Integration Tests" below.)
 
 ```typescript
-const context = { auth: { user: null, loading: false }, team: null };
-await expect(requireAuth(context)).rejects.toThrow();
+const context = { auth: { user: null }, queryClient: new QueryClient() };
+expect(() => requireAuth(context)).toThrow();
 ```
 
 **Mock factories:** `createMockTeam`, `createMockDriver` from `@/tests/test-utils`.
@@ -114,7 +120,7 @@ See root `CLAUDE.md` `## Testing Strategy` for when to reach for this layer vs. 
 
 **Run:** `npm run web:test:integration` (focused) or `npm run web:test` (full suite).
 
-**Stack:** Vitest + jsdom + MSW intercepting at the `fetch` boundary. Tests exercise the real router, real loaders, real components, and the real `apiClient` — only the network is mocked. The MSW server is exported from `setupTests.ts` as `server`, runs in strict mode (`onUnhandledRequest: 'error'`), and resets handlers after each test.
+**Stack:** Vitest + jsdom + MSW intercepting at the `fetch` boundary. Tests exercise the real router, real loaders, real components, and the real `apiClient` — only the network is mocked. The MSW server lives in `src/mocks/server.ts` with the shared default handlers in `src/mocks/handlers.ts` (both re-exported from `setupTests.ts` as `server` / `API_BASE`); it runs in strict mode (`onUnhandledRequest: 'error'`) and resets handlers after each test.
 
 **Reference test:** `src/tests/integration/account.integration.test.tsx`. Copy its shape for new flows.
 
@@ -126,25 +132,24 @@ See root `CLAUDE.md` `## Testing Strategy` for when to reach for this layer vs. 
 
 **Auth:**
 
-- Pass a complete `AuthContextType` value to `renderWithRouter`. The helper provides it to `AuthContext.Provider` (for component-tree consumers like `useAuth`) and to the router context (for guards like `requireAuth`).
-- `apiClient` reads its bearer token from `supabase.auth.getSession()`, not from `AuthContext`. With no real Supabase session in tests, no `Authorization` header is sent — handlers must not assert on it. If a future test needs a real bearer header, seed the Supabase client's session at that point; don't pre-build that machinery now.
+- Pass a complete `Auth` value to `renderWithRouter`. The helper seeds the auth store with it (for component-tree consumers like `useAuth`) and passes the same value to the router context (for guards like `requireAuth`).
+- `apiClient` reads its bearer token from `supabase.auth.getSession()`, not from the auth store. With no real Supabase session in tests, no `Authorization` header is sent — handlers must not assert on it. If a future test needs a real bearer header, seed the Supabase client's session at that point; don't pre-build that machinery now.
 
 **MSW handlers:**
 
 - Build URLs from `API_BASE` exported by `setupTests.ts`: ``http.get(`${API_BASE}/me/profile`, ...)``. Don't hardcode the base.
-- Declare handlers per test via `server.use(...)`. There are no shared default handlers today, on purpose — strict mode forces every test to spell out its network surface.
-- **Trigger to extract a default:** when you find yourself copy-pasting the same handler across three or more flow tests (likely `/me/profile`, `/me/team`, `/seasons/current` once authenticated flows accumulate), introduce `src/mocks/handlers.ts` + `src/mocks/server.ts`, seed the duplicates as defaults, and let tests override per-flow with `server.use(...)`. Until that trigger fires, keep handlers per-test.
+- **Defaults cover the cross-route reads** every authenticated tree touches: `src/mocks/handlers.ts` seeds `/me/profile` (a profile with `hasTeam: false`), `/me/team` (404 — no team), and `/seasons/current`. They model a freshly-authenticated user without a team; a test mounting a `_team-required` route overrides `/me/team` with a present team via `server.use(...)`.
+- Declare everything else per test via `server.use(...)` — strict mode forces each test to spell out the rest of its network surface. Promote a handler to a default only once it's copy-pasted across three or more flow tests.
 - **Don't introduce per-service path constants** (e.g. `USER_PROFILE_PATH = '/me/profile'`). The service module is already the single source of truth for each path. Strict-mode MSW reports the exact unhandled URL on a typo or rename, so drift is caught loudly — constants would just add a second place to maintain.
 - For 4xx/5xx, use `new HttpResponse(null, { status })`. For success bodies, use `HttpResponse.json(factoryOutput)` so the response shape is typed via the factory.
 
-**`renderWithRouter` signature:** `routeTree`, `initialEntry`, `auth`, `routerContext` (the latter is `Omit<RouterContext, 'auth'>` — `auth` is wired automatically from the `auth` field).
+**`renderWithRouter` signature:** `routeTree`, `initialEntry`, `auth`, and an optional `routerContext` (rarely needed — `auth` and `queryClient` are wired automatically, and nothing else remains in `RouterContext`). The helper creates a fresh per-test `QueryClient`, wraps the tree in its provider, and returns it, so tests can seed or assert the Query cache directly (e.g. `queryClient.setQueryData(teamKeys.all, mockTeam)`).
 
 ```typescript
-renderWithRouter({
+const { queryClient } = renderWithRouter({
   routeTree: buildAccountRouteTree(),
   initialEntry: '/account',
   auth: authedAuth,
-  routerContext: { team: null, profile: null, currentSeason: null },
 });
 ```
 
