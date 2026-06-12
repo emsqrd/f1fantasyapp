@@ -279,7 +279,7 @@ const joinInviteRoute = createRoute({
 const authenticatedLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: '_authenticated',
-  beforeLoad: ({ context }) => requireAuth(context),
+  beforeLoad: ({ context, location }) => requireAuth(context, location.href),
   component: () => <Outlet />,
   // Catches the `requireTeam` fetch failure thrown by the `_team-required`
   // child guard. Placed on this ancestor — inside the root Layout outlet, so the

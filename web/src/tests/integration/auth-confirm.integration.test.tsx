@@ -15,7 +15,6 @@ import {
   createRootRouteWithContext,
   createRoute,
   redirect,
-  useLocation,
   useSearch,
 } from '@tanstack/react-router';
 import { screen, waitFor } from '@testing-library/react';
@@ -49,16 +48,6 @@ function SignUpStub() {
       {search.confirmationError && (
         <p data-testid="confirmation-error">{search.confirmationError}</p>
       )}
-    </>
-  );
-}
-
-function LeagueStub() {
-  const { hash } = useLocation();
-  return (
-    <>
-      <h1>League Stub</h1>
-      <p data-testid="location-hash">{hash}</p>
     </>
   );
 }
@@ -103,10 +92,9 @@ function buildAuthConfirmRouteTree() {
     heading: 'Join Invite Stub',
   });
 
-  const leagueRoute = createRoute({
-    getParentRoute: () => rootRoute,
+  const leagueRoute = buildStubRoute(rootRoute, {
     path: '/league/$leagueId',
-    component: LeagueStub,
+    heading: 'League Stub',
   });
 
   return rootRoute.addChildren([
@@ -184,7 +172,7 @@ describe('/auth/confirm route', () => {
     const user = userEvent.setup();
 
     const sameOriginNext = `${window.location.origin}/league/5#standings`;
-    renderWithRouter({
+    const { router } = renderWithRouter({
       routeTree: buildAuthConfirmRouteTree(),
       initialEntry: `/auth/confirm?token_hash=abc123&type=signup&next=${encodeURIComponent(
         sameOriginNext,
@@ -196,7 +184,7 @@ describe('/auth/confirm route', () => {
     await user.click(await screen.findByRole('button', { name: /continue/i }));
 
     expect(await screen.findByRole('heading', { name: 'League Stub' })).toBeInTheDocument();
-    expect(screen.getByTestId('location-hash')).toHaveTextContent('standings');
+    expect(router.state.location.hash).toBe('standings');
   });
 
   it('redirects to /sign-up?confirmationError=expired when verifyOtp errors with otp_expired', async () => {

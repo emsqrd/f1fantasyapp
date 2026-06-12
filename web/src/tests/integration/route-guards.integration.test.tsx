@@ -24,18 +24,22 @@ import { describe, expect, it } from 'vitest';
 // root → context → guard path the production tree uses. Mirror the layout chain:
 // `_authenticated` (requireAuth) → `_team-required` (requireTeam) for /my-team,
 // with `/create-team` sitting directly under `_authenticated` as the no-team
-// redirect target. Destination routes are bare stubs so a redirect lands on
-// something renderable; their headings are how each test confirms which redirect
-// fired.
+// redirect target. `/sign-in` sits at the root as the unauthenticated redirect
+// target. Destination routes are bare stubs so a redirect lands on something
+// renderable; their headings are how each test confirms which redirect fired.
 function buildGuardRouteTree() {
   const rootRoute = buildRootRoute();
 
-  const homeRoute = buildStubRoute(rootRoute, { path: '/', heading: 'Home Page' });
+  const signInRoute = buildStubRoute(rootRoute, { path: '/sign-in', heading: 'Sign In Page' });
   const authenticatedLayoutRoute = buildAuthenticatedLayout(rootRoute);
   const teamRequiredLayoutRoute = buildTeamRequiredLayout(authenticatedLayoutRoute);
   const myTeamRoute = buildStubRoute(teamRequiredLayoutRoute, {
     path: 'my-team',
     heading: 'My Team Page',
+  });
+  const leagueRoute = buildStubRoute(teamRequiredLayoutRoute, {
+    path: 'league/$leagueId',
+    heading: 'League Page',
   });
   const createTeamRoute = buildStubRoute(authenticatedLayoutRoute, {
     path: 'create-team',
@@ -43,25 +47,41 @@ function buildGuardRouteTree() {
   });
 
   return rootRoute.addChildren([
-    homeRoute,
+    signInRoute,
     authenticatedLayoutRoute.addChildren([
-      teamRequiredLayoutRoute.addChildren([myTeamRoute]),
+      teamRequiredLayoutRoute.addChildren([myTeamRoute, leagueRoute]),
       createTeamRoute,
     ]),
   ]);
 }
 
 describe('route guard wiring', () => {
-  it('redirects unauthenticated users from /my-team to /', async () => {
-    renderWithRouter({
+  it('redirects an unauthenticated visitor to /sign-in carrying the attempted path', async () => {
+    const { router } = renderWithRouter({
       routeTree: buildGuardRouteTree(),
       initialEntry: '/my-team',
       auth: createUnauthAuth(),
       routerContext: createBaseRouterContext(),
     });
 
-    expect(await screen.findByRole('heading', { name: 'Home Page' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Sign In Page' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/sign-in');
+    expect((router.state.location.search as { redirect?: string }).redirect).toBe('/my-team');
     expect(screen.queryByRole('heading', { name: 'My Team Page' })).not.toBeInTheDocument();
+  });
+
+  it('round-trips a deep link query string through the redirect param', async () => {
+    const { router } = renderWithRouter({
+      routeTree: buildGuardRouteTree(),
+      initialEntry: '/league/5?tab=roster',
+      auth: createUnauthAuth(),
+      routerContext: createBaseRouterContext(),
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Sign In Page' })).toBeInTheDocument();
+    expect((router.state.location.search as { redirect?: string }).redirect).toBe(
+      '/league/5?tab=roster',
+    );
   });
 
   it('redirects authenticated users without a team from /my-team to /create-team', async () => {

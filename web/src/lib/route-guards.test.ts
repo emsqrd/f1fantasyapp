@@ -39,7 +39,21 @@ describe('route-guards', () => {
   });
 
   describe('requireAuth', () => {
-    it('throws redirect when user is not authenticated', () => {
+    it('throws redirect to /sign-in carrying the attempted destination when unauthenticated', () => {
+      const context: RouterContext = {
+        auth: { user: null },
+        queryClient,
+      };
+
+      expect(() => requireAuth(context, '/my-team')).toThrow();
+      expect(redirect).toHaveBeenCalledWith({
+        to: '/sign-in',
+        search: { redirect: '/my-team' },
+        replace: true,
+      });
+    });
+
+    it('throws redirect to /sign-in with no destination when redirectTo is omitted', () => {
       const context: RouterContext = {
         auth: { user: null },
         queryClient,
@@ -47,7 +61,8 @@ describe('route-guards', () => {
 
       expect(() => requireAuth(context)).toThrow();
       expect(redirect).toHaveBeenCalledWith({
-        to: '/',
+        to: '/sign-in',
+        search: { redirect: undefined },
         replace: true,
       });
     });
