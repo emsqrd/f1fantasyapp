@@ -13,6 +13,7 @@ import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import type { Team as TeamType } from '@/contracts/Team';
 import { requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
+import { safeInternalPath } from '@/lib/safeInternalPath';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
 import { getLeagueStandings, getMyStandings } from '@/services/standingsService';
 import { getTeamById, getTeamSummary, myTeamQuery } from '@/services/teamService';
@@ -72,19 +73,16 @@ const teamIdParamsSchema = z.object({
 });
 
 /**
- * Zod schema for validating redirect search parameters.
- *
- * Uses `.catch()` for graceful error handling per TanStack Router best practices:
- * Invalid redirect values fall back to undefined instead of throwing errors.
- *
- * Security: Only allows internal paths starting with '/' to prevent open redirects.
+ * Zod schema for the `redirect` search param. `.catch(undefined)` keeps a
+ * malformed value from throwing; `safeInternalPath` coerces it to a safe
+ * same-origin path or `undefined`.
  */
 const redirectSearchSchema = z.object({
   redirect: z
     .string()
-    .refine((url) => url.startsWith('/'), 'Redirect must be an internal path')
     .optional()
-    .catch(undefined),
+    .catch(undefined)
+    .transform((value) => safeInternalPath(value)),
 });
 
 /**

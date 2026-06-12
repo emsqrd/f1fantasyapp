@@ -1,5 +1,6 @@
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import type { RouterContext } from '@/lib/router-context';
+import { safeInternalPath } from '@/lib/safeInternalPath';
 import { supabase } from '@/lib/supabase';
 import {
   buildUnauthenticatedLayout,
@@ -24,11 +25,7 @@ vi.mock('@/lib/supabase', () => ({
 
 // Mirrors the `/sign-up` route from `router.tsx`.
 const signUpSearchSchema = z.object({
-  redirect: z
-    .string()
-    .refine((url) => url.startsWith('/'), 'Redirect must be an internal path')
-    .optional()
-    .catch(undefined),
+  redirect: z.string().optional().catch(undefined).transform(safeInternalPath),
   confirmationError: z.enum(['expired', 'generic']).optional().catch(undefined),
 });
 

@@ -15,6 +15,7 @@ import {
   createRootRouteWithContext,
   createRoute,
   redirect,
+  useLocation,
   useSearch,
 } from '@tanstack/react-router';
 import { screen, waitFor } from '@testing-library/react';
@@ -48,6 +49,16 @@ function SignUpStub() {
       {search.confirmationError && (
         <p data-testid="confirmation-error">{search.confirmationError}</p>
       )}
+    </>
+  );
+}
+
+function LeagueStub() {
+  const { hash } = useLocation();
+  return (
+    <>
+      <h1>League Stub</h1>
+      <p data-testid="location-hash">{hash}</p>
     </>
   );
 }
@@ -92,7 +103,19 @@ function buildAuthConfirmRouteTree() {
     heading: 'Join Invite Stub',
   });
 
-  return rootRoute.addChildren([authConfirmRoute, signUpRoute, homeRoute, joinInviteRoute]);
+  const leagueRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/league/$leagueId',
+    component: LeagueStub,
+  });
+
+  return rootRoute.addChildren([
+    authConfirmRoute,
+    signUpRoute,
+    homeRoute,
+    joinInviteRoute,
+    leagueRoute,
+  ]);
 }
 
 function mockVerifyOtpSuccess() {
@@ -154,6 +177,26 @@ describe('/auth/confirm route', () => {
     await user.click(await screen.findByRole('button', { name: /continue/i }));
 
     expect(await screen.findByRole('heading', { name: 'Join Invite Stub' })).toBeInTheDocument();
+  });
+
+  it('preserves the URL fragment of the next param', async () => {
+    mockVerifyOtpSuccess();
+    const user = userEvent.setup();
+
+    const sameOriginNext = `${window.location.origin}/league/5#standings`;
+    renderWithRouter({
+      routeTree: buildAuthConfirmRouteTree(),
+      initialEntry: `/auth/confirm?token_hash=abc123&type=signup&next=${encodeURIComponent(
+        sameOriginNext,
+      )}`,
+      auth: createUnauthAuth(),
+      routerContext: createBaseRouterContext(),
+    });
+
+    await user.click(await screen.findByRole('button', { name: /continue/i }));
+
+    expect(await screen.findByRole('heading', { name: 'League Stub' })).toBeInTheDocument();
+    expect(screen.getByTestId('location-hash')).toHaveTextContent('standings');
   });
 
   it('redirects to /sign-up?confirmationError=expired when verifyOtp errors with otp_expired', async () => {
