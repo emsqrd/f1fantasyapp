@@ -31,12 +31,12 @@ test.describe('auth', () => {
     await expect(page.getByText(`Welcome back, ${user.displayName}`)).toBeVisible();
   });
 
-  test('redirects unauthenticated visits to /my-team back to the landing page', async ({
+  test('redirects unauthenticated visits to /my-team to sign-in, preserving the destination', async ({
     page,
   }) => {
     await page.goto('/my-team');
 
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/sign-in?redirect=%2Fmy-team');
   });
 
   test('completes signup via the magic link in the confirmation email', async ({ page }) => {
@@ -235,7 +235,9 @@ test.describe('auth', () => {
     await contextB.close();
   });
 
-  test('sign out clears the session so protected routes redirect again', async ({ page }) => {
+  test('sign out clears the session so protected routes redirect to sign-in again', async ({
+    page,
+  }) => {
     const user = await createTestUser();
     const season = await seedCurrentSeason();
     const grid = await seedMinimalGrid({ seasonId: season.id });
@@ -265,7 +267,7 @@ test.describe('auth', () => {
     await expect(page.getByText('Something went wrong!')).not.toBeVisible();
 
     await page.goto('/my-team');
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/sign-in?redirect=%2Fmy-team');
   });
 
   test('switching users in the same session shows the new identity, never the old', async ({
