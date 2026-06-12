@@ -187,7 +187,9 @@ export function SignUpForm() {
         )}
         <div className="text-center">
           <Button variant="link" asChild className="text-sm">
-            <Link to="/sign-in">Already have an account? Sign in</Link>
+            <Link to="/sign-in" search={{ redirect: search.redirect }}>
+              Already have an account? Sign in
+            </Link>
           </Button>
         </div>
       </div>

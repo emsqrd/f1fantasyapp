@@ -232,10 +232,10 @@ Forward only `redirect` (not `confirmationError`). When `redirect` is `undefined
 
 ## Out of scope / follow-ups
 
-- **`requireTeam` destination preservation.** A user without a team who deep-links to `/league/5` is sent to `/create-team` and, after creating, does not return to `/league/5` (the invite flow handles this case explicitly; generic deep links don't). Different gate, different issue.
+- **`requireTeam` destination preservation.** A user without a team who deep-links to `/league/5` is sent to `/create-team` and, after creating, does not return to `/league/5` (the invite flow handles this case explicitly; generic deep links don't). Different gate, different issue. Observed in Commit 4's manual check: a teamless registrant following the `/my-team` deep link lands on `/my-team`, then `requireTeam` immediately bounces to `/create-team` — the redirect is honored; the team gate supersedes it.
 - **Post-sign-up email round-trip for non-invite deep links** already works via `emailRedirectTo` → `next`; no change needed, but worth a manual smoke once Commits 1–4 land.
 
 ## Verification
 
 - `npm run web:build`, `web:lint`, `web:test`, `web:format:check`.
-- Manual matrix: (a) anon deep link → sign-in → returns to destination; (b) anon deep link with query string → returns whole; (c) already-authed visit to `/sign-in?redirect=/x` → `/x`; (d) anon deep link → toggle to sign-up → register → returns to destination; (e) a hand-crafted `/sign-in?redirect=//evil.com` → the param is stripped from the URL on arrival (the schema transforms it to `undefined` and the router re-serializes the cleaned search, so this is observable without signing in), and signing in falls back to `/`, never off-origin.
+- Manual matrix: (a) anon deep link → sign-in → returns to destination; (b) anon deep link with query string → returns whole; (c) already-authed visit to `/sign-in?redirect=/x` → `/x`; (d) anon deep link → toggle to sign-up → register → returns to destination (for a team-gated destination, a teamless registrant is then bounced on to `/create-team` — see the `requireTeam` follow-up below); (e) a hand-crafted `/sign-in?redirect=//evil.com` → the param is stripped from the URL on arrival (the schema transforms it to `undefined` and the router re-serializes the cleaned search, so this is observable without signing in), and signing in falls back to `/`, never off-origin.

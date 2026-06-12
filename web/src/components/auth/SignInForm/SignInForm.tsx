@@ -91,7 +91,9 @@ export function SignInForm() {
         </Card>
         <div className="text-center">
           <Button variant="link" asChild className="text-sm">
-            <Link to="/sign-up">Don't have an account? Sign up</Link>
+            <Link to="/sign-up" search={{ redirect: search.redirect }}>
+              Don't have an account? Sign up
+            </Link>
           </Button>
         </div>
       </div>
