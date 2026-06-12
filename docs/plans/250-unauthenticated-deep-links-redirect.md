@@ -152,6 +152,8 @@ Return the `router` so tests can assert post-redirect location:
 return { ...render(/* … */), queryClient, router };
 ```
 
+Once this lands, simplify Commit 1's fragment-preservation test in `auth-confirm.integration.test.tsx`: it currently asserts the preserved hash through a `LeagueStub` rendering `useLocation().hash` (the only way to read the post-navigation hash without the `router`). Replace that with a direct `router.state.location.hash` assertion and drop `LeagueStub`.
+
 ### Tests
 
 - **`route-guards.test.ts` (unit):** the unauthenticated `requireAuth` case asserts `redirect({ to: '/sign-in', search: { redirect: '/my-team' }, replace: true })` (was `{ to: '/', replace: true }`); add a no-`redirectTo` case asserting `search: { redirect: undefined }`. The authed case is unchanged.
@@ -227,4 +229,4 @@ Forward only `redirect` (not `confirmationError`). When `redirect` is `undefined
 ## Verification
 
 - `npm run web:build`, `web:lint`, `web:test`, `web:format:check`.
-- Manual matrix: (a) anon deep link → sign-in → returns to destination; (b) anon deep link with query string → returns whole; (c) already-authed visit to `/sign-in?redirect=/x` → `/x`; (d) anon deep link → toggle to sign-up → register → returns to destination; (e) a hand-crafted `/sign-in?redirect=//evil.com` → sign-in falls back to `/`, never navigates off-origin.
+- Manual matrix: (a) anon deep link → sign-in → returns to destination; (b) anon deep link with query string → returns whole; (c) already-authed visit to `/sign-in?redirect=/x` → `/x`; (d) anon deep link → toggle to sign-up → register → returns to destination; (e) a hand-crafted `/sign-in?redirect=//evil.com` → the param is stripped from the URL on arrival (the schema transforms it to `undefined` and the router re-serializes the cleaned search, so this is observable without signing in), and signing in falls back to `/`, never off-origin.
