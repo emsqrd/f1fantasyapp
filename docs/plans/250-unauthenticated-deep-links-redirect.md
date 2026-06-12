@@ -160,7 +160,7 @@ Once this lands, simplify Commit 1's fragment-preservation test in `auth-confirm
 - **`SignInForm.test.tsx` (component):** assert a successful sign-in with `?redirect=/league/5` navigates to `/league/5`, and falls back to `/` when absent (the consumer already exists at `SignInForm.tsx:33` — lock it).
 - **`route-guards.integration.test.tsx:55`:** flip the assertion. Add a `/sign-in` stub to `buildGuardRouteTree`; unauthed `/my-team` now lands there with `router.state.location.pathname === '/sign-in'` and `router.state.location.search.redirect === '/my-team'`. Add one deep link *with* a query string (`/league/5?tab=roster`) to prove `location.href` round-trips. Drop the now-unused `Home Page` stub assertion for this case.
 
-**Gate:** build/lint/test/format pass; manual: anon visit to `/my-team` lands on the sign-in form, sign in, return to `/my-team`.
+**Gate:** build/lint/test/format pass; Verify (yourself): anon visit to `/my-team` lands on the sign-in form, sign in, return to `/my-team`.
 
 ---
 
@@ -189,7 +189,7 @@ Drop the hardcoded `/` bounce to mirror production (the layout is now a plain wr
 - **`route-guards.integration.test.tsx` (new case):** an already-authed visitor to `/sign-in?redirect=/league/5` lands on the `/league/5` stub (not `/`). Same for `/sign-up?redirect=/x`.
 - **`signup-resend.integration.test.tsx`:** adjust for the helper change above; existing resend assertions otherwise stand.
 
-**Gate:** build/lint/test/format pass; manual: while signed in, visiting `/sign-in?redirect=/account` lands on `/account`.
+**Gate:** build/lint/test/format pass; Verify (yourself): while signed in, visiting `/sign-in?redirect=/account` lands on `/account`.
 
 ---
 
@@ -217,7 +217,7 @@ Forward only `redirect` (not `confirmationError`). When `redirect` is `undefined
 
 - **Integration:** mount `/sign-in?redirect=/league/5`, click "Sign up", assert `router.state.location.pathname === '/sign-up'` and `…search.redirect === '/league/5'`. Mirror for the reverse toggle from `/sign-up`.
 
-**Gate:** build/lint/test/format pass; manual: anon `/my-team` → sign-in → "Sign up" → register → land on `/my-team`.
+**Gate:** build/lint/test/format pass; Verify (yourself): anon `/my-team` → sign-in → "Sign up" → register → land on `/my-team`.
 
 ---
 

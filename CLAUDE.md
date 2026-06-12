@@ -142,6 +142,13 @@ Overlap is correct when each layer catches a distinct failure mode. It's waste w
 - Frontend unit/component tests: Vitest + `@testing-library/react`.
 - E2E: Playwright, small suite, runs against a prod-like build. Parallel workers with isolated users.
 
+## Manual verification
+
+Some changes have run-time-only payoff that tests don't surface; those warrant a browser check against the dev stack.
+
+- **Authed flows:** sign up a throwaway user — the confirmation code lands in the local Supabase mail catcher.
+- **Signed-out behavior:** use an isolated browser context so an existing session stays intact.
+
 ## Commenting Strategy
 
 Default to no comment. Every comment is debt — it can rot, mislead, or distract. Write one only when the alternative is worse: a reader would otherwise misunderstand the code or spend time discovering something the comment encodes directly.
