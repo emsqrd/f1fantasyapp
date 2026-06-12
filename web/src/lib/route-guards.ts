@@ -19,6 +19,20 @@ export function requireAuth(context: RouterContext, redirectTo?: string): void {
 }
 
 /**
+ * The inverse of {@link requireAuth}: bounces an already-authenticated visitor
+ * off a public-only route to their post-auth destination, so a signed-in user
+ * never lands on the auth forms.
+ */
+export function redirectIfAuthenticated(context: RouterContext, redirectTo?: string): void {
+  if (!context.auth.user) return;
+
+  throw redirect({
+    to: redirectTo ?? '/',
+    replace: true,
+  });
+}
+
+/**
  * Route guard for team-gated routes. Auth is enforced by the enclosing
  * `_authenticated` layout, so this guard does not re-check it.
  *

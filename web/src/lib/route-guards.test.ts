@@ -1,4 +1,4 @@
-import { requireAuth, requireTeam } from '@/lib/route-guards';
+import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { teamKeys } from '@/services/teamService';
 import { createAuthedAuth, createMockTeam } from '@/tests/test-utils';
@@ -74,6 +74,44 @@ describe('route-guards', () => {
       };
 
       expect(() => requireAuth(context)).not.toThrow();
+      expect(redirect).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('redirectIfAuthenticated', () => {
+    it('throws redirect to the destination when authenticated with a redirect', () => {
+      const context: RouterContext = {
+        auth: { user: createMockUser() },
+        queryClient,
+      };
+
+      expect(() => redirectIfAuthenticated(context, '/league/5')).toThrow();
+      expect(redirect).toHaveBeenCalledWith({
+        to: '/league/5',
+        replace: true,
+      });
+    });
+
+    it('throws redirect to / when authenticated without a redirect', () => {
+      const context: RouterContext = {
+        auth: { user: createMockUser() },
+        queryClient,
+      };
+
+      expect(() => redirectIfAuthenticated(context)).toThrow();
+      expect(redirect).toHaveBeenCalledWith({
+        to: '/',
+        replace: true,
+      });
+    });
+
+    it('does not throw when user is unauthenticated', () => {
+      const context: RouterContext = {
+        auth: { user: null },
+        queryClient,
+      };
+
+      expect(() => redirectIfAuthenticated(context)).not.toThrow();
       expect(redirect).not.toHaveBeenCalled();
     });
   });

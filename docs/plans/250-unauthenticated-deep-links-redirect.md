@@ -39,7 +39,7 @@ Four self-contained commits, each independently passing build/lint/test/format, 
 
 1. **Harden the redirect validator** — `safeInternalPath` + schema + `ConfirmEmailNotice` refactor + unit matrix. *Lands first, on purpose: it closes the open-redirect hole before the next commit makes the param reachable from every protected route.*
 2. **Capture the destination in `requireAuth`** — guard takes `location`, redirects to `/sign-in?redirect=<href>`; wiring + unit + integration.
-3. **Honor `redirect` on the already-authed bounce** — move the bounce off the `_unauthenticated` layout onto the sign-in/sign-up routes; drop the now-dead `indexRoute` schema.
+3. **Honor `redirect` on the already-authed bounce** — move the bounce off the `_unauthenticated` layout onto the sign-in/sign-up routes via an extracted `redirectIfAuthenticated` guard; drop the now-dead `indexRoute` schema.
 4. **Carry `redirect` across the sign-in ↔ sign-up toggle** — both toggle links forward the param.
 
 ---
@@ -100,7 +100,7 @@ Behavior is identical except the hash is now preserved (the old version returned
 Two integration tests inline-copy the old `.startsWith('/')` validator and would silently diverge from production — keeping them on the weak check, which for `create-team` means its test would still accept `//evil.com` (and `CreateTeam` is the one consumer an attacker can influence, via `JoinInvite`'s `search={{ redirect }}`). Per `web/CLAUDE.md` ("production routes are not exported; mirror inline"), keep the mirrors inline but point them at the shared `safeInternalPath` so the security logic stays single-sourced:
 
 - **`web/src/tests/integration/create-team.integration.test.tsx:34`** — swap the inline `redirectSearchSchema` to `.optional().catch(undefined).transform(safeInternalPath)`.
-- **`web/src/tests/integration/signup-resend.integration.test.tsx:26`** — same swap on its inline `signUpSearchSchema`'s `redirect` field (its `confirmationError` field is untouched). (This file is also touched in Commit 3 for `buildUnauthenticatedLayout`.)
+- **`web/src/tests/integration/signup-resend.integration.test.tsx:26`** — same swap on its inline `signUpSearchSchema`'s `redirect` field (its `confirmationError` field is untouched). (The shared `buildUnauthenticatedLayout` helper this file consumes also changes in Commit 3, but the file itself needs no further edit there.)
 
 ### Tests
 
@@ -166,17 +166,25 @@ Once this lands, simplify Commit 1's fragment-preservation test in `auth-confirm
 
 ## Commit 3 — Honor `redirect` on the already-authed bounce
 
+### `web/src/lib/route-guards.ts` (`redirectIfAuthenticated`, new)
+
+Extract the bounce as the inverse of `requireAuth`, so it joins the existing guard vocabulary (`requireAuth`/`requireTeam`) and its branch logic can live at the lowest layer (unit) rather than only being reachable through the router:
+
+```ts
+export function redirectIfAuthenticated(context: RouterContext, redirectTo?: string): void {
+  if (!context.auth.user) return;
+
+  throw redirect({ to: redirectTo ?? '/', replace: true });
+}
+```
+
 ### `web/src/router.tsx`
 
 - **`unauthenticatedLayoutRoute` (lines 128–140):** remove the `beforeLoad`; keep the route as a grouping wrapper (`component: () => <Outlet />`). Its `id: '_unauthenticated'` and the child route IDs are unchanged.
-- **`signInRoute` (lines 175–181)** and **`signUpRoute` (lines 190–196):** add the redirect-honoring authed-bounce (`search` is already validated by each route's `validateSearch`):
+- **`signInRoute`** and **`signUpRoute`:** call the extracted guard from `beforeLoad` (`search` is already validated by each route's `validateSearch`):
 
   ```ts
-  beforeLoad: ({ context, search }) => {
-    if (context.auth.user) {
-      throw redirect({ to: search.redirect ?? '/', replace: true });
-    }
-  },
+  beforeLoad: ({ context, search }) => redirectIfAuthenticated(context, search.redirect),
   ```
 - **`indexRoute` (line 152):** remove `validateSearch: redirectSearchSchema` — dead now that nothing sends `redirect` to `/`. `IndexRoute` reads `useLoaderData`, never `useSearch`, so this is inert.
 
@@ -186,8 +194,9 @@ Drop the hardcoded `/` bounce to mirror production (the layout is now a plain wr
 
 ### Tests
 
-- **`route-guards.integration.test.tsx` (new case):** an already-authed visitor to `/sign-in?redirect=/league/5` lands on the `/league/5` stub (not `/`). Same for `/sign-up?redirect=/x`.
-- **`signup-resend.integration.test.tsx`:** adjust for the helper change above; existing resend assertions otherwise stand.
+- **`route-guards.test.ts` (unit):** the branch matrix on `redirectIfAuthenticated` — authed + `redirect` → throws to the destination; authed, no `redirect` → throws to `/`; unauthenticated → no throw.
+- **`route-guards.integration.test.tsx`:** two composition happy-paths — an authed `/sign-in?redirect=/league/5` and an authed `/sign-up?redirect=/account` each navigate to the destination through the real router. These own throw→navigate→render (which the unit tests, mocking `redirect`, can't see); the branch matrix stays in unit.
+- **`signup-resend.integration.test.tsx`:** no change needed — dropping the layout bounce is behavior-neutral for its unauthenticated cases (only the shared `buildUnauthenticatedLayout` helper changes).
 
 **Gate:** build/lint/test/format pass; Verify (yourself): while signed in, visiting `/sign-in?redirect=/account` lands on `/account`.
 

@@ -11,7 +11,7 @@ import { ConfirmEmailNotice } from '@/components/auth/ConfirmEmailNotice/Confirm
 import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import type { Team as TeamType } from '@/contracts/Team';
-import { requireAuth, requireTeam } from '@/lib/route-guards';
+import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
@@ -123,17 +123,12 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
   ),
 });
 
+// Authed-bounce lives on the child sign-in/sign-up routes, not here: a parent
+// beforeLoad short-circuits before the child's validated `search` is read, and
+// the bounce needs the `redirect` param to honor it.
 const unauthenticatedLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: '_unauthenticated',
-  beforeLoad: ({ context }) => {
-    if (context.auth.user) {
-      throw redirect({
-        to: '/',
-        replace: true,
-      });
-    }
-  },
   component: () => <Outlet />,
 });
 
@@ -147,7 +142,6 @@ const unauthenticatedLayoutRoute = createRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  validateSearch: redirectSearchSchema,
   loader: async ({ context }) => {
     if (!context.auth.user) {
       return { home: null };
@@ -174,6 +168,7 @@ const signInRoute = createRoute({
   getParentRoute: () => unauthenticatedLayoutRoute,
   path: '/sign-in',
   validateSearch: redirectSearchSchema,
+  beforeLoad: ({ context, search }) => redirectIfAuthenticated(context, search.redirect),
   component: SignInForm,
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
@@ -189,6 +184,7 @@ const signUpRoute = createRoute({
   getParentRoute: () => unauthenticatedLayoutRoute,
   path: '/sign-up',
   validateSearch: signUpSearchSchema,
+  beforeLoad: ({ context, search }) => redirectIfAuthenticated(context, search.redirect),
   component: SignUpForm,
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
