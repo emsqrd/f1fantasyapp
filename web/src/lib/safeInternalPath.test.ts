@@ -13,6 +13,8 @@ describe('safeInternalPath', () => {
   it.each([
     ['protocol-relative', '//evil.com'],
     ['backslash-folded', '/\\evil.com'],
+    ['dot-segment folded to protocol-relative', '/..//evil.com'],
+    ['single-dot folded to protocol-relative', '/.//evil.com'],
     ['absolute external', 'https://evil.com'],
     ['javascript: scheme', 'javascript:alert(1)'],
   ])('rejects %s', (_label, input) => {

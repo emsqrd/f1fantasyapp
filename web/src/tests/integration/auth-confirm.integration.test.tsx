@@ -92,18 +92,7 @@ function buildAuthConfirmRouteTree() {
     heading: 'Join Invite Stub',
   });
 
-  const leagueRoute = buildStubRoute(rootRoute, {
-    path: '/league/$leagueId',
-    heading: 'League Stub',
-  });
-
-  return rootRoute.addChildren([
-    authConfirmRoute,
-    signUpRoute,
-    homeRoute,
-    joinInviteRoute,
-    leagueRoute,
-  ]);
+  return rootRoute.addChildren([authConfirmRoute, signUpRoute, homeRoute, joinInviteRoute]);
 }
 
 function mockVerifyOtpSuccess() {
@@ -165,26 +154,6 @@ describe('/auth/confirm route', () => {
     await user.click(await screen.findByRole('button', { name: /continue/i }));
 
     expect(await screen.findByRole('heading', { name: 'Join Invite Stub' })).toBeInTheDocument();
-  });
-
-  it('preserves the URL fragment of the next param', async () => {
-    mockVerifyOtpSuccess();
-    const user = userEvent.setup();
-
-    const sameOriginNext = `${window.location.origin}/league/5#standings`;
-    const { router } = renderWithRouter({
-      routeTree: buildAuthConfirmRouteTree(),
-      initialEntry: `/auth/confirm?token_hash=abc123&type=signup&next=${encodeURIComponent(
-        sameOriginNext,
-      )}`,
-      auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext(),
-    });
-
-    await user.click(await screen.findByRole('button', { name: /continue/i }));
-
-    expect(await screen.findByRole('heading', { name: 'League Stub' })).toBeInTheDocument();
-    expect(router.state.location.hash).toBe('standings');
   });
 
   it('redirects to /sign-up?confirmationError=expired when verifyOtp errors with otp_expired', async () => {
