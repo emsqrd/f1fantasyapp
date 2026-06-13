@@ -30,6 +30,12 @@ The two score fields are nullable: a team that exists but has not yet had a scor
 
 The caller's position and total points within a specific league — the caller-scoped projection of `TeamLeagueStanding`. Served by `GET /me/standings`, which returns one row per league the caller belongs to: `{ leagueId, leagueName, totalTeams, position: int?, totalPoints: int? }`. The row entity is a *standing*, not a league — league metadata (name, totalTeams) is denormalized in for rendering convenience. `position` and `totalPoints` are nullable until the caller's team has a scored race in the current season while a member of that league. See [[league total points]] for why per-league totals can diverge from [[season total points]].
 
+## League invite
+
+A shareable credential that grants access to join a specific private league. Each league has a single invite token that is **stable and permanent** — it does not expire and is not rotated, so the same link keeps working until the league itself is removed.
+
+A token that resolves to no league is an **invalid invite**, never an "expired" one — there is no expiry concept in the model. Don't describe a dead invite as "expired"; the failure is always "invalid." A valid invite can still be unjoinable when the league is **full** — a distinct state from an invalid one.
+
 ## No-team state
 
 A signed-in user who has not yet created a team for the current season — the earliest point in the onboarding progression. Distinct from the [[No-leagues state]] (team exists, no league joined) and the [[No-scored-races state]] (team in a league, nothing scored yet). The [[Home]] surface renders a dedicated no-team variant: the identity header drops the team name, and the score and leagues areas give way to a create-team prompt and a gated-leagues notice.
