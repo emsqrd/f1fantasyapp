@@ -1,7 +1,7 @@
 # ADR 006: TanStack Query for Cross-Route Reads (profile, team, season)
 
 **Date:** 2026-06-07
-**Status:** Proposed
+**Status:** Accepted
 
 ## Context
 

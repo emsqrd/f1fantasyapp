@@ -11,8 +11,9 @@ import { ConfirmEmailNotice } from '@/components/auth/ConfirmEmailNotice/Confirm
 import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import type { Team as TeamType } from '@/contracts/Team';
-import { requireAuth, requireTeam } from '@/lib/route-guards';
+import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
+import { safeInternalPath } from '@/lib/safeInternalPath';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
 import { getLeagueStandings, getMyStandings } from '@/services/standingsService';
 import { getTeamById, getTeamSummary, myTeamQuery } from '@/services/teamService';
@@ -72,19 +73,16 @@ const teamIdParamsSchema = z.object({
 });
 
 /**
- * Zod schema for validating redirect search parameters.
- *
- * Uses `.catch()` for graceful error handling per TanStack Router best practices:
- * Invalid redirect values fall back to undefined instead of throwing errors.
- *
- * Security: Only allows internal paths starting with '/' to prevent open redirects.
+ * Zod schema for the `redirect` search param. `.catch(undefined)` keeps a
+ * malformed value from throwing; `safeInternalPath` coerces it to a safe
+ * same-origin path or `undefined`.
  */
 const redirectSearchSchema = z.object({
   redirect: z
     .string()
-    .refine((url) => url.startsWith('/'), 'Redirect must be an internal path')
     .optional()
-    .catch(undefined),
+    .catch(undefined)
+    .transform((value) => safeInternalPath(value)),
 });
 
 /**
@@ -125,17 +123,12 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
   ),
 });
 
+// Authed-bounce lives on the child sign-in/sign-up routes, not here: a parent
+// beforeLoad short-circuits before the child's validated `search` is read, and
+// the bounce needs the `redirect` param to honor it.
 const unauthenticatedLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: '_unauthenticated',
-  beforeLoad: ({ context }) => {
-    if (context.auth.user) {
-      throw redirect({
-        to: '/',
-        replace: true,
-      });
-    }
-  },
   component: () => <Outlet />,
 });
 
@@ -149,7 +142,6 @@ const unauthenticatedLayoutRoute = createRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  validateSearch: redirectSearchSchema,
   loader: async ({ context }) => {
     if (!context.auth.user) {
       return { home: null };
@@ -176,6 +168,7 @@ const signInRoute = createRoute({
   getParentRoute: () => unauthenticatedLayoutRoute,
   path: '/sign-in',
   validateSearch: redirectSearchSchema,
+  beforeLoad: ({ context, search }) => redirectIfAuthenticated(context, search.redirect),
   component: SignInForm,
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
@@ -191,6 +184,7 @@ const signUpRoute = createRoute({
   getParentRoute: () => unauthenticatedLayoutRoute,
   path: '/sign-up',
   validateSearch: signUpSearchSchema,
+  beforeLoad: ({ context, search }) => redirectIfAuthenticated(context, search.redirect),
   component: SignUpForm,
   errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
@@ -281,7 +275,7 @@ const joinInviteRoute = createRoute({
 const authenticatedLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: '_authenticated',
-  beforeLoad: ({ context }) => requireAuth(context),
+  beforeLoad: ({ context, location }) => requireAuth(context, location.href),
   component: () => <Outlet />,
   // Catches the `requireTeam` fetch failure thrown by the `_team-required`
   // child guard. Placed on this ancestor — inside the root Layout outlet, so the

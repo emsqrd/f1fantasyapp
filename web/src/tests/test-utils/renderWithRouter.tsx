@@ -65,5 +65,6 @@ export function renderWithRouter({
       </QueryClientProvider>,
     ),
     queryClient,
+    router,
   };
 }

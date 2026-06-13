@@ -1,4 +1,5 @@
 import { CreateTeam } from '@/components/CreateTeam/CreateTeam';
+import { safeInternalPath } from '@/lib/safeInternalPath';
 import { myTeamQuery } from '@/services/teamService';
 import { API_BASE, server } from '@/setupTests';
 import {
@@ -32,11 +33,7 @@ function buildCreateTeamRouteTree() {
   const authenticatedLayoutRoute = buildAuthenticatedLayout(rootRoute);
 
   const redirectSearchSchema = z.object({
-    redirect: z
-      .string()
-      .refine((url) => url.startsWith('/'), 'Redirect must be an internal path')
-      .optional()
-      .catch(undefined),
+    redirect: z.string().optional().catch(undefined).transform(safeInternalPath),
   });
 
   const createTeamRoute = createRoute({

@@ -1,20 +1,10 @@
 import { LoadingButton } from '@/components/LoadingButton/LoadingButton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
+import { safeInternalPath } from '@/lib/safeInternalPath';
 import { supabase } from '@/lib/supabase';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
-
-function resolveNextDestination(next: string | undefined): string | null {
-  if (!next) return null;
-  try {
-    const url = new URL(next, window.location.origin);
-    if (url.origin !== window.location.origin) return null;
-    return url.pathname + url.search;
-  } catch {
-    return null;
-  }
-}
 
 export function ConfirmEmailNotice() {
   const navigate = useNavigate();
@@ -41,8 +31,7 @@ export function ConfirmEmailNotice() {
       }
     }
 
-    const internalNext = resolveNextDestination(search.next);
-    const destination = internalNext ?? '/';
+    const destination = safeInternalPath(search.next) ?? '/';
     await navigate({ to: destination, replace: true });
   };
 

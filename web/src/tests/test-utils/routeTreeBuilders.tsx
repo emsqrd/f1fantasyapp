@@ -8,7 +8,6 @@ import {
   Outlet,
   createRootRouteWithContext,
   createRoute,
-  redirect,
 } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 
@@ -36,7 +35,8 @@ export function buildAuthenticatedLayout(rootRoute: AnyRoute) {
   return createRoute({
     getParentRoute: () => rootRoute,
     id: '_authenticated',
-    beforeLoad: ({ context }: { context: RouterContext }) => requireAuth(context),
+    beforeLoad: ({ context, location }: { context: RouterContext; location: { href: string } }) =>
+      requireAuth(context, location.href),
     component: () => <Outlet />,
   });
 }
@@ -60,14 +60,6 @@ export function buildUnauthenticatedLayout(rootRoute: AnyRoute) {
   return createRoute({
     getParentRoute: () => rootRoute,
     id: '_unauthenticated',
-    beforeLoad: ({ context }: { context: RouterContext }) => {
-      if (context.auth.user) {
-        throw redirect({
-          to: '/',
-          replace: true,
-        });
-      }
-    },
     component: () => <Outlet />,
   });
 }
