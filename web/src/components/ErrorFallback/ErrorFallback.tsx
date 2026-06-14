@@ -19,7 +19,7 @@ export function ErrorFallback({ error, onReset, secondaryAction }: Props) {
           <div className="space-y-2">
             <h2 className="text-2xl font-semibold">Something went wrong</h2>
             <p className="text-muted-foreground">
-              We encountered an unexpected error. Please try refreshing the page.
+              We encountered an unexpected error. Please try again.
             </p>
             {error && (
               <details className="mt-4 text-left">

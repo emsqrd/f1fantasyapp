@@ -222,7 +222,7 @@ describe('Join via invite token', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('renders the retryable error card, not a not-found page, when the preview fails transiently (500)', async () => {
+  it('renders the error card, not a not-found page, when the preview fails with a 500', async () => {
     server.use(
       http.get(
         `${API_BASE}/leagues/join/${TOKEN}/preview`,
