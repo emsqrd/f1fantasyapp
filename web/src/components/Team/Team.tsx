@@ -2,11 +2,11 @@ import type { RaceWeekend } from '@/contracts/RaceWeekend';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team } from '@/contracts/Team';
 import { useLockCountdown } from '@/hooks/useLockCountdown';
+import { useSetCaptain } from '@/hooks/useSetCaptain';
 import { formatBudget } from '@/lib/utils';
-import { myTeamQuery, setCaptain } from '@/services/teamService';
+import { myTeamQuery } from '@/services/teamService';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { notFound, useLoaderData } from '@tanstack/react-router';
-import { useState } from 'react';
 
 import { AppContainer } from '../AppContainer/AppContainer';
 import { ConstructorPicker } from '../ConstructorPicker/ConstructorPicker';
@@ -66,26 +66,17 @@ export function TeamView({
   races,
   readOnly,
 }: TeamViewProps) {
-  const [captainDriverId, setCaptainDriverId] = useState<number | null>(
-    team.drivers.find((d) => d.isCaptain)?.id ?? null,
-  );
-  const [captainError, setCaptainError] = useState<string | null>(null);
+  const captainMutation = useSetCaptain();
+  const captainDriverId = team.drivers.find((d) => d.isCaptain)?.id ?? null;
+  const captainError = captainMutation.error
+    ? captainMutation.error.message || 'Failed to update captain'
+    : null;
   const currentRace = races.find((r) => r.isCurrent) ?? races.at(-1);
 
   const countdown = useLockCountdown(currentRace?.lockDeadline ?? null);
   const isLocked = countdown.isLocked;
 
-  const handleSetCaptain = async (driverId: number | null) => {
-    const previous = captainDriverId;
-    setCaptainDriverId(driverId);
-    setCaptainError(null);
-    try {
-      await setCaptain(driverId);
-    } catch (error) {
-      setCaptainDriverId(previous);
-      setCaptainError(error instanceof Error ? error.message : 'Failed to update captain');
-    }
-  };
+  const handleSetCaptain = (driverId: number | null) => captainMutation.mutate(driverId);
 
   return (
     <AppContainer maxWidth="md">
