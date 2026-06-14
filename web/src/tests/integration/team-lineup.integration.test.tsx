@@ -21,7 +21,7 @@ import {
   renderWithRouter,
 } from '@/tests/test-utils';
 import { Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router';
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -177,6 +177,82 @@ describe('My team lineup', () => {
     // Empty slots collapse — no Add buttons render.
     expect(screen.queryByRole('button', { name: /add driver/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /add constructor/i })).not.toBeInTheDocument();
+  });
+
+  it('refreshes the lineup after adding a driver', async () => {
+    const user = userEvent.setup();
+    const emptyTeam = createMockTeam({ remainingBudget: 80_000_000, drivers: [] });
+    const teamWithDriver = createMockTeam({
+      remainingBudget: 55_000_000,
+      drivers: [createMockTeamDriver({ ...allDrivers[1], slotPosition: 0, isCaptain: false })],
+    });
+
+    let added = false;
+    server.use(
+      http.get(`${API_BASE}/me/team`, () => HttpResponse.json(added ? teamWithDriver : emptyTeam)),
+      http.get(`${API_BASE}/drivers`, () => HttpResponse.json(allDrivers)),
+      http.get(`${API_BASE}/constructors`, () => HttpResponse.json(allConstructors)),
+      http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(createMockSeason())),
+      http.get(`${API_BASE}/seasons/1/race-weekends`, () => HttpResponse.json([futureRace])),
+      http.post(`${API_BASE}/me/team/drivers`, () => {
+        added = true;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    renderMyTeam();
+
+    const addButtons = await screen.findAllByRole('button', { name: /add driver/i });
+    await user.click(addButtons[0]);
+
+    const dialog = await screen.findByRole('dialog', { name: /select driver/i });
+    const norrisItem = within(dialog).getByText('Lando Norris').closest('li')!;
+    await user.click(within(norrisItem).getByRole('button', { name: /add driver/i }));
+
+    // The empty team renders no Remove controls; the added driver's slot only
+    // fills once the invalidated query refetches the team-with-driver.
+    expect(await screen.findByRole('button', { name: /remove driver/i })).toBeInTheDocument();
+    expect(screen.getByText('Lando Norris')).toBeInTheDocument();
+  });
+
+  it('does not fire a second add while one is in flight', async () => {
+    const user = userEvent.setup();
+    const team = createMockTeam({ remainingBudget: 80_000_000, drivers: [] });
+
+    let resolveAdd!: () => void;
+    let addCount = 0;
+    server.use(
+      ...teamHandlers(team),
+      http.post(`${API_BASE}/me/team/drivers`, async () => {
+        addCount++;
+        await new Promise<void>((resolve) => {
+          resolveAdd = resolve;
+        });
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    renderMyTeam();
+
+    const addButtons = await screen.findAllByRole('button', { name: /add driver/i });
+    await user.click(addButtons[0]);
+
+    const dialog = await screen.findByRole('dialog', { name: /select driver/i });
+    const norrisItem = within(dialog).getByText('Lando Norris').closest('li')!;
+    const addNorris = within(norrisItem).getByRole('button', { name: /add driver/i });
+
+    // The first click leaves the add in flight (the handler holds the response),
+    // so the picker stays open and isPending gates the second click.
+    await user.click(addNorris);
+    await user.click(addNorris);
+
+    await waitFor(() => expect(addCount).toBe(1));
+
+    resolveAdd();
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: /select driver/i })).not.toBeInTheDocument(),
+    );
+    expect(addCount).toBe(1);
   });
 
   it('surfaces an error message when setCaptain fails', async () => {

@@ -1,5 +1,6 @@
-import { myTeamQuery } from '@/services/teamService';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
+import { type ReactNode, createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useLineupPicker } from './useLineupPicker';
@@ -10,17 +11,6 @@ vi.mock('@sentry/react', () => ({
     error: vi.fn(),
   },
 }));
-
-// Mock the query client the hook calls to refresh the team after a mutation.
-// importActual keeps queryOptions real so myTeamQuery.queryKey is the production key.
-const mockInvalidateQueries = vi.fn();
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual('@tanstack/react-query');
-  return {
-    ...actual,
-    useQueryClient: () => ({ invalidateQueries: mockInvalidateQueries }),
-  };
-});
 
 interface TestItem {
   id: number;
@@ -35,56 +25,63 @@ const mockItems: TestItem[] = [
   { id: 5, name: 'Item 5' },
 ];
 
-describe('useLineupPicker', () => {
-  const mockAddToTeam = vi.fn();
-  const mockRemoveFromTeam = vi.fn();
+const mockAddToTeam = vi.fn();
+const mockRemoveFromTeam = vi.fn();
 
+// Fresh client per test so the hook's invalidateQueries calls hit a clean cache.
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+}
+
+function renderPicker(
+  options: {
+    items?: TestItem[];
+    lineup?: (TestItem | null)[];
+    itemType?: 'driver' | 'constructor';
+  } = {},
+) {
+  return renderHook(
+    () =>
+      useLineupPicker({
+        items: options.items ?? mockItems,
+        lineup: options.lineup ?? [null, null, null, null],
+        itemType: options.itemType ?? 'driver',
+        addToTeam: mockAddToTeam,
+        removeFromTeam: mockRemoveFromTeam,
+      }),
+    { wrapper: createWrapper() },
+  );
+}
+
+describe('useLineupPicker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockInvalidateQueries.mockResolvedValue(undefined);
     mockAddToTeam.mockResolvedValue(undefined);
     mockRemoveFromTeam.mockResolvedValue(undefined);
   });
 
   describe('pool', () => {
     it('returns all items when lineup is empty', () => {
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [null, null, null, null],
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
+      const { result } = renderPicker();
 
       expect(result.current.pool).toEqual(mockItems);
     });
 
     it('excludes items already in the lineup from the pool', () => {
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [mockItems[0], mockItems[2], null, null],
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
+      const { result } = renderPicker({ lineup: [mockItems[0], mockItems[2], null, null] });
 
       expect(result.current.pool).toEqual([mockItems[1], mockItems[3], mockItems[4]]);
     });
 
     it('returns empty pool when all items are in lineup', () => {
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems.slice(0, 4),
-          lineup: mockItems.slice(0, 4),
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
+      const { result } = renderPicker({
+        items: mockItems.slice(0, 4),
+        lineup: mockItems.slice(0, 4),
+      });
 
       expect(result.current.pool).toEqual([]);
     });
@@ -92,26 +89,14 @@ describe('useLineupPicker', () => {
 
   describe('openPicker', () => {
     it('clears previous errors when picker is opened', async () => {
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [null, null, null, null],
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
-
-      // Simulate an error state
       mockAddToTeam.mockRejectedValueOnce(new Error('API Error'));
-      await act(async () => {
-        await result.current.handleAdd(0, mockItems[0]);
-      });
 
-      // Wait for error to be set
-      await waitFor(() => {
-        expect(result.current.error).toBeTruthy();
+      const { result } = renderPicker();
+
+      act(() => {
+        result.current.handleAdd(0, mockItems[0]);
       });
+      await waitFor(() => expect(result.current.error).toBeTruthy());
 
       act(() => {
         result.current.openPicker(1);
@@ -121,334 +106,151 @@ describe('useLineupPicker', () => {
     });
 
     it('does not open picker when operation is pending', async () => {
-      // Make the mock take some time to resolve so we can test pending state
       let resolveAdd: () => void;
-      const addPromise = new Promise<void>((resolve) => {
-        resolveAdd = resolve;
-      });
-      mockAddToTeam.mockReturnValueOnce(addPromise);
-
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [null, null, null, null],
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
+      mockAddToTeam.mockReturnValueOnce(
+        new Promise<void>((resolve) => {
+          resolveAdd = resolve;
         }),
       );
 
-      // Start an add operation (will be pending)
+      const { result } = renderPicker();
+
       act(() => {
         result.current.handleAdd(0, mockItems[0]);
       });
+      await waitFor(() => expect(result.current.isPending).toBe(true));
 
-      // Try to open picker while pending
       act(() => {
         result.current.openPicker(1);
       });
 
-      // selectedPosition should not change
       expect(result.current.selectedPosition).toBe(null);
 
-      // Clean up - resolve the promise
-      await act(async () => {
-        resolveAdd!();
-        await addPromise;
-      });
+      resolveAdd!();
+      await waitFor(() => expect(result.current.isPending).toBe(false));
     });
   });
 
   describe('handleAdd', () => {
     it('calls addToTeam with correct parameters', async () => {
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [null, null, null, null],
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
+      const { result } = renderPicker();
 
-      await act(async () => {
-        await result.current.handleAdd(1, mockItems[2]);
+      act(() => {
+        result.current.handleAdd(1, mockItems[2]);
       });
 
-      expect(mockAddToTeam).toHaveBeenCalledWith(mockItems[2].id, 1);
-    });
-
-    it('invalidates the team query after successful add', async () => {
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [null, null, null, null],
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
-
-      await act(async () => {
-        await result.current.handleAdd(0, mockItems[0]);
-      });
-
-      expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: myTeamQuery.queryKey });
+      await waitFor(() => expect(mockAddToTeam).toHaveBeenCalledWith(mockItems[2].id, 1));
     });
 
     it('closes picker after successful add', async () => {
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [null, null, null, null],
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
+      const { result } = renderPicker();
 
       act(() => {
         result.current.openPicker(0);
       });
       expect(result.current.selectedPosition).toBe(0);
 
-      await act(async () => {
-        await result.current.handleAdd(0, mockItems[0]);
-      });
-
-      expect(result.current.selectedPosition).toBe(null);
-    });
-
-    it('sets isPending during add operation', async () => {
-      // Create a promise we can control
-      let resolveAdd: () => void;
-      const addPromise = new Promise<void>((resolve) => {
-        resolveAdd = resolve;
-      });
-      mockAddToTeam.mockReturnValueOnce(addPromise);
-
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [null, null, null, null],
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
-
-      expect(result.current.isPending).toBe(false);
-
-      // Start the operation
       act(() => {
         result.current.handleAdd(0, mockItems[0]);
       });
 
-      // Should be pending now
-      expect(result.current.isPending).toBe(true);
-
-      // Resolve the operation
-      await act(async () => {
-        resolveAdd!();
-        await addPromise;
-      });
-
-      expect(result.current.isPending).toBe(false);
+      await waitFor(() => expect(result.current.selectedPosition).toBe(null));
     });
 
     it('sets error message when add fails', async () => {
       mockAddToTeam.mockRejectedValueOnce(new Error('API Error'));
 
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [null, null, null, null],
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
+      const { result } = renderPicker();
 
       act(() => {
         result.current.openPicker(0);
       });
 
-      await act(async () => {
-        await result.current.handleAdd(0, mockItems[0]);
+      act(() => {
+        result.current.handleAdd(0, mockItems[0]);
       });
 
-      expect(result.current.error).toBe('Failed to add driver. Please try again.');
+      await waitFor(() =>
+        expect(result.current.error).toBe('Failed to add driver. Please try again.'),
+      );
     });
 
     it('closes picker when add fails', async () => {
       mockAddToTeam.mockRejectedValueOnce(new Error('API Error'));
 
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [null, null, null, null],
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
+      const { result } = renderPicker();
 
       act(() => {
         result.current.openPicker(0);
       });
 
-      await act(async () => {
-        await result.current.handleAdd(0, mockItems[0]);
+      act(() => {
+        result.current.handleAdd(0, mockItems[0]);
       });
 
-      expect(result.current.selectedPosition).toBe(null);
+      await waitFor(() => expect(result.current.selectedPosition).toBe(null));
     });
 
     it('clears error before add operation', async () => {
       mockAddToTeam.mockRejectedValueOnce(new Error('First error'));
 
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [null, null, null, null],
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
+      const { result } = renderPicker();
 
       // First add fails
-      await act(async () => {
-        await result.current.handleAdd(0, mockItems[0]);
+      act(() => {
+        result.current.handleAdd(0, mockItems[0]);
       });
-      expect(result.current.error).toBeTruthy();
+      await waitFor(() => expect(result.current.error).toBeTruthy());
 
       // Second add succeeds - error should clear
-      await act(async () => {
-        await result.current.handleAdd(0, mockItems[0]);
+      act(() => {
+        result.current.handleAdd(0, mockItems[0]);
       });
-      expect(result.current.error).toBe(null);
+      await waitFor(() => expect(result.current.error).toBe(null));
     });
   });
 
   describe('handleRemove', () => {
     it('calls removeFromTeam with correct position', async () => {
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [mockItems[0], null, null, null],
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
+      const { result } = renderPicker({ lineup: [mockItems[0], null, null, null] });
 
-      await act(async () => {
-        await result.current.handleRemove(0);
-      });
-
-      expect(mockRemoveFromTeam).toHaveBeenCalledWith(0);
-    });
-
-    it('invalidates the team query after successful remove', async () => {
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [mockItems[0], null, null, null],
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
-
-      await act(async () => {
-        await result.current.handleRemove(0);
-      });
-
-      expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: myTeamQuery.queryKey });
-    });
-
-    it('sets isPending during remove operation', async () => {
-      // Create a promise we can control
-      let resolveRemove: () => void;
-      const removePromise = new Promise<void>((resolve) => {
-        resolveRemove = resolve;
-      });
-      mockRemoveFromTeam.mockReturnValueOnce(removePromise);
-
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [mockItems[0], null, null, null],
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
-
-      expect(result.current.isPending).toBe(false);
-
-      // Start the operation
       act(() => {
         result.current.handleRemove(0);
       });
 
-      // Should be pending now
-      expect(result.current.isPending).toBe(true);
-
-      // Resolve the operation
-      await act(async () => {
-        resolveRemove!();
-        await removePromise;
-      });
-
-      expect(result.current.isPending).toBe(false);
+      await waitFor(() => expect(mockRemoveFromTeam).toHaveBeenCalledWith(0));
     });
 
     it('sets error message when remove fails', async () => {
       mockRemoveFromTeam.mockRejectedValueOnce(new Error('API Error'));
 
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [mockItems[0], null, null, null],
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
+      const { result } = renderPicker({ lineup: [mockItems[0], null, null, null] });
 
-      await act(async () => {
-        await result.current.handleRemove(0);
+      act(() => {
+        result.current.handleRemove(0);
       });
 
-      expect(result.current.error).toBe('Failed to remove driver. Please try again.');
+      await waitFor(() =>
+        expect(result.current.error).toBe('Failed to remove driver. Please try again.'),
+      );
     });
 
     it('clears error before remove operation', async () => {
       mockRemoveFromTeam.mockRejectedValueOnce(new Error('First error'));
 
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [mockItems[0], null, null, null],
-          itemType: 'driver',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
+      const { result } = renderPicker({ lineup: [mockItems[0], null, null, null] });
 
       // First remove fails
-      await act(async () => {
-        await result.current.handleRemove(0);
+      act(() => {
+        result.current.handleRemove(0);
       });
-      expect(result.current.error).toBeTruthy();
+      await waitFor(() => expect(result.current.error).toBeTruthy());
 
       // Second remove succeeds - error should clear
-      await act(async () => {
-        await result.current.handleRemove(0);
+      act(() => {
+        result.current.handleRemove(0);
       });
-      expect(result.current.error).toBe(null);
+      await waitFor(() => expect(result.current.error).toBe(null));
     });
   });
 
@@ -456,41 +258,32 @@ describe('useLineupPicker', () => {
     it('uses custom itemType in add error message', async () => {
       mockAddToTeam.mockRejectedValueOnce(new Error('API Error'));
 
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [null, null, null, null],
-          itemType: 'constructor',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
+      const { result } = renderPicker({ itemType: 'constructor' });
 
-      await act(async () => {
-        await result.current.handleAdd(0, mockItems[0]);
+      act(() => {
+        result.current.handleAdd(0, mockItems[0]);
       });
 
-      expect(result.current.error).toBe('Failed to add constructor. Please try again.');
+      await waitFor(() =>
+        expect(result.current.error).toBe('Failed to add constructor. Please try again.'),
+      );
     });
 
     it('uses custom itemType in remove error message', async () => {
       mockRemoveFromTeam.mockRejectedValueOnce(new Error('API Error'));
 
-      const { result } = renderHook(() =>
-        useLineupPicker({
-          items: mockItems,
-          lineup: [mockItems[0], null, null, null],
-          itemType: 'constructor',
-          addToTeam: mockAddToTeam,
-          removeFromTeam: mockRemoveFromTeam,
-        }),
-      );
-
-      await act(async () => {
-        await result.current.handleRemove(0);
+      const { result } = renderPicker({
+        lineup: [mockItems[0], null, null, null],
+        itemType: 'constructor',
       });
 
-      expect(result.current.error).toBe('Failed to remove constructor. Please try again.');
+      act(() => {
+        result.current.handleRemove(0);
+      });
+
+      await waitFor(() =>
+        expect(result.current.error).toBe('Failed to remove constructor. Please try again.'),
+      );
     });
   });
 });
