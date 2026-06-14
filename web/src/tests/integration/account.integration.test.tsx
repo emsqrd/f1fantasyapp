@@ -1,6 +1,5 @@
 import { Account } from '@/components/Account/Account';
-import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
-import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
+import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import type { UserProfile } from '@/contracts/UserProfile';
 import type { RouterContext } from '@/lib/router-context';
 import { profileQuery } from '@/services/userProfileService';
@@ -40,11 +39,7 @@ function buildAccountRouteTree() {
       await context.queryClient.ensureQueryData(profileQuery);
     },
     component: Account,
-    errorComponent: ({ error }) => (
-      <ErrorBoundary level="page">
-        <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-      </ErrorBoundary>
-    ),
+    errorComponent: RouteErrorComponent,
   });
 
   return rootRoute.addChildren([authenticatedLayoutRoute.addChildren([accountRoute])]);

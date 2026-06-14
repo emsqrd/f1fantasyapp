@@ -1,5 +1,3 @@
-import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
-import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
 import { TeamRoute } from '@/components/Team/Team';
 import type { RouterContext } from '@/lib/router-context';
 import { getConstructors } from '@/services/constructorService';
@@ -73,11 +71,6 @@ function buildTeamByIdRouteTree() {
     },
     component: TeamRoute,
     notFoundComponent: () => <h1>Team Not Found</h1>,
-    errorComponent: ({ error }) => (
-      <ErrorBoundary level="page">
-        <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-      </ErrorBoundary>
-    ),
   });
 
   const myTeamStubRoute = buildStubRoute(teamRequiredLayoutRoute, {

@@ -1,6 +1,5 @@
-import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
-import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
 import { JoinInvite } from '@/components/JoinInvite/JoinInvite';
+import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import type { Team } from '@/contracts/Team';
 import type { RouterContext } from '@/lib/router-context';
 import { previewInvite } from '@/services/leagueInviteService';
@@ -13,7 +12,14 @@ import {
   createUnauthAuth,
   renderWithRouter,
 } from '@/tests/test-utils';
-import { Outlet, createRootRouteWithContext, createRoute, notFound } from '@tanstack/react-router';
+import { isApiError } from '@/utils/errors';
+import {
+  Link,
+  Outlet,
+  createRootRouteWithContext,
+  createRoute,
+  notFound,
+} from '@tanstack/react-router';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, delay, http } from 'msw';
@@ -21,10 +27,12 @@ import { describe, expect, it } from 'vitest';
 
 // `/join/$token` is a public top-level route — not under `_authenticated`. The
 // integration tree mirrors `joinInviteRoute` from `router.tsx` plus minimal
-// stub routes for the destinations the JoinInvite Link components target
-// (`/sign-in`, `/sign-up`, `/create-team`). Stubs are bare placeholders — the
-// component bodies never render in these tests; they exist so TanStack Router
-// can resolve the `to` props and produce hrefs with the redirect query string.
+// stub routes for the destinations the rendered Link components target: the
+// JoinInvite actions (`/sign-in`, `/sign-up`, `/create-team`) and the "Go home"
+// escape on the not-found and error fallbacks (`/`). Stubs are bare placeholders
+// — the component bodies never render in these tests; they exist so TanStack
+// Router can resolve the `to` props and produce their hrefs (the auth links
+// carry the redirect query string).
 function buildJoinInviteRouteTree() {
   const rootRoute = createRootRouteWithContext<RouterContext>()({
     component: () => <Outlet />,
@@ -39,14 +47,25 @@ function buildJoinInviteRouteTree() {
       try {
         const preview = await previewInvite(params.token);
         return { preview };
-      } catch {
-        throw notFound({ routeId: '/join/$token' });
+      } catch (error) {
+        if (isApiError(error) && error.status === 400) {
+          throw notFound({ routeId: '/join/$token' });
+        }
+        throw error;
       }
     },
-    errorComponent: ({ error }) => (
-      <ErrorBoundary level="page">
-        <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-      </ErrorBoundary>
+    errorComponent: RouteErrorComponent,
+    notFoundComponent: () => (
+      <div className="flex min-h-screen flex-col items-center justify-center">
+        <h1 className="mb-4 text-4xl font-bold">Invite Not Found</h1>
+        <p className="text-muted-foreground mb-4">
+          This invite link isn't valid. Double-check the link, or ask the league owner to share it
+          again.
+        </p>
+        <Link to="/" className="text-primary hover:underline">
+          Go home
+        </Link>
+      </div>
     ),
   });
 
@@ -77,7 +96,19 @@ function buildJoinInviteRouteTree() {
     component: () => null,
   });
 
-  return rootRoute.addChildren([joinInviteRoute, signInRoute, signUpRoute, createTeamRoute]);
+  const indexRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/',
+    component: () => null,
+  });
+
+  return rootRoute.addChildren([
+    indexRoute,
+    joinInviteRoute,
+    signInRoute,
+    signUpRoute,
+    createTeamRoute,
+  ]);
 }
 
 // JoinInvite reads team existence from `profile.hasTeam` (fetched via the profile
@@ -170,11 +201,32 @@ describe('Join via invite token', () => {
     expect(screen.queryByRole('link', { name: /sign in to join/i })).not.toBeInTheDocument();
   });
 
-  it('renders the route 404 fallback when the loader rejects with an invalid token', async () => {
+  it('renders the invite-not-found page when the loader rejects with a 400 (unknown token)', async () => {
     server.use(
       http.get(
         `${API_BASE}/leagues/join/${TOKEN}/preview`,
-        () => new HttpResponse(null, { status: 404 }),
+        () => new HttpResponse(null, { status: 400 }),
+      ),
+    );
+
+    renderWithRouter({
+      routeTree: buildJoinInviteRouteTree(),
+      initialEntry: `/join/${TOKEN}`,
+      auth: createUnauthAuth(),
+      routerContext: makeRouterContext(null),
+    });
+
+    expect(await screen.findByRole('heading', { name: /invite not found/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: /404 - page not found/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders the error card, not a not-found page, when the preview fails with a 500', async () => {
+    server.use(
+      http.get(
+        `${API_BASE}/leagues/join/${TOKEN}/preview`,
+        () => new HttpResponse(null, { status: 500 }),
       ),
     );
 
@@ -186,8 +238,13 @@ describe('Join via invite token', () => {
     });
 
     expect(
-      await screen.findByRole('heading', { name: /404 - Page Not Found/i }),
+      await screen.findByRole('heading', { name: /something went wrong/i }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /invite not found/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: /404 - page not found/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('shows the league-full alert and hides action buttons when preview reports the league is full', async () => {

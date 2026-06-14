@@ -1,30 +1,25 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 interface Props {
   error: Error | null;
   onReset?: () => void;
-  level?: 'page' | 'section';
+  secondaryAction?: ReactNode;
 }
 
 // Displays user-friendly error UI with optional retry functionality
-export function ErrorFallback({ error, onReset, level = 'page' }: Props) {
-  const isPageLevel = level === 'page';
-
+export function ErrorFallback({ error, onReset, secondaryAction }: Props) {
   return (
-    <div
-      className={`flex items-center justify-center ${isPageLevel ? 'min-h-screen' : 'min-h-[400px]'} bg-background p-4`}
-    >
+    <div className="bg-background flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md p-6">
         <div className="flex flex-col items-center space-y-4 text-center">
           <AlertCircle className="text-destructive h-12 w-12" aria-hidden="true" />
           <div className="space-y-2">
             <h2 className="text-2xl font-semibold">Something went wrong</h2>
             <p className="text-muted-foreground">
-              {isPageLevel
-                ? 'We encountered an unexpected error. Please try refreshing the page.'
-                : 'We encountered an unexpected error in this section.'}
+              We encountered an unexpected error. Please try again.
             </p>
             {error && (
               <details className="mt-4 text-left">
@@ -37,10 +32,15 @@ export function ErrorFallback({ error, onReset, level = 'page' }: Props) {
               </details>
             )}
           </div>
-          {onReset && (
-            <Button onClick={onReset} variant="default">
-              Try again
-            </Button>
+          {(onReset || secondaryAction) && (
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {onReset && (
+                <Button onClick={onReset} variant="default">
+                  Try again
+                </Button>
+              )}
+              {secondaryAction}
+            </div>
           )}
         </div>
       </Card>
