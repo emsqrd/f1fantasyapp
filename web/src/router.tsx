@@ -9,6 +9,7 @@ import { MyTeamRoute, TeamRoute } from '@/components/Team/Team';
 import { ConfirmEmailNotice } from '@/components/auth/ConfirmEmailNotice/ConfirmEmailNotice';
 import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
+import { Button } from '@/components/ui/button';
 import type { Team as TeamType } from '@/contracts/Team';
 import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
@@ -17,7 +18,9 @@ import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/lea
 import { getLeagueStandings, getMyStandings } from '@/services/standingsService';
 import { getTeamById, getTeamSummary, myTeamQuery } from '@/services/teamService';
 import { profileQuery } from '@/services/userProfileService';
+import { isApiError } from '@/utils/errors';
 import {
+  Link,
   Outlet,
   createRootRouteWithContext,
   createRoute,
@@ -110,9 +113,9 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
     <div className="flex min-h-screen flex-col items-center justify-center">
       <h1 className="mb-4 text-4xl font-bold">404 - Page Not Found</h1>
       <p className="text-muted-foreground mb-4">The page you're looking for doesn't exist.</p>
-      <a href="/" className="text-primary hover:underline">
+      <Link to="/" className="text-primary hover:underline">
         Go back home
-      </a>
+      </Link>
     </div>
   ),
 });
@@ -214,8 +217,8 @@ const authConfirmRoute = createRoute({
  * Uses {@link https://tanstack.com/router/latest/docs/framework/react/guide/data-loading | loader}
  * to fetch and validate invite preview before component renders.
  *
- * **Note:** Returns 404 for invalid or expired tokens. Users can be authenticated or
- * unauthenticated - authentication is handled by the {@link JoinInvite} component.
+ * **Note:** Users can be authenticated or unauthenticated - authentication is
+ * handled by the {@link JoinInvite} component.
  */
 const joinInviteRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -226,14 +229,17 @@ const joinInviteRoute = createRoute({
   component: JoinInvite,
   loader: async ({ params }) => {
     const ROUTE_ID = '/join/$token';
-    const { token } = params;
-
     try {
-      const preview = await previewInvite(token);
+      const preview = await previewInvite(params.token);
       return { preview };
-    } catch (_) {
-      // invalid or non-existent token returns 404
-      throw notFound({ routeId: ROUTE_ID });
+    } catch (error) {
+      // 400 means the token resolves to no league (invalid / never existed) — a real
+      // absence, so notFound. 5xx and network errors are transient; rethrow them to
+      // the error boundary.
+      if (isApiError(error) && error.status === 400) {
+        throw notFound({ routeId: ROUTE_ID });
+      }
+      throw error;
     }
   },
   pendingComponent: () => (
@@ -242,6 +248,18 @@ const joinInviteRoute = createRoute({
         <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
         <p className="text-muted-foreground">Loading invite details...</p>
       </div>
+    </div>
+  ),
+  notFoundComponent: () => (
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <h1 className="mb-4 text-4xl font-bold">Invite Not Found</h1>
+      <p className="text-muted-foreground mb-4">
+        This invite link isn't valid. Double-check the link, or ask the league owner to share it
+        again.
+      </p>
+      <Button asChild>
+        <Link to="/">Go home</Link>
+      </Button>
     </div>
   ),
 });
@@ -452,9 +470,9 @@ const leagueRoute = createRoute({
     <div className="flex min-h-screen flex-col items-center justify-center">
       <h1 className="mb-4 text-4xl font-bold">League Not Found</h1>
       <p className="text-muted-foreground mb-4">The league you're looking for doesn't exist.</p>
-      <a href="/leagues" className="text-primary hover:underline">
+      <Link to="/leagues" className="text-primary hover:underline">
         Go to leagues
-      </a>
+      </Link>
     </div>
   ),
 });
@@ -543,9 +561,9 @@ const teamRoute = createRoute({
     <div className="flex min-h-screen flex-col items-center justify-center">
       <h1 className="mb-4 text-4xl font-bold">Team Not Found</h1>
       <p className="text-muted-foreground mb-4">The team you're looking for doesn't exist.</p>
-      <a href="/leagues" className="text-primary hover:underline">
+      <Link to="/leagues" className="text-primary hover:underline">
         Go to leagues
-      </a>
+      </Link>
     </div>
   ),
 });
@@ -592,9 +610,9 @@ const myTeamRoute = createRoute({
     <div className="flex min-h-screen flex-col items-center justify-center">
       <h1 className="mb-4 text-4xl font-bold">Team Not Found</h1>
       <p className="text-muted-foreground mb-4">Your team could not be found.</p>
-      <a href="/create-team" className="text-primary hover:underline">
+      <Link to="/create-team" className="text-primary hover:underline">
         Create Team
-      </a>
+      </Link>
     </div>
   ),
 });
@@ -651,9 +669,9 @@ export const router = createRouter({
     <div className="flex min-h-screen flex-col items-center justify-center">
       <h1 className="mb-4 text-4xl font-bold">404 - Page Not Found</h1>
       <p className="text-muted-foreground mb-4">The page you're looking for doesn't exist.</p>
-      <a href="/" className="text-primary hover:underline">
+      <Link to="/" className="text-primary hover:underline">
         Go back home
-      </a>
+      </Link>
     </div>
   ),
 });
