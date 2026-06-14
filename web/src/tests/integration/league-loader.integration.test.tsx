@@ -1,5 +1,3 @@
-import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
-import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
 import { League } from '@/components/League/League';
 import type { RouterContext } from '@/lib/router-context';
 import { getLeagueById } from '@/services/leagueService';
@@ -58,11 +56,6 @@ function buildLeagueRouteTree() {
     },
     component: League,
     notFoundComponent: () => <h1>League Not Found</h1>,
-    errorComponent: ({ error }) => (
-      <ErrorBoundary level="page">
-        <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-      </ErrorBoundary>
-    ),
   });
 
   return rootRoute.addChildren([

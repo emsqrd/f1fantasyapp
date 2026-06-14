@@ -1,6 +1,5 @@
-import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
-import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
 import { JoinInvite } from '@/components/JoinInvite/JoinInvite';
+import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import type { Team } from '@/contracts/Team';
 import type { RouterContext } from '@/lib/router-context';
 import { previewInvite } from '@/services/leagueInviteService';
@@ -43,11 +42,7 @@ function buildJoinInviteRouteTree() {
         throw notFound({ routeId: '/join/$token' });
       }
     },
-    errorComponent: ({ error }) => (
-      <ErrorBoundary level="page">
-        <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-      </ErrorBoundary>
-    ),
+    errorComponent: RouteErrorComponent,
   });
 
   // `validateSearch` is required for `<Link search={{ redirect }}>` to serialize

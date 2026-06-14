@@ -1,5 +1,4 @@
-import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
-import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
+import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
@@ -116,11 +115,7 @@ function buildTeamErrorRouteTree() {
     id: '_authenticated',
     beforeLoad: ({ context }: { context: RouterContext }) => requireAuth(context),
     component: () => <Outlet />,
-    errorComponent: ({ error, reset }) => (
-      <ErrorBoundary level="page">
-        <ErrorFallback error={error} onReset={reset} level="page" />
-      </ErrorBoundary>
-    ),
+    errorComponent: RouteErrorComponent,
   });
 
   const teamRequiredLayoutRoute = createRoute({

@@ -1,5 +1,3 @@
-import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
-import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
 import { MyTeamRoute } from '@/components/Team/Team';
 import type { Team } from '@/contracts/Team';
 import type { RouterContext } from '@/lib/router-context';
@@ -30,8 +28,8 @@ import { describe, expect, it } from 'vitest';
 
 // Minimal route trees mirror the production `_authenticated → _team-required`
 // chain in `router.tsx` so the real guards (`requireAuth`, `requireTeam`) and
-// the real loaders run the same way they do in production. Loaders, components,
-// and errorComponents are mirrored inline because the production routes aren't
+// the real loaders run the same way they do in production. Loaders and
+// components are mirrored inline because the production routes aren't
 // exported from `router.tsx`.
 function buildMyTeamRouteTree() {
   const rootRoute = createRootRouteWithContext<RouterContext>()({
@@ -55,11 +53,6 @@ function buildMyTeamRouteTree() {
       return { activeDrivers, activeConstructors, races };
     },
     component: MyTeamRoute,
-    errorComponent: ({ error }) => (
-      <ErrorBoundary level="page">
-        <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-      </ErrorBoundary>
-    ),
   });
 
   return rootRoute.addChildren([

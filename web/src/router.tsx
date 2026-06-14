@@ -1,11 +1,10 @@
 import { Account } from '@/components/Account/Account';
 import { CreateTeam } from '@/components/CreateTeam/CreateTeam';
-import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
-import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
 import { IndexRoute } from '@/components/IndexRoute/IndexRoute';
 import { Layout } from '@/components/Layout/Layout';
 import { League } from '@/components/League/League';
 import { LeagueList } from '@/components/LeagueList/LeagueList';
+import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import { MyTeamRoute, TeamRoute } from '@/components/Team/Team';
 import { ConfirmEmailNotice } from '@/components/auth/ConfirmEmailNotice/ConfirmEmailNotice';
 import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
@@ -19,7 +18,6 @@ import { getLeagueStandings, getMyStandings } from '@/services/standingsService'
 import { getTeamById, getTeamSummary, myTeamQuery } from '@/services/teamService';
 import { profileQuery } from '@/services/userProfileService';
 import {
-  ErrorComponent,
   Outlet,
   createRootRouteWithContext,
   createRoute,
@@ -107,11 +105,7 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
       )}
     </>
   ),
-  errorComponent: ({ error, reset }) => (
-    <ErrorBoundary level="page">
-      <ErrorFallback error={error} onReset={reset} level="page" />
-    </ErrorBoundary>
-  ),
+  errorComponent: RouteErrorComponent,
   notFoundComponent: () => (
     <div className="flex min-h-screen flex-col items-center justify-center">
       <h1 className="mb-4 text-4xl font-bold">404 - Page Not Found</h1>
@@ -158,7 +152,6 @@ const indexRoute = createRoute({
     return { home: { summary, standings, races } };
   },
   component: IndexRoute,
-  errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
 
 /**
@@ -170,7 +163,6 @@ const signInRoute = createRoute({
   validateSearch: redirectSearchSchema,
   beforeLoad: ({ context, search }) => redirectIfAuthenticated(context, search.redirect),
   component: SignInForm,
-  errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
 
 const signUpSearchSchema = redirectSearchSchema.extend({
@@ -186,7 +178,6 @@ const signUpRoute = createRoute({
   validateSearch: signUpSearchSchema,
   beforeLoad: ({ context, search }) => redirectIfAuthenticated(context, search.redirect),
   component: SignUpForm,
-  errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
 
 const authConfirmSearchSchema = z.object({
@@ -214,7 +205,6 @@ const authConfirmRoute = createRoute({
       throw redirect({ to: '/sign-up', replace: true });
     }
   },
-  errorComponent: ({ error }) => <ErrorComponent error={error} />,
 });
 
 /**
@@ -254,11 +244,6 @@ const joinInviteRoute = createRoute({
       </div>
     </div>
   ),
-  errorComponent: ({ error }) => (
-    <ErrorBoundary level="page">
-      <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-    </ErrorBoundary>
-  ),
 });
 
 /**
@@ -281,11 +266,7 @@ const authenticatedLayoutRoute = createRoute({
   // child guard. Placed on this ancestor — inside the root Layout outlet, so the
   // chrome stays and the user gets a retry — because a route's own errorComponent
   // doesn't reliably catch its own beforeLoad throw on a hard load.
-  errorComponent: ({ error, reset }) => (
-    <ErrorBoundary level="page">
-      <ErrorFallback error={error} onReset={reset} level="page" />
-    </ErrorBoundary>
-  ),
+  errorComponent: RouteErrorComponent,
 });
 
 /**
@@ -314,11 +295,6 @@ const accountRoute = createRoute({
     </div>
   ),
   pendingMs: 200, // Show pending after 200ms to prevent flash for fast loads
-  errorComponent: ({ error }) => (
-    <ErrorBoundary level="page">
-      <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-    </ErrorBoundary>
-  ),
 });
 
 /**
@@ -341,11 +317,6 @@ const createTeamRoute = createRoute({
     </div>
   ),
   pendingMs: 200, // Show pending after 200ms to prevent flash for fast loads
-  errorComponent: ({ error }) => (
-    <ErrorBoundary level="page">
-      <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-    </ErrorBoundary>
-  ),
 });
 
 /**
@@ -396,11 +367,6 @@ const leaguesRoute = createRoute({
       </div>
     </div>
   ),
-  errorComponent: ({ error }) => (
-    <ErrorBoundary level="page">
-      <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-    </ErrorBoundary>
-  ),
 });
 
 const browseLeaguesRoute = createRoute({
@@ -425,11 +391,6 @@ const browseLeaguesRoute = createRoute({
   pendingMs: 200, // Show pending after 200ms to prevent flash for fast loads
   staleTime: 10_000, // Consider fresh for 10 seconds
   gcTime: 5 * 60_000, // Keep in memory for 5 minutes
-  errorComponent: ({ error }) => (
-    <ErrorBoundary level="page">
-      <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-    </ErrorBoundary>
-  ),
 });
 
 /**
@@ -495,11 +456,6 @@ const leagueRoute = createRoute({
         Go to leagues
       </a>
     </div>
-  ),
-  errorComponent: ({ error }) => (
-    <ErrorBoundary level="page">
-      <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-    </ErrorBoundary>
   ),
 });
 
@@ -592,11 +548,6 @@ const teamRoute = createRoute({
       </a>
     </div>
   ),
-  errorComponent: ({ error }) => (
-    <ErrorBoundary level="page">
-      <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-    </ErrorBoundary>
-  ),
 });
 
 const myTeamRoute = createRoute({
@@ -646,11 +597,6 @@ const myTeamRoute = createRoute({
       </a>
     </div>
   ),
-  errorComponent: ({ error }) => (
-    <ErrorBoundary level="page">
-      <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-    </ErrorBoundary>
-  ),
 });
 
 /**
@@ -685,7 +631,6 @@ const routeTree = rootRoute.addChildren([
  * - Route tree structure
  * - Router context (auth, queryClient)
  * - Default pending/error/not-found components
- * - {@link ErrorBoundary} integration for error handling
  *
  * **Note:** Sentry integration is configured in `main.tsx` via
  * `tanStackRouterBrowserTracingIntegration` for performance monitoring.
@@ -701,11 +646,7 @@ export const router = createRouter({
       <div className="text-muted-foreground">Loading...</div>
     </div>
   ),
-  defaultErrorComponent: ({ error }) => (
-    <ErrorBoundary level="page">
-      <ErrorFallback error={error} level="page" />
-    </ErrorBoundary>
-  ),
+  defaultErrorComponent: RouteErrorComponent,
   defaultNotFoundComponent: () => (
     <div className="flex min-h-screen flex-col items-center justify-center">
       <h1 className="mb-4 text-4xl font-bold">404 - Page Not Found</h1>

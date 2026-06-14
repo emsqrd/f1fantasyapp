@@ -246,30 +246,11 @@ npm run build        # Type check + build for production
 
 ### Error Boundary System
 
-The application uses a multi-level error boundary strategy to catch and handle React rendering errors gracefully:
-
-#### ErrorBoundary Component
-
-- **Location**: `src/components/ErrorBoundary/ErrorBoundary.tsx`
-- **Purpose**: Class component that catches JavaScript errors in child components
-- **Integration**: Integrated with Sentry for error tracking and component stack traces
-- **Levels**: Supports `page` and `section` level error boundaries for granular error containment
-
-```typescript
-// Page-level boundary (wraps entire routes)
-<ErrorBoundary level="page">
-  <MyPage />
-</ErrorBoundary>
-
-// Section-level boundary (wraps specific components)
-<ErrorBoundary level="section">
-  <DataFetchingComponent />
-</ErrorBoundary>
-```
+TanStack Router's per-route `errorComponent` (`RouteErrorComponent`) is the application's error boundary. It catches loader and render errors and renders `ErrorFallback` with a "Try again" that re-runs the loader (`router.invalidate()`) plus a "Go home" escape. It's wired as the router's `defaultErrorComponent` and on the root and `_authenticated` routes.
 
 #### React 19 Error Handlers
 
-The application uses React 19's new error handler callbacks in `main.tsx`:
+React 19's root-level error callbacks in `main.tsx` forward errors to Sentry — telemetry layered under the boundary above, not a recovery surface:
 
 ```typescript
 const root = createRoot(container, {
@@ -289,10 +270,9 @@ const root = createRoot(container, {
 
 #### ErrorFallback
 
-- **Location**: `src/components/ErrorBoundary/ErrorFallback.tsx`
-- **Purpose**: Default fallback UI displayed by ErrorBoundary
+- **Location**: `src/components/ErrorFallback/ErrorFallback.tsx`
+- **Purpose**: User-friendly fallback UI
 - **Features**: User-friendly error message, expandable error details, optional retry button
-- **Variants**: Adapts messaging for page-level or section-level errors
 
 #### ErrorState
 

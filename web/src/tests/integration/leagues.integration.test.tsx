@@ -1,7 +1,6 @@
 import { BrowseLeagues } from '@/components/BrowseLeagues/BrowseLeagues';
-import { ErrorBoundary } from '@/components/ErrorBoundary/ErrorBoundary';
-import { ErrorFallback } from '@/components/ErrorBoundary/ErrorFallback';
 import { League } from '@/components/League/League';
+import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import type { RouterContext } from '@/lib/router-context';
 import { getAvailableLeagues, getLeagueById } from '@/services/leagueService';
 import { getLeagueStandings } from '@/services/standingsService';
@@ -40,11 +39,7 @@ function buildBrowseLeaguesRouteTree() {
     path: 'browse-leagues',
     loader: async () => ({ leagues: await getAvailableLeagues() }),
     component: BrowseLeagues,
-    errorComponent: ({ error }) => (
-      <ErrorBoundary level="page">
-        <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-      </ErrorBoundary>
-    ),
+    errorComponent: RouteErrorComponent,
   });
 
   return rootRoute.addChildren([
@@ -79,11 +74,7 @@ function buildLeagueRouteTree() {
     },
     component: League,
     notFoundComponent: () => <h1>League Not Found</h1>,
-    errorComponent: ({ error }) => (
-      <ErrorBoundary level="page">
-        <ErrorFallback error={error} level="page" onReset={() => window.location.reload()} />
-      </ErrorBoundary>
-    ),
+    errorComponent: RouteErrorComponent,
   });
 
   return rootRoute.addChildren([

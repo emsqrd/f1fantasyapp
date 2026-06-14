@@ -57,7 +57,6 @@ Loaders throw `notFound({ routeId })` on missing resources; the route's `errorCo
 
 **Multi-level error boundary strategy:**
 
-- **ErrorBoundary** (`src/components/ErrorBoundary/`) - Catches React rendering errors
 - **React 19 error handlers** in `main.tsx` - `onUncaughtError`, `onCaughtError`, `onRecoverableError`
 - **ErrorFallback** - User-friendly fallback UI
 - **ErrorState** - Full-page error display for data failures
@@ -69,7 +68,6 @@ Loaders throw `notFound({ routeId })` on missing resources; the route's `errorCo
 - Toasts: Background operations only (e.g., avatar uploads)
 - InlineError: Form errors, validation failures
 - ErrorState: Page-level data fetching failures
-- ErrorBoundary: Wrap components that might throw during render
 
 ### Frontend Test Layering
 

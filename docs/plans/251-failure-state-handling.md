@@ -43,7 +43,7 @@ Three related failure-handling defects on the routing layer:
 
 Two self-contained commits, each independently passing build/lint/test/format, each a gate (wait for approval before the next):
 
-1. **Consolidate route error recovery** (symptom a) — shared `RouteErrorComponent` + `invalidate` + "Go home"; delete the ~12 duplicates, the nested wrappers, the dead `ErrorBoundary` class; folder restructure; doc edits.
+1. **Consolidate route error recovery** (symptom a) — shared `RouteErrorComponent` + `invalidate` + "Go home"; delete the ~12 duplicates, the nested wrappers, the dead `ErrorBoundary` class; strip the now-dead `level` variant from `ErrorFallback`; folder restructure; doc edits.
 2. **Invite failure handling** (symptoms b + c) — loader 400-discrimination + invite `notFoundComponent`; convert the remaining not-found anchors to `<Link>`.
 
 Two commits, not three: the `ErrorFallback` folder-move rides inside commit 1 — do not split it into its own mechanical commit.
@@ -80,7 +80,7 @@ export function RouteErrorComponent({ error }: ErrorComponentProps) {
 
 ### `web/src/components/ErrorFallback/ErrorFallback.tsx` (moved from `ErrorBoundary/`, gains "Go home")
 
-Move the file unchanged except for the secondary escape link (page-level only):
+Move the file, adding the secondary escape link and stripping the now-dead `level` prop (with `ErrorBoundary` gone, `RouteErrorComponent` is the only consumer and always renders page-level):
 
 ```tsx
 import { Button } from '@/components/ui/button';
@@ -91,13 +91,10 @@ import type { ReactNode } from 'react';
 interface Props {
   error: Error | null;
   onReset?: () => void;
-  level?: 'page' | 'section';
   secondaryAction?: ReactNode;
 }
 
-export function ErrorFallback({ error, onReset, level = 'page', secondaryAction }: Props) {
-  const isPageLevel = level === 'page';
-
+export function ErrorFallback({ error, onReset, secondaryAction }: Props) {
   return (
     <div className={/* unchanged */}>
       <Card className="w-full max-w-md p-6">
@@ -218,4 +215,3 @@ These keep their bare underlined-link styling (`className="text-primary hover:un
 ## Out of scope / follow-ups
 
 - **[#271](https://github.com/emsqrd/f1fantasyapp/issues/271)** — top-level error boundary for the app shell (the pre-existing gap surfaced while deleting the `ErrorBoundary` class). `priority:low`.
-- Stripping the unused `level="section"` variant from `ErrorFallback` — harmless, separate cleanup.
