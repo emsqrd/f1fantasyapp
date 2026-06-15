@@ -1,8 +1,8 @@
 import { MyTeamRoute } from '@/components/Team/Team';
 import type { Team } from '@/contracts/Team';
 import type { RouterContext } from '@/lib/router-context';
-import { getConstructors } from '@/services/constructorService';
-import { getDrivers } from '@/services/driverService';
+import { constructorsQuery } from '@/services/constructorService';
+import { driversQuery } from '@/services/driverService';
 import { getRaceWeekends } from '@/services/raceWeekendService';
 import { seasonQuery } from '@/services/seasonService';
 import { myTeamQuery } from '@/services/teamService';
@@ -46,12 +46,12 @@ function buildMyTeamRouteTree() {
     loader: async ({ context }) => {
       const season = await context.queryClient.ensureQueryData(seasonQuery);
       await context.queryClient.ensureQueryData(myTeamQuery);
-      const [activeDrivers, activeConstructors, races] = await Promise.all([
-        getDrivers(),
-        getConstructors(),
+      const [races] = await Promise.all([
         season ? getRaceWeekends(season.id) : Promise.resolve([]),
+        context.queryClient.ensureQueryData(driversQuery),
+        context.queryClient.ensureQueryData(constructorsQuery),
       ]);
-      return { activeDrivers, activeConstructors, races };
+      return { races };
     },
     component: MyTeamRoute,
   });

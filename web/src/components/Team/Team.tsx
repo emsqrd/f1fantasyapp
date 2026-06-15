@@ -4,6 +4,8 @@ import type { Team } from '@/contracts/Team';
 import { useLockCountdown } from '@/hooks/useLockCountdown';
 import { useSetCaptain } from '@/hooks/useSetCaptain';
 import { formatBudget } from '@/lib/utils';
+import { constructorsQuery } from '@/services/constructorService';
+import { driversQuery } from '@/services/driverService';
 import { myTeamQuery } from '@/services/teamService';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { notFound, useLoaderData } from '@tanstack/react-router';
@@ -24,7 +26,9 @@ export interface TeamViewProps {
 
 export function MyTeamRoute() {
   const { data: team } = useSuspenseQuery(myTeamQuery);
-  const { activeDrivers, activeConstructors, races } = useLoaderData({
+  const { data: activeDrivers } = useSuspenseQuery(driversQuery);
+  const { data: activeConstructors } = useSuspenseQuery(constructorsQuery);
+  const { races } = useLoaderData({
     from: '/_authenticated/_team-required/my-team',
   });
 
@@ -44,7 +48,9 @@ export function MyTeamRoute() {
 }
 
 export function TeamRoute() {
-  const { team, activeDrivers, activeConstructors, races } = useLoaderData({
+  const { data: activeDrivers } = useSuspenseQuery(driversQuery);
+  const { data: activeConstructors } = useSuspenseQuery(constructorsQuery);
+  const { team, races } = useLoaderData({
     from: '/_authenticated/_team-required/team/$teamId',
   });
 

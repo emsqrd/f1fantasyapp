@@ -10,7 +10,6 @@ import { ConfirmEmailNotice } from '@/components/auth/ConfirmEmailNotice/Confirm
 import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import { Button } from '@/components/ui/button';
-import type { Team as TeamType } from '@/contracts/Team';
 import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
@@ -33,12 +32,10 @@ import { z } from 'zod';
 
 import { BrowseLeagues } from './components/BrowseLeagues/BrowseLeagues';
 import { JoinInvite } from './components/JoinInvite/JoinInvite';
-import type { RaceWeekend } from './contracts/RaceWeekend';
-import type { Constructor, Driver } from './contracts/Role';
 import { routerAuth } from './lib/authStore';
 import { queryClient } from './lib/queryClient';
-import { getConstructors } from './services/constructorService';
-import { getDrivers } from './services/driverService';
+import { constructorsQuery } from './services/constructorService';
+import { driversQuery } from './services/driverService';
 import { previewInvite } from './services/leagueInviteService';
 import { getRaceWeekends } from './services/raceWeekendService';
 import { seasonQuery } from './services/seasonService';
@@ -507,15 +504,7 @@ const teamRoute = createRoute({
       throw redirect({ to: '/my-team', replace: true });
     }
   },
-  loader: async ({
-    params,
-    context,
-  }): Promise<{
-    team: TeamType;
-    activeDrivers: Driver[];
-    activeConstructors: Constructor[];
-    races: RaceWeekend[];
-  }> => {
+  loader: async ({ params, context }) => {
     const TEAM_ROUTE_ID = '/_authenticated/_team-required/team/$teamId';
 
     // Validate and parse params using Zod schema
@@ -531,11 +520,11 @@ const teamRoute = createRoute({
     const season = await context.queryClient.ensureQueryData(seasonQuery);
 
     // Fetch all data in parallel
-    const [team, activeDrivers, activeConstructors, races] = await Promise.all([
+    const [team, races] = await Promise.all([
       getTeamById(teamId),
-      getDrivers(),
-      getConstructors(),
       season ? getRaceWeekends(season.id) : Promise.resolve([]),
+      context.queryClient.ensureQueryData(driversQuery),
+      context.queryClient.ensureQueryData(constructorsQuery),
     ]);
 
     // Return 404 if team doesn't exist
@@ -543,7 +532,7 @@ const teamRoute = createRoute({
       throw notFound({ routeId: TEAM_ROUTE_ID });
     }
 
-    return { team, activeDrivers, activeConstructors, races };
+    return { team, races };
   },
   component: TeamRoute,
   pendingComponent: () => (
@@ -574,25 +563,19 @@ const myTeamRoute = createRoute({
   staticData: {
     pageTitle: 'My Team',
   },
-  loader: async ({
-    context,
-  }): Promise<{
-    activeDrivers: Driver[];
-    activeConstructors: Constructor[];
-    races: RaceWeekend[];
-  }> => {
+  loader: async ({ context }) => {
     const season = await context.queryClient.ensureQueryData(seasonQuery);
     // Warm-cache hit after the `_team-required` guard; pairs with the component's
     // useSuspenseQuery(myTeamQuery).
     await context.queryClient.ensureQueryData(myTeamQuery);
 
-    const [activeDrivers, activeConstructors, races] = await Promise.all([
-      getDrivers(),
-      getConstructors(),
+    const [races] = await Promise.all([
       season ? getRaceWeekends(season.id) : Promise.resolve([]),
+      context.queryClient.ensureQueryData(driversQuery),
+      context.queryClient.ensureQueryData(constructorsQuery),
     ]);
 
-    return { activeDrivers, activeConstructors, races };
+    return { races };
   },
   component: MyTeamRoute,
   pendingComponent: () => (
