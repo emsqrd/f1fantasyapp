@@ -57,6 +57,15 @@ updates:
           - "@types/react"
           - "@types/react-dom"
 
+  - package-ecosystem: "npm"
+    directory: "/e2e"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-patch"]
+
   - package-ecosystem: "nuget"
     directory: "/api"
     schedule:
