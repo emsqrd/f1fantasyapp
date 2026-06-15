@@ -225,6 +225,39 @@ describe('My team lineup', () => {
     expect(screen.getByText('Lando Norris')).toBeInTheDocument();
   });
 
+  it('refreshes the lineup after removing a driver', async () => {
+    const user = userEvent.setup();
+    const teamWithDriver = createMockTeam({
+      remainingBudget: 55_000_000,
+      drivers: [createMockTeamDriver({ ...allDrivers[1], slotPosition: 0, isCaptain: false })],
+    });
+    const emptyTeam = createMockTeam({ remainingBudget: 80_000_000, drivers: [] });
+
+    let removed = false;
+    server.use(
+      http.get(`${API_BASE}/me/team`, () =>
+        HttpResponse.json(removed ? emptyTeam : teamWithDriver),
+      ),
+      http.get(`${API_BASE}/drivers`, () => HttpResponse.json(allDrivers)),
+      http.get(`${API_BASE}/constructors`, () => HttpResponse.json(allConstructors)),
+      http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(createMockSeason())),
+      http.get(`${API_BASE}/seasons/1/race-weekends`, () => HttpResponse.json([futureRace])),
+      http.delete(`${API_BASE}/me/team/drivers/0`, () => {
+        removed = true;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    renderMyTeam();
+
+    await user.click(await screen.findByRole('button', { name: /remove driver/i }));
+
+    // The driver only leaves the slot once the invalidated query refetches the
+    // now-empty team.
+    await waitFor(() => expect(screen.queryByText('Lando Norris')).not.toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /remove driver/i })).not.toBeInTheDocument();
+  });
+
   it('does not fire a second add while one is in flight', async () => {
     const user = userEvent.setup();
     const team = createMockTeam({ remainingBudget: 80_000_000, drivers: [] });
@@ -313,7 +346,7 @@ describe('My team lineup', () => {
     );
   });
 
-  it('rolls back the optimistic captain and surfaces an error when setCaptain fails', async () => {
+  it('shows the optimistic captain in flight, then surfaces an error when setCaptain fails', async () => {
     const user = userEvent.setup();
     const team = createMockTeam({
       remainingBudget: 80_000_000,
@@ -333,14 +366,16 @@ describe('My team lineup', () => {
 
     renderMyTeam();
 
-    // Optimistic: the star moves to the driver while the request is in flight.
+    // The PUT is held open, so only the optimistic cache patch can move the star here.
     await user.click(await screen.findByRole('button', { name: /set .* as captain/i }));
     expect(await screen.findByRole('button', { name: /captain.*active/i })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
 
-    // On failure the optimistic patch rolls back and the error surfaces.
+    // The revert below is observable but indistinguishable from the refetch that
+    // runs after the request settles (which also serves a captain-less team); the
+    // cache rollback on failure is pinned in useSetCaptain.test.ts.
     respondCaptain();
     expect(await screen.findByRole('alert')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: /set .* as captain/i })).toBeInTheDocument();

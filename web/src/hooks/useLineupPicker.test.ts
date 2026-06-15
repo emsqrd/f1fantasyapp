@@ -28,7 +28,7 @@ const mockItems: TestItem[] = [
 const mockAddToTeam = vi.fn();
 const mockRemoveFromTeam = vi.fn();
 
-// Fresh client per test so the hook's invalidateQueries calls hit a clean cache.
+// useLineupPicker reaches the Query client through useMutation, so it needs a provider.
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
