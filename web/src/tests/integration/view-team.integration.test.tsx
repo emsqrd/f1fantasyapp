@@ -1,7 +1,7 @@
 import { TeamRoute } from '@/components/Team/Team';
 import type { RouterContext } from '@/lib/router-context';
-import { getConstructors } from '@/services/constructorService';
-import { getDrivers } from '@/services/driverService';
+import { constructorsQuery } from '@/services/constructorService';
+import { driversQuery } from '@/services/driverService';
 import { getRaceWeekends } from '@/services/raceWeekendService';
 import { seasonQuery } from '@/services/seasonService';
 import { getTeamById, myTeamQuery } from '@/services/teamService';
@@ -58,16 +58,16 @@ function buildTeamByIdRouteTree() {
     loader: async ({ params, context }) => {
       const season = await context.queryClient.ensureQueryData(seasonQuery);
       const teamId = Number(params.teamId);
-      const [team, activeDrivers, activeConstructors, races] = await Promise.all([
+      const [team, races] = await Promise.all([
         getTeamById(teamId),
-        getDrivers(),
-        getConstructors(),
         season ? getRaceWeekends(season.id) : Promise.resolve([]),
+        context.queryClient.ensureQueryData(driversQuery),
+        context.queryClient.ensureQueryData(constructorsQuery),
       ]);
       if (!team) {
         throw notFound({ routeId: '/_authenticated/_team-required/team/$teamId' });
       }
-      return { team, activeDrivers, activeConstructors, races };
+      return { team, races };
     },
     component: TeamRoute,
     notFoundComponent: () => <h1>Team Not Found</h1>,
