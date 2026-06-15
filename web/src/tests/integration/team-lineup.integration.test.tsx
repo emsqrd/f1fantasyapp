@@ -9,6 +9,7 @@ import { myTeamQuery } from '@/services/teamService';
 import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
+  buildStubRoute,
   buildTeamRequiredLayout,
   createAuthedAuth,
   createMockConstructorList,
@@ -21,7 +22,7 @@ import {
   renderWithRouter,
 } from '@/tests/test-utils';
 import { Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router';
-import { screen, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -55,8 +56,17 @@ function buildMyTeamRouteTree() {
     component: MyTeamRoute,
   });
 
+  // A sibling under the same `_team-required` layout gives the captain-persistence
+  // test somewhere to navigate so `MyTeamRoute` unmounts and remounts.
+  const leaguesStubRoute = buildStubRoute(teamRequiredLayoutRoute, {
+    path: 'leagues',
+    heading: 'Leagues Page',
+  });
+
   return rootRoute.addChildren([
-    authenticatedLayoutRoute.addChildren([teamRequiredLayoutRoute.addChildren([myTeamRoute])]),
+    authenticatedLayoutRoute.addChildren([
+      teamRequiredLayoutRoute.addChildren([myTeamRoute, leaguesStubRoute]),
+    ]),
   ]);
 }
 
@@ -179,21 +189,195 @@ describe('My team lineup', () => {
     expect(screen.queryByRole('button', { name: /add constructor/i })).not.toBeInTheDocument();
   });
 
-  it('surfaces an error message when setCaptain fails', async () => {
+  it('refreshes the lineup after adding a driver', async () => {
+    const user = userEvent.setup();
+    const emptyTeam = createMockTeam({ remainingBudget: 80_000_000, drivers: [] });
+    const teamWithDriver = createMockTeam({
+      remainingBudget: 55_000_000,
+      drivers: [createMockTeamDriver({ ...allDrivers[1], slotPosition: 0, isCaptain: false })],
+    });
+
+    let added = false;
+    server.use(
+      http.get(`${API_BASE}/me/team`, () => HttpResponse.json(added ? teamWithDriver : emptyTeam)),
+      http.get(`${API_BASE}/drivers`, () => HttpResponse.json(allDrivers)),
+      http.get(`${API_BASE}/constructors`, () => HttpResponse.json(allConstructors)),
+      http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(createMockSeason())),
+      http.get(`${API_BASE}/seasons/1/race-weekends`, () => HttpResponse.json([futureRace])),
+      http.post(`${API_BASE}/me/team/drivers`, () => {
+        added = true;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    renderMyTeam();
+
+    const addButtons = await screen.findAllByRole('button', { name: /add driver/i });
+    await user.click(addButtons[0]);
+
+    const dialog = await screen.findByRole('dialog', { name: /select driver/i });
+    const norrisItem = within(dialog).getByText('Lando Norris').closest('li')!;
+    await user.click(within(norrisItem).getByRole('button', { name: /add driver/i }));
+
+    // The empty team renders no Remove controls; the added driver's slot only
+    // fills once the invalidated query refetches the team-with-driver.
+    expect(await screen.findByRole('button', { name: /remove driver/i })).toBeInTheDocument();
+    expect(screen.getByText('Lando Norris')).toBeInTheDocument();
+  });
+
+  it('refreshes the lineup after removing a driver', async () => {
+    const user = userEvent.setup();
+    const teamWithDriver = createMockTeam({
+      remainingBudget: 55_000_000,
+      drivers: [createMockTeamDriver({ ...allDrivers[1], slotPosition: 0, isCaptain: false })],
+    });
+    const emptyTeam = createMockTeam({ remainingBudget: 80_000_000, drivers: [] });
+
+    let removed = false;
+    server.use(
+      http.get(`${API_BASE}/me/team`, () =>
+        HttpResponse.json(removed ? emptyTeam : teamWithDriver),
+      ),
+      http.get(`${API_BASE}/drivers`, () => HttpResponse.json(allDrivers)),
+      http.get(`${API_BASE}/constructors`, () => HttpResponse.json(allConstructors)),
+      http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(createMockSeason())),
+      http.get(`${API_BASE}/seasons/1/race-weekends`, () => HttpResponse.json([futureRace])),
+      http.delete(`${API_BASE}/me/team/drivers/0`, () => {
+        removed = true;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    renderMyTeam();
+
+    await user.click(await screen.findByRole('button', { name: /remove driver/i }));
+
+    // The driver only leaves the slot once the invalidated query refetches the
+    // now-empty team.
+    await waitFor(() => expect(screen.queryByText('Lando Norris')).not.toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /remove driver/i })).not.toBeInTheDocument();
+  });
+
+  it('does not fire a second add while one is in flight', async () => {
+    const user = userEvent.setup();
+    const team = createMockTeam({ remainingBudget: 80_000_000, drivers: [] });
+
+    let resolveAdd!: () => void;
+    let addCount = 0;
+    server.use(
+      ...teamHandlers(team),
+      http.post(`${API_BASE}/me/team/drivers`, async () => {
+        addCount++;
+        await new Promise<void>((resolve) => {
+          resolveAdd = resolve;
+        });
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    renderMyTeam();
+
+    const addButtons = await screen.findAllByRole('button', { name: /add driver/i });
+    await user.click(addButtons[0]);
+
+    const dialog = await screen.findByRole('dialog', { name: /select driver/i });
+    const norrisItem = within(dialog).getByText('Lando Norris').closest('li')!;
+    const addNorris = within(norrisItem).getByRole('button', { name: /add driver/i });
+
+    // The first click leaves the add in flight (the handler holds the response),
+    // so the picker stays open and isPending gates the second click.
+    await user.click(addNorris);
+    await user.click(addNorris);
+
+    await waitFor(() => expect(addCount).toBe(1));
+
+    resolveAdd();
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: /select driver/i })).not.toBeInTheDocument(),
+    );
+    expect(addCount).toBe(1);
+  });
+
+  it('keeps a newly set captain after navigating away and back', async () => {
+    const user = userEvent.setup();
+    const withoutCaptain = createMockTeam({
+      remainingBudget: 55_000_000,
+      drivers: [createMockTeamDriver({ ...allDrivers[0], slotPosition: 0, isCaptain: false })],
+    });
+    const withCaptain = createMockTeam({
+      remainingBudget: 55_000_000,
+      drivers: [createMockTeamDriver({ ...allDrivers[0], slotPosition: 0, isCaptain: true })],
+    });
+
+    let captainSet = false;
+    server.use(
+      http.get(`${API_BASE}/me/team`, () =>
+        HttpResponse.json(captainSet ? withCaptain : withoutCaptain),
+      ),
+      http.get(`${API_BASE}/drivers`, () => HttpResponse.json(allDrivers)),
+      http.get(`${API_BASE}/constructors`, () => HttpResponse.json(allConstructors)),
+      http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(createMockSeason())),
+      http.get(`${API_BASE}/seasons/1/race-weekends`, () => HttpResponse.json([futureRace])),
+      http.put(`${API_BASE}/me/team/captain`, () => {
+        captainSet = true;
+        return new HttpResponse(null, { status: 200 });
+      }),
+    );
+
+    const { router } = renderMyTeam();
+
+    await user.click(await screen.findByRole('button', { name: /set .* as captain/i }));
+    await screen.findByRole('button', { name: /captain.*active/i });
+
+    await act(async () => {
+      await router.navigate({ to: '/leagues' });
+    });
+    await screen.findByRole('heading', { name: 'Leagues Page' });
+
+    await act(async () => {
+      await router.navigate({ to: '/my-team' });
+    });
+
+    // Before the fix the remounted view re-seeded from the stale cached team and
+    // the captain reverted; the cache write now survives the unmount/remount.
+    expect(await screen.findByRole('button', { name: /captain.*active/i })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('shows the optimistic captain in flight, then surfaces an error when setCaptain fails', async () => {
     const user = userEvent.setup();
     const team = createMockTeam({
       remainingBudget: 80_000_000,
       drivers: [createMockTeamDriver({ ...allDrivers[0], slotPosition: 0, isCaptain: false })],
     });
+
+    let respondCaptain!: () => void;
     server.use(
       ...teamHandlers(team),
-      http.put(`${API_BASE}/me/team/captain`, () => new HttpResponse(null, { status: 500 })),
+      http.put(`${API_BASE}/me/team/captain`, async () => {
+        await new Promise<void>((resolve) => {
+          respondCaptain = resolve;
+        });
+        return new HttpResponse(null, { status: 500 });
+      }),
     );
 
     renderMyTeam();
 
+    // The PUT is held open, so only the optimistic cache patch can move the star here.
     await user.click(await screen.findByRole('button', { name: /set .* as captain/i }));
+    expect(await screen.findByRole('button', { name: /captain.*active/i })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
 
+    // The revert below is observable but indistinguishable from the refetch that
+    // runs after the request settles (which also serves a captain-less team); the
+    // cache rollback on failure is pinned in useSetCaptain.test.ts.
+    respondCaptain();
     expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /set .* as captain/i })).toBeInTheDocument();
   });
 });

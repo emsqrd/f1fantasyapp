@@ -1,7 +1,9 @@
 import type { RaceWeekend } from '@/contracts/RaceWeekend';
 import type { Constructor, Driver } from '@/contracts/Role';
 import { createMockConstructor, createMockDriver, createMockTeam } from '@/tests/test-utils';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { TeamView } from './Team';
@@ -40,11 +42,17 @@ function makeRacesWithDeadline(deadline: string | null): RaceWeekend[] {
   return mockRaces.map((race) => ({ ...race, lockDeadline: deadline }));
 }
 
+// TeamView reaches the Query cache through `useSetCaptain`, so it needs a client.
+function renderTeamView(ui: ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
 describe('TeamView', () => {
   it('shows owner name when readOnly is true', () => {
     const team = createMockTeam({ name: 'Test Team', ownerName: 'Test Owner' });
 
-    render(
+    renderTeamView(
       <TeamView
         team={team}
         activeDrivers={mockActiveDrivers}
@@ -60,7 +68,7 @@ describe('TeamView', () => {
   it('does not show owner name when readOnly is false', () => {
     const team = createMockTeam({ name: 'Test Team', ownerName: 'Test Owner' });
 
-    render(
+    renderTeamView(
       <TeamView
         team={team}
         activeDrivers={mockActiveDrivers}
@@ -74,7 +82,7 @@ describe('TeamView', () => {
   });
 
   it('shows current race round and name in subtitle', () => {
-    render(
+    renderTeamView(
       <TeamView
         team={createMockTeam()}
         activeDrivers={mockActiveDrivers}
@@ -88,7 +96,7 @@ describe('TeamView', () => {
   });
 
   it('renders the lock countdown for the current race', () => {
-    render(
+    renderTeamView(
       <TeamView
         team={createMockTeam()}
         activeDrivers={mockActiveDrivers}

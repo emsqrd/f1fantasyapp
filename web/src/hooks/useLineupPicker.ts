@@ -1,6 +1,6 @@
 import { myTeamQuery } from '@/services/teamService';
 import * as Sentry from '@sentry/react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
 interface UseLineupPickerOptions<T extends { id: number }> {
@@ -12,8 +12,7 @@ interface UseLineupPickerOptions<T extends { id: number }> {
 }
 
 /**
- * Manages lineup selection state and operations for picker components.
- * Handles item pool filtering, picker state, and add/remove operations with error handling.
+ * Manages lineup selection state and add/remove operations for picker components.
  */
 export function useLineupPicker<T extends { id: number }>({
   items,
@@ -24,7 +23,6 @@ export function useLineupPicker<T extends { id: number }>({
 }: UseLineupPickerOptions<T>) {
   const queryClient = useQueryClient();
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
-  const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const pool = useMemo(() => {
@@ -34,18 +32,11 @@ export function useLineupPicker<T extends { id: number }>({
     return items.filter((item) => !usedIds.has(item.id));
   }, [items, lineup]);
 
-  /**
-   * Adds an item to the lineup at the specified position.
-   * Closes the picker on both success and error.
-   */
-  const handleAdd = async (position: number, item: T) => {
-    setIsPending(true);
-    setError(null);
-
-    try {
-      await addToTeam(item.id, position);
-      await queryClient.invalidateQueries({ queryKey: myTeamQuery.queryKey });
-    } catch (err) {
+  const addToLineupMutation = useMutation({
+    mutationFn: ({ position, item }: { position: number; item: T }) => addToTeam(item.id, position),
+    onMutate: () => setError(null),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: myTeamQuery.queryKey }),
+    onError: (err, { position, item }) => {
       Sentry.logger.error(`Failed to add ${itemType} to lineup`, {
         itemType,
         position,
@@ -54,23 +45,16 @@ export function useLineupPicker<T extends { id: number }>({
       });
 
       setError(`Failed to add ${itemType}. Please try again.`);
-    } finally {
-      setIsPending(false);
-      setSelectedPosition(null);
-    }
-  };
+    },
+    // Add closes the picker on both success and error; remove leaves it as-is.
+    onSettled: () => setSelectedPosition(null),
+  });
 
-  /**
-   * Removes an item from the lineup at the specified position.
-   */
-  const handleRemove = async (position: number) => {
-    setIsPending(true);
-    setError(null);
-
-    try {
-      await removeFromTeam(position);
-      await queryClient.invalidateQueries({ queryKey: myTeamQuery.queryKey });
-    } catch (err) {
+  const removeFromLineupMutation = useMutation({
+    mutationFn: (position: number) => removeFromTeam(position),
+    onMutate: () => setError(null),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: myTeamQuery.queryKey }),
+    onError: (err, position) => {
       Sentry.logger.error(`Failed to remove ${itemType} from lineup`, {
         itemType,
         position,
@@ -78,15 +62,11 @@ export function useLineupPicker<T extends { id: number }>({
       });
 
       setError(`Failed to remove ${itemType}. Please try again.`);
-    } finally {
-      setIsPending(false);
-    }
-  };
+    },
+  });
 
-  /**
-   * Opens the picker overlay for the specified position.
-   * Clears any previous errors and prevents opening during pending operations.
-   */
+  const isPending = addToLineupMutation.isPending || removeFromLineupMutation.isPending;
+
   const openPicker = (position: number) => {
     if (!isPending) {
       setError(null);
@@ -101,7 +81,7 @@ export function useLineupPicker<T extends { id: number }>({
     error,
     openPicker,
     closePicker: () => setSelectedPosition(null),
-    handleAdd,
-    handleRemove,
+    handleAdd: (position: number, item: T) => addToLineupMutation.mutate({ position, item }),
+    handleRemove: (position: number) => removeFromLineupMutation.mutate(position),
   };
 }
