@@ -12,6 +12,6 @@
   },
   "devDependencies": {
     "husky": "^9.1.7",
-    "supabase": "^2.91.2"
+    "supabase": "^2.106.0"
   }
 }
