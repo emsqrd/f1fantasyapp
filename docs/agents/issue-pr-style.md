@@ -34,7 +34,7 @@ Imperative. No conventional-commit prefix. ≤70 characters. What, not how.
 
 ### Body
 
-Open with 1–2 sentences of the why that isn't visible in the diff, plus `Closes #N`. Add a section below only when it has real content:
+Under **`## Summary`**, give 1–2 sentences of the why that isn't visible in the diff, plus `Closes #N`. Add a section below only when it has real content:
 
 - **`## Verification`** — give the checks that left no artifact (e.g. a browser check against the dev stack). Don't list the automated tests.
 - **`## Risk & scope`** — name a genuine risk, a shortcut taken, or something deliberately left out, with a pointer. Don't restate the commit messages.
@@ -44,6 +44,7 @@ Small fix:
 ```
 Title: Fix lap-count off-by-one in sprint scoring
 
+## Summary
 Sprint laps were counted 0-indexed; F1 rounds are 1-indexed, so points landed on
 the wrong driver. Closes #142.
 ```
@@ -53,6 +54,7 @@ Larger change:
 ```
 Title: Persist standings instead of recomputing per request
 
+## Summary
 Standings were recomputed on every /me/standings call, which got slow once leagues
 filled up. Now materialized on score ingest. Closes #51.
 
