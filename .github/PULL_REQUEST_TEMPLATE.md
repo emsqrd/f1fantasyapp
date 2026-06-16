@@ -4,6 +4,8 @@ Keep this body lean — say only what the diff, CI, the linked issue, and commit
 See docs/agents/issue-pr-style.md.
 -->
 
+## Summary
+
 <!-- 1–2 sentences: what this changes, and the why that isn't visible in the diff. -->
 
 Closes #
