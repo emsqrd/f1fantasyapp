@@ -287,6 +287,10 @@ Hosted on Fly.io + Supabase (free tier).
 
 GitHub issues in `emsqrd/f1fantasyapp` via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
+### Issue & PR writing
+
+Title and body conventions for issues and PRs; create new issues labeled `needs-triage`. See `docs/agents/issue-pr-style.md`.
+
 ### Triage labels
 
 Canonical role names used as-is (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
