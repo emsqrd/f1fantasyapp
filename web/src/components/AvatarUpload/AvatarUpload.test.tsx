@@ -29,18 +29,22 @@ describe('AvatarUpload', () => {
       resetError: vi.fn(),
     });
 
-    // Mock Image constructor with full HTMLImageElement interface for Radix UI compatibility
+    // Radix's AvatarImage only mounts the <img> once the image reports
+    // `complete` with `naturalWidth > 0` — firing `load` alone won't do it.
     globalThis.Image = class MockImage extends EventTarget {
       onload: (() => void) | null = null;
       onerror: (() => void) | null = null;
+      complete = false;
+      naturalWidth = 0;
 
       constructor() {
         super();
       }
 
       set src(_: string) {
-        // Simulate successful image load by default
         setTimeout(() => {
+          this.complete = true;
+          this.naturalWidth = 1;
           this.onload?.();
           this.dispatchEvent(new Event('load'));
         }, 0);
