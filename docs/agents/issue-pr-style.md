@@ -17,12 +17,14 @@ Lead with a verb, or state the symptom. ~6–10 words. No conventional-commit pr
 
 ### Body
 
-- **Problem** — state the gap as a problem, not a solution: _When &lt;situation&gt;, &lt;what happens&gt; — which is a problem because &lt;impact&gt;._
-- **Outcome** — give the resolved state in one line.
-- **Acceptance criteria** — list the checkable conditions that prove the outcome; map each to a test or an observation.
-- **Scope** — state what's in and what's explicitly out.
-- **Pointers** — link relevant files, docs (`docs/research/…`, `docs/adr/…`), related issues.
-- **Reproduction** (bugs only) — give numbered steps, then **Expected**, **Actual**, **Environment**.
+Each part below is its own `##` section header. Include a section only when it has real content.
+
+- **`## Problem`** — state the gap as a problem, not a solution: _When &lt;situation&gt;, &lt;what happens&gt; — which is a problem because &lt;impact&gt;._
+- **`## Outcome`** — give the resolved state in one line.
+- **`## Acceptance criteria`** — list the checkable conditions that prove the outcome; map each to a test or an observation.
+- **`## Scope`** — state what's in and what's explicitly out.
+- **`## Pointers`** — link relevant files, docs (`docs/research/…`, `docs/adr/…`), related issues.
+- **`## Reproduction`** (bugs only) — give numbered steps, then **Expected**, **Actual**, **Environment**.
 
 ## Pull requests
 
