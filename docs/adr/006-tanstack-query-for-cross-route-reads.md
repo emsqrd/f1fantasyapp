@@ -1,4 +1,4 @@
-# ADR 006: TanStack Query for Cross-Route Reads (profile, team, season)
+# ADR 006: TanStack Query for Cross-Route Reads
 
 **Date:** 2026-06-07
 **Status:** Accepted
@@ -15,9 +15,9 @@ Tracking issue #254. Closes #247 and #249 (the failure-handling fix shares this 
 
 ## Decision
 
-Adopt TanStack Query for data read **across multiple routes, or in both a guard and a component**. A single `queryClient` lives in router context (so `beforeLoad`/loaders reach it) and behind `QueryClientProvider` (so components reach it); profile, team, and season move out of router context into that cache, leaving context as `{ auth, queryClient }`. This delivers those three reads; the shared reference data — drivers, constructors, race-weekends (#255) — is sequenced onto the same foundation. **Single-route-owned** data — leagues, league/team detail, the index route's summary/standings — stays on the router's loader cache. Not a wholesale migration, and not limited to these three reads.
+Adopt TanStack Query for data read **across multiple routes, or in both a guard and a component**. A single `queryClient` lives in router context (so `beforeLoad`/loaders reach it) and behind `QueryClientProvider` (so components reach it); profile, team, and season move out of router context into that cache, leaving context as `{ auth, queryClient }`. This delivers those three reads; the shared reference data is sequenced onto the same foundation. **Single-route-owned** data stays on the router's loader cache. Not a wholesale migration, and not limited to these three reads.
 
-**The non-obvious part is that each read is ensured where it's consumed, and the placements differ on purpose:** team is ensured in the guards' `beforeLoad` (`requireTeam` / `requireNoTeam` / `teamRoute`), because the whole `beforeLoad` chain runs before any loader and a guard's redirect decision can only read a value ensured in a `beforeLoad`; profile is primed in `rootRoute`'s **loader** (its only readers are the always-on shell and the account route — no guard reads it, and `rootRoute` is the one ancestor of every authed-reachable route, so it warms the shell without a flash); season is ensured in the leaf loaders that read `season.id`. A reader expecting all three in one place should know this asymmetry is deliberate.
+**The non-obvious part is that each read is ensured where it's consumed, and the placements differ on purpose:** team is ensured in the guards' `beforeLoad`, because the whole `beforeLoad` chain runs before any loader and a guard's redirect decision can only read a value ensured in a `beforeLoad`; profile is primed in `rootRoute`'s **loader** (read by the always-on shell; no guard reads it, and `rootRoute` is the one ancestor of every authed-reachable route, so it warms the shell without a flash); season is ensured in the leaf loaders that read `season.id`. A reader expecting all three in one place should know this asymmetry is deliberate.
 
 **Existence sheds the embedded team.** `/me/profile` returns the full team aggregate today and the client discards it; it is replaced by a computed `hasTeam`, and the team name moves to `/me/team/summary`. Existence then has three readers split by concern: **routing** reads the team query (a transient failure **throws** — never a `/create-team` misroute; a `null` is genuine absence), **nav shell** reads `profile.hasTeam` (tolerant), and **`Home`'s body** reads the loader-ensured summary (`summary === null` ⟺ no team), which fails honestly rather than demoting a team-owner. Reads are not collapsed to `null` by a shared `catch`; transient-failure-versus-genuine-absence is the seam #249 owns.
 
@@ -25,7 +25,7 @@ Implementation specifics — query definitions and keys, freshness windows, read
 
 ## Consequences
 
-- Two caches coexist by design, and the boundary is the **access pattern, not the entity**: data read across routes or in both a guard and a component lives in the Query cache (profile/team/season now, the reference data via #255); single-route-owned data stays on the router loader cache. A reader must understand that line — and that the Query layer is expected to grow along it.
+- Two caches coexist by design, and the boundary is the **access pattern, not the entity**: data read across routes or in both a guard and a component lives in the Query cache; single-route-owned data stays on the router loader cache. A reader must understand that line — and that the Query layer is expected to grow along it.
 - The Query cache outlives navigation and even sign-out within a tab, so a change of user identity must explicitly clear the user-scoped (`['me']`) entries or risk showing one user another's data. The reset runs at the auth-event source (see plan).
 - #247 and #249 close together.
 - #248 (preloading) and #252 (post-write refresh) become tractable on top: the heavy `beforeLoad` fan-out is gone, and components subscribe to the cache, so an invalidation reactively updates them — the reason reads use `useSuspenseQuery`, not `useLoaderData`.

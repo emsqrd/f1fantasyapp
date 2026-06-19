@@ -46,8 +46,8 @@ Centralized `ApiClient` class handles all HTTP requests:
 
 Two kinds of reads:
 
-- **Route-owned data** (league detail, standings, drivers/constructors/race weekends for a view) — the route's loader fetches it before the component renders; the component reads `Route.useLoaderData()` without loading states.
-- **Cross-route reads** (profile, team, season) — each defined once as a `queryOptions` in its service module (`profileQuery`, `myTeamQuery`, `seasonQuery`). Guards and loaders prime them with `context.queryClient.ensureQueryData(...)`; components read `useSuspenseQuery(...)` when a loader guarantees the data, or `useQuery({ ...profileQuery, enabled: !!user })` for shell that also renders for anonymous users (sidebar, account menu).
+- **Route-owned data** — the route's loader fetches it before the component renders; the component reads `Route.useLoaderData()` without loading states.
+- **Cross-route reads** — each defined once as a `queryOptions` in its service module. Guards and loaders prime them with `context.queryClient.ensureQueryData(...)`; components read `useSuspenseQuery(...)` when a loader guarantees the data, or `useQuery({ ...profileQuery, enabled: !!user })` for shell that also renders for anonymous users (sidebar, account menu).
 
 Writes that change a query-cached resource use `useMutation` and reconcile the cache via `invalidateQueries` in `onSuccess`/`onSettled` — don't hand-roll `await service()` + a manual invalidate. Optimistic writes additionally snapshot + `setQueryData` in `onMutate` with an `onError` rollback (see `useSetCaptain`). `router.invalidate()` only re-runs loaders, and `ensureQueryData` then serves the stale cache entry, so it won't refresh these reads.
 
