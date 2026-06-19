@@ -19,7 +19,6 @@ export function IndexRoute() {
     <Home
       name={profile?.firstName ?? profile?.displayName ?? ''}
       summary={home.summary}
-      standings={home.standings}
       races={home.races}
     />
   );

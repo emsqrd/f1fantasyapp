@@ -1,10 +1,11 @@
-import type { MyLeagueStanding } from '@/contracts/MyLeagueStanding';
+import { InlineError } from '@/components/InlineError/InlineError';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { standingsQuery } from '@/services/standingsService';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 
-interface MyLeaguesListProps {
-  standings: MyLeagueStanding[];
-}
+import { JoinLeaguesPrompt } from './JoinLeaguesPrompt';
 
 const EM_DASH = '—';
 
@@ -14,9 +15,26 @@ const rowChrome =
 const rowHover = 'md:hover:bg-accent';
 const rowFocus = 'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none';
 
-export function MyLeaguesList({ standings }: MyLeaguesListProps) {
-  if (standings.length === 0) {
+export function MyLeaguesList() {
+  const { data, isPending, isError, refetch } = useQuery(standingsQuery);
+
+  if (isPending) {
     return null;
+  }
+
+  if (isError) {
+    return (
+      <section className="flex flex-col gap-3">
+        <InlineError message="We couldn't load your leagues." />
+        <Button variant="outline" size="sm" className="self-start" onClick={() => refetch()}>
+          Try again
+        </Button>
+      </section>
+    );
+  }
+
+  if (data.length === 0) {
+    return <JoinLeaguesPrompt />;
   }
 
   return (
@@ -49,7 +67,7 @@ export function MyLeaguesList({ standings }: MyLeaguesListProps) {
           aria-label="My Leagues"
           className="flex flex-col gap-2 md:gap-0 md:[&>li:last-child>a]:border-b-0"
         >
-          {standings.map((entry) => (
+          {data.map((entry) => (
             <li key={entry.leagueId}>
               <Link
                 to="/league/$leagueId"

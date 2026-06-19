@@ -14,7 +14,7 @@ import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-g
 import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
-import { getLeagueStandings, getMyStandings } from '@/services/standingsService';
+import { getLeagueStandings } from '@/services/standingsService';
 import { getTeamById, getTeamSummary, myTeamQuery } from '@/services/teamService';
 import { profileQuery } from '@/services/userProfileService';
 import { isApiError } from '@/utils/errors';
@@ -130,8 +130,8 @@ const unauthenticatedLayoutRoute = createRoute({
  * Index route at `/` - branches on auth state.
  *
  * Anonymous users see the marketing {@link LandingPage}. Authenticated users see
- * the {@link Home} surface composed from team summary, league standings, and
- * race weekends fetched in parallel by the loader.
+ * the {@link Home} surface composed from team summary and race weekends fetched
+ * in parallel by the loader.
  */
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -143,13 +143,12 @@ const indexRoute = createRoute({
 
     const season = await context.queryClient.ensureQueryData(seasonQuery);
 
-    const [summary, standings, races] = await Promise.all([
+    const [summary, races] = await Promise.all([
       getTeamSummary(),
-      getMyStandings(),
       season ? getRaceWeekends(season.id) : Promise.resolve([]),
     ]);
 
-    return { home: { summary, standings, races } };
+    return { home: { summary, races } };
   },
   component: IndexRoute,
 });
