@@ -1,9 +1,10 @@
 import { BrowseLeagues } from '@/components/BrowseLeagues/BrowseLeagues';
 import { League } from '@/components/League/League';
+import { LeagueList } from '@/components/LeagueList/LeagueList';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import type { RouterContext } from '@/lib/router-context';
-import { getAvailableLeagues, getLeagueById } from '@/services/leagueService';
-import { getLeagueStandings } from '@/services/standingsService';
+import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
+import { getLeagueStandings, standingsKeys } from '@/services/standingsService';
 import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
@@ -16,7 +17,7 @@ import {
   renderWithRouter,
 } from '@/tests/test-utils';
 import { Outlet, createRootRouteWithContext, createRoute, notFound } from '@tanstack/react-router';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -79,6 +80,27 @@ function buildLeagueRouteTree() {
 
   return rootRoute.addChildren([
     authenticatedLayoutRoute.addChildren([teamRequiredLayoutRoute.addChildren([leagueRoute])]),
+  ]);
+}
+
+function buildLeaguesListRouteTree() {
+  const rootRoute = createRootRouteWithContext<RouterContext>()({
+    component: () => <Outlet />,
+  });
+
+  const authenticatedLayoutRoute = buildAuthenticatedLayout(rootRoute);
+  const teamRequiredLayoutRoute = buildTeamRequiredLayout(authenticatedLayoutRoute);
+
+  const leaguesRoute = createRoute({
+    getParentRoute: () => teamRequiredLayoutRoute,
+    path: 'leagues',
+    loader: async () => ({ leagues: await getMyLeagues() }),
+    component: LeagueList,
+    errorComponent: RouteErrorComponent,
+  });
+
+  return rootRoute.addChildren([
+    authenticatedLayoutRoute.addChildren([teamRequiredLayoutRoute.addChildren([leaguesRoute])]),
   ]);
 }
 
@@ -291,6 +313,140 @@ describe('Browse leagues', () => {
     await user.click(await screen.findByRole('button', { name: /confirm join/i }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Failed to join league');
+  });
+
+  it('invalidates the cached standings after joining a league', async () => {
+    const user = userEvent.setup();
+
+    server.use(
+      http.get(`${API_BASE}/leagues/available`, () =>
+        HttpResponse.json([createMockLeague({ id: 42, name: 'Open Grid', isPrivate: false })]),
+      ),
+      http.post(`${API_BASE}/leagues/42/join`, () =>
+        HttpResponse.json(createMockLeague({ id: 42, name: 'Open Grid' })),
+      ),
+    );
+
+    const { queryClient } = renderWithRouter({
+      routeTree: buildBrowseLeaguesRouteTree(),
+      initialEntry: '/browse-leagues',
+      auth: createAuthedAuth(),
+      routerContext: authedRouterContext(),
+    });
+
+    // A cached standings entry is required for the invalidation to be observable.
+    queryClient.setQueryData(standingsKeys.all, []);
+
+    await user.click(await screen.findByRole('button', { name: /join league/i }));
+    await user.click(await screen.findByRole('button', { name: /confirm join/i }));
+
+    await waitFor(() =>
+      expect(queryClient.getQueryState(standingsKeys.all)?.isInvalidated).toBe(true),
+    );
+  });
+});
+
+describe('My leagues', () => {
+  it('renders the joined leagues from the loader as links to each league', async () => {
+    server.use(
+      http.get(`${API_BASE}/me/leagues`, () =>
+        HttpResponse.json([
+          createMockLeague({ id: 1, name: 'Apex Hunters' }),
+          createMockLeague({ id: 2, name: 'Podium Chasers' }),
+        ]),
+      ),
+    );
+
+    renderWithRouter({
+      routeTree: buildLeaguesListRouteTree(),
+      initialEntry: '/leagues',
+      auth: createAuthedAuth(),
+      routerContext: authedRouterContext(),
+    });
+
+    expect(await screen.findByRole('link', { name: /open apex hunters/i })).toHaveAttribute(
+      'href',
+      '/league/1',
+    );
+    expect(screen.getByRole('link', { name: /open podium chasers/i })).toHaveAttribute(
+      'href',
+      '/league/2',
+    );
+  });
+
+  it('renders the empty state when no leagues have been joined', async () => {
+    server.use(http.get(`${API_BASE}/me/leagues`, () => HttpResponse.json([])));
+
+    renderWithRouter({
+      routeTree: buildLeaguesListRouteTree(),
+      initialEntry: '/leagues',
+      auth: createAuthedAuth(),
+      routerContext: authedRouterContext(),
+    });
+
+    expect(await screen.findByText(/you haven't joined any leagues yet/i)).toBeInTheDocument();
+  });
+
+  it('creates a league with the form values and invalidates the cached standings', async () => {
+    const user = userEvent.setup();
+    let createBody: unknown;
+
+    server.use(
+      http.get(`${API_BASE}/me/leagues`, () => HttpResponse.json([])),
+      http.post(`${API_BASE}/leagues`, async ({ request }) => {
+        createBody = await request.json();
+        return HttpResponse.json(createMockLeague({ id: 7, name: 'Night Race Crew' }));
+      }),
+    );
+
+    const { queryClient } = renderWithRouter({
+      routeTree: buildLeaguesListRouteTree(),
+      initialEntry: '/leagues',
+      auth: createAuthedAuth(),
+      routerContext: authedRouterContext(),
+    });
+
+    queryClient.setQueryData(standingsKeys.all, []);
+
+    await user.click(await screen.findByRole('button', { name: /create league/i }));
+    await user.type(await screen.findByLabelText(/league name/i), '  Night Race Crew  ');
+    await user.type(screen.getByLabelText(/description/i), '  Wheel to wheel  ');
+    await user.click(screen.getByRole('switch', { name: /private/i }));
+    await user.click(screen.getByRole('button', { name: /submit/i }));
+
+    await waitFor(() =>
+      expect(createBody).toEqual({
+        name: 'Night Race Crew',
+        description: 'Wheel to wheel',
+        isPrivate: false,
+      }),
+    );
+    await waitFor(() =>
+      expect(queryClient.getQueryState(standingsKeys.all)?.isInvalidated).toBe(true),
+    );
+  });
+
+  it('keeps the create dialog open and surfaces an error when the request fails', async () => {
+    const user = userEvent.setup();
+
+    server.use(
+      http.get(`${API_BASE}/me/leagues`, () => HttpResponse.json([])),
+      http.post(`${API_BASE}/leagues`, () => new HttpResponse(null, { status: 500 })),
+    );
+
+    renderWithRouter({
+      routeTree: buildLeaguesListRouteTree(),
+      initialEntry: '/leagues',
+      auth: createAuthedAuth(),
+      routerContext: authedRouterContext(),
+    });
+
+    await user.click(await screen.findByRole('button', { name: /create league/i }));
+    await user.type(await screen.findByLabelText(/league name/i), 'Night Race Crew');
+    await user.click(screen.getByRole('button', { name: /submit/i }));
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });
 
