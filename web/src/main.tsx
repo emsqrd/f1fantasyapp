@@ -1,6 +1,7 @@
 import { Toaster } from '@/components/ui/sonner';
 import * as Sentry from '@sentry/react';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ThemeProvider } from 'next-themes';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -75,6 +76,9 @@ root.render(
       <Toaster position="top-center" />
       <QueryClientProvider client={queryClient}>
         <InnerApp />
+        {import.meta.env.VITE_QUERY_DEVTOOLS === 'true' && (
+          <ReactQueryDevtools initialIsOpen={false} />
+        )}
       </QueryClientProvider>
     </ThemeProvider>
   </StrictMode>,
