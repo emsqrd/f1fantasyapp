@@ -2,8 +2,8 @@ import { Account } from '@/components/Account/Account';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import type { UserProfile } from '@/contracts/UserProfile';
 import type { RouterContext } from '@/lib/router-context';
+import { API_BASE, server } from '@/mocks';
 import { profileQuery } from '@/services/userProfileService';
-import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
   createAuthedAuth,

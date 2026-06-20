@@ -8,6 +8,7 @@
  * import { createMockTeam, createMockDriver } from '@/tests/test-utils';
  */
 
+export { setMobileViewport } from './matchMedia';
 export {
   createMockConstructor,
   createMockConstructorList,

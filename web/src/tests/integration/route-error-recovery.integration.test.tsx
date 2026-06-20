@@ -1,7 +1,7 @@
 import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import type { RouterContext } from '@/lib/router-context';
+import { API_BASE, server } from '@/mocks';
 import { getAvailableLeagues } from '@/services/leagueService';
-import { API_BASE, server } from '@/setupTests';
 import { createUnauthAuth, renderWithRouter } from '@/tests/test-utils';
 import { Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router';
 import { screen } from '@testing-library/react';

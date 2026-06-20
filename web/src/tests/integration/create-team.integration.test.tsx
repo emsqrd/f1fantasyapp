@@ -1,7 +1,7 @@
 import { CreateTeam } from '@/components/CreateTeam/CreateTeam';
 import { safeInternalPath } from '@/lib/safeInternalPath';
+import { API_BASE, server } from '@/mocks';
 import { myTeamQuery } from '@/services/teamService';
-import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
   buildRootRoute,

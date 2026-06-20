@@ -2,9 +2,9 @@ import { JoinInvite } from '@/components/JoinInvite/JoinInvite';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import type { Team } from '@/contracts/Team';
 import type { RouterContext } from '@/lib/router-context';
+import { API_BASE, server } from '@/mocks';
 import { previewInvite } from '@/services/leagueInviteService';
 import { standingsKeys } from '@/services/standingsService';
-import { API_BASE, server } from '@/setupTests';
 import {
   createAuthedAuth,
   createBaseRouterContext,

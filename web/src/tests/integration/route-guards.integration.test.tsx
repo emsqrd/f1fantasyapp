@@ -2,7 +2,7 @@ import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteError
 import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
-import { API_BASE, server } from '@/setupTests';
+import { API_BASE, server } from '@/mocks';
 import {
   buildAuthenticatedLayout,
   buildRootRoute,

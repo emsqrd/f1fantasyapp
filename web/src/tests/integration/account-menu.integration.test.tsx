@@ -2,7 +2,7 @@ import { AccountMenu } from '@/components/AccountMenu/AccountMenu';
 import type { UserProfile } from '@/contracts/UserProfile';
 import type { Auth } from '@/lib/authStore';
 import type { RouterContext } from '@/lib/router-context';
-import { API_BASE, server } from '@/setupTests';
+import { API_BASE, server } from '@/mocks';
 import {
   buildStubRoute,
   createAuthedAuth,

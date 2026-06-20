@@ -1,13 +1,14 @@
 import { Layout } from '@/components/Layout/Layout';
 import type { UserProfile } from '@/contracts/UserProfile';
 import type { RouterContext } from '@/lib/router-context';
-import { API_BASE, server, setMobileViewport } from '@/setupTests';
+import { API_BASE, server } from '@/mocks';
 import {
   buildStubRoute,
   createAuthedAuth,
   createBaseRouterContext,
   createMockUserProfile,
   renderWithRouter,
+  setMobileViewport,
 } from '@/tests/test-utils';
 import { createRootRouteWithContext } from '@tanstack/react-router';
 import { screen, within } from '@testing-library/react';

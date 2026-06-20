@@ -2,7 +2,7 @@ import type { UserProfile } from '@/contracts/UserProfile';
 import { useCurrentAvatar } from '@/hooks/useCurrentAvatar';
 import { avatarEvents } from '@/lib/avatarEvents';
 import type { RouterContext } from '@/lib/router-context';
-import { API_BASE, server } from '@/setupTests';
+import { API_BASE, server } from '@/mocks';
 import {
   createAuthedAuth,
   createBaseRouterContext,

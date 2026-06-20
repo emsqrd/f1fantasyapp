@@ -1,9 +1,9 @@
 import { League } from '@/components/League/League';
 import type { LeagueStandings, TeamLeagueStanding } from '@/contracts/LeagueStandings';
 import type { RouterContext } from '@/lib/router-context';
+import { API_BASE, server } from '@/mocks';
 import { getLeagueById } from '@/services/leagueService';
 import { getLeagueStandings } from '@/services/standingsService';
-import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
   buildTeamRequiredLayout,

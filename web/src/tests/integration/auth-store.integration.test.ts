@@ -1,5 +1,5 @@
 import { getAuthActions, getAuthSnapshot, initAuthStore } from '@/lib/authStore';
-import { server } from '@/setupTests';
+import { server } from '@/mocks';
 import { HttpResponse, http } from 'msw';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 

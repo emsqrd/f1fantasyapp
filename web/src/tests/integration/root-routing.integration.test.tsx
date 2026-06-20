@@ -1,10 +1,10 @@
 import { IndexRoute } from '@/components/IndexRoute/IndexRoute';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import type { RouterContext } from '@/lib/router-context';
+import { API_BASE, server } from '@/mocks';
 import { getRaceWeekends } from '@/services/raceWeekendService';
 import { seasonQuery } from '@/services/seasonService';
 import { getTeamSummary } from '@/services/teamService';
-import { API_BASE, server } from '@/setupTests';
 import {
   createAuthedAuth,
   createBaseRouterContext,

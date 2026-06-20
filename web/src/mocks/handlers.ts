@@ -2,9 +2,7 @@ import { createMockSeason, createMockUserProfile } from '@/tests/test-utils/mock
 import { HttpResponse, http } from 'msw';
 
 /**
- * Base URL the test suite's apiClient targets. Defined here rather than in
- * setupTests so the default handlers can build full URLs without importing back
- * through setupTests (a cycle); re-exported from setupTests for existing imports.
+ * Base URL the test suite's apiClient targets.
  */
 export const API_BASE = 'http://localhost/api';
 
