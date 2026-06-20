@@ -1,7 +1,9 @@
 import type { League } from '@/contracts/League';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
 import { joinLeague } from '@/services/leagueService';
+import { standingsKeys } from '@/services/standingsService';
 import * as Sentry from '@sentry/react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLoaderData, useNavigate } from '@tanstack/react-router';
 import { Globe, Lock, Users } from 'lucide-react';
 import { useCallback, useState } from 'react';
@@ -35,6 +37,7 @@ export function BrowseLeagues() {
   }) as PublicLeaguesLoaderData;
 
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [joiningLeagueId, setJoiningLeagueId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState<number | null>(null);
@@ -49,6 +52,9 @@ export function BrowseLeagues() {
 
       try {
         await joinLeague(league.id);
+
+        // Joining changes the user's standings.
+        queryClient.invalidateQueries({ queryKey: standingsKeys.all });
 
         Sentry.logger.info('User joined league from browse page', {
           leagueId: league.id,
@@ -76,7 +82,7 @@ export function BrowseLeagues() {
         setDialogOpen(null);
       }
     },
-    [navigate, announce],
+    [navigate, queryClient, announce],
   );
 
   const handleDialogChange = useCallback((leagueId: number, open: boolean) => {

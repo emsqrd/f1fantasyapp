@@ -83,6 +83,8 @@ Delay-gating the loader avoids that flash: route loaders get it from `pendingMs`
 
 See root `CLAUDE.md` `## Testing Strategy` for cross-cutting rules (unit vs integration vs E2E, anti-patterns). This section covers frontend-specific layering within the unit/component-test level.
 
+**Decide the layer by the boundary a test crosses.** A component test runs in jsdom, renders real children and real hooks, and supplies whatever providers the component needs to render (a `QueryClient`, theme); it makes no network call and runs none of a route's loader, guards, or navigation. An integration test crosses a boundary: the network (stubbed with MSW), or a real route tree running its loader, guards, and navigation.
+
 **Files:** `src/setupTests.ts`, `src/tests/test-utils/mockFactories.ts`
 
 **Two layers at the jsdom level:**
@@ -95,8 +97,6 @@ See root `CLAUDE.md` `## Testing Strategy` for cross-cutting rules (unit vs inte
    - Use a direct hook test only when the hook has enough internal logic (state machine, async branches, error rollback) that testing through a consumer would mean more setup than assertions.
    - Trivial passthroughs (`useAuth`) are honestly covered by integration tests of their consumers — don't add a direct test just to assert "context returns context."
 
-**Container / parent components are not a separate layer.** Their behavior — hook-state drives UI, callbacks wired through children, dialog roles, multi-component round-trips — belongs in the integration layer where the real hook and real children run together. Mocking a hook to assert "given hook state X, render UI Y" is shallow rendering by another name; it ties tests to implementation and doesn't catch the wiring bugs it claims to.
-
 **Heuristic:** if the setup is longer than the assertions, the test is probably in the wrong layer.
 
 **Frontend-specific do-not-test list** (in addition to root anti-patterns):
@@ -105,7 +105,7 @@ See root `CLAUDE.md` `## Testing Strategy` for cross-cutting rules (unit vs inte
 - Basic UI primitives (Button, Card, Sheet) — trust the library.
 - Static JSX (headings, labels) unless position/order matters.
 - Styling / CSS classes.
-- Individual Zod schema rules — test them through form integration.
+- Zod schema rules in isolation — exercise them through the real form (render, type, submit, assert the error or payload).
 
 **Route components belong in the integration layer.** Mounting a route component with `vi.mock('@tanstack/react-router', ...)` to stub `useLoaderData`/`useNavigate` decouples the test from the very wiring (loader → component, guard → redirect) that integration tests exist to verify. Build a per-test route tree in `src/tests/integration/<flow>.integration.test.tsx` instead — see "Frontend Integration Tests" below.
 

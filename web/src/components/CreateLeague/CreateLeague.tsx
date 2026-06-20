@@ -1,11 +1,13 @@
 import type { League } from '@/contracts/League';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
 import { createLeague } from '@/services/leagueService';
+import { standingsKeys } from '@/services/standingsService';
 import {
   type CreateLeagueFormData,
   createLeagueFormSchema,
 } from '@/validations/createLeagueFormSchema';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
@@ -33,6 +35,7 @@ export function CreateLeague({ onLeagueCreated }: CreateLeagueProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { message, announce } = useLiveRegion();
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -58,6 +61,9 @@ export function CreateLeague({ onLeagueCreated }: CreateLeagueProps) {
         description: formData.leagueDescription,
         isPrivate: formData.leagueIsPrivate,
       });
+
+      // Creating a league adds it to the user's standings.
+      queryClient.invalidateQueries({ queryKey: standingsKeys.all });
 
       setIsOpen(false);
       reset();
