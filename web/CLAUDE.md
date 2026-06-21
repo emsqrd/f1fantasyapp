@@ -47,8 +47,10 @@ Centralized `ApiClient` class handles all HTTP requests:
 Three kinds of reads:
 
 - **Route-owned data** — the route's loader fetches it before the component renders; the component reads `Route.useLoaderData()` without loading states.
-- **Cross-route reads** — each defined once as a `queryOptions` in its service module. Guards and loaders prime them with `context.queryClient.ensureQueryData(...)`; components read `useSuspenseQuery(...)` when a loader guarantees the data, or `useQuery({ ...profileQuery, enabled: !!user })` for shell that also renders for anonymous users (sidebar, account menu).
+- **Cross-route reads** — each defined once as a `queryOptions` in its service module. Guards and loaders prime them with `context.queryClient.ensureQueryData(...)`; components read `useSuspenseQuery(...)` when a loader guarantees the data, or `useQuery({ ...profileQueries.current(), enabled: !!user })` for shell that also renders for anonymous users.
 - **Component-owned reads** — a single component issues the read with `useQuery`, not loader-primed. Use for data that must load or fail independently of its route, or whose key isn't known until render (dialogs, typeahead, pagination).
+
+**Query definitions.** Each resource's reads live in a per-resource `…Queries` factory in its service module, structured most-generic to most-specific: an `all` base key, then one member per read — named for the read, its key extending `all`.
 
 Writes that change a query-cached resource use `useMutation` and reconcile the cache via `invalidateQueries` in `onSuccess`/`onSettled`. Optimistic writes additionally snapshot + `setQueryData` in `onMutate` with an `onError` rollback (see `useSetCaptain`). `router.invalidate()` only re-runs loaders, and `ensureQueryData` then serves the stale cache entry, so it won't refresh these reads.
 
@@ -152,7 +154,7 @@ See root `CLAUDE.md` `## Testing Strategy` for when to reach for this layer vs. 
 - **Don't introduce per-service path constants** (e.g. `USER_PROFILE_PATH = '/me/profile'`). The service module is already the single source of truth for each path. Strict-mode MSW reports the exact unhandled URL on a typo or rename, so drift is caught loudly — constants would just add a second place to maintain.
 - For 4xx/5xx, use `new HttpResponse(null, { status })`. For success bodies, use `HttpResponse.json(factoryOutput)` so the response shape is typed via the factory.
 
-**`renderWithRouter` signature:** `routeTree`, `initialEntry`, and `auth` (`auth` and `queryClient` are wired into router context automatically). The helper creates a fresh per-test `QueryClient`, wraps the tree in its provider, and returns it, so tests can seed or assert the Query cache directly (e.g. `queryClient.setQueryData(teamKeys.all, mockTeam)`).
+**`renderWithRouter` signature:** `routeTree`, `initialEntry`, and `auth` (`auth` and `queryClient` are wired into router context automatically). The helper creates a fresh per-test `QueryClient`, wraps the tree in its provider, and returns it, so tests can seed or assert the Query cache directly (e.g. `queryClient.setQueryData(teamQueries.mine().queryKey, mockTeam)`).
 
 ```typescript
 const { queryClient } = renderWithRouter({
