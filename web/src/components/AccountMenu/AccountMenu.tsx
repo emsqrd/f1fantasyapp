@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentAvatar } from '@/hooks/useCurrentAvatar';
-import { profileQuery } from '@/services/userProfileService';
+import { profileQueries } from '@/services/userProfileService';
 import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
@@ -39,7 +39,7 @@ export function AccountMenu({ trigger, side }: AccountMenuProps) {
   const navigate = useNavigate();
   const avatar = useCurrentAvatar();
 
-  const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
+  const { data: profile } = useQuery({ ...profileQueries.current(), enabled: !!user });
 
   const handleAccountClick = () => {
     navigate({ to: '/account' });

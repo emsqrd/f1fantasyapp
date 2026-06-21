@@ -1,7 +1,7 @@
 import { InlineError } from '@/components/InlineError/InlineError';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { standingsQuery } from '@/services/standingsService';
+import { standingsQueries } from '@/services/standingsService';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 
@@ -16,7 +16,7 @@ const rowHover = 'md:hover:bg-accent';
 const rowFocus = 'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none';
 
 export function MyLeaguesList() {
-  const { data, isPending, isError, refetch } = useQuery(standingsQuery);
+  const { data, isPending, isError, refetch } = useQuery(standingsQueries.mine());
 
   if (isPending) {
     return null;

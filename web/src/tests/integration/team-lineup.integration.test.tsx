@@ -2,11 +2,11 @@ import { MyTeamRoute } from '@/components/Team/Team';
 import type { Team } from '@/contracts/Team';
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/mocks';
-import { constructorsQuery } from '@/services/constructorService';
-import { driversQuery } from '@/services/driverService';
+import { constructorQueries } from '@/services/constructorService';
+import { driverQueries } from '@/services/driverService';
 import { getRaceWeekends } from '@/services/raceWeekendService';
-import { seasonQuery } from '@/services/seasonService';
-import { myTeamQuery } from '@/services/teamService';
+import { seasonQueries } from '@/services/seasonService';
+import { teamQueries } from '@/services/teamService';
 import {
   buildAuthenticatedLayout,
   buildStubRoute,
@@ -44,12 +44,12 @@ function buildMyTeamRouteTree() {
     getParentRoute: () => teamRequiredLayoutRoute,
     path: 'my-team',
     loader: async ({ context }) => {
-      const season = await context.queryClient.ensureQueryData(seasonQuery);
-      await context.queryClient.ensureQueryData(myTeamQuery);
+      const season = await context.queryClient.ensureQueryData(seasonQueries.current());
+      await context.queryClient.ensureQueryData(teamQueries.mine());
       const [races] = await Promise.all([
         season ? getRaceWeekends(season.id) : Promise.resolve([]),
-        context.queryClient.ensureQueryData(driversQuery),
-        context.queryClient.ensureQueryData(constructorsQuery),
+        context.queryClient.ensureQueryData(driverQueries.list()),
+        context.queryClient.ensureQueryData(constructorQueries.list()),
       ]);
       return { races };
     },

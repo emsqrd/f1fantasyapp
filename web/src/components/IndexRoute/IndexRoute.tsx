@@ -1,5 +1,5 @@
 import { useAuth } from '@/hooks/useAuth';
-import { profileQuery } from '@/services/userProfileService';
+import { profileQueries } from '@/services/userProfileService';
 import { useQuery } from '@tanstack/react-query';
 import { useLoaderData } from '@tanstack/react-router';
 
@@ -9,7 +9,7 @@ import { LandingPage } from '../LandingPage/LandingPage';
 export function IndexRoute() {
   const { user } = useAuth();
   const { home } = useLoaderData({ from: '/' });
-  const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
+  const { data: profile } = useQuery({ ...profileQueries.current(), enabled: !!user });
 
   if (home === null) {
     return <LandingPage />;

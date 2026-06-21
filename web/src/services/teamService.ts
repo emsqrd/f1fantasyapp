@@ -107,10 +107,12 @@ export async function getTeamSummary(): Promise<TeamSummary | null> {
   }
 }
 
-export const teamKeys = { all: ['me', 'team'] as const };
-
-export const myTeamQuery = queryOptions({
-  queryKey: teamKeys.all,
-  queryFn: getMyTeam,
-  staleTime: 5 * 60_000,
-});
+export const teamQueries = {
+  all: ['me', 'team'] as const,
+  mine: () =>
+    queryOptions({
+      queryKey: [...teamQueries.all, 'mine'] as const,
+      queryFn: getMyTeam,
+      staleTime: 5 * 60_000,
+    }),
+};

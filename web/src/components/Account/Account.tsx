@@ -2,7 +2,7 @@ import type { UserProfile } from '@/contracts/UserProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
 import { avatarEvents } from '@/lib/avatarEvents';
-import { profileQuery, userProfileService } from '@/services/userProfileService';
+import { profileQueries, userProfileService } from '@/services/userProfileService';
 import {
   type UserProfileFormData,
   userProfileFormSchema,
@@ -25,7 +25,7 @@ import { Card, CardContent, CardHeader } from '../ui/card';
 export function Account() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { data: userProfile } = useSuspenseQuery(profileQuery);
+  const { data: userProfile } = useSuspenseQuery(profileQueries.current());
 
   const handleAvatarChange = async (avatarUrl: string) => {
     if (!userProfile) return;
@@ -33,7 +33,7 @@ export function Account() {
     try {
       await userProfileService.updateUserProfile({ ...userProfile, avatarUrl });
       avatarEvents.emit(avatarUrl);
-      await queryClient.invalidateQueries(profileQuery);
+      await queryClient.invalidateQueries({ queryKey: profileQueries.current().queryKey });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update avatar';
       toast.error(message);
@@ -44,7 +44,7 @@ export function Account() {
     if (!userProfile) return;
 
     await userProfileService.updateUserProfile({ ...userProfile, ...formData });
-    await queryClient.invalidateQueries(profileQuery);
+    await queryClient.invalidateQueries({ queryKey: profileQueries.current().queryKey });
   };
 
   return (

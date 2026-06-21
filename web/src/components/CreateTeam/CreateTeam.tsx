@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
-import { createTeam, myTeamQuery } from '@/services/teamService';
-import { profileQuery } from '@/services/userProfileService';
+import { createTeam, teamQueries } from '@/services/teamService';
+import { profileQueries } from '@/services/userProfileService';
 import { type CreateTeamFormData, createTeamFormSchema } from '@/validations/teamSchemas';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -24,7 +24,7 @@ export function CreateTeam() {
 
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
+  const { data: profile } = useQuery({ ...profileQueries.current(), enabled: !!user });
 
   const {
     register,
@@ -51,8 +51,8 @@ export function CreateTeam() {
       // Evict instead — including the `null` cached for a no-team user — and
       // the destination's requireTeam fetches the full shape. The profile
       // refresh flips `hasTeam` for the sidebar and invite CTAs.
-      queryClient.removeQueries({ queryKey: myTeamQuery.queryKey });
-      queryClient.invalidateQueries(profileQuery);
+      queryClient.removeQueries({ queryKey: teamQueries.mine().queryKey });
+      queryClient.invalidateQueries({ queryKey: profileQueries.current().queryKey });
 
       // Navigate - TanStack Router handles navigation transitions
       if (search.redirect) {

@@ -14,9 +14,11 @@ export async function getCurrentSeason(): Promise<Season | null> {
   }
 }
 
-export const seasonKeys = { current: ['season', 'current'] as const };
-
-export const seasonQuery = queryOptions({
-  queryKey: seasonKeys.current,
-  queryFn: getCurrentSeason,
-});
+export const seasonQueries = {
+  all: ['season'] as const,
+  current: () =>
+    queryOptions({
+      queryKey: [...seasonQueries.all, 'current'] as const,
+      queryFn: getCurrentSeason,
+    }),
+};

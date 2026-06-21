@@ -1,11 +1,11 @@
 import { TeamRoute } from '@/components/Team/Team';
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/mocks';
-import { constructorsQuery } from '@/services/constructorService';
-import { driversQuery } from '@/services/driverService';
+import { constructorQueries } from '@/services/constructorService';
+import { driverQueries } from '@/services/driverService';
 import { getRaceWeekends } from '@/services/raceWeekendService';
-import { seasonQuery } from '@/services/seasonService';
-import { getTeamById, myTeamQuery } from '@/services/teamService';
+import { seasonQueries } from '@/services/seasonService';
+import { getTeamById, teamQueries } from '@/services/teamService';
 import {
   buildAuthenticatedLayout,
   buildStubRoute,
@@ -50,19 +50,19 @@ function buildTeamByIdRouteTree() {
     beforeLoad: async ({ context, params }) => {
       const teamId = Number(params.teamId);
       if (!Number.isInteger(teamId)) return;
-      const team = await context.queryClient.ensureQueryData(myTeamQuery);
+      const team = await context.queryClient.ensureQueryData(teamQueries.mine());
       if (team?.id === teamId) {
         throw redirect({ to: '/my-team', replace: true });
       }
     },
     loader: async ({ params, context }) => {
-      const season = await context.queryClient.ensureQueryData(seasonQuery);
+      const season = await context.queryClient.ensureQueryData(seasonQueries.current());
       const teamId = Number(params.teamId);
       const [team, races] = await Promise.all([
         getTeamById(teamId),
         season ? getRaceWeekends(season.id) : Promise.resolve([]),
-        context.queryClient.ensureQueryData(driversQuery),
-        context.queryClient.ensureQueryData(constructorsQuery),
+        context.queryClient.ensureQueryData(driverQueries.list()),
+        context.queryClient.ensureQueryData(constructorQueries.list()),
       ]);
       if (!team) {
         throw notFound({ routeId: '/_authenticated/_team-required/team/$teamId' });

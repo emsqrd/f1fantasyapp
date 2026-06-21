@@ -7,10 +7,12 @@ export async function getDrivers(seasonYear?: number): Promise<Driver[]> {
   return apiClient.get<Driver[]>(url, 'get drivers');
 }
 
-export const driverKeys = { all: ['drivers'] as const };
-
-export const driversQuery = queryOptions({
-  queryKey: driverKeys.all,
-  queryFn: () => getDrivers(),
-  staleTime: 5 * 60_000,
-});
+export const driverQueries = {
+  all: ['drivers'] as const,
+  list: (seasonYear?: number) =>
+    queryOptions({
+      queryKey: [...driverQueries.all, 'list', seasonYear ?? null] as const,
+      queryFn: () => getDrivers(seasonYear),
+      staleTime: 5 * 60_000,
+    }),
+};

@@ -1,6 +1,6 @@
 import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
-import { teamKeys } from '@/services/teamService';
+import { teamQueries } from '@/services/teamService';
 import { createAuthedAuth, createMockTeam } from '@/tests/test-utils';
 import type { User } from '@supabase/supabase-js';
 import { QueryClient } from '@tanstack/react-query';
@@ -119,7 +119,7 @@ describe('route-guards', () => {
   describe('requireTeam', () => {
     it('throws redirect to /create-team when the team query resolves to null', async () => {
       const teamlessClient = new QueryClient();
-      teamlessClient.setQueryData(teamKeys.all, null);
+      teamlessClient.setQueryData(teamQueries.mine().queryKey, null);
       const context: RouterContext = {
         auth: createAuthedAuth(),
         queryClient: teamlessClient,
@@ -134,7 +134,7 @@ describe('route-guards', () => {
 
     it('resolves without redirecting when the team query has a team', async () => {
       const teamClient = new QueryClient();
-      teamClient.setQueryData(teamKeys.all, createMockTeam());
+      teamClient.setQueryData(teamQueries.mine().queryKey, createMockTeam());
       const context: RouterContext = {
         auth: createAuthedAuth(),
         queryClient: teamClient,

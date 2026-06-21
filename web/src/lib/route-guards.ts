@@ -1,5 +1,5 @@
 import type { RouterContext } from '@/lib/router-context';
-import { myTeamQuery } from '@/services/teamService';
+import { teamQueries } from '@/services/teamService';
 import { redirect } from '@tanstack/react-router';
 
 /**
@@ -41,7 +41,7 @@ export function redirectIfAuthenticated(context: RouterContext, redirectTo?: str
  * real owner to /create-team on a transient blip.
  */
 export async function requireTeam(context: RouterContext): Promise<void> {
-  const team = await context.queryClient.ensureQueryData(myTeamQuery);
+  const team = await context.queryClient.ensureQueryData(teamQueries.mine());
   if (!team) {
     throw redirect({
       to: '/create-team',

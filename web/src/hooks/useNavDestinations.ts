@@ -1,5 +1,5 @@
 import { useAuth } from '@/hooks/useAuth';
-import { profileQuery } from '@/services/userProfileService';
+import { profileQueries } from '@/services/userProfileService';
 import { useQuery } from '@tanstack/react-query';
 import { ChartNoAxesGantt, Home, type LucideIcon, Search, Users } from 'lucide-react';
 
@@ -13,7 +13,7 @@ export interface NavDestination {
 
 export function useNavDestinations(): NavDestination[] {
   const { user } = useAuth();
-  const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
+  const { data: profile } = useQuery({ ...profileQueries.current(), enabled: !!user });
   const hasTeam = profile?.hasTeam ?? false;
 
   const destinations: NavDestination[] = [

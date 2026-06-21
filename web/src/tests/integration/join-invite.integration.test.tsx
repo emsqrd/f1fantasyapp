@@ -4,7 +4,7 @@ import type { Team } from '@/contracts/Team';
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/mocks';
 import { previewInvite } from '@/services/leagueInviteService';
-import { standingsKeys } from '@/services/standingsService';
+import { standingsQueries } from '@/services/standingsService';
 import {
   createAuthedAuth,
   createMockLeague,
@@ -227,12 +227,12 @@ describe('Join via invite token', () => {
     });
 
     // A cached standings entry is required for the invalidation to be observable.
-    queryClient.setQueryData(standingsKeys.all, []);
+    queryClient.setQueryData(standingsQueries.mine().queryKey, []);
 
     await user.click(await screen.findByRole('button', { name: /join league/i }));
 
     await waitFor(() =>
-      expect(queryClient.getQueryState(standingsKeys.all)?.isInvalidated).toBe(true),
+      expect(queryClient.getQueryState(standingsQueries.mine().queryKey)?.isInvalidated).toBe(true),
     );
   });
 

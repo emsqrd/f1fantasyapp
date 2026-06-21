@@ -7,10 +7,12 @@ export function getConstructors(seasonYear?: number): Promise<Constructor[]> {
   return apiClient.get<Constructor[]>(url, 'get constructors');
 }
 
-export const constructorKeys = { all: ['constructors'] as const };
-
-export const constructorsQuery = queryOptions({
-  queryKey: constructorKeys.all,
-  queryFn: () => getConstructors(),
-  staleTime: 5 * 60_000,
-});
+export const constructorQueries = {
+  all: ['constructors'] as const,
+  list: (seasonYear?: number) =>
+    queryOptions({
+      queryKey: [...constructorQueries.all, 'list', seasonYear ?? null] as const,
+      queryFn: () => getConstructors(seasonYear),
+      staleTime: 5 * 60_000,
+    }),
+};

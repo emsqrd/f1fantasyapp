@@ -1,4 +1,4 @@
-import { myTeamQuery } from '@/services/teamService';
+import { teamQueries } from '@/services/teamService';
 import * as Sentry from '@sentry/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
@@ -35,7 +35,7 @@ export function useLineupPicker<T extends { id: number }>({
   const addToLineupMutation = useMutation({
     mutationFn: ({ position, item }: { position: number; item: T }) => addToTeam(item.id, position),
     onMutate: () => setError(null),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: myTeamQuery.queryKey }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: teamQueries.mine().queryKey }),
     onError: (err, { position, item }) => {
       Sentry.logger.error(`Failed to add ${itemType} to lineup`, {
         itemType,
@@ -53,7 +53,7 @@ export function useLineupPicker<T extends { id: number }>({
   const removeFromLineupMutation = useMutation({
     mutationFn: (position: number) => removeFromTeam(position),
     onMutate: () => setError(null),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: myTeamQuery.queryKey }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: teamQueries.mine().queryKey }),
     onError: (err, position) => {
       Sentry.logger.error(`Failed to remove ${itemType} from lineup`, {
         itemType,

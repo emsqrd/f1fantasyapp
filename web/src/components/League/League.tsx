@@ -2,7 +2,7 @@ import type { LeagueInvite } from '@/contracts/LeagueInvite';
 import { useAuth } from '@/hooks/useAuth';
 import { useClipboard } from '@/hooks/useClipboard';
 import { getOrCreateLeagueInvite } from '@/services/leagueInviteService';
-import { profileQuery } from '@/services/userProfileService';
+import { profileQueries } from '@/services/userProfileService';
 import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 import { getRouteApi } from '@tanstack/react-router';
@@ -21,7 +21,7 @@ const routeApi = getRouteApi('/_authenticated/_team-required/league/$leagueId');
 
 export function League() {
   const { user } = useAuth();
-  const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
+  const { data: profile } = useQuery({ ...profileQueries.current(), enabled: !!user });
   const { league } = routeApi.useLoaderData();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);

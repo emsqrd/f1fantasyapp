@@ -1,7 +1,7 @@
 import type { League } from '@/contracts/League';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
 import { joinLeague } from '@/services/leagueService';
-import { standingsKeys } from '@/services/standingsService';
+import { standingsQueries } from '@/services/standingsService';
 import * as Sentry from '@sentry/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLoaderData, useNavigate } from '@tanstack/react-router';
@@ -54,7 +54,7 @@ export function BrowseLeagues() {
         await joinLeague(league.id);
 
         // Joining changes the user's standings.
-        queryClient.invalidateQueries({ queryKey: standingsKeys.all });
+        queryClient.invalidateQueries({ queryKey: standingsQueries.all });
 
         Sentry.logger.info('User joined league from browse page', {
           leagueId: league.id,
