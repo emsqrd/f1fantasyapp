@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useCurrentAvatar } from '@/hooks/useCurrentAvatar';
 import { useNavDestinations } from '@/hooks/useNavDestinations';
-import { profileQuery } from '@/services/userProfileService';
+import { profileQueries } from '@/services/userProfileService';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useMatchRoute, useNavigate } from '@tanstack/react-router';
 import { ChevronUpIcon, TrophyIcon } from 'lucide-react';
@@ -27,7 +27,7 @@ export function AppSidebar() {
   const destinations = useNavDestinations();
   const avatar = useCurrentAvatar();
 
-  const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
+  const { data: profile } = useQuery({ ...profileQueries.current(), enabled: !!user });
 
   const handleLogoClick = () => {
     navigate({ to: '/' });

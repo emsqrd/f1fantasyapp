@@ -22,9 +22,11 @@ export async function getMyStandings(): Promise<MyLeagueStanding[]> {
   return await apiClient.get<MyLeagueStanding[]>('/me/standings', 'get your league standings');
 }
 
-export const standingsKeys = { all: ['me', 'standings'] as const };
-
-export const standingsQuery = queryOptions({
-  queryKey: standingsKeys.all,
-  queryFn: getMyStandings,
-});
+export const standingsQueries = {
+  all: ['me', 'standings'] as const,
+  mine: () =>
+    queryOptions({
+      queryKey: [...standingsQueries.all, 'mine'] as const,
+      queryFn: getMyStandings,
+    }),
+};

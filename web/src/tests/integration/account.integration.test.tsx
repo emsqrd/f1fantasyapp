@@ -3,7 +3,7 @@ import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteError
 import type { UserProfile } from '@/contracts/UserProfile';
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/mocks';
-import { profileQuery } from '@/services/userProfileService';
+import { profileQueries } from '@/services/userProfileService';
 import {
   buildAuthenticatedLayout,
   createAuthedAuth,
@@ -35,7 +35,7 @@ function buildAccountRouteTree() {
     getParentRoute: () => authenticatedLayoutRoute,
     path: 'account',
     loader: async ({ context }) => {
-      await context.queryClient.ensureQueryData(profileQuery);
+      await context.queryClient.ensureQueryData(profileQueries.current());
     },
     component: Account,
     errorComponent: RouteErrorComponent,
@@ -99,7 +99,7 @@ describe('Account page', () => {
 
     await screen.findAllByText(/profile updated successfully/i);
     // The query cache — read by the always-mounted sidebar — now holds the new name.
-    expect(queryClient.getQueryData(profileQuery.queryKey)).toMatchObject({
+    expect(queryClient.getQueryData(profileQueries.current().queryKey)).toMatchObject({
       displayName: 'Updated',
     });
   });

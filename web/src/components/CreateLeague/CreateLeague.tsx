@@ -1,7 +1,7 @@
 import type { League } from '@/contracts/League';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
 import { createLeague } from '@/services/leagueService';
-import { standingsKeys } from '@/services/standingsService';
+import { standingsQueries } from '@/services/standingsService';
 import {
   type CreateLeagueFormData,
   createLeagueFormSchema,
@@ -63,7 +63,7 @@ export function CreateLeague({ onLeagueCreated }: CreateLeagueProps) {
       });
 
       // Creating a league adds it to the user's standings.
-      queryClient.invalidateQueries({ queryKey: standingsKeys.all });
+      queryClient.invalidateQueries({ queryKey: standingsQueries.all });
 
       setIsOpen(false);
       reset();

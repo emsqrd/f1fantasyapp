@@ -21,10 +21,12 @@ export const userProfileService = {
   },
 };
 
-export const profileKeys = { all: ['me', 'profile'] as const };
-
-export const profileQuery = queryOptions({
-  queryKey: profileKeys.all,
-  queryFn: () => userProfileService.getCurrentProfile(),
-  staleTime: 5 * 60_000,
-});
+export const profileQueries = {
+  all: ['me', 'profile'] as const,
+  current: () =>
+    queryOptions({
+      queryKey: [...profileQueries.all, 'current'] as const,
+      queryFn: () => userProfileService.getCurrentProfile(),
+      staleTime: 5 * 60_000,
+    }),
+};

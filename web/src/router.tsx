@@ -15,8 +15,8 @@ import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
 import { getLeagueStandings } from '@/services/standingsService';
-import { getTeamById, getTeamSummary, myTeamQuery } from '@/services/teamService';
-import { profileQuery } from '@/services/userProfileService';
+import { getTeamById, getTeamSummary, teamQueries } from '@/services/teamService';
+import { profileQueries } from '@/services/userProfileService';
 import { isApiError } from '@/utils/errors';
 import {
   Link,
@@ -34,11 +34,11 @@ import { BrowseLeagues } from './components/BrowseLeagues/BrowseLeagues';
 import { JoinInvite } from './components/JoinInvite/JoinInvite';
 import { routerAuth } from './lib/authStore';
 import { queryClient } from './lib/queryClient';
-import { constructorsQuery } from './services/constructorService';
-import { driversQuery } from './services/driverService';
+import { constructorQueries } from './services/constructorService';
+import { driverQueries } from './services/driverService';
 import { previewInvite } from './services/leagueInviteService';
 import { getRaceWeekends } from './services/raceWeekendService';
-import { seasonQuery } from './services/seasonService';
+import { seasonQueries } from './services/seasonService';
 
 /**
  * Zod schema for validating league ID route parameter.
@@ -94,7 +94,7 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
     // Prime the profile query so the app shell and the index greeting serve it
     // from cache. Tolerate a failure — a profile blip must not fail the whole tree.
     if (context.auth.user) {
-      await context.queryClient.ensureQueryData(profileQuery).catch(() => null);
+      await context.queryClient.ensureQueryData(profileQueries.current()).catch(() => null);
     }
   },
   component: () => (
@@ -141,7 +141,7 @@ const indexRoute = createRoute({
       return { home: null };
     }
 
-    const season = await context.queryClient.ensureQueryData(seasonQuery);
+    const season = await context.queryClient.ensureQueryData(seasonQueries.current());
 
     const [summary, races] = await Promise.all([
       getTeamSummary(),
@@ -297,7 +297,7 @@ const accountRoute = createRoute({
     pageTitle: 'Account Settings',
   },
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(profileQuery);
+    await context.queryClient.ensureQueryData(profileQueries.current());
   },
   component: Account,
   pendingComponent: () => (
@@ -498,7 +498,7 @@ const teamRoute = createRoute({
     const validationResult = teamIdParamsSchema.safeParse(params);
     if (!validationResult.success) return;
 
-    const team = await context.queryClient.ensureQueryData(myTeamQuery);
+    const team = await context.queryClient.ensureQueryData(teamQueries.mine());
     if (team?.id === validationResult.data.teamId) {
       throw redirect({ to: '/my-team', replace: true });
     }
@@ -516,14 +516,14 @@ const teamRoute = createRoute({
     }
 
     const { teamId } = validationResult.data;
-    const season = await context.queryClient.ensureQueryData(seasonQuery);
+    const season = await context.queryClient.ensureQueryData(seasonQueries.current());
 
     // Fetch all data in parallel
     const [team, races] = await Promise.all([
       getTeamById(teamId),
       season ? getRaceWeekends(season.id) : Promise.resolve([]),
-      context.queryClient.ensureQueryData(driversQuery),
-      context.queryClient.ensureQueryData(constructorsQuery),
+      context.queryClient.ensureQueryData(driverQueries.list()),
+      context.queryClient.ensureQueryData(constructorQueries.list()),
     ]);
 
     // Return 404 if team doesn't exist
@@ -563,15 +563,15 @@ const myTeamRoute = createRoute({
     pageTitle: 'My Team',
   },
   loader: async ({ context }) => {
-    const season = await context.queryClient.ensureQueryData(seasonQuery);
+    const season = await context.queryClient.ensureQueryData(seasonQueries.current());
     // Warm-cache hit after the `_team-required` guard; pairs with the component's
-    // useSuspenseQuery(myTeamQuery).
-    await context.queryClient.ensureQueryData(myTeamQuery);
+    // useSuspenseQuery(teamQueries.mine()).
+    await context.queryClient.ensureQueryData(teamQueries.mine());
 
     const [races] = await Promise.all([
       season ? getRaceWeekends(season.id) : Promise.resolve([]),
-      context.queryClient.ensureQueryData(driversQuery),
-      context.queryClient.ensureQueryData(constructorsQuery),
+      context.queryClient.ensureQueryData(driverQueries.list()),
+      context.queryClient.ensureQueryData(constructorQueries.list()),
     ]);
 
     return { races };

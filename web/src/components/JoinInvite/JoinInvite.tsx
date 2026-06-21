@@ -7,8 +7,8 @@ import type { LeagueInvitePreviewResponse } from '@/contracts/LeagueInvitePrevie
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
 import { joinViaInvite } from '@/services/leagueInviteService';
-import { standingsKeys } from '@/services/standingsService';
-import { profileQuery } from '@/services/userProfileService';
+import { standingsQueries } from '@/services/standingsService';
+import { profileQueries } from '@/services/userProfileService';
 import * as Sentry from '@sentry/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useLoaderData, useNavigate, useParams } from '@tanstack/react-router';
@@ -44,7 +44,7 @@ export function JoinInvite() {
   // Auth and team state
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
+  const { data: profile } = useQuery({ ...profileQueries.current(), enabled: !!user });
   const hasTeam = profile?.hasTeam ?? false;
 
   // Join operation state
@@ -71,7 +71,7 @@ export function JoinInvite() {
       }
 
       // Joining changes the user's standings.
-      queryClient.invalidateQueries({ queryKey: standingsKeys.all });
+      queryClient.invalidateQueries({ queryKey: standingsQueries.all });
 
       announce(`Successfully joined ${league.name}`);
 

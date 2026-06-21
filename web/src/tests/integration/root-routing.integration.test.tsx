@@ -3,7 +3,7 @@ import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteError
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/mocks';
 import { getRaceWeekends } from '@/services/raceWeekendService';
-import { seasonQuery } from '@/services/seasonService';
+import { seasonQueries } from '@/services/seasonService';
 import { getTeamSummary } from '@/services/teamService';
 import {
   createAuthedAuth,
@@ -57,7 +57,7 @@ function buildIndexRouteTree() {
         return { home: null };
       }
 
-      const season = await context.queryClient.ensureQueryData(seasonQuery);
+      const season = await context.queryClient.ensureQueryData(seasonQueries.current());
 
       const [summary, races] = await Promise.all([
         getTeamSummary(),

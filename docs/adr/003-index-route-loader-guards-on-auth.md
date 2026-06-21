@@ -26,7 +26,7 @@ loader: async ({ context }) => {
 component: IndexRoute,
 ```
 
-> `context.currentSeason` in this snippet has since moved to the TanStack Query cache — the loader now reads the season via `queryClient.ensureQueryData(seasonQuery)`; see [ADR 006](006-tanstack-query-for-cross-route-reads.md). The auth-guard decision is unchanged.
+> `context.currentSeason` in this snippet has since moved to the TanStack Query cache — the loader now reads the season from the Query cache; see [ADR 006](006-tanstack-query-for-cross-route-reads.md). The auth-guard decision is unchanged.
 
 ## Consequences
 

@@ -1,6 +1,6 @@
 import { useAuth } from '@/hooks/useAuth';
 import { avatarEvents } from '@/lib/avatarEvents';
-import { profileQuery } from '@/services/userProfileService';
+import { profileQueries } from '@/services/userProfileService';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
@@ -18,7 +18,7 @@ export interface CurrentAvatar {
  */
 export function useCurrentAvatar(): CurrentAvatar {
   const { user } = useAuth();
-  const { data: profile } = useQuery({ ...profileQuery, enabled: !!user });
+  const { data: profile } = useQuery({ ...profileQueries.current(), enabled: !!user });
 
   const [uploadedAvatarUrl, setUploadedAvatarUrl] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);

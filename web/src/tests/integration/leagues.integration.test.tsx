@@ -5,7 +5,7 @@ import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteError
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/mocks';
 import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
-import { getLeagueStandings, standingsKeys } from '@/services/standingsService';
+import { getLeagueStandings, standingsQueries } from '@/services/standingsService';
 import {
   buildAuthenticatedLayout,
   buildTeamRequiredLayout,
@@ -333,13 +333,13 @@ describe('Browse leagues', () => {
     });
 
     // A cached standings entry is required for the invalidation to be observable.
-    queryClient.setQueryData(standingsKeys.all, []);
+    queryClient.setQueryData(standingsQueries.mine().queryKey, []);
 
     await user.click(await screen.findByRole('button', { name: /join league/i }));
     await user.click(await screen.findByRole('button', { name: /confirm join/i }));
 
     await waitFor(() =>
-      expect(queryClient.getQueryState(standingsKeys.all)?.isInvalidated).toBe(true),
+      expect(queryClient.getQueryState(standingsQueries.mine().queryKey)?.isInvalidated).toBe(true),
     );
   });
 });
@@ -404,7 +404,7 @@ describe('My leagues', () => {
       auth: createAuthedAuth(),
     });
 
-    queryClient.setQueryData(standingsKeys.all, []);
+    queryClient.setQueryData(standingsQueries.mine().queryKey, []);
 
     await user.click(await screen.findByRole('button', { name: /create league/i }));
     await user.type(await screen.findByLabelText(/league name/i), '  Night Race Crew  ');
@@ -420,7 +420,7 @@ describe('My leagues', () => {
       }),
     );
     await waitFor(() =>
-      expect(queryClient.getQueryState(standingsKeys.all)?.isInvalidated).toBe(true),
+      expect(queryClient.getQueryState(standingsQueries.mine().queryKey)?.isInvalidated).toBe(true),
     );
   });
 

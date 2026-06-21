@@ -52,5 +52,5 @@ Rejected — profile is consumed only by the always-on `Layout`, never by a load
 ## References
 
 - Tracking: #254. Closes #247; co-fixes #249, which closes once its regression tests confirm a transient failure no longer reads as "no team." Unblocks #248, #252, #255.
-- Builds on ADR 002 (`/` renders Home for authed users) and ADR 003 (index loader guards on auth — its `context.currentSeason!.id` read now goes through `seasonQuery`).
+- Builds on ADR 002 (`/` renders Home for authed users) and ADR 003 (index loader guards on auth — its `context.currentSeason!.id` read now goes through the Query cache).
 - Composes with ADR 004 (apiClient owns token refresh): the QueryClient's `retry: 1` layers onto `makeRequest`'s recovery.

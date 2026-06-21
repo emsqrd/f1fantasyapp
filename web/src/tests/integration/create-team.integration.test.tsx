@@ -1,7 +1,7 @@
 import { CreateTeam } from '@/components/CreateTeam/CreateTeam';
 import { safeInternalPath } from '@/lib/safeInternalPath';
 import { API_BASE, server } from '@/mocks';
-import { myTeamQuery } from '@/services/teamService';
+import { teamQueries } from '@/services/teamService';
 import {
   buildAuthenticatedLayout,
   buildRootRoute,
@@ -107,7 +107,7 @@ describe('Create team', () => {
     expect(capturedBody).toEqual({ name: 'My Racing Team' });
     // The POST response is slimmer than GET /me/team, so the team query must be
     // evicted, not seeded with it — the next guard read fetches the full shape.
-    expect(queryClient.getQueryData(myTeamQuery.queryKey)).toBeUndefined();
+    expect(queryClient.getQueryData(teamQueries.mine().queryKey)).toBeUndefined();
   });
 
   it('surfaces an InlineError when team creation fails', async () => {
