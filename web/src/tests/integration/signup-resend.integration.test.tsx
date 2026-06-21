@@ -2,12 +2,7 @@ import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
 import { supabase } from '@/lib/supabase';
-import {
-  buildUnauthenticatedLayout,
-  createBaseRouterContext,
-  createUnauthAuth,
-  renderWithRouter,
-} from '@/tests/test-utils';
+import { buildUnauthenticatedLayout, createUnauthAuth, renderWithRouter } from '@/tests/test-utils';
 import { AuthApiError } from '@supabase/supabase-js';
 import { Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router';
 import { screen, waitFor } from '@testing-library/react';
@@ -72,7 +67,6 @@ describe('Signup resend confirmation', () => {
       routeTree: buildSignUpRouteTree(),
       initialEntry: '/sign-up?redirect=/leagues/123',
       auth: createUnauthAuth({ signUp }),
-      routerContext: createBaseRouterContext(),
     });
 
     await driveFormToPending(user);
@@ -100,7 +94,6 @@ describe('Signup resend confirmation', () => {
       routeTree: buildSignUpRouteTree(),
       initialEntry: '/sign-up?redirect=/leagues/123',
       auth: createUnauthAuth({ signUp }),
-      routerContext: createBaseRouterContext(),
     });
 
     await driveFormToPending(user);

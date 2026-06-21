@@ -10,7 +10,6 @@ import {
   buildAuthenticatedLayout,
   buildTeamRequiredLayout,
   createAuthedAuth,
-  createBaseRouterContext,
   createMockLeague,
   createMockLeagueStandings,
   createMockTeam,
@@ -104,11 +103,10 @@ function buildLeaguesListRouteTree() {
   ]);
 }
 
-function authedRouterContext(): Omit<RouterContext, 'auth' | 'queryClient'> {
+function stubMyTeam(): void {
   // The League/BrowseLeagues pages read profile through the query (default
   // handler); the `/me/team` handler satisfies the `requireTeam` guard.
   server.use(http.get(`${API_BASE}/me/team`, () => HttpResponse.json(createMockTeam())));
-  return createBaseRouterContext();
 }
 
 describe('Browse leagues', () => {
@@ -136,11 +134,11 @@ describe('Browse leagues', () => {
       ),
     );
 
+    stubMyTeam();
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
       auth: createAuthedAuth(),
-      routerContext: authedRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Open Grid' })).toBeInTheDocument();
@@ -163,11 +161,11 @@ describe('Browse leagues', () => {
       ),
     );
 
+    stubMyTeam();
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
       auth: createAuthedAuth(),
-      routerContext: authedRouterContext(),
     });
 
     expect(await screen.findByRole('button', { name: /join league/i })).toBeDisabled();
@@ -182,11 +180,11 @@ describe('Browse leagues', () => {
       ),
     );
 
+    stubMyTeam();
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
       auth: createAuthedAuth(),
-      routerContext: authedRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /join league/i }));
@@ -209,11 +207,11 @@ describe('Browse leagues', () => {
       ),
     );
 
+    stubMyTeam();
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
       auth: createAuthedAuth(),
-      routerContext: authedRouterContext(),
     });
 
     const joinButtons = await screen.findAllByRole('button', { name: /join league/i });
@@ -232,11 +230,11 @@ describe('Browse leagues', () => {
   it('renders the empty state when no leagues are available', async () => {
     server.use(http.get(`${API_BASE}/leagues/available`, () => HttpResponse.json([])));
 
+    stubMyTeam();
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
       auth: createAuthedAuth(),
-      routerContext: authedRouterContext(),
     });
 
     expect(
@@ -249,11 +247,11 @@ describe('Browse leagues', () => {
       http.get(`${API_BASE}/leagues/available`, () => new HttpResponse(null, { status: 500 })),
     );
 
+    stubMyTeam();
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
       auth: createAuthedAuth(),
-      routerContext: authedRouterContext(),
     });
 
     expect(
@@ -278,11 +276,11 @@ describe('Browse leagues', () => {
       ),
     );
 
+    stubMyTeam();
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
       auth: createAuthedAuth(),
-      routerContext: authedRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /join league/i }));
@@ -302,11 +300,11 @@ describe('Browse leagues', () => {
       http.post(`${API_BASE}/leagues/99/join`, () => HttpResponse.error()),
     );
 
+    stubMyTeam();
     renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
       auth: createAuthedAuth(),
-      routerContext: authedRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /join league/i }));
@@ -327,11 +325,11 @@ describe('Browse leagues', () => {
       ),
     );
 
+    stubMyTeam();
     const { queryClient } = renderWithRouter({
       routeTree: buildBrowseLeaguesRouteTree(),
       initialEntry: '/browse-leagues',
       auth: createAuthedAuth(),
-      routerContext: authedRouterContext(),
     });
 
     // A cached standings entry is required for the invalidation to be observable.
@@ -357,11 +355,11 @@ describe('My leagues', () => {
       ),
     );
 
+    stubMyTeam();
     renderWithRouter({
       routeTree: buildLeaguesListRouteTree(),
       initialEntry: '/leagues',
       auth: createAuthedAuth(),
-      routerContext: authedRouterContext(),
     });
 
     expect(await screen.findByRole('link', { name: /open apex hunters/i })).toHaveAttribute(
@@ -377,11 +375,11 @@ describe('My leagues', () => {
   it('renders the empty state when no leagues have been joined', async () => {
     server.use(http.get(`${API_BASE}/me/leagues`, () => HttpResponse.json([])));
 
+    stubMyTeam();
     renderWithRouter({
       routeTree: buildLeaguesListRouteTree(),
       initialEntry: '/leagues',
       auth: createAuthedAuth(),
-      routerContext: authedRouterContext(),
     });
 
     expect(await screen.findByText(/you haven't joined any leagues yet/i)).toBeInTheDocument();
@@ -399,11 +397,11 @@ describe('My leagues', () => {
       }),
     );
 
+    stubMyTeam();
     const { queryClient } = renderWithRouter({
       routeTree: buildLeaguesListRouteTree(),
       initialEntry: '/leagues',
       auth: createAuthedAuth(),
-      routerContext: authedRouterContext(),
     });
 
     queryClient.setQueryData(standingsKeys.all, []);
@@ -434,11 +432,11 @@ describe('My leagues', () => {
       http.post(`${API_BASE}/leagues`, () => new HttpResponse(null, { status: 500 })),
     );
 
+    stubMyTeam();
     renderWithRouter({
       routeTree: buildLeaguesListRouteTree(),
       initialEntry: '/leagues',
       auth: createAuthedAuth(),
-      routerContext: authedRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /create league/i }));
@@ -461,11 +459,11 @@ describe('League page', () => {
       ),
     );
 
+    stubMyTeam();
     renderWithRouter({
       routeTree: buildLeagueRouteTree(),
       initialEntry: '/league/7',
       auth: createAuthedAuth(),
-      routerContext: authedRouterContext(),
     });
 
     expect(
@@ -481,11 +479,11 @@ describe('League page', () => {
       ),
     );
 
+    stubMyTeam();
     renderWithRouter({
       routeTree: buildLeagueRouteTree(),
       initialEntry: '/league/123',
       auth: createAuthedAuth(),
-      routerContext: authedRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'League Not Found' })).toBeInTheDocument();
@@ -499,11 +497,11 @@ describe('League page', () => {
       ),
     );
 
+    stubMyTeam();
     renderWithRouter({
       routeTree: buildLeagueRouteTree(),
       initialEntry: '/league/500',
       auth: createAuthedAuth(),
-      routerContext: authedRouterContext(),
     });
 
     expect(

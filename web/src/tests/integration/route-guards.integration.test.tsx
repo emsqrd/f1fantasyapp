@@ -10,7 +10,6 @@ import {
   buildTeamRequiredLayout,
   buildUnauthenticatedLayout,
   createAuthedAuth,
-  createBaseRouterContext,
   createUnauthAuth,
   renderWithRouter,
 } from '@/tests/test-utils';
@@ -63,7 +62,6 @@ describe('route guard wiring', () => {
       routeTree: buildGuardRouteTree(),
       initialEntry: '/my-team',
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Sign In Page' })).toBeInTheDocument();
@@ -77,7 +75,6 @@ describe('route guard wiring', () => {
       routeTree: buildGuardRouteTree(),
       initialEntry: '/league/5?tab=roster',
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Sign In Page' })).toBeInTheDocument();
@@ -93,7 +90,6 @@ describe('route guard wiring', () => {
       routeTree: buildGuardRouteTree(),
       initialEntry: '/my-team',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Create Team Page' })).toBeInTheDocument();
@@ -214,7 +210,6 @@ describe('already-authed bounce wiring on the sign-in/sign-up routes', () => {
       routeTree: buildAuthedBounceRouteTree(),
       initialEntry: '/sign-in?redirect=/league/5',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'League Page' })).toBeInTheDocument();
@@ -227,7 +222,6 @@ describe('already-authed bounce wiring on the sign-in/sign-up routes', () => {
       routeTree: buildAuthedBounceRouteTree(),
       initialEntry: '/sign-up?redirect=/account',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Account Page' })).toBeInTheDocument();

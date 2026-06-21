@@ -152,7 +152,7 @@ See root `CLAUDE.md` `## Testing Strategy` for when to reach for this layer vs. 
 - **Don't introduce per-service path constants** (e.g. `USER_PROFILE_PATH = '/me/profile'`). The service module is already the single source of truth for each path. Strict-mode MSW reports the exact unhandled URL on a typo or rename, so drift is caught loudly — constants would just add a second place to maintain.
 - For 4xx/5xx, use `new HttpResponse(null, { status })`. For success bodies, use `HttpResponse.json(factoryOutput)` so the response shape is typed via the factory.
 
-**`renderWithRouter` signature:** `routeTree`, `initialEntry`, `auth`, and an optional `routerContext` (rarely needed — `auth` and `queryClient` are wired automatically, and nothing else remains in `RouterContext`). The helper creates a fresh per-test `QueryClient`, wraps the tree in its provider, and returns it, so tests can seed or assert the Query cache directly (e.g. `queryClient.setQueryData(teamKeys.all, mockTeam)`).
+**`renderWithRouter` signature:** `routeTree`, `initialEntry`, and `auth` (`auth` and `queryClient` are wired into router context automatically). The helper creates a fresh per-test `QueryClient`, wraps the tree in its provider, and returns it, so tests can seed or assert the Query cache directly (e.g. `queryClient.setQueryData(teamKeys.all, mockTeam)`).
 
 ```typescript
 const { queryClient } = renderWithRouter({

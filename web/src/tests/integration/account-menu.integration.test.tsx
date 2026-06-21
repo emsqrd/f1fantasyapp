@@ -6,7 +6,6 @@ import { API_BASE, server } from '@/mocks';
 import {
   buildStubRoute,
   createAuthedAuth,
-  createBaseRouterContext,
   createMockUserProfile,
   renderWithRouter,
 } from '@/tests/test-utils';
@@ -81,7 +80,6 @@ function renderMenu(options: {
     routeTree: buildMenuTree(options.withTheme),
     initialEntry: options.initialEntry ?? '/',
     auth: options.auth,
-    routerContext: createBaseRouterContext(),
   });
 }
 

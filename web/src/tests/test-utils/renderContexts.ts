@@ -1,5 +1,4 @@
 import type { Auth } from '@/lib/authStore';
-import type { RouterContext } from '@/lib/router-context';
 import type { Session, User } from '@supabase/supabase-js';
 import { vi } from 'vitest';
 
@@ -37,13 +36,4 @@ export function createAuthedAuth(overrides: Partial<Auth> = {}): Auth {
     session: {} as Session,
     ...overrides,
   };
-}
-
-/**
- * Test utility: Creates the `routerContext` arg for `renderWithRouter`. With
- * `auth` and the per-test `queryClient` wired separately, nothing else remains in
- * `RouterContext`, so this returns an empty object.
- */
-export function createBaseRouterContext(): Omit<RouterContext, 'auth' | 'queryClient'> {
-  return {};
 }

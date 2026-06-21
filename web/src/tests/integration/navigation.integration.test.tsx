@@ -5,7 +5,6 @@ import { API_BASE, server } from '@/mocks';
 import {
   buildStubRoute,
   createAuthedAuth,
-  createBaseRouterContext,
   createMockUserProfile,
   renderWithRouter,
   setMobileViewport,
@@ -54,7 +53,6 @@ function renderNav(options: {
     routeTree: buildNavRouteTree(),
     initialEntry: options.initialEntry ?? '/',
     auth: createAuthedAuth(),
-    routerContext: createBaseRouterContext(),
   });
 }
 

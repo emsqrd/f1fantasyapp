@@ -1,5 +1,4 @@
 import { type Auth, routerAuth, seedAuthStore } from '@/lib/authStore';
-import type { RouterContext } from '@/lib/router-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   type AnyRoute,
@@ -13,14 +12,6 @@ export interface RenderWithRouterOptions {
   routeTree: AnyRoute;
   initialEntry: string;
   auth: Auth;
-  /**
-   * Router-level context for `createRouter` beyond `auth` and `queryClient`
-   * (both wired automatically — `auth` from the option above, `queryClient` as a
-   * fresh per-test client — so route guards and the React tree always see the
-   * same values). Profile/team/season are read through the Query cache, so
-   * nothing else remains in `RouterContext` to supply — hence optional.
-   */
-  routerContext?: Omit<RouterContext, 'auth' | 'queryClient'>;
 }
 
 /**
@@ -40,12 +31,7 @@ export interface RenderWithRouterOptions {
  * Returns the React Testing Library result plus the per-test `queryClient`, so
  * tests can seed or assert against the Query cache directly.
  */
-export function renderWithRouter({
-  routeTree,
-  initialEntry,
-  auth,
-  routerContext = {},
-}: RenderWithRouterOptions) {
+export function renderWithRouter({ routeTree, initialEntry, auth }: RenderWithRouterOptions) {
   seedAuthStore(auth);
 
   const queryClient = new QueryClient({
@@ -55,7 +41,7 @@ export function renderWithRouter({
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
-    context: { ...routerContext, auth: routerAuth, queryClient },
+    context: { auth: routerAuth, queryClient },
   });
 
   return {

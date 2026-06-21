@@ -8,7 +8,6 @@ import {
   buildAuthenticatedLayout,
   buildTeamRequiredLayout,
   createAuthedAuth,
-  createBaseRouterContext,
   createMockLeague,
   createMockLeagueStandings,
   createMockTeam,
@@ -74,7 +73,6 @@ function renderLeaguePage(standings: LeagueStandings) {
     routeTree: buildLeagueRouteTree(),
     initialEntry: '/league/1',
     auth: createAuthedAuth(),
-    routerContext: createBaseRouterContext(),
   });
 }
 

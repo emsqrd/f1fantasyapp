@@ -3,12 +3,7 @@ import { useCurrentAvatar } from '@/hooks/useCurrentAvatar';
 import { avatarEvents } from '@/lib/avatarEvents';
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/mocks';
-import {
-  createAuthedAuth,
-  createBaseRouterContext,
-  createMockUserProfile,
-  renderWithRouter,
-} from '@/tests/test-utils';
+import { createAuthedAuth, createMockUserProfile, renderWithRouter } from '@/tests/test-utils';
 import { Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router';
 import { act, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
@@ -51,7 +46,6 @@ function renderProbe(profile: UserProfile) {
     routeTree: rootRoute.addChildren([indexRoute]),
     initialEntry: '/',
     auth: createAuthedAuth(),
-    routerContext: createBaseRouterContext(),
   });
 }
 
