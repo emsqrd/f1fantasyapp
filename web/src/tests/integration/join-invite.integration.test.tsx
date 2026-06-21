@@ -2,12 +2,11 @@ import { JoinInvite } from '@/components/JoinInvite/JoinInvite';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import type { Team } from '@/contracts/Team';
 import type { RouterContext } from '@/lib/router-context';
+import { API_BASE, server } from '@/mocks';
 import { previewInvite } from '@/services/leagueInviteService';
 import { standingsKeys } from '@/services/standingsService';
-import { API_BASE, server } from '@/setupTests';
 import {
   createAuthedAuth,
-  createBaseRouterContext,
   createMockLeague,
   createMockTeam,
   createMockUserProfile,
@@ -125,13 +124,12 @@ function buildJoinInviteRouteTree() {
 // query on the authed branches), not from context — so seed the profile here and
 // keep the `team` arg as the test's has-team intent. Unauthenticated renders
 // never fetch it, so the handler is harmless there.
-function makeRouterContext(team: Team | null): Omit<RouterContext, 'auth' | 'queryClient'> {
+function stubProfileForTeam(team: Team | null): void {
   server.use(
     http.get(`${API_BASE}/me/profile`, () =>
       HttpResponse.json(createMockUserProfile({ hasTeam: team !== null })),
     ),
   );
-  return createBaseRouterContext();
 }
 
 const TOKEN = 'abc-token';
@@ -154,11 +152,11 @@ describe('Join via invite token', () => {
   it('shows sign-in and create-account links carrying a redirect back to the invite for unauthenticated users', async () => {
     server.use(previewHandler());
 
+    stubProfileForTeam(null);
     renderWithRouter({
       routeTree: buildJoinInviteRouteTree(),
       initialEntry: `/join/${TOKEN}`,
       auth: createUnauthAuth(),
-      routerContext: makeRouterContext(null),
     });
 
     const signInLink = await screen.findByRole('link', { name: /sign in to join/i });
@@ -179,11 +177,11 @@ describe('Join via invite token', () => {
   it('shows a create-team link carrying a redirect back to the invite for authed users without a team', async () => {
     server.use(previewHandler());
 
+    stubProfileForTeam(null);
     renderWithRouter({
       routeTree: buildJoinInviteRouteTree(),
       initialEntry: `/join/${TOKEN}`,
       auth: createAuthedAuth(),
-      routerContext: makeRouterContext(null),
     });
 
     const createTeamLink = await screen.findByRole('link', { name: /create team/i });
@@ -199,11 +197,11 @@ describe('Join via invite token', () => {
   it('shows the join-league button for authed users with a team', async () => {
     server.use(previewHandler());
 
+    stubProfileForTeam(createMockTeam());
     renderWithRouter({
       routeTree: buildJoinInviteRouteTree(),
       initialEntry: `/join/${TOKEN}`,
       auth: createAuthedAuth(),
-      routerContext: makeRouterContext(createMockTeam()),
     });
 
     expect(await screen.findByRole('button', { name: /join league/i })).toBeInTheDocument();
@@ -221,11 +219,11 @@ describe('Join via invite token', () => {
       ),
     );
 
+    stubProfileForTeam(createMockTeam());
     const { queryClient } = renderWithRouter({
       routeTree: buildJoinInviteRouteTree(),
       initialEntry: `/join/${TOKEN}`,
       auth: createAuthedAuth(),
-      routerContext: makeRouterContext(createMockTeam()),
     });
 
     // A cached standings entry is required for the invalidation to be observable.
@@ -246,11 +244,11 @@ describe('Join via invite token', () => {
       ),
     );
 
+    stubProfileForTeam(null);
     renderWithRouter({
       routeTree: buildJoinInviteRouteTree(),
       initialEntry: `/join/${TOKEN}`,
       auth: createUnauthAuth(),
-      routerContext: makeRouterContext(null),
     });
 
     expect(await screen.findByRole('heading', { name: /invite not found/i })).toBeInTheDocument();
@@ -267,11 +265,11 @@ describe('Join via invite token', () => {
       ),
     );
 
+    stubProfileForTeam(null);
     renderWithRouter({
       routeTree: buildJoinInviteRouteTree(),
       initialEntry: `/join/${TOKEN}`,
       auth: createUnauthAuth(),
-      routerContext: makeRouterContext(null),
     });
 
     expect(
@@ -287,11 +285,11 @@ describe('Join via invite token', () => {
   it('shows the league-full alert and hides action buttons when preview reports the league is full', async () => {
     server.use(previewHandler({ isLeagueFull: true }));
 
+    stubProfileForTeam(createMockTeam());
     renderWithRouter({
       routeTree: buildJoinInviteRouteTree(),
       initialEntry: `/join/${TOKEN}`,
       auth: createAuthedAuth(),
-      routerContext: makeRouterContext(createMockTeam()),
     });
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
@@ -317,11 +315,11 @@ describe('Join via invite token', () => {
       ),
     );
 
+    stubProfileForTeam(createMockTeam());
     renderWithRouter({
       routeTree: buildJoinInviteRouteTree(),
       initialEntry: `/join/${TOKEN}`,
       auth: createAuthedAuth(),
-      routerContext: makeRouterContext(createMockTeam()),
     });
 
     await user.click(await screen.findByRole('button', { name: /join league/i }));
@@ -340,11 +338,11 @@ describe('Join via invite token', () => {
       http.post(`${API_BASE}/leagues/join/${TOKEN}`, () => new HttpResponse(null, { status: 204 })),
     );
 
+    stubProfileForTeam(createMockTeam());
     renderWithRouter({
       routeTree: buildJoinInviteRouteTree(),
       initialEntry: `/join/${TOKEN}`,
       auth: createAuthedAuth(),
-      routerContext: makeRouterContext(createMockTeam()),
     });
 
     await user.click(await screen.findByRole('button', { name: /join league/i }));
@@ -373,11 +371,11 @@ describe('Join via invite token', () => {
       }),
     );
 
+    stubProfileForTeam(createMockTeam());
     renderWithRouter({
       routeTree: buildJoinInviteRouteTree(),
       initialEntry: `/join/${TOKEN}`,
       auth: createAuthedAuth(),
-      routerContext: makeRouterContext(createMockTeam()),
     });
 
     const joinButton = await screen.findByRole('button', { name: /join league/i });
@@ -402,11 +400,11 @@ describe('Join via invite token', () => {
       }),
     );
 
+    stubProfileForTeam(createMockTeam());
     renderWithRouter({
       routeTree: buildJoinInviteRouteTree(),
       initialEntry: `/join/${TOKEN}`,
       auth: createAuthedAuth(),
-      routerContext: makeRouterContext(createMockTeam()),
     });
 
     await user.click(await screen.findByRole('button', { name: /join league/i }));

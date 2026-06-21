@@ -4,7 +4,6 @@ import { supabase } from '@/lib/supabase';
 import {
   buildStubRoute,
   createAuthedAuth,
-  createBaseRouterContext,
   createUnauthAuth,
   renderWithRouter,
 } from '@/tests/test-utils';
@@ -122,7 +121,6 @@ describe('/auth/confirm route', () => {
       routeTree: buildAuthConfirmRouteTree(),
       initialEntry: '/auth/confirm?token_hash=abc123&type=signup',
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: /confirm your email/i })).toBeInTheDocument();
@@ -148,7 +146,6 @@ describe('/auth/confirm route', () => {
         sameOriginNext,
       )}`,
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /continue/i }));
@@ -164,7 +161,6 @@ describe('/auth/confirm route', () => {
       routeTree: buildAuthConfirmRouteTree(),
       initialEntry: '/auth/confirm?token_hash=stale&type=signup',
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /continue/i }));
@@ -181,7 +177,6 @@ describe('/auth/confirm route', () => {
       routeTree: buildAuthConfirmRouteTree(),
       initialEntry: '/auth/confirm?token_hash=stale&type=signup',
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /continue/i }));
@@ -195,7 +190,6 @@ describe('/auth/confirm route', () => {
       routeTree: buildAuthConfirmRouteTree(),
       initialEntry: '/auth/confirm',
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Sign-up Stub' })).toBeInTheDocument();
@@ -207,7 +201,6 @@ describe('/auth/confirm route', () => {
       routeTree: buildAuthConfirmRouteTree(),
       initialEntry: '/auth/confirm',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Home Stub' })).toBeInTheDocument();
@@ -224,7 +217,6 @@ describe('/auth/confirm route', () => {
         'https://evil.example.com/foo',
       )}`,
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /continue/i }));
@@ -239,7 +231,6 @@ describe('/auth/confirm route', () => {
       routeTree: buildAuthConfirmRouteTree(),
       initialEntry: '/auth/confirm?token_hash=abc123&type=signup',
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: /confirm your email/i })).toBeInTheDocument();
@@ -264,7 +255,6 @@ describe('/auth/confirm route', () => {
       routeTree: buildAuthConfirmRouteTree(),
       initialEntry: '/auth/confirm?token_hash=abc123&type=signup',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /continue/i }));

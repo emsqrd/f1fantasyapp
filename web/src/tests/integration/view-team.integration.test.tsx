@@ -1,11 +1,11 @@
 import { TeamRoute } from '@/components/Team/Team';
 import type { RouterContext } from '@/lib/router-context';
+import { API_BASE, server } from '@/mocks';
 import { constructorsQuery } from '@/services/constructorService';
 import { driversQuery } from '@/services/driverService';
 import { getRaceWeekends } from '@/services/raceWeekendService';
 import { seasonQuery } from '@/services/seasonService';
 import { getTeamById, myTeamQuery } from '@/services/teamService';
-import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
   buildStubRoute,

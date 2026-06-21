@@ -8,6 +8,7 @@
  * import { createMockTeam, createMockDriver } from '@/tests/test-utils';
  */
 
+export { setMobileViewport } from './matchMedia';
 export {
   createMockConstructor,
   createMockConstructorList,
@@ -23,7 +24,7 @@ export {
   createMockTeamDriver,
   createMockUserProfile,
 } from './mockFactories';
-export { createAuthedAuth, createBaseRouterContext, createUnauthAuth } from './renderContexts';
+export { createAuthedAuth, createUnauthAuth } from './renderContexts';
 export { renderWithRouter } from './renderWithRouter';
 export type { RenderWithRouterOptions } from './renderWithRouter';
 export {

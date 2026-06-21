@@ -2,12 +2,7 @@ import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
-import {
-  buildUnauthenticatedLayout,
-  createBaseRouterContext,
-  createUnauthAuth,
-  renderWithRouter,
-} from '@/tests/test-utils';
+import { buildUnauthenticatedLayout, createUnauthAuth, renderWithRouter } from '@/tests/test-utils';
 import { Outlet, createRootRouteWithContext, createRoute } from '@tanstack/react-router';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -58,7 +53,6 @@ describe('sign-in ↔ sign-up toggle', () => {
       routeTree: buildAuthToggleRouteTree(),
       initialEntry: '/sign-in?redirect=/league/5',
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     await user.click(await screen.findByRole('link', { name: /sign up/i }));
@@ -74,7 +68,6 @@ describe('sign-in ↔ sign-up toggle', () => {
       routeTree: buildAuthToggleRouteTree(),
       initialEntry: '/sign-up?redirect=/league/5',
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     await user.click(await screen.findByRole('link', { name: /sign in/i }));

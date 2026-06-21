@@ -1,13 +1,12 @@
 import { CreateTeam } from '@/components/CreateTeam/CreateTeam';
 import { safeInternalPath } from '@/lib/safeInternalPath';
+import { API_BASE, server } from '@/mocks';
 import { myTeamQuery } from '@/services/teamService';
-import { API_BASE, server } from '@/setupTests';
 import {
   buildAuthenticatedLayout,
   buildRootRoute,
   buildStubRoute,
   createAuthedAuth,
-  createBaseRouterContext,
   createMockTeam,
   createMockUserProfile,
   renderWithRouter,
@@ -59,7 +58,6 @@ describe('Create team', () => {
       routeTree: buildCreateTeamRouteTree(),
       initialEntry: '/create-team',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByLabelText(/team name/i)).toBeInTheDocument();
@@ -77,7 +75,6 @@ describe('Create team', () => {
       routeTree: buildCreateTeamRouteTree(),
       initialEntry: '/create-team',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByText(/only have one team per season/i)).toBeInTheDocument();
@@ -100,7 +97,6 @@ describe('Create team', () => {
       routeTree: buildCreateTeamRouteTree(),
       initialEntry: '/create-team',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     await user.type(await screen.findByLabelText(/team name/i), '  My Racing Team  ');
@@ -123,7 +119,6 @@ describe('Create team', () => {
       routeTree: buildCreateTeamRouteTree(),
       initialEntry: '/create-team',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     await user.type(await screen.findByLabelText(/team name/i), 'Team Name');
@@ -143,7 +138,6 @@ describe('Create team', () => {
       routeTree: buildCreateTeamRouteTree(),
       initialEntry: '/create-team',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     await user.click(await screen.findByRole('button', { name: /create team/i }));
@@ -160,7 +154,6 @@ describe('Create team', () => {
       routeTree: buildCreateTeamRouteTree(),
       initialEntry: '/create-team?redirect=/leagues',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     await user.type(await screen.findByLabelText(/team name/i), 'My Racing Team');

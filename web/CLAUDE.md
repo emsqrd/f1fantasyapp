@@ -129,7 +129,7 @@ See root `CLAUDE.md` `## Testing Strategy` for when to reach for this layer vs. 
 
 **Run:** `npm run web:test:integration` (focused) or `npm run web:test` (full suite).
 
-**Stack:** Vitest + jsdom + MSW intercepting at the `fetch` boundary. Tests exercise the real router, real loaders, real components, and the real `apiClient` — only the network is mocked. The MSW server lives in `src/mocks/server.ts` with the shared default handlers in `src/mocks/handlers.ts` (both re-exported from `setupTests.ts` as `server` / `API_BASE`); it runs in strict mode (`onUnhandledRequest: 'error'`) and resets handlers after each test.
+**Stack:** Vitest + jsdom + MSW intercepting at the `fetch` boundary. Tests exercise the real router, real loaders, real components, and the real `apiClient` — only the network is mocked. The MSW server lives in `src/mocks/server.ts` with the shared default handlers in `src/mocks/handlers.ts` (tests import `server` / `API_BASE` from the `@/mocks` barrel); it runs in strict mode (`onUnhandledRequest: 'error'`) and resets handlers after each test.
 
 **Reference test:** `src/tests/integration/account.integration.test.tsx`. Copy its shape for new flows.
 
@@ -146,13 +146,13 @@ See root `CLAUDE.md` `## Testing Strategy` for when to reach for this layer vs. 
 
 **MSW handlers:**
 
-- Build URLs from `API_BASE` exported by `setupTests.ts`: ``http.get(`${API_BASE}/me/profile`, ...)``. Don't hardcode the base.
+- Build URLs from `API_BASE` exported by `@/mocks`: ``http.get(`${API_BASE}/me/profile`, ...)``. Don't hardcode the base.
 - **Defaults cover the cross-route reads** every authenticated tree touches: `src/mocks/handlers.ts` seeds `/me/profile` (a profile with `hasTeam: false`), `/me/team` (404 — no team), and `/seasons/current`. They model a freshly-authenticated user without a team; a test mounting a `_team-required` route overrides `/me/team` with a present team via `server.use(...)`.
 - Declare everything else per test via `server.use(...)` — strict mode forces each test to spell out the rest of its network surface. Promote a handler to a default only once it's copy-pasted across three or more flow tests.
 - **Don't introduce per-service path constants** (e.g. `USER_PROFILE_PATH = '/me/profile'`). The service module is already the single source of truth for each path. Strict-mode MSW reports the exact unhandled URL on a typo or rename, so drift is caught loudly — constants would just add a second place to maintain.
 - For 4xx/5xx, use `new HttpResponse(null, { status })`. For success bodies, use `HttpResponse.json(factoryOutput)` so the response shape is typed via the factory.
 
-**`renderWithRouter` signature:** `routeTree`, `initialEntry`, `auth`, and an optional `routerContext` (rarely needed — `auth` and `queryClient` are wired automatically, and nothing else remains in `RouterContext`). The helper creates a fresh per-test `QueryClient`, wraps the tree in its provider, and returns it, so tests can seed or assert the Query cache directly (e.g. `queryClient.setQueryData(teamKeys.all, mockTeam)`).
+**`renderWithRouter` signature:** `routeTree`, `initialEntry`, and `auth` (`auth` and `queryClient` are wired into router context automatically). The helper creates a fresh per-test `QueryClient`, wraps the tree in its provider, and returns it, so tests can seed or assert the Query cache directly (e.g. `queryClient.setQueryData(teamKeys.all, mockTeam)`).
 
 ```typescript
 const { queryClient } = renderWithRouter({

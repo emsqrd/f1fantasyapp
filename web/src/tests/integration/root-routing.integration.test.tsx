@@ -1,13 +1,12 @@
 import { IndexRoute } from '@/components/IndexRoute/IndexRoute';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import type { RouterContext } from '@/lib/router-context';
+import { API_BASE, server } from '@/mocks';
 import { getRaceWeekends } from '@/services/raceWeekendService';
 import { seasonQuery } from '@/services/seasonService';
 import { getTeamSummary } from '@/services/teamService';
-import { API_BASE, server } from '@/setupTests';
 import {
   createAuthedAuth,
-  createBaseRouterContext,
   createMockUserProfile,
   createUnauthAuth,
   renderWithRouter,
@@ -80,7 +79,6 @@ describe('routing at /', () => {
       routeTree: buildIndexRouteTree(),
       initialEntry: '/',
       auth: createUnauthAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(
@@ -122,7 +120,6 @@ describe('routing at /', () => {
       routeTree: buildIndexRouteTree(),
       initialEntry: '/',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Red Bull Racing' })).toBeInTheDocument();
@@ -156,7 +153,6 @@ describe('routing at /', () => {
       routeTree: buildIndexRouteTree(),
       initialEntry: '/',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByText("You're riding solo")).toBeInTheDocument();
@@ -182,7 +178,6 @@ describe('routing at /', () => {
       routeTree: buildIndexRouteTree(),
       initialEntry: '/',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Red Bull Racing' })).toBeInTheDocument();
@@ -223,7 +218,6 @@ describe('routing at /', () => {
       routeTree: buildIndexRouteTree(),
       initialEntry: '/',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     const retry = await screen.findByRole('button', { name: /try again/i });
@@ -256,7 +250,6 @@ describe('routing at /', () => {
       routeTree: buildIndexRouteTree(),
       initialEntry: '/',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(
@@ -288,7 +281,6 @@ describe('routing at /', () => {
       routeTree: buildIndexRouteTree(),
       initialEntry: '/',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     // The team name still comes from the summary; the greeting name is just blank.
@@ -314,7 +306,6 @@ describe('routing at /', () => {
       routeTree: buildIndexRouteTree(),
       initialEntry: '/',
       auth: createAuthedAuth(),
-      routerContext: createBaseRouterContext(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Welcome, Ada' })).toBeInTheDocument();
