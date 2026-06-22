@@ -1,7 +1,7 @@
 # ADR 006: TanStack Query for Cross-Route Reads
 
 **Date:** 2026-06-07
-**Status:** Accepted
+**Status:** Superseded by ADR 009
 
 ## Context
 
