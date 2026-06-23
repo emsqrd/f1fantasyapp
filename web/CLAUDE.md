@@ -28,7 +28,7 @@ TanStack Router uses **guard-based route protection** with pathless layout route
 
 ### State Management
 
-**Pattern:** Put state where its reader reaches it. `beforeLoad`/`loader` run outside React, so anything a guard or loader needs goes in **router context** — `{ auth, queryClient }`. `auth` is a live view over the auth store (reads evaluate at guard/loader execution time, never a render-time copy); `queryClient` reaches the TanStack Query cache, where cross-route reads live — each defined as a `queryOptions` in its service module. The component tree reads the same sources through hooks: `useAuth()` for the store, `useQuery`/`useSuspenseQuery` for the cache.
+**Pattern:** Put state where its reader reaches it. `beforeLoad`/`loader` run outside React, so anything a guard or loader needs goes in **router context** — `{ auth, queryClient }`. `auth` is a live view over the auth store (reads evaluate at guard/loader execution time, never a render-time copy); `queryClient` reaches the TanStack Query cache, where reads live — each defined as a `queryOptions` in its service module. The component tree reads the same sources through hooks: `useAuth()` for the store, `useQuery`/`useSuspenseQuery` for the cache.
 
 ### API/Service Layer
 
@@ -44,15 +44,18 @@ Centralized `ApiClient` class handles all HTTP requests:
 
 ### Data Loading Pattern
 
-Three kinds of reads:
+**TanStack Query is the single read store** (ADR 009). Every read is defined once as `queryOptions` in a per-resource `…Queries` factory in its service module, structured most-generic to most-specific: an `all` base key, then one member per read — named for the read, its key extending `all`.
 
-- **Route-owned data** — the route's loader fetches it before the component renders; the component reads `Route.useLoaderData()` without loading states.
-- **Cross-route reads** — each defined once as a `queryOptions` in its service module. Guards and loaders prime them with `context.queryClient.ensureQueryData(...)`; components read `useSuspenseQuery(...)` when a loader guarantees the data, or `useQuery({ ...profileQueries.current(), enabled: !!user })` for shell that also renders for anonymous users.
-- **Component-owned reads** — a single component issues the read with `useQuery`, not loader-primed. Use for data that must load or fail independently of its route, or whose key isn't known until render (dialogs, typeahead, pagination).
+How a read is consumed:
 
-**Query definitions.** Each resource's reads live in a per-resource `…Queries` factory in its service module, structured most-generic to most-specific: an `all` base key, then one member per read — named for the read, its key extending `all`.
+- **Loader-guaranteed reads** — a guard or loader primes the read with `context.queryClient.ensureQueryData(...)`, which blocks and returns nothing; the component reads `useSuspenseQuery(...)` with no loading state of its own.
+- **Independent reads** — a component issues the read with `useQuery`, not loader-primed. Use for data that loads or fails independently of its route, renders for anonymous users (`useQuery({ ...profileQueries.current(), enabled: !!user })`), or whose key isn't known until render (dialogs, typeahead, pagination).
 
-Writes that change a query-cached resource use `useMutation` and reconcile the cache via `invalidateQueries` in `onSuccess`/`onSettled`. Optimistic writes additionally snapshot + `setQueryData` in `onMutate` with an `onError` rollback (see `useSetCaptain`). `router.invalidate()` only re-runs loaders, and `ensureQueryData` then serves the stale cache entry, so it won't refresh these reads.
+Loaders prime the cache; they do not return fetched data, and components do not read `useLoaderData` for it. Whether a surface blocks on a read or streams it in is a separate, load-strategy question (ADR 008), independent of where the data lives — both read through the Query cache.
+
+> **Migration in progress:** some routes still return data from their loaders and read `useLoaderData` (pre-ADR-009). Treat the rule above as the target for new and changed reads; pre-existing loader-data reads migrate incrementally.
+
+**Writes** that change a query-cached resource use `useMutation` and reconcile the cache via `invalidateQueries` in `onSuccess`/`onSettled`. Optimistic writes additionally snapshot + `setQueryData` in `onMutate` with an `onError` rollback (see `useSetCaptain`). Invalidate with `invalidateQueries`, not `router.invalidate()` — the latter only re-runs loaders, and `ensureQueryData` then serves the stale cache entry, so it won't refresh these reads.
 
 Loaders throw `notFound({ routeId })` on missing resources; the route's `errorComponent` handles the failure path.
 
