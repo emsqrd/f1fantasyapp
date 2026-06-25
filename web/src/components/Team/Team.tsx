@@ -10,13 +10,15 @@ import { raceWeekendQueries } from '@/services/raceWeekendService';
 import { seasonQueries } from '@/services/seasonService';
 import { teamQueries } from '@/services/teamService';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { notFound, useLoaderData } from '@tanstack/react-router';
+import { getRouteApi, notFound } from '@tanstack/react-router';
 
 import { AppContainer } from '../AppContainer/AppContainer';
 import { ConstructorPicker } from '../ConstructorPicker/ConstructorPicker';
 import { DriverPicker } from '../DriverPicker/DriverPicker';
 import { InlineError } from '../InlineError/InlineError';
 import { LockCountdown } from '../LockCountdown/LockCountdown';
+
+const teamRouteApi = getRouteApi('/_authenticated/_team-required/team/$teamId');
 
 export interface TeamViewProps {
   team: Team;
@@ -47,11 +49,14 @@ export function MyTeamRoute() {
 }
 
 export function TeamRoute() {
+  const { teamId } = teamRouteApi.useParams();
+  const { data: team } = useSuspenseQuery(teamQueries.byId(Number(teamId)));
   const { data: activeDrivers } = useSuspenseQuery(driverQueries.list());
   const { data: activeConstructors } = useSuspenseQuery(constructorQueries.list());
-  const { team, races } = useLoaderData({
-    from: '/_authenticated/_team-required/team/$teamId',
-  });
+  const { data: season } = useSuspenseQuery(seasonQueries.current());
+  const { data: races } = useSuspenseQuery(raceWeekendQueries.list(season?.id ?? null));
+
+  if (!team) throw notFound();
 
   return (
     <TeamView

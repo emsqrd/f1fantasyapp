@@ -15,7 +15,7 @@ import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
 import { leagueQueries } from '@/services/leagueService';
 import { standingsQueries } from '@/services/standingsService';
-import { getTeamById, getTeamSummary, teamQueries } from '@/services/teamService';
+import { getTeamSummary, teamQueries } from '@/services/teamService';
 import { profileQueries } from '@/services/userProfileService';
 import { isApiError } from '@/utils/errors';
 import {
@@ -466,10 +466,6 @@ const leagueRoute = createRoute({
  *
  * **Note:** Uses Zod schema ({@link teamIdParamsSchema}) to validate and coerce
  * `teamId` parameter from string to positive integer with detailed error messages.
- *
- * Implements
- * {@link https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#stale-while-revalidate-caching | SWR caching}
- * with `staleTime` and `gcTime` for optimal performance.
  */
 const teamRoute = createRoute({
   getParentRoute: () => teamRequiredLayoutRoute,
@@ -502,10 +498,9 @@ const teamRoute = createRoute({
     const { teamId } = validationResult.data;
     const season = await context.queryClient.ensureQueryData(seasonQueries.current());
 
-    // Fetch all data in parallel
-    const [team, races] = await Promise.all([
-      getTeamById(teamId),
-      season ? getRaceWeekends(season.id) : Promise.resolve([]),
+    const [team] = await Promise.all([
+      context.queryClient.ensureQueryData(teamQueries.byId(teamId)),
+      context.queryClient.ensureQueryData(raceWeekendQueries.list(season?.id ?? null)),
       context.queryClient.ensureQueryData(driverQueries.list()),
       context.queryClient.ensureQueryData(constructorQueries.list()),
     ]);
@@ -514,8 +509,6 @@ const teamRoute = createRoute({
     if (!team) {
       throw notFound({ routeId: TEAM_ROUTE_ID });
     }
-
-    return { team, races };
   },
   component: TeamRoute,
   pendingComponent: () => (
@@ -527,8 +520,6 @@ const teamRoute = createRoute({
     </div>
   ),
   pendingMs: 200, // Show pending after 200ms to prevent flash for fast loads
-  staleTime: 10_000, // Consider fresh for 10 seconds
-  gcTime: 5 * 60_000, // Keep in memory for 5 minutes
   notFoundComponent: () => (
     <div className="flex min-h-screen flex-col items-center justify-center">
       <h1 className="mb-4 text-4xl font-bold">Team Not Found</h1>
