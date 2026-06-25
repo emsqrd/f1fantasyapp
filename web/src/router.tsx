@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
-import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
+import { getAvailableLeagues, getLeagueById, leagueQueries } from '@/services/leagueService';
 import { getLeagueStandings } from '@/services/standingsService';
 import { getTeamById, getTeamSummary, teamQueries } from '@/services/teamService';
 import { profileQueries } from '@/services/userProfileService';
@@ -355,12 +355,6 @@ const teamRequiredLayoutRoute = createRoute({
  * Leagues list route - displays all leagues the user has joined.
  *
  * Child of {@link teamRequiredLayoutRoute}, inherits auth and team protection.
- * Uses {@link https://tanstack.com/router/latest/docs/framework/react/guide/data-loading | loader}
- * to fetch leagues data before component renders.
- *
- * Implements
- * {@link https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#stale-while-revalidate-caching | SWR caching}
- * with `staleTime` and `gcTime` for optimal performance.
  */
 const leaguesRoute = createRoute({
   getParentRoute: () => teamRequiredLayoutRoute,
@@ -368,9 +362,8 @@ const leaguesRoute = createRoute({
   staticData: {
     pageTitle: 'My Leagues',
   },
-  loader: async () => {
-    const leagues = await getMyLeagues();
-    return { leagues };
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(leagueQueries.mine());
   },
   component: LeagueList,
   pendingComponent: () => (

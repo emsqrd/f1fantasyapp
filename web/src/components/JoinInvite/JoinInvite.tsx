@@ -7,6 +7,7 @@ import type { LeagueInvitePreviewResponse } from '@/contracts/LeagueInvitePrevie
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
 import { joinViaInvite } from '@/services/leagueInviteService';
+import { leagueQueries } from '@/services/leagueService';
 import { standingsQueries } from '@/services/standingsService';
 import { profileQueries } from '@/services/userProfileService';
 import * as Sentry from '@sentry/react';
@@ -70,7 +71,7 @@ export function JoinInvite() {
         return;
       }
 
-      // Joining changes the user's standings.
+      queryClient.invalidateQueries({ queryKey: leagueQueries.all });
       queryClient.invalidateQueries({ queryKey: standingsQueries.all });
 
       announce(`Successfully joined ${league.name}`);

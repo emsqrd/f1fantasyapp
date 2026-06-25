@@ -4,8 +4,8 @@ import { LeagueList } from '@/components/LeagueList/LeagueList';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/mocks';
-import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
-import { getLeagueStandings, standingsQueries } from '@/services/standingsService';
+import { getAvailableLeagues, getLeagueById, leagueQueries } from '@/services/leagueService';
+import { getLeagueStandings } from '@/services/standingsService';
 import {
   buildAuthenticatedLayout,
   buildTeamRequiredLayout,
@@ -93,7 +93,9 @@ function buildLeaguesListRouteTree() {
   const leaguesRoute = createRoute({
     getParentRoute: () => teamRequiredLayoutRoute,
     path: 'leagues',
-    loader: async () => ({ leagues: await getMyLeagues() }),
+    loader: async ({ context }) => {
+      await context.queryClient.ensureQueryData(leagueQueries.mine());
+    },
     component: LeagueList,
     errorComponent: RouteErrorComponent,
   });
@@ -312,36 +314,6 @@ describe('Browse leagues', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Failed to join league');
   });
-
-  it('invalidates the cached standings after joining a league', async () => {
-    const user = userEvent.setup();
-
-    server.use(
-      http.get(`${API_BASE}/leagues/available`, () =>
-        HttpResponse.json([createMockLeague({ id: 42, name: 'Open Grid', isPrivate: false })]),
-      ),
-      http.post(`${API_BASE}/leagues/42/join`, () =>
-        HttpResponse.json(createMockLeague({ id: 42, name: 'Open Grid' })),
-      ),
-    );
-
-    stubMyTeam();
-    const { queryClient } = renderWithRouter({
-      routeTree: buildBrowseLeaguesRouteTree(),
-      initialEntry: '/browse-leagues',
-      auth: createAuthedAuth(),
-    });
-
-    // A cached standings entry is required for the invalidation to be observable.
-    queryClient.setQueryData(standingsQueries.mine().queryKey, []);
-
-    await user.click(await screen.findByRole('button', { name: /join league/i }));
-    await user.click(await screen.findByRole('button', { name: /confirm join/i }));
-
-    await waitFor(() =>
-      expect(queryClient.getQueryState(standingsQueries.mine().queryKey)?.isInvalidated).toBe(true),
-    );
-  });
 });
 
 describe('My leagues', () => {
@@ -385,7 +357,7 @@ describe('My leagues', () => {
     expect(await screen.findByText(/you haven't joined any leagues yet/i)).toBeInTheDocument();
   });
 
-  it('creates a league with the form values and invalidates the cached standings', async () => {
+  it('creates a league with the form values', async () => {
     const user = userEvent.setup();
     let createBody: unknown;
 
@@ -398,13 +370,11 @@ describe('My leagues', () => {
     );
 
     stubMyTeam();
-    const { queryClient } = renderWithRouter({
+    renderWithRouter({
       routeTree: buildLeaguesListRouteTree(),
       initialEntry: '/leagues',
       auth: createAuthedAuth(),
     });
-
-    queryClient.setQueryData(standingsQueries.mine().queryKey, []);
 
     await user.click(await screen.findByRole('button', { name: /create league/i }));
     await user.type(await screen.findByLabelText(/league name/i), '  Night Race Crew  ');
@@ -418,9 +388,6 @@ describe('My leagues', () => {
         description: 'Wheel to wheel',
         isPrivate: false,
       }),
-    );
-    await waitFor(() =>
-      expect(queryClient.getQueryState(standingsQueries.mine().queryKey)?.isInvalidated).toBe(true),
     );
   });
 

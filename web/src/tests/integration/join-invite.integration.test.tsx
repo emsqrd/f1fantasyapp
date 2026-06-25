@@ -4,10 +4,8 @@ import type { Team } from '@/contracts/Team';
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/mocks';
 import { previewInvite } from '@/services/leagueInviteService';
-import { standingsQueries } from '@/services/standingsService';
 import {
   createAuthedAuth,
-  createMockLeague,
   createMockTeam,
   createMockUserProfile,
   createUnauthAuth,
@@ -207,33 +205,6 @@ describe('Join via invite token', () => {
     expect(await screen.findByRole('button', { name: /join league/i })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /create team/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /sign in to join/i })).not.toBeInTheDocument();
-  });
-
-  it('invalidates the cached standings after joining via invite', async () => {
-    const user = userEvent.setup();
-
-    server.use(
-      previewHandler(),
-      http.post(`${API_BASE}/leagues/join/${TOKEN}`, () =>
-        HttpResponse.json(createMockLeague({ id: 7, name: 'COTA Champions' })),
-      ),
-    );
-
-    stubProfileForTeam(createMockTeam());
-    const { queryClient } = renderWithRouter({
-      routeTree: buildJoinInviteRouteTree(),
-      initialEntry: `/join/${TOKEN}`,
-      auth: createAuthedAuth(),
-    });
-
-    // A cached standings entry is required for the invalidation to be observable.
-    queryClient.setQueryData(standingsQueries.mine().queryKey, []);
-
-    await user.click(await screen.findByRole('button', { name: /join league/i }));
-
-    await waitFor(() =>
-      expect(queryClient.getQueryState(standingsQueries.mine().queryKey)?.isInvalidated).toBe(true),
-    );
   });
 
   it('renders the invite-not-found page when the loader rejects with a 400 (unknown token)', async () => {

@@ -3,6 +3,7 @@ import type { League } from '@/contracts/League';
 import { apiClient } from '@/lib/api';
 import { isApiError } from '@/utils/errors';
 import * as Sentry from '@sentry/react';
+import { queryOptions } from '@tanstack/react-query';
 
 export async function createLeague(data: CreateLeagueRequest): Promise<League> {
   const league = await apiClient.post<League, CreateLeagueRequest>(
@@ -61,3 +62,12 @@ export async function joinLeague(leagueId: number): Promise<League> {
 
   return joinedLeague;
 }
+
+export const leagueQueries = {
+  all: ['leagues'] as const,
+  mine: () =>
+    queryOptions({
+      queryKey: [...leagueQueries.all, 'mine'] as const,
+      queryFn: getMyLeagues,
+    }),
+};

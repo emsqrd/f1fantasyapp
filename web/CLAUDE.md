@@ -53,8 +53,6 @@ How a read is consumed:
 
 Loaders prime the cache; they do not return fetched data, and components do not read `useLoaderData` for it. Whether a surface blocks on a read or streams it in is a separate, load-strategy question (ADR 008), independent of where the data lives — both read through the Query cache.
 
-> **Migration in progress:** some routes still return data from their loaders and read `useLoaderData` (pre-ADR-009). Treat the rule above as the target for new and changed reads; pre-existing loader-data reads migrate incrementally.
-
 **Writes** that change a query-cached resource use `useMutation` and reconcile the cache via `invalidateQueries` in `onSuccess`/`onSettled`. Optimistic writes additionally snapshot + `setQueryData` in `onMutate` with an `onError` rollback (see `useSetCaptain`). Invalidate with `invalidateQueries`, not `router.invalidate()` — the latter only re-runs loaders, and `ensureQueryData` then serves the stale cache entry, so it won't refresh these reads.
 
 Loaders throw `notFound({ routeId })` on missing resources; the route's `errorComponent` handles the failure path.
