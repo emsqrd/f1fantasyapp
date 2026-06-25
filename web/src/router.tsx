@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
-import { getAvailableLeagues, getLeagueById, leagueQueries } from '@/services/leagueService';
+import { getLeagueById, leagueQueries } from '@/services/leagueService';
 import { getLeagueStandings } from '@/services/standingsService';
 import { getTeamById, getTeamSummary, teamQueries } from '@/services/teamService';
 import { profileQueries } from '@/services/userProfileService';
@@ -382,9 +382,8 @@ const browseLeaguesRoute = createRoute({
   staticData: {
     pageTitle: 'Available Leagues',
   },
-  loader: async () => {
-    const leagues = await getAvailableLeagues();
-    return { leagues };
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(leagueQueries.available());
   },
   component: BrowseLeagues,
   pendingComponent: () => (
@@ -396,8 +395,6 @@ const browseLeaguesRoute = createRoute({
     </div>
   ),
   pendingMs: 200, // Show pending after 200ms to prevent flash for fast loads
-  staleTime: 10_000, // Consider fresh for 10 seconds
-  gcTime: 5 * 60_000, // Keep in memory for 5 minutes
 });
 
 /**

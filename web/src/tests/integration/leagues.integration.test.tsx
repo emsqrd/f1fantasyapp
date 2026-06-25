@@ -4,7 +4,7 @@ import { LeagueList } from '@/components/LeagueList/LeagueList';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/mocks';
-import { getAvailableLeagues, getLeagueById, leagueQueries } from '@/services/leagueService';
+import { getLeagueById, leagueQueries } from '@/services/leagueService';
 import { getLeagueStandings } from '@/services/standingsService';
 import {
   buildAuthenticatedLayout,
@@ -37,7 +37,9 @@ function buildBrowseLeaguesRouteTree() {
   const browseLeaguesRoute = createRoute({
     getParentRoute: () => teamRequiredLayoutRoute,
     path: 'browse-leagues',
-    loader: async () => ({ leagues: await getAvailableLeagues() }),
+    loader: async ({ context }) => {
+      await context.queryClient.ensureQueryData(leagueQueries.available());
+    },
     component: BrowseLeagues,
     errorComponent: RouteErrorComponent,
   });

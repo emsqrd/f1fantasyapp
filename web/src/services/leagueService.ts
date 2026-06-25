@@ -70,4 +70,9 @@ export const leagueQueries = {
       queryKey: [...leagueQueries.all, 'mine'] as const,
       queryFn: getMyLeagues,
     }),
+  available: (searchTerm?: string) =>
+    queryOptions({
+      queryKey: [...leagueQueries.all, 'available', searchTerm ?? null] as const,
+      queryFn: () => getAvailableLeagues(searchTerm),
+    }),
 };
