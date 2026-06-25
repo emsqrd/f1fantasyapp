@@ -6,6 +6,8 @@ import { useSetCaptain } from '@/hooks/useSetCaptain';
 import { formatBudget } from '@/lib/utils';
 import { constructorQueries } from '@/services/constructorService';
 import { driverQueries } from '@/services/driverService';
+import { raceWeekendQueries } from '@/services/raceWeekendService';
+import { seasonQueries } from '@/services/seasonService';
 import { teamQueries } from '@/services/teamService';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { notFound, useLoaderData } from '@tanstack/react-router';
@@ -28,9 +30,8 @@ export function MyTeamRoute() {
   const { data: team } = useSuspenseQuery(teamQueries.mine());
   const { data: activeDrivers } = useSuspenseQuery(driverQueries.list());
   const { data: activeConstructors } = useSuspenseQuery(constructorQueries.list());
-  const { races } = useLoaderData({
-    from: '/_authenticated/_team-required/my-team',
-  });
+  const { data: season } = useSuspenseQuery(seasonQueries.current());
+  const { data: races } = useSuspenseQuery(raceWeekendQueries.list(season?.id ?? null));
 
   if (!team) throw notFound();
 

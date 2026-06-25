@@ -1,6 +1,7 @@
 import type { RaceWeekend } from '@/contracts/RaceWeekend';
 import { apiClient } from '@/lib/api';
 import { isApiError } from '@/utils/errors';
+import { queryOptions } from '@tanstack/react-query';
 
 export async function getRaceWeekends(seasonId: number): Promise<RaceWeekend[]> {
   return apiClient.get<RaceWeekend[]>(`/seasons/${seasonId}/race-weekends`, 'get race weekends');
@@ -19,3 +20,13 @@ export async function getRaceWeekend(seasonId: number, round: number): Promise<R
     throw error;
   }
 }
+
+export const raceWeekendQueries = {
+  all: ['raceWeekends'] as const,
+  list: (seasonId: number | null) =>
+    queryOptions({
+      queryKey: [...raceWeekendQueries.all, 'list', seasonId] as const,
+      queryFn: () => (seasonId == null ? [] : getRaceWeekends(seasonId)),
+      staleTime: 5 * 60_000,
+    }),
+};

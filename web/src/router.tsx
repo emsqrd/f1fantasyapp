@@ -37,7 +37,7 @@ import { queryClient } from './lib/queryClient';
 import { constructorQueries } from './services/constructorService';
 import { driverQueries } from './services/driverService';
 import { previewInvite } from './services/leagueInviteService';
-import { getRaceWeekends } from './services/raceWeekendService';
+import { getRaceWeekends, raceWeekendQueries } from './services/raceWeekendService';
 import { seasonQueries } from './services/seasonService';
 
 /**
@@ -552,13 +552,11 @@ const myTeamRoute = createRoute({
     // useSuspenseQuery(teamQueries.mine()).
     await context.queryClient.ensureQueryData(teamQueries.mine());
 
-    const [races] = await Promise.all([
-      season ? getRaceWeekends(season.id) : Promise.resolve([]),
+    await Promise.all([
+      context.queryClient.ensureQueryData(raceWeekendQueries.list(season?.id ?? null)),
       context.queryClient.ensureQueryData(driverQueries.list()),
       context.queryClient.ensureQueryData(constructorQueries.list()),
     ]);
-
-    return { races };
   },
   component: MyTeamRoute,
   pendingComponent: () => (
@@ -570,8 +568,6 @@ const myTeamRoute = createRoute({
     </div>
   ),
   pendingMs: 200, // Show pending after 200ms to prevent flash for fast loads
-  staleTime: 10_000, // Consider fresh for 10 seconds
-  gcTime: 5 * 60_000, // Keep in memory for 5 minutes
   notFoundComponent: () => (
     <div className="flex min-h-screen flex-col items-center justify-center">
       <h1 className="mb-4 text-4xl font-bold">Team Not Found</h1>
