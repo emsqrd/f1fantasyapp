@@ -4,8 +4,8 @@ import { LeagueList } from '@/components/LeagueList/LeagueList';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/mocks';
-import { getLeagueById, leagueQueries } from '@/services/leagueService';
-import { getLeagueStandings } from '@/services/standingsService';
+import { leagueQueries } from '@/services/leagueService';
+import { standingsQueries } from '@/services/standingsService';
 import {
   buildAuthenticatedLayout,
   buildTeamRequiredLayout,
@@ -20,6 +20,13 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
+
+// Mirrors the production `leagueIdParamsSchema` in `router.tsx` — the production
+// route isn't exported, so the param-validation branch is pinned here inline.
+const leagueIdParamsSchema = z.object({
+  leagueId: z.coerce.number().int().positive(),
+});
 
 // Minimal route trees mirror the production `_authenticated → _team-required`
 // chain in `router.tsx` so the real guards (`requireAuth`, `requireTeam`) and
@@ -62,17 +69,20 @@ function buildLeagueRouteTree() {
   const leagueRoute = createRoute({
     getParentRoute: () => teamRequiredLayoutRoute,
     path: 'league/$leagueId',
-    loader: async ({ params }) => {
-      const leagueId = Number(params.leagueId);
+    loader: async ({ params, context }) => {
       const ROUTE_ID = '/_authenticated/_team-required/league/$leagueId';
+      const validation = leagueIdParamsSchema.safeParse(params);
+      if (!validation.success) {
+        throw notFound({ routeId: ROUTE_ID });
+      }
+      const { leagueId } = validation.data;
       const [league, standings] = await Promise.all([
-        getLeagueById(leagueId),
-        getLeagueStandings(leagueId),
+        context.queryClient.ensureQueryData(leagueQueries.byId(leagueId)),
+        context.queryClient.ensureQueryData(standingsQueries.forLeague(leagueId)),
       ]);
       if (!league || !standings) {
         throw notFound({ routeId: ROUTE_ID });
       }
-      return { league, standings };
     },
     component: League,
     notFoundComponent: () => <h1>League Not Found</h1>,
@@ -418,7 +428,7 @@ describe('My leagues', () => {
 });
 
 describe('League page', () => {
-  it('renders league details returned by the loader', async () => {
+  it('renders league details when both reads succeed', async () => {
     server.use(
       http.get(`${API_BASE}/leagues/7`, () =>
         HttpResponse.json(createMockLeague({ id: 7, name: 'COTA Champions' })),
@@ -452,6 +462,35 @@ describe('League page', () => {
     renderWithRouter({
       routeTree: buildLeagueRouteTree(),
       initialEntry: '/league/123',
+      auth: createAuthedAuth(),
+    });
+
+    expect(await screen.findByRole('heading', { name: 'League Not Found' })).toBeInTheDocument();
+  });
+
+  it('renders the notFound component when the standings lookup returns 404', async () => {
+    server.use(
+      http.get(`${API_BASE}/leagues/55`, () =>
+        HttpResponse.json(createMockLeague({ id: 55, name: 'Half Loaded' })),
+      ),
+      http.get(`${API_BASE}/leagues/55/standings`, () => new HttpResponse(null, { status: 404 })),
+    );
+
+    stubMyTeam();
+    renderWithRouter({
+      routeTree: buildLeagueRouteTree(),
+      initialEntry: '/league/55',
+      auth: createAuthedAuth(),
+    });
+
+    expect(await screen.findByRole('heading', { name: 'League Not Found' })).toBeInTheDocument();
+  });
+
+  it('renders the notFound component when the league id param is invalid', async () => {
+    stubMyTeam();
+    renderWithRouter({
+      routeTree: buildLeagueRouteTree(),
+      initialEntry: '/league/not-a-number',
       auth: createAuthedAuth(),
     });
 

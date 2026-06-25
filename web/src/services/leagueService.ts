@@ -75,4 +75,9 @@ export const leagueQueries = {
       queryKey: [...leagueQueries.all, 'available', searchTerm ?? null] as const,
       queryFn: () => getAvailableLeagues(searchTerm),
     }),
+  byId: (id: number) =>
+    queryOptions({
+      queryKey: [...leagueQueries.all, 'detail', id] as const,
+      queryFn: () => getLeagueById(id),
+    }),
 };

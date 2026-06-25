@@ -32,8 +32,6 @@ export function MyTeamRoute() {
     from: '/_authenticated/_team-required/my-team',
   });
 
-  // requireTeam guarantees a team at runtime; this narrows the nullable queryFn
-  // result and falls back to the route's Create-Team notFoundComponent.
   if (!team) throw notFound();
 
   return (

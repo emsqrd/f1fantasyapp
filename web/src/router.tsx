@@ -13,8 +13,8 @@ import { Button } from '@/components/ui/button';
 import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
-import { getLeagueById, leagueQueries } from '@/services/leagueService';
-import { getLeagueStandings } from '@/services/standingsService';
+import { leagueQueries } from '@/services/leagueService';
+import { standingsQueries } from '@/services/standingsService';
 import { getTeamById, getTeamSummary, teamQueries } from '@/services/teamService';
 import { profileQueries } from '@/services/userProfileService';
 import { isApiError } from '@/utils/errors';
@@ -406,10 +406,6 @@ const browseLeaguesRoute = createRoute({
  *
  * **Note:** Uses Zod schema ({@link leagueIdParamsSchema}) to validate and coerce
  * `leagueId` parameter from string to positive integer with detailed error messages.
- *
- * Implements
- * {@link https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#stale-while-revalidate-caching | SWR caching}
- * with `staleTime` and `gcTime` for optimal performance.
  */
 const leagueRoute = createRoute({
   getParentRoute: () => teamRequiredLayoutRoute,
@@ -417,7 +413,7 @@ const leagueRoute = createRoute({
   staticData: {
     pageTitle: 'League Details',
   },
-  loader: async ({ params }) => {
+  loader: async ({ params, context }) => {
     const LEAGUE_ROUTE_ID = '/_authenticated/_team-required/league/$leagueId';
 
     // Validate and parse params using Zod schema
@@ -431,8 +427,8 @@ const leagueRoute = createRoute({
 
     const { leagueId } = validationResult.data;
     const [league, standings] = await Promise.all([
-      getLeagueById(leagueId),
-      getLeagueStandings(leagueId),
+      context.queryClient.ensureQueryData(leagueQueries.byId(leagueId)),
+      context.queryClient.ensureQueryData(standingsQueries.forLeague(leagueId)),
     ]);
 
     // Return 404 if either resource is missing — the two endpoints should agree,
@@ -440,8 +436,6 @@ const leagueRoute = createRoute({
     if (!league || !standings) {
       throw notFound({ routeId: LEAGUE_ROUTE_ID });
     }
-
-    return { league, standings };
   },
   component: League,
   pendingComponent: () => (

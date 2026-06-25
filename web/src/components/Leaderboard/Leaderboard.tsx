@@ -2,9 +2,11 @@ import { LeaderboardHeader } from '@/components/LeaderboardHeader/LeaderboardHea
 import { PositionDelta } from '@/components/PositionDelta/PositionDelta';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { leagueQueries } from '@/services/leagueService';
+import { standingsQueries } from '@/services/standingsService';
 import { profileQueries } from '@/services/userProfileService';
-import { useQuery } from '@tanstack/react-query';
-import { Link, getRouteApi } from '@tanstack/react-router';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { Link, getRouteApi, notFound } from '@tanstack/react-router';
 import { ChevronRightIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -25,9 +27,13 @@ interface LeaderboardProps {
 }
 
 export function Leaderboard({ actions, inlineAction }: LeaderboardProps = {}) {
-  const { league, standings } = routeApi.useLoaderData();
+  const { leagueId } = routeApi.useParams();
+  const { data: league } = useSuspenseQuery(leagueQueries.byId(Number(leagueId)));
+  const { data: standings } = useSuspenseQuery(standingsQueries.forLeague(Number(leagueId)));
   const { user } = useAuth();
   const { data: profile } = useQuery({ ...profileQueries.current(), enabled: !!user });
+
+  if (!league || !standings) throw notFound();
 
   const entries = standings.standings;
 
