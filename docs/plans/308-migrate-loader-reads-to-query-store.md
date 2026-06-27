@@ -93,11 +93,27 @@ Each commit is independently green (`npm run web:test`, `web:lint`, `web:format:
 
 **7 — Disable the router loader cache.** Set `defaultPreloadStaleTime: 0` in `createRouter`. Verify no per-route `staleTime`/`gcTime` remain and no `useLoaderData` data reads survive (`grep`). This is the convergence gate.
 
+**8 — Freshness policy: base `staleTime` 0 (opt-in staleness).** Follow-on cleanup the migration made necessary. Earlier commits put the same uncommented `staleTime: 5 * 60_000` on every read they moved (the earliest on `profileQuery`, 3ab5507), regardless of how often each read's data actually changes — making staleness the implicit default. On cross-user reads this client can't invalidate, that widened the freshness window with no refresh path inside it: notably `teamQueries.byId`, where a viewed team's roster can show stale for up to 5 min (≈10s pre-migration; surfaced in review). Flip the default so staleness is opt-in and fails safe — a forgotten annotation costs a wasted background refetch, not stale data on screen.
+  - **`queryClient.ts`:** remove the `staleTime: 60_000` override so the QueryClient default (`0`) stands. Drop `gcTime: 5 * 60_000` — already the v5 default, redundant.
+  - **Strip the blanket `staleTime: 5 * 60_000`** from the 7 reads that carry it: `teamQueries.{mine,byId,summary}`, `raceWeekendQueries.list`, `driverQueries.list`, `constructorQueries.list`, `profileQueries.current`. They inherit `0` → `refetchOnMount`/`OnWindowFocus`/`OnReconnect` revalidate on engagement (stale-while-revalidate: instant cached paint, fresh moments later). Cross-user reads (`byId`, `standings.forLeague`, league lists — which never carried a `staleTime`) get correct freshness for free.
+  - **Lone opt-out:** `seasonQueries.current` → `staleTime: Infinity` (static within a session — changes annually; `Infinity`, not `'static'`, so manual invalidation still works). The only read that states its own window; everything else uses the default.
+  - **Tests — no changes needed.** Nothing asserts a query `staleTime`. The only test `staleTime` references are the six `setQueryDefaults(leagueQueries.all | standingsQueries.all, { staleTime: 60_000 })` freshness pins in `league-membership.integration.test.tsx` — per-key preconditions that override the global default, so they stay intact. Dropping the global to `0` adds only one `refetchOnMount` background refetch per loader-primed query (`refetchOnWindowFocus` is globally `false`; reconnect doesn't fire in jsdom): served identically by MSW (no `once: true` handlers), no rendered-output change, no re-suspend. The suite's four call-count assertions are on auth callbacks and a state-guarded invite fetch (`League.tsx` `useState`, not a query) — none on a query whose `staleTime` changes.
+
+**9 — Join invite preview (`previewInvite`).** Retire the last return-data route onto the Query store. `joinInviteRoute` is the one read #308 left on `useLoaderData` + `return { preview }`, and its unguarded null path crashes the render — verified: a `200` with a `null` body throws `Cannot read properties of null (reading 'leagueName')` and trips the error boundary instead of showing Invite Not Found, because `previewInvite` can *return* null (not throw) on `2xx`-empty/`204`/non-JSON responses (`api.ts:123–138`) and the `as JoinInviteLoaderData` cast hides it.
+  - **Factory** (`leagueInviteService.ts`): `leagueInviteQueries = { all: ['leagueInvite'], preview: (token) => queryOptions({ queryKey: [...all, 'preview', token], queryFn: () => previewInvite(token) }) }`. No `staleTime` — inherits the base-0 default (commit 8).
+  - **Loader** (`joinInviteRoute`): `await context.queryClient.ensureQueryData(leagueInviteQueries.preview(params.token))` inside the existing `try` (keep `400 → notFound({ routeId })`, rethrow 5xx/network); then `if (!preview) throw notFound({ routeId })` for the `2xx`-null/empty path. Return nothing. Two absence signals (400 thrown, null returned) converge on `notFound`.
+  - **Component** (`JoinInvite.tsx`): `const { token } = useParams(...)`; `const { data: preview } = useSuspenseQuery(leagueInviteQueries.preview(token)); if (!preview) throw notFound();`. Drop `useLoaderData` + the `JoinInviteLoaderData` interface/cast; the narrowing throw matches `Team`/`Leaderboard`.
+  - **Writes:** none — `joinViaInvite` already invalidates `leagueQueries.all` + `standingsQueries.all`, and the user navigates away on join, so the preview needs no reconciliation.
+  - **Preload:** now Query-backed, so a hover-preload + click dedupes through the cache like every other route — closes the return-data double-`previewInvite` the review noted under `defaultPreloadStaleTime: 0`.
+  - **Tests** (`join-invite.integration.test.tsx`): migrate the mirror `joinInviteRoute` loader to the priming shape (ensureQueryData + both `notFound` guards, return nothing); the mirror component reads `useSuspenseQuery`. **Add the missing null-preview arm:** a `200` with a null/empty body renders "Invite Not Found", not a crash (the 400 and 500 arms already exist; this is the non-400 absence the bug exposed).
+  - **Convergence:** this was the last `useLoaderData` data-read and the last return-data loader; after it, commit 7's "no `useLoaderData` data reads" invariant holds app-wide, not just across the commit 1–6 components.
+
 ## Key files
 
-- Factories: `web/src/services/{leagueService,raceWeekendService,teamService,standingsService}.ts`
+- Factories: `web/src/services/{leagueService,raceWeekendService,teamService,standingsService}.ts`; freshness cleanup (commit 8) also touches `{driverService,constructorService,userProfileService,seasonService}.ts`; join invite (commit 9) adds `leagueInviteService.ts`
+- Query client default (commit 8): `web/src/lib/queryClient.ts`
 - Routes + router config: `web/src/router.tsx`
-- Components: `IndexRoute.tsx`, `LeagueList.tsx`, `BrowseLeagues.tsx`, `League.tsx`, `Leaderboard.tsx`, `Team.tsx`
+- Components: `IndexRoute.tsx`, `LeagueList.tsx`, `BrowseLeagues.tsx`, `League.tsx`, `Leaderboard.tsx`, `Team.tsx`, `JoinInvite.tsx` (commit 9)
 - Writes: `CreateLeague.tsx`, `BrowseLeagues.tsx`, `JoinInvite.tsx`, `CreateTeam.tsx`
 - Tests: `web/src/tests/integration/{leagues,join-invite,leaderboard,team-lineup,view-team,root-routing,route-error-recovery,create-team}.integration.test.tsx`; **add** `league-membership.integration.test.tsx` (commit 1); **delete** `league-loader.integration.test.tsx` (commit 3, folded into `leagues`)
 
@@ -105,9 +121,12 @@ Each commit is independently green (`npm run web:test`, `web:lint`, `web:format:
 
 - **Per commit:** `npm run web:test` (or `web:test:integration` focused) + `web:lint` + `web:format:check` + `web:build`, all green.
 - **After commit 7, grep the convergence invariants:** no `useLoaderData` data reads remain in the migrated components; no `staleTime`/`gcTime` on routes in `router.tsx`; `defaultPreloadStaleTime: 0` is set.
+- **After commit 8, grep the freshness invariants:** no `staleTime: 5 * 60_000` remains in `src/services`; `queryClient` carries no `staleTime` override; `seasonQueries.current` is the only read with an explicit `staleTime`.
+- **After commit 9:** no `useLoaderData` data-read or return-data loader remains anywhere (`joinInviteRoute` was the last holdout); `leagueInviteQueries.preview` is primed in the loader and read via `useSuspenseQuery`.
 - **Final regression gate (once, end of PR):** run the existing e2e suite — `cd e2e/supabase && supabase start`, then `npm run e2e`. No new e2e tests are added (this migration's failure modes belong at the integration layer); the existing sign-in → build-team → join-league → view-scores journeys traverse the migrated reads and their invalidating writes against the real API, confirming cache wiring and invalidation keys hold beyond MSW.
 - **Manual browser check (dev stack, throwaway user)** — these are the runtime payoffs tests don't fully surface:
   - Edit your team, then go Home — the summary still reflects identity (no stale wipe).
   - Create a league / join from Browse / join via invite link — My Leagues and the league member count reflect it on next view (no stale list).
   - Create a team from the no-team Home, navigate back Home — summary flips from CreateTeamHero to the team variant.
   - League leaderboard shows your row after you join.
+  - **(commit 8)** View another team (`/team/$id`), change its roster server-side, return within seconds — the viewed roster updates (no multi-minute stale window).
