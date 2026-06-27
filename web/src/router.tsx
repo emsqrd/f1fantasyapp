@@ -15,7 +15,7 @@ import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
 import { leagueQueries } from '@/services/leagueService';
 import { standingsQueries } from '@/services/standingsService';
-import { getTeamSummary, teamQueries } from '@/services/teamService';
+import { teamQueries } from '@/services/teamService';
 import { profileQueries } from '@/services/userProfileService';
 import { isApiError } from '@/utils/errors';
 import {
@@ -37,7 +37,7 @@ import { queryClient } from './lib/queryClient';
 import { constructorQueries } from './services/constructorService';
 import { driverQueries } from './services/driverService';
 import { previewInvite } from './services/leagueInviteService';
-import { getRaceWeekends, raceWeekendQueries } from './services/raceWeekendService';
+import { raceWeekendQueries } from './services/raceWeekendService';
 import { seasonQueries } from './services/seasonService';
 
 /**
@@ -138,17 +138,15 @@ const indexRoute = createRoute({
   path: '/',
   loader: async ({ context }) => {
     if (!context.auth.user) {
-      return { home: null };
+      return;
     }
 
     const season = await context.queryClient.ensureQueryData(seasonQueries.current());
 
-    const [summary, races] = await Promise.all([
-      getTeamSummary(),
-      season ? getRaceWeekends(season.id) : Promise.resolve([]),
+    await Promise.all([
+      context.queryClient.ensureQueryData(teamQueries.summary()),
+      context.queryClient.ensureQueryData(raceWeekendQueries.list(season?.id ?? null)),
     ]);
-
-    return { home: { summary, races } };
   },
   component: IndexRoute,
 });

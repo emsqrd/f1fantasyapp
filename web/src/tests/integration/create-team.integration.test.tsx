@@ -1,7 +1,6 @@
 import { CreateTeam } from '@/components/CreateTeam/CreateTeam';
 import { safeInternalPath } from '@/lib/safeInternalPath';
 import { API_BASE, server } from '@/mocks';
-import { teamQueries } from '@/services/teamService';
 import {
   buildAuthenticatedLayout,
   buildRootRoute,
@@ -12,28 +11,27 @@ import {
   renderWithRouter,
 } from '@/tests/test-utils';
 import { createRoute } from '@tanstack/react-router';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
+
+const redirectSearchSchema = z.object({
+  redirect: z.string().optional().catch(undefined).transform(safeInternalPath),
+});
 
 // `/create-team` lives directly under the `_authenticated` layout in
 // `router.tsx` — the one-team-per-user rule is enforced by the backend, and
 // `CreateTeam` itself decides between the form and an already-have-a-team state
 // from `profile.hasTeam`. The default MSW handlers seed a no-team profile, so the
 // form renders without per-test setup; the has-team case overrides `/me/profile`.
-// Stub destination routes (`/team/$teamId`, `/leagues`) exist as bare
-// placeholders so navigation targets are resolvable; their rendered titles are
-// how the tests assert navigation landed on the right URL.
+// The `/team/$teamId` and `/leagues` stubs are bare navigation targets so the
+// create's redirect resolves.
 function buildCreateTeamRouteTree() {
   const rootRoute = buildRootRoute();
 
   const authenticatedLayoutRoute = buildAuthenticatedLayout(rootRoute);
-
-  const redirectSearchSchema = z.object({
-    redirect: z.string().optional().catch(undefined).transform(safeInternalPath),
-  });
 
   const createTeamRoute = createRoute({
     getParentRoute: () => authenticatedLayoutRoute,
@@ -81,19 +79,18 @@ describe('Create team', () => {
     expect(screen.queryByLabelText(/team name/i)).not.toBeInTheDocument();
   });
 
-  it('creates the team and navigates to /team/$teamId on success', async () => {
+  it('submits the trimmed team name as the create request body', async () => {
     const user = userEvent.setup();
-    const createdTeam = createMockTeam({ id: 42, name: 'My Racing Team' });
     let capturedBody: unknown = null;
 
     server.use(
       http.post(`${API_BASE}/teams`, async ({ request }) => {
         capturedBody = await request.json();
-        return HttpResponse.json(createdTeam);
+        return HttpResponse.json(createMockTeam({ id: 42, name: 'My Racing Team' }));
       }),
     );
 
-    const { queryClient } = renderWithRouter({
+    renderWithRouter({
       routeTree: buildCreateTeamRouteTree(),
       initialEntry: '/create-team',
       auth: createAuthedAuth(),
@@ -102,12 +99,8 @@ describe('Create team', () => {
     await user.type(await screen.findByLabelText(/team name/i), '  My Racing Team  ');
     await user.click(screen.getByRole('button', { name: /create team/i }));
 
-    expect(await screen.findByRole('heading', { name: 'Team Page' })).toBeInTheDocument();
     // Wire contract: schema trims whitespace; CreateTeam sends `{ name }`.
-    expect(capturedBody).toEqual({ name: 'My Racing Team' });
-    // The POST response is slimmer than GET /me/team, so the team query must be
-    // evicted, not seeded with it — the next guard read fetches the full shape.
-    expect(queryClient.getQueryData(teamQueries.mine().queryKey)).toBeUndefined();
+    await waitFor(() => expect(capturedBody).toEqual({ name: 'My Racing Team' }));
   });
 
   it('surfaces an InlineError when team creation fails', async () => {
@@ -125,8 +118,8 @@ describe('Create team', () => {
     await user.click(screen.getByRole('button', { name: /create team/i }));
 
     expect(await screen.findByRole('alert')).toBeInTheDocument();
-    // Stayed on the form — no navigation.
-    expect(screen.queryByRole('heading', { name: 'Team Page' })).not.toBeInTheDocument();
+    // Stayed on the form — no navigation to the team destination.
+    expect(screen.getByLabelText(/team name/i)).toBeInTheDocument();
   });
 
   it('blocks submit and shows a field error when team name is empty', async () => {

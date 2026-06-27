@@ -121,4 +121,10 @@ export const teamQueries = {
       queryFn: () => getTeamById(id),
       staleTime: 5 * 60_000,
     }),
+  summary: () =>
+    queryOptions({
+      queryKey: [...teamQueries.all, 'summary'] as const,
+      queryFn: getTeamSummary,
+      staleTime: 5 * 60_000,
+    }),
 };
