@@ -610,6 +610,9 @@ export const router = createRouter({
     auth: routerAuth,
     queryClient,
   },
+  // Query is the single read store (ADR 009): zero the router's preload cache so
+  // it can't serve a loader result the Query cache has already refreshed past.
+  defaultPreloadStaleTime: 0,
   defaultPendingComponent: () => (
     <div role="status" className="flex min-h-screen items-center justify-center">
       <div className="text-muted-foreground">Loading...</div>
