@@ -27,6 +27,5 @@ export const raceWeekendQueries = {
     queryOptions({
       queryKey: [...raceWeekendQueries.all, 'list', seasonId] as const,
       queryFn: () => (seasonId == null ? [] : getRaceWeekends(seasonId)),
-      staleTime: 5 * 60_000,
     }),
 };

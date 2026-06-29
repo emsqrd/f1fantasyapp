@@ -27,6 +27,5 @@ export const profileQueries = {
     queryOptions({
       queryKey: [...profileQueries.all, 'current'] as const,
       queryFn: () => userProfileService.getCurrentProfile(),
-      staleTime: 5 * 60_000,
     }),
 };
