@@ -3,7 +3,7 @@ import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteError
 import type { Team } from '@/contracts/Team';
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/mocks';
-import { previewInvite } from '@/services/leagueInviteService';
+import { leagueInviteQueries } from '@/services/leagueInviteService';
 import {
   createAuthedAuth,
   createMockTeam,
@@ -42,10 +42,14 @@ function buildJoinInviteRouteTree() {
     getParentRoute: () => rootRoute,
     path: '/join/$token',
     component: JoinInvite,
-    loader: async ({ params }) => {
+    loader: async ({ params, context }) => {
       try {
-        const preview = await previewInvite(params.token);
-        return { preview };
+        const preview = await context.queryClient.ensureQueryData(
+          leagueInviteQueries.preview(params.token),
+        );
+        if (!preview) {
+          throw notFound({ routeId: '/join/$token' });
+        }
       } catch (error) {
         if (isApiError(error) && error.status === 400) {
           throw notFound({ routeId: '/join/$token' });
@@ -212,6 +216,28 @@ describe('Join via invite token', () => {
       http.get(
         `${API_BASE}/leagues/join/${TOKEN}/preview`,
         () => new HttpResponse(null, { status: 400 }),
+      ),
+    );
+
+    stubProfileForTeam(null);
+    renderWithRouter({
+      routeTree: buildJoinInviteRouteTree(),
+      initialEntry: `/join/${TOKEN}`,
+      auth: createUnauthAuth(),
+    });
+
+    expect(await screen.findByRole('heading', { name: /invite not found/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: /404 - page not found/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders the invite-not-found page when the preview returns a 2xx with an empty body', async () => {
+    // 200 + null body: previewInvite resolves null, which the loader maps to notFound.
+    server.use(
+      http.get(
+        `${API_BASE}/leagues/join/${TOKEN}/preview`,
+        () => new HttpResponse(null, { status: 200 }),
       ),
     );
 

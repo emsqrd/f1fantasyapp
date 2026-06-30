@@ -36,7 +36,7 @@ import { routerAuth } from './lib/authStore';
 import { queryClient } from './lib/queryClient';
 import { constructorQueries } from './services/constructorService';
 import { driverQueries } from './services/driverService';
-import { previewInvite } from './services/leagueInviteService';
+import { leagueInviteQueries } from './services/leagueInviteService';
 import { raceWeekendQueries } from './services/raceWeekendService';
 import { seasonQueries } from './services/seasonService';
 
@@ -221,11 +221,17 @@ const joinInviteRoute = createRoute({
     pageTitle: 'Join League',
   },
   component: JoinInvite,
-  loader: async ({ params }) => {
+  loader: async ({ params, context }) => {
     const ROUTE_ID = '/join/$token';
     try {
-      const preview = await previewInvite(params.token);
-      return { preview };
+      const preview = await context.queryClient.ensureQueryData(
+        leagueInviteQueries.preview(params.token),
+      );
+      // previewInvite returns null (not throws) on a 2xx-empty/204/non-JSON body —
+      // without this guard the component derefs preview.leagueName and crashes.
+      if (!preview) {
+        throw notFound({ routeId: ROUTE_ID });
+      }
     } catch (error) {
       // 400 means the token resolves to no league (invalid / never existed) — a real
       // absence, so notFound. 5xx and network errors are transient; rethrow them to
