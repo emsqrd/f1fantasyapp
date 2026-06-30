@@ -2,8 +2,8 @@ import { League } from '@/components/League/League';
 import type { LeagueStandings, TeamLeagueStanding } from '@/contracts/LeagueStandings';
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/mocks';
-import { getLeagueById } from '@/services/leagueService';
-import { getLeagueStandings } from '@/services/standingsService';
+import { leagueQueries } from '@/services/leagueService';
+import { standingsQueries } from '@/services/standingsService';
 import {
   buildAuthenticatedLayout,
   buildTeamRequiredLayout,
@@ -32,16 +32,16 @@ function buildLeagueRouteTree() {
   const leagueRoute = createRoute({
     getParentRoute: () => teamRequiredLayoutRoute,
     path: 'league/$leagueId',
-    loader: async ({ params }) => {
+    loader: async ({ params, context }) => {
       const ROUTE_ID = '/_authenticated/_team-required/league/$leagueId';
+      const leagueId = Number(params.leagueId);
       const [league, standings] = await Promise.all([
-        getLeagueById(Number(params.leagueId)),
-        getLeagueStandings(Number(params.leagueId)),
+        context.queryClient.ensureQueryData(leagueQueries.byId(leagueId)),
+        context.queryClient.ensureQueryData(standingsQueries.forLeague(leagueId)),
       ]);
       if (!league || !standings) {
         throw notFound({ routeId: ROUTE_ID });
       }
-      return { league, standings };
     },
     component: League,
     notFoundComponent: () => <h1>League Not Found</h1>,

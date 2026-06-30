@@ -1,15 +1,11 @@
-import type { League } from '@/contracts/League';
 import { cn } from '@/lib/utils';
-import { Link, useLoaderData, useNavigate } from '@tanstack/react-router';
+import { leagueQueries } from '@/services/leagueService';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { ChevronRightIcon } from 'lucide-react';
 
 import { AppContainer } from '../AppContainer/AppContainer';
 import { CreateLeague } from '../CreateLeague/CreateLeague';
-
-// Type for the route's loader data
-interface LeagueListLoaderData {
-  leagues: League[];
-}
 
 const rowBase = 'flex w-full items-center gap-3 transition-colors';
 const rowChrome =
@@ -18,11 +14,7 @@ const rowHover = 'sm:hover:bg-accent';
 const rowFocus = 'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none';
 
 export function LeagueList() {
-  // Get leagues data from the route loader
-  // Data is already loaded before this component renders (no loading state needed)
-  const { leagues } = useLoaderData({
-    from: '/_authenticated/_team-required/leagues',
-  }) as LeagueListLoaderData;
+  const { data: leagues } = useSuspenseQuery(leagueQueries.mine());
 
   const navigate = useNavigate();
 

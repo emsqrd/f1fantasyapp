@@ -1,10 +1,10 @@
 import type { League } from '@/contracts/League';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
-import { joinLeague } from '@/services/leagueService';
+import { joinLeague, leagueQueries } from '@/services/leagueService';
 import { standingsQueries } from '@/services/standingsService';
 import * as Sentry from '@sentry/react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useLoaderData, useNavigate } from '@tanstack/react-router';
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { Globe, Lock, Users } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
@@ -27,14 +27,8 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 
-interface PublicLeaguesLoaderData {
-  leagues: League[];
-}
-
 export function BrowseLeagues() {
-  const { leagues } = useLoaderData({
-    from: '/_authenticated/_team-required/browse-leagues',
-  }) as PublicLeaguesLoaderData;
+  const { data: leagues } = useSuspenseQuery(leagueQueries.available());
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -53,7 +47,7 @@ export function BrowseLeagues() {
       try {
         await joinLeague(league.id);
 
-        // Joining changes the user's standings.
+        queryClient.invalidateQueries({ queryKey: leagueQueries.all });
         queryClient.invalidateQueries({ queryKey: standingsQueries.all });
 
         Sentry.logger.info('User joined league from browse page', {

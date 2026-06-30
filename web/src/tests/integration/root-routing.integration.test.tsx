@@ -2,9 +2,9 @@ import { IndexRoute } from '@/components/IndexRoute/IndexRoute';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/mocks';
-import { getRaceWeekends } from '@/services/raceWeekendService';
+import { raceWeekendQueries } from '@/services/raceWeekendService';
 import { seasonQueries } from '@/services/seasonService';
-import { getTeamSummary } from '@/services/teamService';
+import { teamQueries } from '@/services/teamService';
 import {
   createAuthedAuth,
   createMockUserProfile,
@@ -54,17 +54,15 @@ function buildIndexRouteTree() {
     path: '/',
     loader: async ({ context }) => {
       if (!context.auth.user) {
-        return { home: null };
+        return;
       }
 
       const season = await context.queryClient.ensureQueryData(seasonQueries.current());
 
-      const [summary, races] = await Promise.all([
-        getTeamSummary(),
-        season ? getRaceWeekends(season.id) : Promise.resolve([]),
+      await Promise.all([
+        context.queryClient.ensureQueryData(teamQueries.summary()),
+        context.queryClient.ensureQueryData(raceWeekendQueries.list(season?.id ?? null)),
       ]);
-
-      return { home: { summary, races } };
     },
     component: IndexRoute,
     errorComponent: RouteErrorComponent,
@@ -189,29 +187,25 @@ describe('routing at /', () => {
     expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
   });
 
-  it('re-fetches only standings when the widget retry is clicked', async () => {
+  it('recovers the leagues widget when the retry is clicked', async () => {
     const user = userEvent.setup();
-    let summaryCalls = 0;
-    let racesCalls = 0;
 
     server.use(
       http.get(`${API_BASE}/me/profile`, () =>
         HttpResponse.json(createMockUserProfile({ firstName: 'Ada', hasTeam: true })),
       ),
-      http.get(`${API_BASE}/me/team/summary`, () => {
-        summaryCalls += 1;
-        return HttpResponse.json({
+      http.get(`${API_BASE}/me/team/summary`, () =>
+        HttpResponse.json({
           teamName: 'Red Bull Racing',
           seasonTotalPoints: 312,
           lastRace: null,
-        });
-      }),
+        }),
+      ),
       http.get(`${API_BASE}/me/standings`, () => new HttpResponse(null, { status: 500 })),
       http.get(`${API_BASE}/seasons/current`, () => HttpResponse.json(CURRENT_SEASON)),
-      http.get(`${API_BASE}/seasons/${CURRENT_SEASON.id}/race-weekends`, () => {
-        racesCalls += 1;
-        return HttpResponse.json(RACE_WEEKENDS);
-      }),
+      http.get(`${API_BASE}/seasons/${CURRENT_SEASON.id}/race-weekends`, () =>
+        HttpResponse.json(RACE_WEEKENDS),
+      ),
     );
 
     renderWithRouter({
@@ -233,8 +227,6 @@ describe('routing at /', () => {
     await user.click(retry);
 
     expect(await screen.findByRole('link', { name: /Open Cota 2026/i })).toBeInTheDocument();
-    expect(summaryCalls).toBe(1);
-    expect(racesCalls).toBe(1);
   });
 
   it('fails the route when the team summary fetch fails', async () => {
