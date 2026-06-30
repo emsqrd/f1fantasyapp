@@ -13,6 +13,5 @@ export const driverQueries = {
     queryOptions({
       queryKey: [...driverQueries.all, 'list', seasonYear ?? null] as const,
       queryFn: () => getDrivers(seasonYear),
-      staleTime: 5 * 60_000,
     }),
 };

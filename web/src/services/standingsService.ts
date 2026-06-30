@@ -29,4 +29,9 @@ export const standingsQueries = {
       queryKey: [...standingsQueries.all, 'mine'] as const,
       queryFn: getMyStandings,
     }),
+  forLeague: (leagueId: number) =>
+    queryOptions({
+      queryKey: [...standingsQueries.all, 'league', leagueId] as const,
+      queryFn: () => getLeagueStandings(leagueId),
+    }),
 };

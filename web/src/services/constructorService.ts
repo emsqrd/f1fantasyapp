@@ -13,6 +13,5 @@ export const constructorQueries = {
     queryOptions({
       queryKey: [...constructorQueries.all, 'list', seasonYear ?? null] as const,
       queryFn: () => getConstructors(seasonYear),
-      staleTime: 5 * 60_000,
     }),
 };

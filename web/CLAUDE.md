@@ -53,8 +53,6 @@ How a read is consumed:
 
 Loaders prime the cache; they do not return fetched data, and components do not read `useLoaderData` for it. Whether a surface blocks on a read or streams it in is a separate, load-strategy question (ADR 008), independent of where the data lives — both read through the Query cache.
 
-> **Migration in progress:** some routes still return data from their loaders and read `useLoaderData` (pre-ADR-009). Treat the rule above as the target for new and changed reads; pre-existing loader-data reads migrate incrementally.
-
 **Writes** that change a query-cached resource use `useMutation` and reconcile the cache via `invalidateQueries` in `onSuccess`/`onSettled`. Optimistic writes additionally snapshot + `setQueryData` in `onMutate` with an `onError` rollback (see `useSetCaptain`). Invalidate with `invalidateQueries`, not `router.invalidate()` — the latter only re-runs loaders, and `ensureQueryData` then serves the stale cache entry, so it won't refresh these reads.
 
 Loaders throw `notFound({ routeId })` on missing resources; the route's `errorComponent` handles the failure path.
@@ -112,6 +110,7 @@ See root `CLAUDE.md` `## Testing Strategy` for cross-cutting rules (unit vs inte
 - Static JSX (headings, labels) unless position/order matters.
 - Styling / CSS classes.
 - Zod schema rules in isolation — exercise them through the real form (render, type, submit, assert the error or payload).
+- TanStack Query cache internals — don't assert `getQueryData`/`setQueryData` state or that `invalidateQueries` fired; assert the rendered outcome.
 
 **Route components belong in the integration layer.** Mounting a route component with `vi.mock('@tanstack/react-router', ...)` to stub `useLoaderData`/`useNavigate` decouples the test from the very wiring (loader → component, guard → redirect) that integration tests exist to verify. Build a per-test route tree in `src/tests/integration/<flow>.integration.test.tsx` instead — see "Frontend Integration Tests" below.
 
@@ -157,7 +156,7 @@ See root `CLAUDE.md` `## Testing Strategy` for when to reach for this layer vs. 
 - **Don't introduce per-service path constants** (e.g. `USER_PROFILE_PATH = '/me/profile'`). The service module is already the single source of truth for each path. Strict-mode MSW reports the exact unhandled URL on a typo or rename, so drift is caught loudly — constants would just add a second place to maintain.
 - For 4xx/5xx, use `new HttpResponse(null, { status })`. For success bodies, use `HttpResponse.json(factoryOutput)` so the response shape is typed via the factory.
 
-**`renderWithRouter` signature:** `routeTree`, `initialEntry`, and `auth` (`auth` and `queryClient` are wired into router context automatically). The helper creates a fresh per-test `QueryClient`, wraps the tree in its provider, and returns it, so tests can seed or assert the Query cache directly (e.g. `queryClient.setQueryData(teamQueries.mine().queryKey, mockTeam)`).
+**`renderWithRouter` signature:** `routeTree`, `initialEntry`, and `auth` (`auth` and `queryClient` are wired into router context automatically). The helper creates a fresh per-test `QueryClient`, wraps the tree in its provider, and returns it, so tests can set cache-freshness preconditions (e.g. pin `staleTime` with `setQueryDefaults`). Arrange query data through MSW — the single source of truth for test data — and assert what renders, not cache state.
 
 ```typescript
 const { queryClient } = renderWithRouter({
@@ -168,6 +167,8 @@ const { queryClient } = renderWithRouter({
 ```
 
 **Don't `vi.mock('@tanstack/react-router', ...)` or `vi.mock('@/services/...', ...)` in this layer.** Those mocks belong in component-level tests; mocking them here defeats the point of the layer.
+
+**Testing writes and cache reconciliation.** Verify a write by what renders after it, not by the cache. Arrange the read through MSW (the single source of truth for test data). A broad invalidation (`invalidateQueries`/`removeQueries` on a base key) is the safeguard — don't add a regression test per consuming surface to prove it fired. Cover a write's user-visible consequence once, on a real surface, and only when it's a critical flow; otherwise let e2e or the lowest layer own it. If observing that consequence requires a stand-in surface built only for the test, you're testing the mechanism — move it to a unit test of the reconciliation, or drop it.
 
 ### Sentry Integration
 

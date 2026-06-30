@@ -2,10 +2,11 @@ import type { LeagueInvite } from '@/contracts/LeagueInvite';
 import { useAuth } from '@/hooks/useAuth';
 import { useClipboard } from '@/hooks/useClipboard';
 import { getOrCreateLeagueInvite } from '@/services/leagueInviteService';
+import { leagueQueries } from '@/services/leagueService';
 import { profileQueries } from '@/services/userProfileService';
 import * as Sentry from '@sentry/react';
-import { useQuery } from '@tanstack/react-query';
-import { getRouteApi } from '@tanstack/react-router';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { getRouteApi, notFound } from '@tanstack/react-router';
 import { Check, Copy, Share, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
@@ -22,7 +23,8 @@ const routeApi = getRouteApi('/_authenticated/_team-required/league/$leagueId');
 export function League() {
   const { user } = useAuth();
   const { data: profile } = useQuery({ ...profileQueries.current(), enabled: !!user });
-  const { league } = routeApi.useLoaderData();
+  const { leagueId } = routeApi.useParams();
+  const { data: league } = useSuspenseQuery(leagueQueries.byId(Number(leagueId)));
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [leagueInvite, setLeagueInvite] = useState<LeagueInvite | null>(null);
@@ -30,6 +32,8 @@ export function League() {
   const [error, setError] = useState<string | null>(null);
 
   const { copy, reset, hasCopied } = useClipboard();
+
+  if (!league) throw notFound();
 
   const inviteUrl = leagueInvite ? `${window.location.origin}/join/${leagueInvite.token}` : '';
   const isOwner = profile?.id === league.ownerId;

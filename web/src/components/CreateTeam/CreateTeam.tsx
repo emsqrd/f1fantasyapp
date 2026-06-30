@@ -46,12 +46,13 @@ export function CreateTeam() {
         name: formData.teamName,
       });
 
-      // POST /teams returns a slimmer team than GET /me/team (no drivers/
-      // constructors), so it must not be cached as the team query's value.
-      // Evict instead — including the `null` cached for a no-team user — and
-      // the destination's requireTeam fetches the full shape. The profile
-      // refresh flips `hasTeam` for the sidebar and invite CTAs.
-      queryClient.removeQueries({ queryKey: teamQueries.mine().queryKey });
+      // POST /teams returns a slimmer team than GET /me/team (id/name/owner only —
+      // no budget or roster), so it must not be cached as the team query's value.
+      // Evict the whole team namespace — the `null` cached for a no-team user
+      // and the no-team Home summary — so the destination's requireTeam refetches
+      // the full team and Home refetches the now-present summary. The profile
+      // refresh updates hasTeam for dependent UI.
+      queryClient.removeQueries({ queryKey: teamQueries.all });
       queryClient.invalidateQueries({ queryKey: profileQueries.current().queryKey });
 
       // Navigate - TanStack Router handles navigation transitions

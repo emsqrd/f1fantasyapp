@@ -13,9 +13,9 @@ import { Button } from '@/components/ui/button';
 import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
-import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
-import { getLeagueStandings } from '@/services/standingsService';
-import { getTeamById, getTeamSummary, teamQueries } from '@/services/teamService';
+import { leagueQueries } from '@/services/leagueService';
+import { standingsQueries } from '@/services/standingsService';
+import { teamQueries } from '@/services/teamService';
 import { profileQueries } from '@/services/userProfileService';
 import { isApiError } from '@/utils/errors';
 import {
@@ -36,8 +36,8 @@ import { routerAuth } from './lib/authStore';
 import { queryClient } from './lib/queryClient';
 import { constructorQueries } from './services/constructorService';
 import { driverQueries } from './services/driverService';
-import { previewInvite } from './services/leagueInviteService';
-import { getRaceWeekends } from './services/raceWeekendService';
+import { leagueInviteQueries } from './services/leagueInviteService';
+import { raceWeekendQueries } from './services/raceWeekendService';
 import { seasonQueries } from './services/seasonService';
 
 /**
@@ -138,17 +138,15 @@ const indexRoute = createRoute({
   path: '/',
   loader: async ({ context }) => {
     if (!context.auth.user) {
-      return { home: null };
+      return;
     }
 
     const season = await context.queryClient.ensureQueryData(seasonQueries.current());
 
-    const [summary, races] = await Promise.all([
-      getTeamSummary(),
-      season ? getRaceWeekends(season.id) : Promise.resolve([]),
+    await Promise.all([
+      context.queryClient.ensureQueryData(teamQueries.summary()),
+      context.queryClient.ensureQueryData(raceWeekendQueries.list(season?.id ?? null)),
     ]);
-
-    return { home: { summary, races } };
   },
   component: IndexRoute,
 });
@@ -223,11 +221,17 @@ const joinInviteRoute = createRoute({
     pageTitle: 'Join League',
   },
   component: JoinInvite,
-  loader: async ({ params }) => {
+  loader: async ({ params, context }) => {
     const ROUTE_ID = '/join/$token';
     try {
-      const preview = await previewInvite(params.token);
-      return { preview };
+      const preview = await context.queryClient.ensureQueryData(
+        leagueInviteQueries.preview(params.token),
+      );
+      // previewInvite returns null (not throws) on a 2xx-empty/204/non-JSON body —
+      // without this guard the component derefs preview.leagueName and crashes.
+      if (!preview) {
+        throw notFound({ routeId: ROUTE_ID });
+      }
     } catch (error) {
       // 400 means the token resolves to no league (invalid / never existed) — a real
       // absence, so notFound. 5xx and network errors are transient; rethrow them to
@@ -355,12 +359,6 @@ const teamRequiredLayoutRoute = createRoute({
  * Leagues list route - displays all leagues the user has joined.
  *
  * Child of {@link teamRequiredLayoutRoute}, inherits auth and team protection.
- * Uses {@link https://tanstack.com/router/latest/docs/framework/react/guide/data-loading | loader}
- * to fetch leagues data before component renders.
- *
- * Implements
- * {@link https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#stale-while-revalidate-caching | SWR caching}
- * with `staleTime` and `gcTime` for optimal performance.
  */
 const leaguesRoute = createRoute({
   getParentRoute: () => teamRequiredLayoutRoute,
@@ -368,9 +366,8 @@ const leaguesRoute = createRoute({
   staticData: {
     pageTitle: 'My Leagues',
   },
-  loader: async () => {
-    const leagues = await getMyLeagues();
-    return { leagues };
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(leagueQueries.mine());
   },
   component: LeagueList,
   pendingComponent: () => (
@@ -389,9 +386,8 @@ const browseLeaguesRoute = createRoute({
   staticData: {
     pageTitle: 'Available Leagues',
   },
-  loader: async () => {
-    const leagues = await getAvailableLeagues();
-    return { leagues };
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(leagueQueries.available());
   },
   component: BrowseLeagues,
   pendingComponent: () => (
@@ -403,8 +399,6 @@ const browseLeaguesRoute = createRoute({
     </div>
   ),
   pendingMs: 200, // Show pending after 200ms to prevent flash for fast loads
-  staleTime: 10_000, // Consider fresh for 10 seconds
-  gcTime: 5 * 60_000, // Keep in memory for 5 minutes
 });
 
 /**
@@ -416,10 +410,6 @@ const browseLeaguesRoute = createRoute({
  *
  * **Note:** Uses Zod schema ({@link leagueIdParamsSchema}) to validate and coerce
  * `leagueId` parameter from string to positive integer with detailed error messages.
- *
- * Implements
- * {@link https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#stale-while-revalidate-caching | SWR caching}
- * with `staleTime` and `gcTime` for optimal performance.
  */
 const leagueRoute = createRoute({
   getParentRoute: () => teamRequiredLayoutRoute,
@@ -427,7 +417,7 @@ const leagueRoute = createRoute({
   staticData: {
     pageTitle: 'League Details',
   },
-  loader: async ({ params }) => {
+  loader: async ({ params, context }) => {
     const LEAGUE_ROUTE_ID = '/_authenticated/_team-required/league/$leagueId';
 
     // Validate and parse params using Zod schema
@@ -441,8 +431,8 @@ const leagueRoute = createRoute({
 
     const { leagueId } = validationResult.data;
     const [league, standings] = await Promise.all([
-      getLeagueById(leagueId),
-      getLeagueStandings(leagueId),
+      context.queryClient.ensureQueryData(leagueQueries.byId(leagueId)),
+      context.queryClient.ensureQueryData(standingsQueries.forLeague(leagueId)),
     ]);
 
     // Return 404 if either resource is missing — the two endpoints should agree,
@@ -450,8 +440,6 @@ const leagueRoute = createRoute({
     if (!league || !standings) {
       throw notFound({ routeId: LEAGUE_ROUTE_ID });
     }
-
-    return { league, standings };
   },
   component: League,
   pendingComponent: () => (
@@ -482,10 +470,6 @@ const leagueRoute = createRoute({
  *
  * **Note:** Uses Zod schema ({@link teamIdParamsSchema}) to validate and coerce
  * `teamId` parameter from string to positive integer with detailed error messages.
- *
- * Implements
- * {@link https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#stale-while-revalidate-caching | SWR caching}
- * with `staleTime` and `gcTime` for optimal performance.
  */
 const teamRoute = createRoute({
   getParentRoute: () => teamRequiredLayoutRoute,
@@ -518,10 +502,9 @@ const teamRoute = createRoute({
     const { teamId } = validationResult.data;
     const season = await context.queryClient.ensureQueryData(seasonQueries.current());
 
-    // Fetch all data in parallel
-    const [team, races] = await Promise.all([
-      getTeamById(teamId),
-      season ? getRaceWeekends(season.id) : Promise.resolve([]),
+    const [team] = await Promise.all([
+      context.queryClient.ensureQueryData(teamQueries.byId(teamId)),
+      context.queryClient.ensureQueryData(raceWeekendQueries.list(season?.id ?? null)),
       context.queryClient.ensureQueryData(driverQueries.list()),
       context.queryClient.ensureQueryData(constructorQueries.list()),
     ]);
@@ -530,8 +513,6 @@ const teamRoute = createRoute({
     if (!team) {
       throw notFound({ routeId: TEAM_ROUTE_ID });
     }
-
-    return { team, races };
   },
   component: TeamRoute,
   pendingComponent: () => (
@@ -543,8 +524,6 @@ const teamRoute = createRoute({
     </div>
   ),
   pendingMs: 200, // Show pending after 200ms to prevent flash for fast loads
-  staleTime: 10_000, // Consider fresh for 10 seconds
-  gcTime: 5 * 60_000, // Keep in memory for 5 minutes
   notFoundComponent: () => (
     <div className="flex min-h-screen flex-col items-center justify-center">
       <h1 className="mb-4 text-4xl font-bold">Team Not Found</h1>
@@ -568,13 +547,11 @@ const myTeamRoute = createRoute({
     // useSuspenseQuery(teamQueries.mine()).
     await context.queryClient.ensureQueryData(teamQueries.mine());
 
-    const [races] = await Promise.all([
-      season ? getRaceWeekends(season.id) : Promise.resolve([]),
+    await Promise.all([
+      context.queryClient.ensureQueryData(raceWeekendQueries.list(season?.id ?? null)),
       context.queryClient.ensureQueryData(driverQueries.list()),
       context.queryClient.ensureQueryData(constructorQueries.list()),
     ]);
-
-    return { races };
   },
   component: MyTeamRoute,
   pendingComponent: () => (
@@ -586,8 +563,6 @@ const myTeamRoute = createRoute({
     </div>
   ),
   pendingMs: 200, // Show pending after 200ms to prevent flash for fast loads
-  staleTime: 10_000, // Consider fresh for 10 seconds
-  gcTime: 5 * 60_000, // Keep in memory for 5 minutes
   notFoundComponent: () => (
     <div className="flex min-h-screen flex-col items-center justify-center">
       <h1 className="mb-4 text-4xl font-bold">Team Not Found</h1>
@@ -641,6 +616,9 @@ export const router = createRouter({
     auth: routerAuth,
     queryClient,
   },
+  // Query is the single read store (ADR 009): zero the router's preload cache so
+  // it can't serve a loader result the Query cache has already refreshed past.
+  defaultPreloadStaleTime: 0,
   defaultPendingComponent: () => (
     <div role="status" className="flex min-h-screen items-center justify-center">
       <div className="text-muted-foreground">Loading...</div>

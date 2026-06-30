@@ -3,24 +3,19 @@ import { LiveRegion } from '@/components/LiveRegion/LiveRegion';
 import { LoadingButton } from '@/components/LoadingButton/LoadingButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { LeagueInvitePreviewResponse } from '@/contracts/LeagueInvitePreviewResponse';
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
-import { joinViaInvite } from '@/services/leagueInviteService';
+import { joinViaInvite, leagueInviteQueries } from '@/services/leagueInviteService';
+import { leagueQueries } from '@/services/leagueService';
 import { standingsQueries } from '@/services/standingsService';
 import { profileQueries } from '@/services/userProfileService';
 import * as Sentry from '@sentry/react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useLoaderData, useNavigate, useParams } from '@tanstack/react-router';
+import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { Link, notFound, useNavigate, useParams } from '@tanstack/react-router';
 import { AlertCircle, InfoIcon, Lock, Users } from 'lucide-react';
 import { useState } from 'react';
 
 import { AppContainer } from '../AppContainer/AppContainer';
-
-// Type for the route's loader data
-interface JoinInviteLoaderData {
-  preview: LeagueInvitePreviewResponse;
-}
 
 /**
  * JoinInvite component - displays league preview and handles join flow.
@@ -33,13 +28,10 @@ interface JoinInviteLoaderData {
  * Uses redirect search params to preserve invite link through sign-in/team creation flows.
  */
 export function JoinInvite() {
-  // Get league preview data from route loader
-  const { preview } = useLoaderData({
-    from: '/join/$token',
-  }) as JoinInviteLoaderData;
-
-  // Get token from route params for redirect URLs
   const { token } = useParams({ from: '/join/$token' });
+  const { data: preview } = useSuspenseQuery(leagueInviteQueries.preview(token));
+
+  if (!preview) throw notFound();
 
   // Auth and team state
   const { user } = useAuth();
@@ -70,7 +62,7 @@ export function JoinInvite() {
         return;
       }
 
-      // Joining changes the user's standings.
+      queryClient.invalidateQueries({ queryKey: leagueQueries.all });
       queryClient.invalidateQueries({ queryKey: standingsQueries.all });
 
       announce(`Successfully joined ${league.name}`);

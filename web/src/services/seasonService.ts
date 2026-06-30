@@ -20,5 +20,6 @@ export const seasonQueries = {
     queryOptions({
       queryKey: [...seasonQueries.all, 'current'] as const,
       queryFn: getCurrentSeason,
+      staleTime: Infinity,
     }),
 };

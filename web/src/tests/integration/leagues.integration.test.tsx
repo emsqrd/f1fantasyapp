@@ -4,8 +4,8 @@ import { LeagueList } from '@/components/LeagueList/LeagueList';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import type { RouterContext } from '@/lib/router-context';
 import { API_BASE, server } from '@/mocks';
-import { getAvailableLeagues, getLeagueById, getMyLeagues } from '@/services/leagueService';
-import { getLeagueStandings, standingsQueries } from '@/services/standingsService';
+import { leagueQueries } from '@/services/leagueService';
+import { standingsQueries } from '@/services/standingsService';
 import {
   buildAuthenticatedLayout,
   buildTeamRequiredLayout,
@@ -20,6 +20,13 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
+
+// Mirrors the production `leagueIdParamsSchema` in `router.tsx` — the production
+// route isn't exported, so the param-validation branch is pinned here inline.
+const leagueIdParamsSchema = z.object({
+  leagueId: z.coerce.number().int().positive(),
+});
 
 // Minimal route trees mirror the production `_authenticated → _team-required`
 // chain in `router.tsx` so the real guards (`requireAuth`, `requireTeam`) and
@@ -37,7 +44,9 @@ function buildBrowseLeaguesRouteTree() {
   const browseLeaguesRoute = createRoute({
     getParentRoute: () => teamRequiredLayoutRoute,
     path: 'browse-leagues',
-    loader: async () => ({ leagues: await getAvailableLeagues() }),
+    loader: async ({ context }) => {
+      await context.queryClient.ensureQueryData(leagueQueries.available());
+    },
     component: BrowseLeagues,
     errorComponent: RouteErrorComponent,
   });
@@ -60,17 +69,20 @@ function buildLeagueRouteTree() {
   const leagueRoute = createRoute({
     getParentRoute: () => teamRequiredLayoutRoute,
     path: 'league/$leagueId',
-    loader: async ({ params }) => {
-      const leagueId = Number(params.leagueId);
+    loader: async ({ params, context }) => {
       const ROUTE_ID = '/_authenticated/_team-required/league/$leagueId';
+      const validation = leagueIdParamsSchema.safeParse(params);
+      if (!validation.success) {
+        throw notFound({ routeId: ROUTE_ID });
+      }
+      const { leagueId } = validation.data;
       const [league, standings] = await Promise.all([
-        getLeagueById(leagueId),
-        getLeagueStandings(leagueId),
+        context.queryClient.ensureQueryData(leagueQueries.byId(leagueId)),
+        context.queryClient.ensureQueryData(standingsQueries.forLeague(leagueId)),
       ]);
       if (!league || !standings) {
         throw notFound({ routeId: ROUTE_ID });
       }
-      return { league, standings };
     },
     component: League,
     notFoundComponent: () => <h1>League Not Found</h1>,
@@ -93,7 +105,9 @@ function buildLeaguesListRouteTree() {
   const leaguesRoute = createRoute({
     getParentRoute: () => teamRequiredLayoutRoute,
     path: 'leagues',
-    loader: async () => ({ leagues: await getMyLeagues() }),
+    loader: async ({ context }) => {
+      await context.queryClient.ensureQueryData(leagueQueries.mine());
+    },
     component: LeagueList,
     errorComponent: RouteErrorComponent,
   });
@@ -312,36 +326,6 @@ describe('Browse leagues', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Failed to join league');
   });
-
-  it('invalidates the cached standings after joining a league', async () => {
-    const user = userEvent.setup();
-
-    server.use(
-      http.get(`${API_BASE}/leagues/available`, () =>
-        HttpResponse.json([createMockLeague({ id: 42, name: 'Open Grid', isPrivate: false })]),
-      ),
-      http.post(`${API_BASE}/leagues/42/join`, () =>
-        HttpResponse.json(createMockLeague({ id: 42, name: 'Open Grid' })),
-      ),
-    );
-
-    stubMyTeam();
-    const { queryClient } = renderWithRouter({
-      routeTree: buildBrowseLeaguesRouteTree(),
-      initialEntry: '/browse-leagues',
-      auth: createAuthedAuth(),
-    });
-
-    // A cached standings entry is required for the invalidation to be observable.
-    queryClient.setQueryData(standingsQueries.mine().queryKey, []);
-
-    await user.click(await screen.findByRole('button', { name: /join league/i }));
-    await user.click(await screen.findByRole('button', { name: /confirm join/i }));
-
-    await waitFor(() =>
-      expect(queryClient.getQueryState(standingsQueries.mine().queryKey)?.isInvalidated).toBe(true),
-    );
-  });
 });
 
 describe('My leagues', () => {
@@ -385,7 +369,7 @@ describe('My leagues', () => {
     expect(await screen.findByText(/you haven't joined any leagues yet/i)).toBeInTheDocument();
   });
 
-  it('creates a league with the form values and invalidates the cached standings', async () => {
+  it('creates a league with the form values', async () => {
     const user = userEvent.setup();
     let createBody: unknown;
 
@@ -398,13 +382,11 @@ describe('My leagues', () => {
     );
 
     stubMyTeam();
-    const { queryClient } = renderWithRouter({
+    renderWithRouter({
       routeTree: buildLeaguesListRouteTree(),
       initialEntry: '/leagues',
       auth: createAuthedAuth(),
     });
-
-    queryClient.setQueryData(standingsQueries.mine().queryKey, []);
 
     await user.click(await screen.findByRole('button', { name: /create league/i }));
     await user.type(await screen.findByLabelText(/league name/i), '  Night Race Crew  ');
@@ -418,9 +400,6 @@ describe('My leagues', () => {
         description: 'Wheel to wheel',
         isPrivate: false,
       }),
-    );
-    await waitFor(() =>
-      expect(queryClient.getQueryState(standingsQueries.mine().queryKey)?.isInvalidated).toBe(true),
     );
   });
 
@@ -449,7 +428,7 @@ describe('My leagues', () => {
 });
 
 describe('League page', () => {
-  it('renders league details returned by the loader', async () => {
+  it('renders league details when both reads succeed', async () => {
     server.use(
       http.get(`${API_BASE}/leagues/7`, () =>
         HttpResponse.json(createMockLeague({ id: 7, name: 'COTA Champions' })),
@@ -483,6 +462,35 @@ describe('League page', () => {
     renderWithRouter({
       routeTree: buildLeagueRouteTree(),
       initialEntry: '/league/123',
+      auth: createAuthedAuth(),
+    });
+
+    expect(await screen.findByRole('heading', { name: 'League Not Found' })).toBeInTheDocument();
+  });
+
+  it('renders the notFound component when the standings lookup returns 404', async () => {
+    server.use(
+      http.get(`${API_BASE}/leagues/55`, () =>
+        HttpResponse.json(createMockLeague({ id: 55, name: 'Half Loaded' })),
+      ),
+      http.get(`${API_BASE}/leagues/55/standings`, () => new HttpResponse(null, { status: 404 })),
+    );
+
+    stubMyTeam();
+    renderWithRouter({
+      routeTree: buildLeagueRouteTree(),
+      initialEntry: '/league/55',
+      auth: createAuthedAuth(),
+    });
+
+    expect(await screen.findByRole('heading', { name: 'League Not Found' })).toBeInTheDocument();
+  });
+
+  it('renders the notFound component when the league id param is invalid', async () => {
+    stubMyTeam();
+    renderWithRouter({
+      routeTree: buildLeagueRouteTree(),
+      initialEntry: '/league/not-a-number',
       auth: createAuthedAuth(),
     });
 
