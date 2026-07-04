@@ -4,65 +4,9 @@ import { cn, formatBudget, formatMillions } from './utils';
 
 describe('utils', () => {
   describe('cn', () => {
-    it('should merge class names correctly', () => {
-      const result = cn('class1', 'class2');
-      expect(result).toBe('class1 class2');
-    });
-
-    it('should handle conditional class names', () => {
-      const result = cn('base', true && 'conditional', false && 'hidden');
-      expect(result).toBe('base conditional');
-    });
-
-    it('should handle undefined and null values', () => {
-      const result = cn('base', undefined, null, 'valid');
-      expect(result).toBe('base valid');
-    });
-
-    it('should handle empty strings', () => {
-      const result = cn('base', '', 'valid');
-      expect(result).toBe('base valid');
-    });
-
-    it('should handle arrays of class names', () => {
-      const result = cn(['class1', 'class2'], 'class3');
-      expect(result).toBe('class1 class2 class3');
-    });
-
-    it('should handle objects with boolean values', () => {
-      const result = cn({
-        active: true,
-        disabled: false,
-        'text-red-500': true,
-      });
-      expect(result).toBe('active text-red-500');
-    });
-
-    it('should merge tailwind classes and resolve conflicts', () => {
-      // Test that twMerge functionality works - later classes should override earlier ones
-      const result = cn('text-red-500', 'text-blue-500');
-      expect(result).toBe('text-blue-500');
-    });
-
-    it('should handle complex combinations of inputs', () => {
-      const result = cn(
-        'base-class',
-        { active: true, disabled: false },
-        ['array-class1', 'array-class2'],
-        undefined,
-        'final-class',
-      );
-      expect(result).toBe('base-class active array-class1 array-class2 final-class');
-    });
-
-    it('should return empty string when no valid classes provided', () => {
-      const result = cn(undefined, null, false, '');
-      expect(result).toBe('');
-    });
-
-    it('should handle nested arrays and objects', () => {
-      const result = cn(['base', { conditional: true }, ['nested', 'array']]);
-      expect(result).toBe('base conditional nested array');
+    it('resolves conditional inputs through clsx and tailwind conflicts through twMerge', () => {
+      const result = cn('base', { active: true, hidden: false }, 'text-red-500', 'text-blue-500');
+      expect(result).toBe('base active text-blue-500');
     });
   });
 

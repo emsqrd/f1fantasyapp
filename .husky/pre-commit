@@ -3,7 +3,7 @@
 echo "Running pre-commit checks..."
 
 # Detect source file changes only
-WEB_CHANGED=$(git diff --cached --name-only | grep -E '^web/src/|^web/index\.html|^web/package\.json|^web/(vite|tsconfig)' || true)
+WEB_CHANGED=$(git diff --cached --name-only | grep -E '^web/src/|^web/index\.html|^web/package\.json|^web/(vite|tsconfig)|^web/eslint\.config\.js' || true)
 API_CHANGED=$(git diff --cached --name-only | grep -E '^api/.*\.(cs|csproj)$|^api/appsettings' || true)
 
 WEB_LOG=$(mktemp)
