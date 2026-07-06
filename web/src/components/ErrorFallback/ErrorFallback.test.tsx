@@ -37,11 +37,4 @@ describe('ErrorFallback', () => {
 
     expect(onReset).toHaveBeenCalledTimes(1);
   });
-
-  it('includes AlertCircle icon with aria-hidden', () => {
-    const { container } = render(<ErrorFallback error={null} />);
-
-    const icon = container.querySelector('svg[aria-hidden="true"]');
-    expect(icon).toBeInTheDocument();
-  });
 });

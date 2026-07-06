@@ -17,13 +17,6 @@ describe('InlineError', () => {
     expect(errorContainer).toBeInTheDocument();
   });
 
-  it('includes AlertCircle icon with aria-hidden', () => {
-    const { container } = render(<InlineError message="Test error" />);
-
-    const icon = container.querySelector('svg[aria-hidden="true"]');
-    expect(icon).toBeInTheDocument();
-  });
-
   it('displays different error messages correctly', () => {
     const { rerender } = render(<InlineError message="First error" />);
     expect(screen.getByText('First error')).toBeInTheDocument();
@@ -31,13 +24,5 @@ describe('InlineError', () => {
     rerender(<InlineError message="Second error" />);
     expect(screen.getByText('Second error')).toBeInTheDocument();
     expect(screen.queryByText('First error')).not.toBeInTheDocument();
-  });
-
-  it('applies destructive styling classes', () => {
-    const { container } = render(<InlineError message="Test error" />);
-
-    const errorDiv = container.firstChild as HTMLElement;
-    expect(errorDiv).toHaveClass('text-destructive');
-    expect(errorDiv).toHaveClass('bg-destructive/10');
   });
 });

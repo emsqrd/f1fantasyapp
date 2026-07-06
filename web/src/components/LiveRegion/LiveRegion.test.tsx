@@ -14,9 +14,9 @@ describe('LiveRegion', () => {
   });
 
   it('does not render when message is empty', () => {
-    const { container } = render(<LiveRegion message="" />);
+    render(<LiveRegion message="" />);
 
-    expect(container.firstChild).toBeNull();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('uses polite politeness by default', () => {
@@ -40,13 +40,6 @@ describe('LiveRegion', () => {
     expect(liveRegion).toHaveAttribute('aria-atomic', 'true');
   });
 
-  it('is visually hidden with sr-only class', () => {
-    render(<LiveRegion message="Test message" />);
-
-    const liveRegion = screen.getByRole('status');
-    expect(liveRegion).toHaveClass('sr-only');
-  });
-
   it('updates when message changes', () => {
     const { rerender } = render(<LiveRegion message="First message" />);
 
@@ -59,12 +52,12 @@ describe('LiveRegion', () => {
   });
 
   it('removes region when message becomes empty', () => {
-    const { rerender, container } = render(<LiveRegion message="Test message" />);
+    const { rerender } = render(<LiveRegion message="Test message" />);
 
     expect(screen.getByRole('status')).toBeInTheDocument();
 
     rerender(<LiveRegion message="" />);
 
-    expect(container.firstChild).toBeNull();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 });

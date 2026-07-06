@@ -111,6 +111,7 @@ See root `CLAUDE.md` `## Testing Strategy` for cross-cutting rules (unit vs inte
 - Styling / CSS classes.
 - Zod schema rules in isolation — exercise them through the real form (render, type, submit, assert the error or payload).
 - TanStack Query cache internals — don't assert `getQueryData`/`setQueryData` state or that `invalidateQueries` fired; assert the rendered outcome.
+- Layout/geometry, text selection/caret, focus-by-pointer-position — jsdom fakes these (no rendering engine); assert in **e2e**. Value-level input behavior from ordinary typing/paste (sanitization, `onChange`/`onComplete`) is faithful and stays in jsdom.
 
 **Route components belong in the integration layer.** Mounting a route component with `vi.mock('@tanstack/react-router', ...)` to stub `useLoaderData`/`useNavigate` decouples the test from the very wiring (loader → component, guard → redirect) that integration tests exist to verify. Build a per-test route tree in `src/tests/integration/<flow>.integration.test.tsx` instead — see "Frontend Integration Tests" below.
 

@@ -44,13 +44,6 @@ describe('ErrorState', () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
-  it('includes AlertCircle icon with aria-hidden', () => {
-    const { container } = render(<ErrorState message="Test error" />);
-
-    const icon = container.querySelector('svg[aria-hidden="true"]');
-    expect(icon).toBeInTheDocument();
-  });
-
   it('displays different error messages correctly', () => {
     const { rerender } = render(<ErrorState message="First error" />);
     expect(screen.getByText('First error')).toBeInTheDocument();

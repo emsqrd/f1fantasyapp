@@ -4,6 +4,7 @@ import pluginRouter from '@tanstack/eslint-plugin-router';
 import prettier from 'eslint-config-prettier/flat';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
+import testingLibrary from 'eslint-plugin-testing-library';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
@@ -53,8 +54,26 @@ export default tseslint.config(
   },
   {
     files: ['src/**/*.{test,spec}.{ts,tsx}', 'src/setupTests.ts', 'src/tests/**/*.{ts,tsx}'],
+    plugins: {
+      'testing-library': testingLibrary,
+    },
     rules: {
+      ...testingLibrary.configs['flat/react'].rules,
       '@typescript-eslint/unbound-method': 'off',
+      'no-restricted-properties': [
+        'error',
+        ...[
+          { property: 'selectionStart' },
+          { property: 'selectionEnd' },
+          { property: 'selectionDirection' },
+          { object: 'window', property: 'getSelection' },
+          { object: 'document', property: 'getSelection' },
+        ].map((entry) => ({
+          ...entry,
+          message:
+            'jsdom fakes text selection — assert caret & selection behavior in e2e, not jsdom.',
+        })),
+      ],
     },
   },
 );

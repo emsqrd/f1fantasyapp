@@ -37,10 +37,8 @@ describe('PositionDelta', () => {
   it('marks the glyph as aria-hidden so the label is the only announced text', () => {
     render(<PositionDelta value={3} />);
 
-    const wrapper = screen.getByLabelText('Up 3 positions');
-    const glyph = wrapper.querySelector('[aria-hidden="true"]');
-    expect(glyph).not.toBeNull();
-    expect(glyph).toHaveTextContent('↑');
+    const glyph = screen.getByText('↑');
+    expect(glyph).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('renders the inline variant with the same accessible name', () => {
