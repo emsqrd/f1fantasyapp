@@ -30,7 +30,7 @@ export function AppSidebar() {
   const { data: profile } = useQuery({ ...profileQueries.current(), enabled: !!user });
 
   const handleLogoClick = () => {
-    navigate({ to: '/' });
+    void navigate({ to: '/' });
   };
 
   return (

@@ -1,27 +1,19 @@
 import * as Sentry from '@sentry/react';
-import {
-  type MockedFunction,
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from './api';
 import { supabase } from './supabase';
 
 // Mock Sentry
 vi.mock('@sentry/react', () => ({
-  withScope: vi.fn((callback) => callback({ setTag: vi.fn(), setContext: vi.fn() })),
+  withScope: vi.fn((callback: (scope: Pick<Sentry.Scope, 'setTag' | 'setContext'>) => void) =>
+    callback({ setTag: vi.fn(), setContext: vi.fn() }),
+  ),
   captureException: vi.fn(),
   logger: {
     error: vi.fn(),
     warn: vi.fn(),
-    fmt: (strings: TemplateStringsArray, ...values: unknown[]) =>
-      strings.reduce((acc, str, i) => acc + str + (values[i] || ''), ''),
+    fmt: (strings: TemplateStringsArray) => strings.join(''),
   },
 }));
 
@@ -35,7 +27,7 @@ vi.mock('./supabase', () => ({
 }));
 
 describe('ApiClient', () => {
-  const mockFetch = vi.fn() as MockedFunction<typeof fetch>;
+  const mockFetch = vi.fn<typeof fetch>();
   const mockGetSession = vi.mocked(supabase.auth.getSession);
 
   beforeAll(() => {
@@ -409,6 +401,7 @@ describe('ApiClient', () => {
         status: 500,
         statusText: 'Internal Server Error',
         text: vi.fn().mockResolvedValue(errorBody),
+        headers: new Headers({ 'content-type': 'text/plain' }),
       };
 
       mockFetch.mockResolvedValueOnce(mockResponse as unknown as Response);
@@ -434,6 +427,7 @@ describe('ApiClient', () => {
         status: 503,
         statusText: 'Service Unavailable',
         text: vi.fn().mockResolvedValue('Service temporarily unavailable'),
+        headers: new Headers({ 'content-type': 'text/plain' }),
       };
 
       mockFetch.mockResolvedValueOnce(mockResponse as unknown as Response);
@@ -445,6 +439,32 @@ describe('ApiClient', () => {
     });
   });
 
+  describe('RFC 9457 Problem Details', () => {
+    it('surfaces the `detail` member as the error message for an application/problem+json body', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        text: vi.fn().mockResolvedValue(JSON.stringify({ detail: 'League name already taken' })),
+        headers: new Headers({ 'content-type': 'application/problem+json' }),
+      } as unknown as Response);
+
+      await expect(apiClient.get('/leagues')).rejects.toThrow('League name already taken');
+    });
+
+    it('ignores `detail` on a plain application/json body, falling back to statusText', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        text: vi.fn().mockResolvedValue(JSON.stringify({ detail: 'Should be ignored' })),
+        headers: new Headers({ 'content-type': 'application/json' }),
+      } as unknown as Response);
+
+      await expect(apiClient.get('/leagues')).rejects.toThrow('GET /leagues failed: Bad Request');
+    });
+  });
+
   describe('error handling edge cases', () => {
     it('handles error when reading response body fails', async () => {
       const mockResponse = {
@@ -452,6 +472,7 @@ describe('ApiClient', () => {
         status: 500,
         statusText: 'Internal Server Error',
         text: vi.fn().mockRejectedValue(new Error('Failed to read body')),
+        headers: new Headers({ 'content-type': 'text/plain' }),
       };
 
       mockFetch.mockResolvedValueOnce(mockResponse as unknown as Response);

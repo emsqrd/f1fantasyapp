@@ -8,11 +8,15 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   { ignores: ['dist', 'coverage', 'src/components/ui'] },
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended, prettier],
+    extends: [js.configs.recommended, ...tseslint.configs.recommendedTypeChecked, prettier],
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 'latest',
       globals: globals.browser,
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
     plugins: {
       'react-hooks': reactHooks,
@@ -23,6 +27,26 @@ export default tseslint.config(
       'react-hooks/exhaustive-deps': 'error',
       'react-refresh/only-export-components': ['error', { allowConstantExport: true }],
       'no-console': ['warn', { allow: ['error', 'info'] }],
+      '@typescript-eslint/switch-exhaustiveness-check': 'error',
+      '@typescript-eslint/no-misused-promises': [
+        'error',
+        { checksVoidReturn: { attributes: false } },
+      ],
+      '@typescript-eslint/only-throw-error': [
+        'error',
+        {
+          allow: [
+            { from: 'package', package: '@tanstack/router-core', name: 'Redirect' },
+            { from: 'package', package: '@tanstack/router-core', name: 'NotFoundError' },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/**/*.{test,spec}.{ts,tsx}', 'src/setupTests.ts', 'src/tests/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
     },
   },
 );

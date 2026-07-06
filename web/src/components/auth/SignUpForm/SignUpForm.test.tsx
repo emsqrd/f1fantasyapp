@@ -13,7 +13,7 @@ const mockSession = {
 } as unknown as Session;
 
 // Mock useAuth and useNavigate
-vi.mock('@/hooks/useAuth', async () => {
+vi.mock('@/hooks/useAuth', () => {
   return {
     useAuth: vi.fn(() => ({
       user: null,
@@ -23,7 +23,8 @@ vi.mock('@/hooks/useAuth', async () => {
 });
 
 const mockNavigate = vi.fn();
-const mockUseSearch = vi.fn();
+const mockUseSearch =
+  vi.fn<() => { redirect?: string; confirmationError?: 'expired' | 'generic' }>();
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
   useSearch: () => mockUseSearch(),

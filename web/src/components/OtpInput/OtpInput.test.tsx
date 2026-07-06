@@ -76,11 +76,11 @@ describe('OtpInput', () => {
   it('positions the caret at a clicked slot index after a full code is entered', async () => {
     const user = userEvent.setup();
     render(<Controlled />);
-    const input = screen.getByLabelText('Confirmation code') as HTMLInputElement;
+    const input = screen.getByLabelText<HTMLInputElement>('Confirmation code');
 
     await user.type(input, '123456');
     const slots = document.querySelectorAll('[data-slot="otp-slot"]');
-    await user.click(slots[3] as HTMLElement);
+    await user.click(slots[3]);
 
     expect(input.selectionStart).toBe(3);
     expect(input.selectionEnd).toBe(4);

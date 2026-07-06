@@ -58,7 +58,7 @@ export function CheckEmailNotice({ email, onVerified, onResend }: Props) {
   };
 
   const handleComplete = (value: string) => {
-    if (status === 'idle') verify(value);
+    if (status === 'idle') void verify(value);
   };
 
   const handleResend = async () => {
@@ -148,7 +148,7 @@ export function CheckEmailNotice({ email, onVerified, onResend }: Props) {
           <LoadingButton
             type="button"
             onClick={() => {
-              if (status === 'idle') verify(code);
+              if (status === 'idle') void verify(code);
             }}
             size="lg"
             className="w-full"

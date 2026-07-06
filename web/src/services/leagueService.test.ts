@@ -24,8 +24,6 @@ vi.mock('@/lib/api', () => ({
 vi.mock('@sentry/react', () => ({
   logger: {
     info: vi.fn(),
-    fmt: (strings: TemplateStringsArray, ...values: unknown[]) =>
-      strings.reduce((acc, str, i) => acc + str + (values[i] || ''), ''),
   },
 }));
 

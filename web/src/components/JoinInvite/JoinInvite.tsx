@@ -62,8 +62,8 @@ export function JoinInvite() {
         return;
       }
 
-      queryClient.invalidateQueries({ queryKey: leagueQueries.all });
-      queryClient.invalidateQueries({ queryKey: standingsQueries.all });
+      void queryClient.invalidateQueries({ queryKey: leagueQueries.all });
+      void queryClient.invalidateQueries({ queryKey: standingsQueries.all });
 
       announce(`Successfully joined ${league.name}`);
 

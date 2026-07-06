@@ -143,7 +143,7 @@ export function initAuthStore(options?: { onUserChange?: () => void }): () => vo
     }
   };
 
-  supabase.auth.getSession().then(({ data: { session } }) => {
+  void supabase.auth.getSession().then(({ data: { session } }) => {
     applySession(session);
   });
 

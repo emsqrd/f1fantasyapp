@@ -90,7 +90,7 @@ describe('AvatarUpload', () => {
       render(<AvatarUpload {...defaultProps} />);
 
       const changeButton = screen.getByRole('button', { name: /change avatar/i });
-      const fileInput = screen.getByLabelText(/upload avatar image/i) as HTMLInputElement;
+      const fileInput = screen.getByLabelText<HTMLInputElement>(/upload avatar image/i);
 
       // Mock the click method
       const clickSpy = vi.spyOn(fileInput, 'click');
@@ -371,7 +371,7 @@ describe('AvatarUpload', () => {
     it('should have correct file input attributes', () => {
       render(<AvatarUpload {...defaultProps} />);
 
-      const fileInput = screen.getByLabelText(/upload avatar image/i) as HTMLInputElement;
+      const fileInput = screen.getByLabelText<HTMLInputElement>(/upload avatar image/i);
 
       expect(fileInput).toHaveAttribute('type', 'file');
       expect(fileInput).toHaveAttribute('accept', 'image/jpeg,image/png,image/webp');

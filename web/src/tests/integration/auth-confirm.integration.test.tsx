@@ -40,7 +40,7 @@ const signUpStubSearchSchema = z.object({
 });
 
 function SignUpStub() {
-  const search = useSearch({ strict: false }) as { confirmationError?: string };
+  const search = useSearch({ strict: false });
   return (
     <>
       <h1>Sign-up Stub</h1>

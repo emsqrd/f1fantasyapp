@@ -1,6 +1,5 @@
 import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-guards';
-import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
 import { API_BASE, server } from '@/mocks';
 import {
@@ -109,7 +108,7 @@ function buildTeamErrorRouteTree() {
   const authenticatedLayoutRoute = createRoute({
     getParentRoute: () => rootRoute,
     id: '_authenticated',
-    beforeLoad: ({ context }: { context: RouterContext }) => requireAuth(context),
+    beforeLoad: ({ context }) => requireAuth(context),
     component: () => <Outlet />,
     errorComponent: RouteErrorComponent,
   });
@@ -117,7 +116,7 @@ function buildTeamErrorRouteTree() {
   const teamRequiredLayoutRoute = createRoute({
     getParentRoute: () => authenticatedLayoutRoute,
     id: '_team-required',
-    beforeLoad: ({ context }: { context: RouterContext }) => requireTeam(context),
+    beforeLoad: ({ context }) => requireTeam(context),
     component: () => <Outlet />,
   });
 
@@ -183,8 +182,7 @@ function buildAuthedBounceRouteTree() {
     getParentRoute: () => unauthenticatedLayoutRoute,
     path: '/sign-in',
     validateSearch: redirectSearchSchema,
-    beforeLoad: ({ context, search }: { context: RouterContext; search: { redirect?: string } }) =>
-      redirectIfAuthenticated(context, search.redirect),
+    beforeLoad: ({ context, search }) => redirectIfAuthenticated(context, search.redirect),
     component: () => <h1>Sign In Page</h1>,
   });
 
@@ -192,8 +190,7 @@ function buildAuthedBounceRouteTree() {
     getParentRoute: () => unauthenticatedLayoutRoute,
     path: '/sign-up',
     validateSearch: signUpSearchSchema,
-    beforeLoad: ({ context, search }: { context: RouterContext; search: { redirect?: string } }) =>
-      redirectIfAuthenticated(context, search.redirect),
+    beforeLoad: ({ context, search }) => redirectIfAuthenticated(context, search.redirect),
     component: () => <h1>Sign Up Page</h1>,
   });
 

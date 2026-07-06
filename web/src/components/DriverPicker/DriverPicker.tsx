@@ -38,7 +38,7 @@ export function DriverPicker({
 }: DriverPickerProps) {
   // build lineup with existing drivers
   const lineup = useMemo(() => {
-    const slots: (Driver | null)[] = Array(DRIVER_SLOTS).fill(null);
+    const slots = Array<Driver | null>(DRIVER_SLOTS).fill(null);
 
     teamDrivers?.forEach((driver) => {
       slots[driver.slotPosition] = { ...driver };

@@ -34,7 +34,7 @@ export function ConstructorPicker({
 }: ConstructorPickerProps) {
   // build lineup with existing constructors
   const lineup = useMemo(() => {
-    const slots: (Constructor | null)[] = Array(CONSTRUCTOR_SLOTS).fill(null);
+    const slots = Array<Constructor | null>(CONSTRUCTOR_SLOTS).fill(null);
 
     teamConstructors?.forEach((constructor) => {
       slots[constructor.slotPosition] = { ...constructor };

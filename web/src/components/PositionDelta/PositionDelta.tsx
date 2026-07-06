@@ -43,7 +43,7 @@ export function PositionDelta({ value, variant = 'block', className }: PositionD
       <span aria-hidden="true" className="text-[12px] leading-none">
         {glyph}
       </span>
-      {Math.abs(value as number)}
+      {Math.abs(value)}
     </span>
   );
 }

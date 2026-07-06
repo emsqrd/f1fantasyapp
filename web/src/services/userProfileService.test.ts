@@ -92,21 +92,6 @@ describe('userProfileService', () => {
       );
     });
 
-    it('should return profile with all required fields after registration', async () => {
-      mockApiClient.post.mockResolvedValue(mockUserProfile);
-
-      const result = await userProfileService.registerUser(mockCreateProfileData);
-
-      expect(result).toMatchObject({
-        id: expect.any(Number),
-        email: expect.any(String),
-        firstName: expect.any(String),
-        lastName: expect.any(String),
-        displayName: expect.any(String),
-        avatarUrl: expect.any(String),
-      });
-    });
-
     it('should throw error when registration fails', async () => {
       const errorMessage = 'Registration failed due to validation error';
       mockApiClient.post.mockRejectedValue(new Error(errorMessage));
@@ -155,21 +140,6 @@ describe('userProfileService', () => {
       expect(result).toEqual(mockUserProfile);
       expect(mockApiClient.get).toHaveBeenCalledTimes(1);
       expect(mockApiClient.get).toHaveBeenCalledWith('/me/profile', 'get your profile');
-    });
-
-    it('should return profile with all required fields', async () => {
-      mockApiClient.get.mockResolvedValue(mockUserProfile);
-
-      const result = await userProfileService.getCurrentProfile();
-
-      expect(result).toMatchObject({
-        id: expect.any(Number),
-        email: expect.any(String),
-        firstName: expect.any(String),
-        lastName: expect.any(String),
-        displayName: expect.any(String),
-        avatarUrl: expect.any(String),
-      });
     });
 
     it('should handle profile with empty avatar URL', async () => {
@@ -315,25 +285,6 @@ describe('userProfileService', () => {
       const result = await userProfileService.updateUserProfile(specialCharUpdate as UserProfile);
 
       expect(result).toEqual(expectedResponse);
-    });
-
-    it('should return updated profile with all required fields', async () => {
-      const updateData: UserProfile = {
-        ...originalProfile,
-        displayName: 'Updated Name',
-      };
-      mockApiClient.patch.mockResolvedValue(updateData);
-
-      const result = await userProfileService.updateUserProfile(updateData);
-
-      expect(result).toMatchObject({
-        id: expect.any(Number),
-        email: expect.any(String),
-        firstName: expect.any(String),
-        lastName: expect.any(String),
-        displayName: expect.any(String),
-        avatarUrl: expect.any(String),
-      });
     });
 
     it('should throw error when update fails due to validation', async () => {
