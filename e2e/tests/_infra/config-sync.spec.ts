@@ -26,27 +26,17 @@ const E2E_CONFIG = path.join(REPO_ROOT, 'e2e', 'supabase', 'config.toml');
 const IGNORED_KEY_RE =
   /^\s*(project_id|[a-z_]*port|site_url|additional_redirect_urls|email_sent|max_frequency)\s*=/;
 
+// Compare config values only: drop blank lines, comments (the two files carry
+// different header blocks), and the keys above that must differ between stacks.
+const configValues = (raw: string): string[] =>
+  raw
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '' && !line.startsWith('#') && !IGNORED_KEY_RE.test(line));
+
 test('api/supabase/config.toml and e2e/supabase/config.toml stay in sync', () => {
-  const dev = readFileSync(DEV_CONFIG, 'utf8').split('\n');
-  const e2e = readFileSync(E2E_CONFIG, 'utf8').split('\n');
+  const dev = configValues(readFileSync(DEV_CONFIG, 'utf8'));
+  const e2e = configValues(readFileSync(E2E_CONFIG, 'utf8'));
 
-  const stripIgnored = (lines: string[]): string[] =>
-    lines.filter((line) => !IGNORED_KEY_RE.test(line));
-
-  // Dev config has no leading file-level comment; e2e config has an
-  // orientation comment block before `project_id`. Drop e2e's leading
-  // comment block (everything before the first non-comment, non-blank
-  // line) so the diff isn't poisoned by it.
-  const dropLeadingComments = (lines: string[]): string[] => {
-    let i = 0;
-    while (i < lines.length && (lines[i]!.trim() === '' || lines[i]!.trim().startsWith('#'))) {
-      i++;
-    }
-    return lines.slice(i);
-  };
-
-  const devBody = stripIgnored(dropLeadingComments(dev));
-  const e2eBody = stripIgnored(dropLeadingComments(e2e));
-
-  expect(e2eBody).toEqual(devBody);
+  expect(e2e).toEqual(dev);
 });

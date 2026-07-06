@@ -113,12 +113,14 @@ jobs:
       - name: Restore dotnet tools
         run: dotnet tool restore
         working-directory: api
-      - name: Start E2E Supabase stack
-        run: supabase start
-        working-directory: e2e/supabase
       - name: Install e2e deps
         run: npm ci
         working-directory: e2e
+      - name: Lint e2e
+        run: npm run e2e:lint
+      - name: Start E2E Supabase stack
+        run: supabase start
+        working-directory: e2e/supabase
       - name: Install web deps
         run: npm ci
         working-directory: web

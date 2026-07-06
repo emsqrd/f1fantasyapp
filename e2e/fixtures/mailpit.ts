@@ -34,6 +34,22 @@ export async function getMessage(id: string): Promise<MailpitMessage> {
   return (await res.json()) as MailpitMessage;
 }
 
+export async function getConfirmationUrl(email: string): Promise<string> {
+  const search = await searchByRecipient(email);
+  const message = await getMessage(search.messages[0].ID);
+  const match = message.Text.match(/https?:\/\/\S*\/auth\/confirm\S*/);
+  if (!match) throw new Error(`No confirmation URL in email to ${email}`);
+  return match[0];
+}
+
+export async function getOtpCode(email: string): Promise<string> {
+  const search = await searchByRecipient(email);
+  const message = await getMessage(search.messages[0].ID);
+  const match = message.Text.match(/\b(\d{6})\b/);
+  if (!match) throw new Error(`No OTP code in email to ${email}`);
+  return match[1];
+}
+
 export async function clearAll(): Promise<void> {
   const res = await fetch(`${MAILPIT_BASE_URL}/api/v1/messages`, { method: 'DELETE' });
   if (!res.ok) {

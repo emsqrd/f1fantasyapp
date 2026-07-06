@@ -254,6 +254,19 @@
       }
     },
     {
+      "label": "[E2E] Lint",
+      "type": "shell",
+      "command": "npm run lint",
+      "options": {
+        "cwd": "${workspaceFolder}/e2e"
+      },
+      "problemMatcher": ["$eslint-stylish"],
+      "icon": {
+        "id": "checklist",
+        "color": "terminal.ansiYellow"
+      }
+    },
+    {
       "label": "Start All Servers",
       "dependsOn": ["[Web] Dev Server", "[API] Watch"],
       "dependsOrder": "parallel",
