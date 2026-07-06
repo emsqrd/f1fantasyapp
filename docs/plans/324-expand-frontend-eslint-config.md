@@ -15,7 +15,6 @@ Expand `web/`'s ESLint config from `tseslint.configs.recommended` to core + type
 - **`eslint-config-prettier`** added **last** in the array (disables any formatting rules; Prettier + `@trivago/sort-imports` own formatting).
 - **`projectService: true` + `tsconfigRootDir`** under `languageOptions.parserOptions` to power the type-checked rules. Coverage is already complete: `src/**` → `tsconfig.app.json`, `vite.config.ts` → `tsconfig.node.json`. JS config files (`eslint.config.js`, `prettier.config.js`) aren't matched by the `**/*.{ts,tsx}` block, so they aren't type-checked.
 - **`@typescript-eslint/switch-exhaustiveness-check`** enabled explicitly — it ships with typescript-eslint but no preset turns it on.
-- **`import-x/no-cycle` only** from `eslint-plugin-import-x`, with `eslint-import-resolver-typescript` wired via `settings['import-x/resolver-next']` — the default node resolver can't follow the `@/` alias, which is nearly every import in the codebase. Skip `import/order` — Prettier owns import ordering.
 - **Testing-library + Vitest plugins scoped to test files** — a dedicated config block with `files: ['src/**/*.{test,spec}.{ts,tsx}', 'src/setupTests.ts', 'src/tests/**/*.{ts,tsx}']` so their rules don't evaluate production code.
 - Keep the existing `ignores` (`dist`, `coverage`, `src/components/ui` — vendored shadcn).
 - Keep `react-hooks` as-is apart from the `exhaustive-deps` severity bump above.
@@ -27,7 +26,7 @@ Expand `web/`'s ESLint config from `tseslint.configs.recommended` to core + type
 
 ### Deliberately excluded (see issue for full reasoning)
 
-`eslint-plugin-unicorn` (curation cost), `eslint-plugin-sonarjs` (only unique bug-catch over `js.configs.recommended` is the low-frequency `no-all-duplicated-branches`; not worth a 3.6 MB dep + preset curation), `eslint-plugin-react` (no ESLint 10 support; moot under React 19's automatic JSX runtime), `eslint-plugin-jsx-a11y` (no ESLint 10 support — a **known, tracked gap** vs. the WCAG 2.1 AA goal, not an oversight), `eslint-plugin-jest-dom` (marginal over testing-library), original `eslint-plugin-import` (superseded by `import-x`).
+`eslint-plugin-unicorn` (curation cost), `eslint-plugin-sonarjs` (only unique bug-catch over `js.configs.recommended` is the low-frequency `no-all-duplicated-branches`; not worth a 3.6 MB dep + preset curation), `eslint-plugin-react` (no ESLint 10 support; moot under React 19's automatic JSX runtime), `eslint-plugin-jsx-a11y` (no ESLint 10 support — a **known, tracked gap** vs. the WCAG 2.1 AA goal, not an oversight), `eslint-plugin-jest-dom` (marginal over testing-library), both `eslint-plugin-import` and `eslint-plugin-import-x` — `import-x/no-cycle` (the only rule worth adding; Prettier owns ordering) was trialed and is a silent no-op in this ESLint 10 + flat-config stack: it loads at `error` and the TS resolver resolves, but the rule never flags even a trivial two-file cycle while `no-self-import` on the same machinery does. Cycle detection is dropped; revisit with a `madge --circular` CI check if it's ever needed.
 
 ## Commit sequence
 
@@ -64,14 +63,10 @@ Self-contained, approval-gated commits; foundation first. Each is green on its o
 
 - Install; enable its flat recommended at the preset's authored severities, **scoped to test files**. Fix any violations it surfaces.
 
-### 7. `eslint-plugin-import-x`
+### 7. e2e ESLint config + CI/pre-commit wiring
 
-- Install `eslint-plugin-import-x` + `eslint-import-resolver-typescript`; enable **only** `import-x/no-cycle` with the TS resolver in `settings['import-x/resolver-next']`. Fix any violations it surfaces.
-
-### 8. e2e ESLint config + CI/pre-commit wiring
-
-- **`e2e/eslint.config.js`** mirroring web's language-level bar: `js.configs.recommended` + `recommendedTypeChecked` (`projectService: true` + `tsconfigRootDir` → `e2e/tsconfig.json`, which already includes all 17 files) + `switch-exhaustiveness-check` + `import-x/no-cycle` + `eslint-config-prettier` last, **plus `eslint-plugin-playwright`** recommended (`no-wait-for-timeout` enforces "never sleep"; `no-focused-test` catches committed `.only`). `ignores`: `playwright-report/`, `test-results/`, `supabase/`. No React-ecosystem plugins and no TS resolver — e2e has no path aliases.
-- **Install (e2e devDeps):** `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-plugin-playwright`, `eslint-plugin-import-x`, `eslint-config-prettier`.
+- **`e2e/eslint.config.js`** mirroring web's language-level bar: `js.configs.recommended` + `recommendedTypeChecked` (`projectService: true` + `tsconfigRootDir` → `e2e/tsconfig.json`, which already includes all 17 files) + `switch-exhaustiveness-check` + `eslint-config-prettier` last, **plus `eslint-plugin-playwright`** recommended (`no-wait-for-timeout` enforces "never sleep"; `no-focused-test` catches committed `.only`). `ignores`: `playwright-report/`, `test-results/`, `supabase/`. No React-ecosystem plugins.
+- **Install (e2e devDeps):** `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-plugin-playwright`, `eslint-config-prettier`.
 - **Scripts:** add `"lint": "eslint ."` to `e2e/package.json`; add `"e2e:lint": "cd e2e && npm run lint"` to root `package.json`.
 - **CI (`.github/workflows/ci.yml`, e2e job):** move the e2e `npm ci` step **above** `supabase start`, then add a "Lint e2e" step right after it — a lint failure short-circuits before the 15-min stack spins up.
 - **Pre-commit (`.husky/pre-commit`):** add an `E2E_CHANGED` branch (`git diff --cached --name-only | grep -E '^e2e/'`) that runs `e2e:format:check` + `e2e:lint` only — **never** the e2e tests (they need the Supabase stack; linting is seconds).
