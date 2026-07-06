@@ -1,3 +1,4 @@
+import comments from '@eslint-community/eslint-plugin-eslint-comments';
 import js from '@eslint/js';
 import pluginQuery from '@tanstack/eslint-plugin-query';
 import pluginRouter from '@tanstack/eslint-plugin-router';
@@ -29,11 +30,13 @@ export default tseslint.config(
       },
     },
     plugins: {
+      '@eslint-community/eslint-comments': comments,
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      '@eslint-community/eslint-comments/no-use': 'error',
       'react-hooks/exhaustive-deps': 'error',
       'react-refresh/only-export-components': ['error', { allowConstantExport: true }],
       'no-console': ['warn', { allow: ['error', 'info'] }],

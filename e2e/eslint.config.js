@@ -1,3 +1,4 @@
+import comments from '@eslint-community/eslint-plugin-eslint-comments';
 import js from '@eslint/js';
 import prettier from 'eslint-config-prettier/flat';
 import playwright from 'eslint-plugin-playwright';
@@ -22,7 +23,11 @@ export default tseslint.config(
         tsconfigRootDir: import.meta.dirname,
       },
     },
+    plugins: {
+      '@eslint-community/eslint-comments': comments,
+    },
     rules: {
+      '@eslint-community/eslint-comments/no-use': 'error',
       '@typescript-eslint/switch-exhaustiveness-check': 'error',
     },
   },
