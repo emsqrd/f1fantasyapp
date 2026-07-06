@@ -42,7 +42,7 @@ export function AccountMenu({ trigger, side }: AccountMenuProps) {
   const { data: profile } = useQuery({ ...profileQueries.current(), enabled: !!user });
 
   const handleAccountClick = () => {
-    navigate({ to: '/account' });
+    void navigate({ to: '/account' });
   };
 
   const handleSignOut = async () => {

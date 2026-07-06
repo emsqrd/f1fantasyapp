@@ -4,7 +4,7 @@ import { teamQueries } from '@/services/teamService';
 import { createAuthedAuth, createMockTeam } from '@/tests/test-utils';
 import type { User } from '@supabase/supabase-js';
 import { QueryClient } from '@tanstack/react-query';
-import { redirect } from '@tanstack/react-router';
+import { type RedirectOptions, redirect } from '@tanstack/react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the TanStack Router redirect function
@@ -12,7 +12,7 @@ vi.mock('@tanstack/react-router', async () => {
   const actual = await vi.importActual('@tanstack/react-router');
   return {
     ...actual,
-    redirect: vi.fn((options) => {
+    redirect: vi.fn((options: RedirectOptions) => {
       const error = new Error('Redirect') as Error & { redirect: typeof options };
       error.redirect = options;
       throw error;

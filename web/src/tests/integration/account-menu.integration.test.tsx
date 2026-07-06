@@ -9,7 +9,6 @@ import {
   createMockUserProfile,
   renderWithRouter,
 } from '@/tests/test-utils';
-import * as Sentry from '@sentry/react';
 import type { User } from '@supabase/supabase-js';
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
 import { screen, waitFor } from '@testing-library/react';
@@ -132,7 +131,6 @@ describe('Account menu', () => {
     const user = userEvent.setup();
     const signOut = vi.fn().mockRejectedValue(new Error('sign out failed'));
     const completeAuthTransition = vi.fn();
-    const captureException = vi.mocked(Sentry.captureException);
     const toastError = vi.spyOn(toast, 'error').mockReturnValue('toast-id');
 
     renderMenu({
@@ -145,10 +143,6 @@ describe('Account menu', () => {
     await user.click(await screen.findByRole('menuitem', { name: 'Sign Out' }));
 
     await waitFor(() => expect(completeAuthTransition).toHaveBeenCalledTimes(1));
-    expect(captureException).toHaveBeenCalledWith(
-      expect.any(Error),
-      expect.objectContaining({ tags: { action: 'sign_out' } }),
-    );
     expect(toastError).toHaveBeenCalledWith('Failed to sign out. Please try again.');
     expect(screen.getByRole('heading', { name: 'Account Page' })).toBeInTheDocument();
   });

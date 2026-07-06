@@ -10,7 +10,7 @@ vi.mock('@/hooks/useAuth');
 
 // Mock useNavigate and useSearch
 const mockNavigate = vi.fn();
-const mockUseSearch = vi.fn();
+const mockUseSearch = vi.fn<() => { redirect?: string }>();
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
   useSearch: () => mockUseSearch(),

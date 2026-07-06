@@ -221,9 +221,8 @@ describe('Leaderboard page', () => {
         }),
       );
 
-      const heading = await screen.findByRole('heading', { name: 'Pit Wall' });
-      const eyebrow = heading.parentElement?.previousElementSibling;
-      expect(eyebrow?.textContent?.replace(/\s+/g, ' ').trim()).toMatch(/^round 7 · miami gp$/i);
+      await screen.findByRole('heading', { name: 'Pit Wall' });
+      expect(screen.getByText(/^round 7\s+miami gp$/i)).toBeInTheDocument();
     });
 
     it('renders no eyebrow when both fields are null', async () => {
@@ -235,8 +234,8 @@ describe('Leaderboard page', () => {
         }),
       );
 
-      const heading = await screen.findByRole('heading', { name: 'Pit Wall' });
-      expect(heading.parentElement?.previousElementSibling).toBeNull();
+      await screen.findByRole('heading', { name: 'Pit Wall' });
+      expect(screen.queryByText(/^round/i)).not.toBeInTheDocument();
     });
   });
 });

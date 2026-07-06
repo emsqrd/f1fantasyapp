@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 
 import { createTestUser } from '../fixtures/auth';
 import { seedLeague, seedLeagueInvite } from '../fixtures/league';
-import { clearAll, getMessage, searchByRecipient } from '../fixtures/mailpit';
+import { clearAll, getConfirmationUrl, getOtpCode, searchByRecipient } from '../fixtures/mailpit';
 import { resetDb } from '../fixtures/reset';
 import { seedCurrentSeason, seedMinimalGrid } from '../fixtures/seed';
 import { signInAs } from '../fixtures/session';
@@ -59,11 +59,7 @@ test.describe('auth', () => {
       .poll(async () => (await searchByRecipient(email)).count, { timeout: 10_000 })
       .toBe(1);
 
-    const search = await searchByRecipient(email);
-    const message = await getMessage(search.messages[0].ID);
-    const linkMatch = message.HTML.match(/href="([^"]*\/auth\/confirm[^"]*)"/);
-    if (!linkMatch) throw new Error('Could not find confirmation URL in email HTML');
-    const confirmationUrl = linkMatch[1].replace(/&amp;/g, '&');
+    const confirmationUrl = await getConfirmationUrl(email);
 
     await page.goto(confirmationUrl);
     await expect(page).toHaveURL(/\/auth\/confirm/);
@@ -93,12 +89,9 @@ test.describe('auth', () => {
       .poll(async () => (await searchByRecipient(email)).count, { timeout: 10_000 })
       .toBe(1);
 
-    const search = await searchByRecipient(email);
-    const message = await getMessage(search.messages[0].ID);
-    const tokenMatch = message.Text.match(/\b(\d{6})\b/);
-    if (!tokenMatch) throw new Error('Could not find OTP token in email text');
+    const code = await getOtpCode(email);
 
-    await page.getByLabel('Confirmation code').fill(tokenMatch[1]);
+    await page.getByLabel('Confirmation code').fill(code);
 
     await expect(page).toHaveURL('/');
     await expect(page.getByRole('heading', { name: /welcome/i })).toBeVisible();
@@ -129,12 +122,8 @@ test.describe('auth', () => {
       .poll(async () => (await searchByRecipient(email)).count, { timeout: 10_000 })
       .toBe(2);
 
-    // Mailpit returns messages newest-first; [0] is the resent email.
-    const search = await searchByRecipient(email);
-    const message = await getMessage(search.messages[0].ID);
-    const linkMatch = message.HTML.match(/href="([^"]*\/auth\/confirm[^"]*)"/);
-    if (!linkMatch) throw new Error('Could not find confirmation URL in resent email HTML');
-    const confirmationUrl = linkMatch[1].replace(/&amp;/g, '&');
+    // Mailpit returns messages newest-first; getConfirmationUrl reads [0], the resent email.
+    const confirmationUrl = await getConfirmationUrl(email);
 
     await page.goto(confirmationUrl);
     await expect(page).toHaveURL(/\/auth\/confirm/);
@@ -165,11 +154,7 @@ test.describe('auth', () => {
       .poll(async () => (await searchByRecipient(email)).count, { timeout: 10_000 })
       .toBe(1);
 
-    const search = await searchByRecipient(email);
-    const message = await getMessage(search.messages[0].ID);
-    const linkMatch = message.HTML.match(/href="([^"]*\/auth\/confirm[^"]*)"/);
-    if (!linkMatch) throw new Error('Could not find confirmation URL in email HTML');
-    const confirmationUrl = linkMatch[1].replace(/&amp;/g, '&');
+    const confirmationUrl = await getConfirmationUrl(email);
     const brokenUrl = confirmationUrl.replace(
       /token_hash=[^&]+/,
       'token_hash=pkce_invalidinvalidinvalidinvalid',
@@ -219,11 +204,7 @@ test.describe('auth', () => {
     await expect
       .poll(async () => (await searchByRecipient(email)).count, { timeout: 10_000 })
       .toBe(1);
-    const search = await searchByRecipient(email);
-    const message = await getMessage(search.messages[0].ID);
-    const linkMatch = message.HTML.match(/href="([^"]*\/auth\/confirm[^"]*)"/);
-    if (!linkMatch) throw new Error('Could not find confirmation URL in email HTML');
-    const confirmationUrl = linkMatch[1].replace(/&amp;/g, '&');
+    const confirmationUrl = await getConfirmationUrl(email);
 
     const contextB = await browser.newContext();
     const pageB = await contextB.newPage();
@@ -264,7 +245,7 @@ test.describe('auth', () => {
     // is not enough: the error fallback's banner also shows one.
     await expect(page).toHaveURL('/');
     await expect(page.getByRole('heading', { name: /race to glory/i })).toBeVisible();
-    await expect(page.getByText('Something went wrong!')).not.toBeVisible();
+    await expect(page.getByText('Something went wrong!')).toBeHidden();
 
     await page.goto('/my-team');
     await expect(page).toHaveURL('/sign-in?redirect=%2Fmy-team');

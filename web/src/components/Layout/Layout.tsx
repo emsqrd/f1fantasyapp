@@ -34,7 +34,7 @@ export function Layout() {
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                navigate({ to: '/' });
+                void navigate({ to: '/' });
               }
             }}
             aria-label="Navigate to home page"

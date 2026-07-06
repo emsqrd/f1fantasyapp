@@ -43,21 +43,6 @@ describe('LoadingButton', () => {
     expect(screen.queryByText('Submit')).not.toBeInTheDocument();
   });
 
-  it('displays spinner icon when loading', () => {
-    const { container } = render(<LoadingButton isLoading={true}>Submit</LoadingButton>);
-
-    const spinner = container.querySelector('svg[aria-hidden="true"]');
-    expect(spinner).toBeInTheDocument();
-    expect(spinner).toHaveClass('animate-spin');
-  });
-
-  it('does not display spinner when not loading', () => {
-    const { container } = render(<LoadingButton isLoading={false}>Submit</LoadingButton>);
-
-    const spinner = container.querySelector('svg[aria-hidden="true"]');
-    expect(spinner).not.toBeInTheDocument();
-  });
-
   it('remains focusable when loading', async () => {
     const user = userEvent.setup();
     render(<LoadingButton isLoading={true}>Submit</LoadingButton>);

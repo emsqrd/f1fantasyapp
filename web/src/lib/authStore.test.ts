@@ -58,7 +58,7 @@ describe('authStore', () => {
     });
 
     vi.mocked(supabase.auth.onAuthStateChange).mockImplementation((callback) => {
-      authCallback = callback;
+      authCallback = (event, session) => void callback(event, session);
       return {
         data: { subscription: { unsubscribe: mockUnsubscribe, id: 'test', callback: vi.fn() } },
       };
@@ -212,11 +212,9 @@ describe('authStore', () => {
         { emailRedirectTo: customEmailRedirectTo },
       );
 
-      expect(supabase.auth.signUp).toHaveBeenCalledWith(
+      expect(vi.mocked(supabase.auth.signUp).mock.calls[0][0].options).toEqual(
         expect.objectContaining({
-          options: expect.objectContaining({
-            emailRedirectTo: customEmailRedirectTo,
-          }),
+          emailRedirectTo: customEmailRedirectTo,
         }),
       );
     });

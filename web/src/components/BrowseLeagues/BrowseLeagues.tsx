@@ -47,8 +47,8 @@ export function BrowseLeagues() {
       try {
         await joinLeague(league.id);
 
-        queryClient.invalidateQueries({ queryKey: leagueQueries.all });
-        queryClient.invalidateQueries({ queryKey: standingsQueries.all });
+        void queryClient.invalidateQueries({ queryKey: leagueQueries.all });
+        void queryClient.invalidateQueries({ queryKey: standingsQueries.all });
 
         Sentry.logger.info('User joined league from browse page', {
           leagueId: league.id,
@@ -56,7 +56,7 @@ export function BrowseLeagues() {
         });
 
         // navigate to league detail page after joining
-        navigate({
+        await navigate({
           to: '/league/$leagueId',
           params: { leagueId: String(league.id) },
         });

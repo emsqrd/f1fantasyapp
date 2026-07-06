@@ -21,7 +21,7 @@ import {
   createMockUserProfile,
   renderWithRouter,
 } from '@/tests/test-utils';
-import { type AnyRoute, createRoute } from '@tanstack/react-router';
+import { createRoute } from '@tanstack/react-router';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
@@ -90,7 +90,7 @@ function stubHomeChrome(): void {
 // Route pieces, mirroring `router.tsx`. Composed into per-test flow trees that
 // pair a trigger page with the observed surface plus the `/league/$leagueId`
 // landing every write navigates to.
-function leaguesListRoute(parent: AnyRoute) {
+function leaguesListRoute(parent: ReturnType<typeof buildTeamRequiredLayout>) {
   return createRoute({
     getParentRoute: () => parent,
     path: 'leagues',
@@ -102,7 +102,7 @@ function leaguesListRoute(parent: AnyRoute) {
   });
 }
 
-function browseLeaguesRoute(parent: AnyRoute) {
+function browseLeaguesRoute(parent: ReturnType<typeof buildTeamRequiredLayout>) {
   return createRoute({
     getParentRoute: () => parent,
     path: 'browse-leagues',
@@ -112,7 +112,7 @@ function browseLeaguesRoute(parent: AnyRoute) {
   });
 }
 
-function leagueDetailStub(parent: AnyRoute) {
+function leagueDetailStub(parent: ReturnType<typeof buildTeamRequiredLayout>) {
   return createRoute({
     getParentRoute: () => parent,
     path: 'league/$leagueId',
@@ -120,7 +120,7 @@ function leagueDetailStub(parent: AnyRoute) {
   });
 }
 
-function homeIndexRoute(root: AnyRoute) {
+function homeIndexRoute(root: ReturnType<typeof buildRootRoute>) {
   return createRoute({
     getParentRoute: () => root,
     path: '/',
@@ -140,7 +140,7 @@ function homeIndexRoute(root: AnyRoute) {
   });
 }
 
-function joinInviteRoute(root: AnyRoute) {
+function joinInviteRoute(root: ReturnType<typeof buildRootRoute>) {
   return createRoute({
     getParentRoute: () => root,
     path: '/join/$token',

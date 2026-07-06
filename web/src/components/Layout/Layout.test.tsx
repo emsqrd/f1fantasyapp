@@ -1,3 +1,4 @@
+import { createAuthedAuth, createUnauthAuth } from '@/tests/test-utils';
 import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,7 +7,7 @@ import { Layout } from './Layout';
 
 // Mock TanStack Router
 const mockNavigate = vi.fn();
-const mockUseMatches = vi.fn();
+const mockUseMatches = vi.fn<() => { routeId: string; staticData: { pageTitle?: string } }[]>();
 const mockOutlet = vi.fn(() => <div>Page Content</div>);
 
 vi.mock('@tanstack/react-router', () => ({
@@ -16,7 +17,7 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 // Mock useAuth hook
-const mockUseAuth = vi.fn();
+const mockUseAuth = vi.fn<typeof import('@/hooks/useAuth').useAuth>();
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }));
@@ -65,7 +66,7 @@ describe('Layout', () => {
 
   describe('Unauthenticated Layout', () => {
     beforeEach(() => {
-      mockUseAuth.mockReturnValue({ user: null });
+      mockUseAuth.mockReturnValue(createUnauthAuth());
       mockUseMatches.mockReturnValue([]);
     });
 
@@ -131,9 +132,7 @@ describe('Layout', () => {
 
   describe('Authenticated Layout', () => {
     beforeEach(() => {
-      mockUseAuth.mockReturnValue({
-        user: { id: '1', email: 'test@example.com' },
-      });
+      mockUseAuth.mockReturnValue(createAuthedAuth());
       mockUseMatches.mockReturnValue([]);
     });
 

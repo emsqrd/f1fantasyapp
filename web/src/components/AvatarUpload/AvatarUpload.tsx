@@ -69,12 +69,12 @@ export function AvatarUpload({
     },
   });
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     // Upload the file
-    uploadAvatar(file);
+    void uploadAvatar(file);
   };
 
   const isLoading = uploadState.uploading || isImageLoading;

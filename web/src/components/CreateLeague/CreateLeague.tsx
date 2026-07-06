@@ -62,8 +62,8 @@ export function CreateLeague({ onLeagueCreated }: CreateLeagueProps) {
         isPrivate: formData.leagueIsPrivate,
       });
 
-      queryClient.invalidateQueries({ queryKey: leagueQueries.all });
-      queryClient.invalidateQueries({ queryKey: standingsQueries.all });
+      void queryClient.invalidateQueries({ queryKey: leagueQueries.all });
+      void queryClient.invalidateQueries({ queryKey: standingsQueries.all });
 
       setIsOpen(false);
       reset();

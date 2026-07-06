@@ -105,6 +105,14 @@ function renderMyTeam() {
   });
 }
 
+function driverRow(dialog: HTMLElement, name: string): HTMLElement {
+  const row = within(dialog)
+    .getAllByRole('listitem')
+    .find((li) => within(li).queryByText(name));
+  if (!row) throw new Error(`No driver row for "${name}"`);
+  return row;
+}
+
 describe('My team lineup', () => {
   it('filters constructors already in lineup out of the picker pool', async () => {
     const user = userEvent.setup();
@@ -156,8 +164,8 @@ describe('My team lineup', () => {
     const dialog = await screen.findByRole('dialog', { name: /select driver/i });
 
     // Max is $30M (over $26M budget) — disabled. Lando is $25M — enabled.
-    const verstappenItem = within(dialog).getByText('Max Verstappen').closest('li')!;
-    const norrisItem = within(dialog).getByText('Lando Norris').closest('li')!;
+    const verstappenItem = driverRow(dialog, 'Max Verstappen');
+    const norrisItem = driverRow(dialog, 'Lando Norris');
     expect(within(verstappenItem).getByRole('button', { name: /add driver/i })).toBeDisabled();
     expect(within(norrisItem).getByRole('button', { name: /add driver/i })).not.toBeDisabled();
   });
@@ -215,7 +223,7 @@ describe('My team lineup', () => {
     await user.click(addButtons[0]);
 
     const dialog = await screen.findByRole('dialog', { name: /select driver/i });
-    const norrisItem = within(dialog).getByText('Lando Norris').closest('li')!;
+    const norrisItem = driverRow(dialog, 'Lando Norris');
     await user.click(within(norrisItem).getByRole('button', { name: /add driver/i }));
 
     // The empty team renders no Remove controls; the added driver's slot only
@@ -280,7 +288,7 @@ describe('My team lineup', () => {
     await user.click(addButtons[0]);
 
     const dialog = await screen.findByRole('dialog', { name: /select driver/i });
-    const norrisItem = within(dialog).getByText('Lando Norris').closest('li')!;
+    const norrisItem = driverRow(dialog, 'Lando Norris');
     const addNorris = within(norrisItem).getByRole('button', { name: /add driver/i });
 
     // The first click leaves the add in flight (the handler holds the response),

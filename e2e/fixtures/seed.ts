@@ -95,7 +95,7 @@ export async function seedCurrentSeason(
       [year, startDate, endDate],
     );
     return {
-      id: rows[0]!.Id,
+      id: rows[0].Id,
       year,
       startDate,
       endDate,
@@ -120,7 +120,7 @@ export async function seedMinimalGrid(options: SeedMinimalGridOptions): Promise<
 
     const drivers: SeededDriver[] = [];
     for (const spec of DEFAULT_DRIVERS) {
-      const constructorId = constructors[spec.constructorIndex]!.id;
+      const constructorId = constructors[spec.constructorIndex].id;
       const driver = await insertDriver(client, spec);
       await linkSeasonDriver(client, seasonId, driver.id, constructorId);
       drivers.push(driver);
@@ -156,7 +156,7 @@ export async function seedRaceWeekend(options: SeedRaceWeekendOptions): Promise<
       [options.seasonId, round, name, circuitId, options.raceDate, lockDeadline],
     );
     return {
-      id: rows[0]!.Id,
+      id: rows[0].Id,
       seasonId: options.seasonId,
       round,
       name,
@@ -180,7 +180,7 @@ async function insertConstructor(
     [spec.name, spec.fullName, spec.abbreviation, DEFAULT_CONSTRUCTOR_PRICE],
   );
   return {
-    id: rows[0]!.Id,
+    id: rows[0].Id,
     name: spec.name,
     abbreviation: spec.abbreviation,
     price: DEFAULT_CONSTRUCTOR_PRICE,
@@ -197,7 +197,7 @@ async function insertDriver(client: PoolClient, spec: DriverSpec): Promise<Seede
     [spec.firstName, spec.lastName, spec.abbreviation, DEFAULT_DRIVER_PRICE],
   );
   return {
-    id: rows[0]!.Id,
+    id: rows[0].Id,
     firstName: spec.firstName,
     lastName: spec.lastName,
     abbreviation: spec.abbreviation,
@@ -242,5 +242,5 @@ async function insertCircuit(client: PoolClient, name: string): Promise<number> 
      RETURNING "Id"`,
     [name],
   );
-  return rows[0]!.Id;
+  return rows[0].Id;
 }

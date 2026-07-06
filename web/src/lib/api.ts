@@ -70,16 +70,23 @@ class ApiClient {
           );
         }
 
-        // Try to parse RFC 7807 Problem Details response
+        // Only a problem+json body is a Problem Details document (RFC 9457 §3);
+        // an error status alone doesn't guarantee one.
         let errorMessage = `${method} ${endpoint} failed: ${response.statusText}`;
-        try {
-          const problemDetails = JSON.parse(errorBody);
-          // Use the detail field from Problem Details for user-friendly message
-          if (problemDetails.detail) {
-            errorMessage = problemDetails.detail;
+        if (response.headers.get('content-type')?.includes('application/problem+json')) {
+          try {
+            const problemDetails: unknown = JSON.parse(errorBody);
+            if (
+              typeof problemDetails === 'object' &&
+              problemDetails !== null &&
+              'detail' in problemDetails &&
+              typeof problemDetails.detail === 'string'
+            ) {
+              errorMessage = problemDetails.detail;
+            }
+          } catch {
+            // Malformed problem+json body — fall back to statusText
           }
-        } catch {
-          // If parsing fails, fall back to statusText
         }
 
         const error = new Error(errorMessage) as ApiError;

@@ -31,12 +31,11 @@ export function buildRootRoute({ component }: { component?: () => ReactNode } = 
  * authenticated layout. Centralizing here keeps the guard wiring in one place
  * so a `requireAuth` change touches one file, not every integration test.
  */
-export function buildAuthenticatedLayout(rootRoute: AnyRoute) {
+export function buildAuthenticatedLayout(rootRoute: ReturnType<typeof buildRootRoute>) {
   return createRoute({
     getParentRoute: () => rootRoute,
     id: '_authenticated',
-    beforeLoad: ({ context, location }: { context: RouterContext; location: { href: string } }) =>
-      requireAuth(context, location.href),
+    beforeLoad: ({ context, location }) => requireAuth(context, location.href),
     component: () => <Outlet />,
   });
 }
@@ -47,16 +46,16 @@ export function buildAuthenticatedLayout(rootRoute: AnyRoute) {
  * the Query cache, so tests must seed it via the `/me/team` MSW handler. Pass
  * the parent — typically the route returned by {@link buildAuthenticatedLayout}.
  */
-export function buildTeamRequiredLayout(parent: AnyRoute) {
+export function buildTeamRequiredLayout(parent: ReturnType<typeof buildAuthenticatedLayout>) {
   return createRoute({
     getParentRoute: () => parent,
     id: '_team-required',
-    beforeLoad: ({ context }: { context: RouterContext }) => requireTeam(context),
+    beforeLoad: ({ context }) => requireTeam(context),
     component: () => <Outlet />,
   });
 }
 
-export function buildUnauthenticatedLayout(rootRoute: AnyRoute) {
+export function buildUnauthenticatedLayout(rootRoute: ReturnType<typeof buildRootRoute>) {
   return createRoute({
     getParentRoute: () => rootRoute,
     id: '_unauthenticated',

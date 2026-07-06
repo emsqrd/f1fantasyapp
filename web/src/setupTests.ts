@@ -1,5 +1,4 @@
 import '@testing-library/jest-dom';
-import { cleanup } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 
 import { API_BASE } from './mocks/handlers';
@@ -23,7 +22,6 @@ installMatchMediaMock();
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 
 afterEach(async () => {
-  cleanup();
   server.resetHandlers();
   setMobileViewport(false);
 

@@ -13,15 +13,14 @@ export function setMobileViewport(value: boolean): void {
 // `mobileViewport` flag (everything else, e.g. `next-themes`'s color-scheme
 // query, stays unmatched).
 export function installMatchMediaMock(): void {
-  window.matchMedia = ((query: string): MediaQueryList =>
-    ({
-      matches: query.includes('max-width') ? mobileViewport : false,
-      media: query,
-      onchange: null,
-      addListener: () => {},
-      removeListener: () => {},
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      dispatchEvent: () => false,
-    }) as unknown as MediaQueryList) as typeof window.matchMedia;
+  window.matchMedia = (query: string): MediaQueryList => ({
+    matches: query.includes('max-width') ? mobileViewport : false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  });
 }

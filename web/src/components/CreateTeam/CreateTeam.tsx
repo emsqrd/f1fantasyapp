@@ -53,15 +53,15 @@ export function CreateTeam() {
       // the full team and Home refetches the now-present summary. The profile
       // refresh updates hasTeam for dependent UI.
       queryClient.removeQueries({ queryKey: teamQueries.all });
-      queryClient.invalidateQueries({ queryKey: profileQueries.current().queryKey });
+      void queryClient.invalidateQueries({ queryKey: profileQueries.current().queryKey });
 
       // Navigate - TanStack Router handles navigation transitions
       if (search.redirect) {
         // When redirecting to an external path, use the string
-        navigate({ to: search.redirect });
+        await navigate({ to: search.redirect });
       } else {
         // When going to default route, use type-safe routing
-        navigate({ to: '/team/$teamId', params: { teamId: String(createdTeam.id) } });
+        await navigate({ to: '/team/$teamId', params: { teamId: String(createdTeam.id) } });
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create team';
