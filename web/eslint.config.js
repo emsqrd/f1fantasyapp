@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import pluginQuery from '@tanstack/eslint-plugin-query';
 import pluginRouter from '@tanstack/eslint-plugin-router';
+import vitest from '@vitest/eslint-plugin';
 import prettier from 'eslint-config-prettier/flat';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
@@ -56,9 +57,11 @@ export default tseslint.config(
     files: ['src/**/*.{test,spec}.{ts,tsx}', 'src/setupTests.ts', 'src/tests/**/*.{ts,tsx}'],
     plugins: {
       'testing-library': testingLibrary,
+      vitest,
     },
     rules: {
       ...testingLibrary.configs['flat/react'].rules,
+      ...vitest.configs.recommended.rules,
       '@typescript-eslint/unbound-method': 'off',
       'no-restricted-properties': [
         'error',
