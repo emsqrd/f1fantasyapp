@@ -23,22 +23,11 @@ React SPA (Vite) → .NET 10 Minimal API → PostgreSQL
 
 ## Domain & Features
 
-### Core Concepts
-
-- **Team** — Each user creates one team per season. Teams are subject to a budget cap; each driver/constructor has a price and the projected spend cannot exceed the cap.
-- **Roster Lock** — Each race has a `LockDeadline`. Once `now >= lockDeadline`, the team can no longer be modified (drivers/constructors cannot be added or removed). The UI shows a live countdown and disables pickers when locked.
-- **League** — Users create or join leagues to compete against others. Public leagues are browsable; private leagues use invite tokens. Max 15 teams per league. A team can belong to multiple leagues.
-- **Scoring** — Teams earn points based on real F1 race results. See `docs/research/fantasy-rules/decisions/scoring.md` for the rules.
-- **Season / Race** — Seasons map to F1 calendar years and contain ordered races (with round numbers and lock deadlines). Driver and constructor pricing is dynamic per season.
+Domain concepts, invariants, and canonical language are defined in `CONTEXT.md` at the repo root — read it before working on domain behavior.
 
 ## F1 Domain
 
 **Grid:** 22 drivers across 11 constructors. Each constructor fields exactly 2 drivers.
-
-**Race weekends** come in two formats as it pertains to this game:
-
-- **Standard:** Qualifying → Race
-- **Sprint** (~6 per season): Sprint → Qualifying → Race
 
 **Game rules and design decisions** are documented in `docs/research/fantasy-rules/decisions/`:
 
