@@ -1,6 +1,10 @@
+using System.Net;
+using System.Net.Http.Json;
+using F1CompanionApi.Api.Models;
 using F1CompanionApi.Data.Entities;
 using F1CompanionApi.Domain.Services;
 using F1CompanionApi.IntegrationTests.Support;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace F1CompanionApi.IntegrationTests.Scenarios;
@@ -9,47 +13,6 @@ public class CurrentRaceWeekendTests : IntegrationTestBase
 {
     public CurrentRaceWeekendTests(PostgresFixture postgres)
         : base(postgres) { }
-
-    [Fact]
-    public async Task GetCurrentSeasonRaceWeekendAsync_AllWeekendsUnscored_ReturnsFirstByRound()
-    {
-        var now = DateTime.UtcNow;
-
-        await WithDbAsync(async db =>
-        {
-            var season = await db.CreateCurrentSeasonAsync(year: now.Year);
-
-            // Insert out of round order to verify ORDER BY Round (not insertion order).
-            // Round 2's RaceDate is in the past — proving scoring-driven, not calendar-driven.
-            await db.CreateRaceWeekendAsync(
-                season.Id,
-                raceDate: now.AddDays(7),
-                round: 3,
-                name: "Round 3"
-            );
-            await db.CreateRaceWeekendAsync(
-                season.Id,
-                raceDate: now.AddDays(-7),
-                round: 2,
-                name: "Round 2"
-            );
-            await db.CreateRaceWeekendAsync(
-                season.Id,
-                raceDate: now.AddDays(-14),
-                round: 1,
-                name: "Round 1"
-            );
-        });
-
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var service = scope.ServiceProvider.GetRequiredService<IRaceWeekendService>();
-
-        var result = await service.GetCurrentSeasonRaceWeekendAsync();
-
-        Assert.NotNull(result);
-        Assert.Equal(1, result!.Round);
-        Assert.Equal("Round 1", result.Name);
-    }
 
     [Fact]
     public async Task GetCurrentSeasonRaceWeekendAsync_FirstScored_ReturnsSecond()
@@ -89,46 +52,6 @@ public class CurrentRaceWeekendTests : IntegrationTestBase
         Assert.NotNull(result);
         Assert.Equal(2, result!.Round);
         Assert.Equal("Round 2", result.Name);
-    }
-
-    [Fact]
-    public async Task GetCurrentSeasonRaceWeekendAsync_AllScored_ReturnsNull()
-    {
-        var now = DateTime.UtcNow;
-
-        await WithDbAsync(async db =>
-        {
-            var season = await db.CreateCurrentSeasonAsync(year: now.Year);
-
-            await db.CreateRaceWeekendAsync(
-                season.Id,
-                raceDate: now.AddDays(-21),
-                round: 1,
-                name: "Round 1",
-                scoredAt: now.AddDays(-20)
-            );
-            await db.CreateRaceWeekendAsync(
-                season.Id,
-                raceDate: now.AddDays(-14),
-                round: 2,
-                name: "Round 2",
-                scoredAt: now.AddDays(-13)
-            );
-            await db.CreateRaceWeekendAsync(
-                season.Id,
-                raceDate: now.AddDays(-7),
-                round: 3,
-                name: "Round 3",
-                scoredAt: now.AddDays(-6)
-            );
-        });
-
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var service = scope.ServiceProvider.GetRequiredService<IRaceWeekendService>();
-
-        var result = await service.GetCurrentSeasonRaceWeekendAsync();
-
-        Assert.Null(result);
     }
 
     [Fact]
@@ -206,5 +129,69 @@ public class CurrentRaceWeekendTests : IntegrationTestBase
         var result = await service.GetCurrentSeasonRaceWeekendAsync();
 
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task RunButUnscoredRound_StaysCurrentAndLocked_UntilScored()
+    {
+        var now = DateTime.UtcNow;
+        var (client, profile) = await Factory.CreateAuthenticatedAsync();
+
+        Season season = null!;
+        RaceWeekend round1 = null!;
+        Driver driver = null!;
+        await WithDbAsync(async db =>
+        {
+            season = await db.CreateCurrentSeasonAsync(year: now.Year);
+            round1 = await db.CreateRaceWeekendAsync(
+                season.Id,
+                raceDate: now.AddDays(-1),
+                lockDeadline: now.AddDays(-2),
+                round: 1,
+                name: "Round 1"
+            );
+            await db.CreateRaceWeekendAsync(
+                season.Id,
+                raceDate: now.AddDays(6),
+                lockDeadline: now.AddDays(5),
+                round: 2,
+                name: "Round 2"
+            );
+            await db.CreateTeamAsync(profile.Id);
+            driver = await db.CreateDriverAsync("VER", "Max", "Verstappen");
+        });
+
+        var raceWeekends = await client.GetFromJsonAsync<List<RaceWeekendResponse>>(
+            $"/api/seasons/{season.Id}/race-weekends"
+        );
+        Assert.NotNull(raceWeekends);
+        Assert.True(raceWeekends!.Single(r => r.Round == 1).IsCurrent);
+        Assert.False(raceWeekends.Single(r => r.Round == 2).IsCurrent);
+
+        var lockedResponse = await client.PostAsJsonAsync(
+            "/api/me/team/drivers",
+            new AddDriverToTeamRequest { DriverId = driver.Id, SlotPosition = 0 }
+        );
+        Assert.Equal(HttpStatusCode.Conflict, lockedResponse.StatusCode);
+
+        await WithDbAsync(async db =>
+        {
+            await db
+                .RaceWeekends.Where(r => r.Id == round1.Id)
+                .ExecuteUpdateAsync(s => s.SetProperty(r => r.ScoredAt, DateTime.UtcNow));
+        });
+
+        raceWeekends = await client.GetFromJsonAsync<List<RaceWeekendResponse>>(
+            $"/api/seasons/{season.Id}/race-weekends"
+        );
+        Assert.NotNull(raceWeekends);
+        Assert.False(raceWeekends!.Single(r => r.Round == 1).IsCurrent);
+        Assert.True(raceWeekends.Single(r => r.Round == 2).IsCurrent);
+
+        var openResponse = await client.PostAsJsonAsync(
+            "/api/me/team/drivers",
+            new AddDriverToTeamRequest { DriverId = driver.Id, SlotPosition = 0 }
+        );
+        Assert.Equal(HttpStatusCode.NoContent, openResponse.StatusCode);
     }
 }
