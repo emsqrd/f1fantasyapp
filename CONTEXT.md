@@ -1,49 +1,65 @@
-# Glossary
+# F1 Fantasy
 
-Canonical terms for the F1 Fantasy App. When code, UI copy, tests, or docs name a domain concept, use the term defined here.
+Fantasy F1 platform where users build teams, join leagues, and earn points from real race results. When code, UI copy, tests, or docs name a domain concept, use the term defined here.
 
-## Season total points
+## Language
 
-A team's cumulative points across **every scored race in the current season**, regardless of which leagues the team belongs to. Source of truth: `SUM(TeamRaceWeekendScore.TotalPoints)` for the team within the season.
+### Game structure
 
-Distinct from **league total points** — a team's season total is league-independent.
+**Season**:
+A competition year, mapping to an F1 calendar year and containing that year's race weekends as ordered rounds. Driver and constructor prices are set per season.
 
-## League total points
+**Race weekend**:
+One round of a season — the event teams earn points from. Comes in two formats: standard (qualifying → race) and sprint (sprint → qualifying → race).
+_Avoid_: "race" for the whole event — the race is the Sunday session within the weekend
 
-A team's cumulative points **within a single league**. Source of truth: the latest `TeamLeagueStanding.TotalPoints` row for `(LeagueId, TeamId)`.
+**Current race weekend**:
+The race weekend a team is currently playing: the earliest unscored round of the current season. It advances when scoring completes, not when the grand prix runs — a weekend that has run but is awaiting results is still current, and when every round is scored the season is complete and there is no current weekend.
+_Avoid_: "next race" / "upcoming race" — those read as the next calendar date, which diverges during the awaiting-results window
 
-Diverges from the team's season total whenever the team joined the league after Round 1 — the league total only accumulates from the round the team became a member. No back-fill.
+**Team**:
+A user's fantasy entry for a season — a set of drivers and constructors whose combined prices must stay within the budget cap. Each user fields exactly one team per season.
 
-Never refer to a single number as "total points" without qualifying which one — they are not the same quantity.
+**Roster lock**:
+The freeze on team changes once the current race weekend's lock deadline passes: drivers and constructors cannot be added or removed until the weekend is scored.
 
-## Home
+**League**:
+A group of teams competing against each other; a team can belong to multiple leagues, and a league that has reached its team cap is full. Public leagues are open to browse and join; private leagues are joinable only by invite.
 
-The authed landing surface at `/`. Aggregates cross-domain state (team identity, next race, season/last-race scoring, leagues) so that no single-purpose page has to smuggle in cross-domain summaries. The unauthed view at `/` remains the marketing landing page; the authed view is the Home.
+**League invite**:
+A shareable credential that grants access to join a specific private league; each league has a single permanent token that never expires or rotates. A valid invite can still be unjoinable when the league is full.
+_Avoid_: "expired" invite — there is no expiry in the model; a token that resolves to no league is an invalid invite
 
-## Team summary
+### Points & standings
 
-A point-in-time rollup of a team in the current season: the team's **name** and how it's performing — the [[season total points]] and its score in the most recently scored race. Served by `GET /me/team/summary`. Distinct from [[league total points]], which is per-league.
+**Season total points**:
+A team's cumulative points across every scored race in the current season, independent of league membership.
+_Avoid_: "total points" unqualified — always say whether the season or league total is meant
 
-The two score fields are nullable: a team that exists but has not yet had a scored race in the current season has neither a season total nor a last-race score. The team name is always present when the summary exists.
+**League total points**:
+A team's cumulative points within a single league, accumulating only from the round the team joined — no back-fill. Diverges from the season total whenever the team joined after Round 1.
+_Avoid_: "total points" unqualified
 
-## My league standing
+**Team summary**:
+A point-in-time rollup of a team in the current season: its name, season total points, and most-recent scored-race score. The two score parts are absent for a team with no scored race yet; the name is always present.
 
-The caller's position and total points within a specific league — the caller-scoped projection of `TeamLeagueStanding`. Served by `GET /me/standings`, which returns one row per league the caller belongs to: `{ leagueId, leagueName, totalTeams, position: int?, totalPoints: int? }`. The row entity is a *standing*, not a league — league metadata (name, totalTeams) is denormalized in for rendering convenience. `position` and `totalPoints` are nullable until the caller's team has a scored race in the current season while a member of that league. See [[league total points]] for why per-league totals can diverge from [[season total points]].
+**League standing**:
+A team's position and league total points within a single league it belongs to. Both are absent until the team has a scored race while a member of that league.
 
-## League invite
+**My league standing**:
+The league standing of the signed-in user's team; one exists per league the team belongs to.
 
-A shareable credential that grants access to join a specific private league. Each league has a single invite token that is **stable and permanent** — it does not expire and is not rotated, so the same link keeps working until the league itself is removed.
+### Home
 
-A token that resolves to no league is an **invalid invite**, never an "expired" one — there is no expiry concept in the model. Don't describe a dead invite as "expired"; the failure is always "invalid." A valid invite can still be unjoinable when the league is **full** — a distinct state from an invalid one.
+**Home**:
+The authed landing surface at `/`, aggregating cross-domain state: team identity, current race weekend, scoring summaries, and leagues. The unauthed view at `/` is the marketing landing page, not Home.
 
-## No-team state
+**No-team state**:
+A signed-in user who has not yet created a team for the current season — the earliest point in the onboarding progression.
 
-A signed-in user who has not yet created a team for the current season — the earliest point in the onboarding progression. Distinct from the [[No-leagues state]] (team exists, no league joined) and the [[No-scored-races state]] (team in a league, nothing scored yet). The [[Home]] surface renders a dedicated no-team variant: the identity header drops the team name, and the score and leagues areas give way to a create-team prompt and a gated-leagues notice.
+**No-leagues state**:
+A team that belongs to no league. Distinct from the no-team state (no team at all) and the no-scored-races state (leagues joined, nothing scored yet).
 
-## No-leagues state
-
-A team that belongs to no league. Distinct from the [[No-team state]] (no team at all) and the [[No-scored-races state]] (team has leagues, nothing scored yet). The [[Home]] surface renders the full layout with the leagues list replaced by a join-or-create-a-league prompt.
-
-## No-scored-races state
-
-A team that exists in the current season but has not yet had a scored race. Distinct from "no team yet" — the team exists and belongs to leagues; nothing has been scored yet. The [[Home]] surface renders the same layout as the scored state, with `—` em-dashes in score-bearing positions (the Last-race and Season cards' big number; the league rows' position and points columns). No "0 pts" placeholders — `0` is a real scoring outcome (DNFs, no points-finishers) and must not be conflated with "not yet scored."
+**No-scored-races state**:
+A team that exists in the current season (and may belong to leagues) but has no scored race yet. Not-yet-scored is distinct from scoring zero — `0` is a real outcome (DNFs, no points-finishers), never a placeholder for "not yet scored."
+_Avoid_: "0 pts" as a placeholder for a team with nothing scored yet
