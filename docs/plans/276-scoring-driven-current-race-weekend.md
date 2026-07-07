@@ -20,7 +20,7 @@ public static class CurrentRaceWeekendSelector
 }
 ```
 
-**`api/F1CompanionApi/Domain/Services/RaceWeekendService.cs`** — wire all three sites through it:
+**`api/F1CompanionApi/Domain/Services/RaceWeekendService.cs`** — consolidate all three sites onto the scoring rule (the two list-holding sites call the selector; the by-round read only swaps its query predicate — don't refactor a dead endpoint further):
 
 - `GetRaceWeekendsBySeasonAsync` (~line 54): replace the `RaceDate >= now` pick with the selector over its already-materialized list; keep passing the id into `ToResponseModel` (mapper stays decision-free).
 - `GetRaceWeekendByRoundAsync` (~line 76): swap the second query's predicate to `r.SeasonId == seasonId && r.ScoredAt == null` (keep `OrderBy(Round)`). Nothing more — the endpoint has no production callers; removal is #278.
@@ -71,7 +71,7 @@ Boundary note: the third transition (awaiting → next round open) is driven by 
 
 Durable boundaries (the two things the code can't show): a constraint comment on `clockTicker.subscribe` — read mechanism for render state only; side effects must not hang off ticks (background tabs throttle them and burst on refocus; polling belongs to TanStack Query's `refetchInterval`) — and one convention line in `web/CLAUDE.md` pointing time-derived render state at `useSyncExternalStore` + `clockTicker` with primitive snapshots. No ADR — the pattern itself is now embodied and discoverable in code.
 
-> **Season-complete note:** with all rounds scored nothing is `isCurrent`; Team falls back to the last race. Passing `raceDate: null` there caps the phase at `locked`, exactly preserving today's "Lineup Locked" display instead of a wrong perpetual "Awaiting results". Whether off-season should instead be *open* is a product question left undecided (the API guard would allow edits — it returns null when all rounds are scored).
+> **Season-complete fallback:** with all rounds scored nothing is `isCurrent` and Team falls back to the last race — pass `raceDate: null` for that fallback (the deadline/raceDate asymmetry above is deliberate) so the phase caps at `locked`, preserving today's "Lineup Locked" instead of a wrong perpetual "Awaiting results". Don't design the post-final-race display here — #278 owns it and removes this fallback.
 
 **Tests:**
 
@@ -81,10 +81,12 @@ Durable boundaries (the two things the code can't show): a constraint comment on
 - `LockCountdown.test.tsx`: switches from `makeState` to props (`phase`, `lockDeadline`). Add awaitingResults per variant: hero → empty DOM; compact → "Awaiting results", no "Lineup Locked", no lock icon.
 - `NextRaceCard.test.tsx`: assert "Next up" in the open test; add locked (eyebrow "Current" + "Lineup Locked") and awaitingResults (eyebrow "Awaiting results", no lock copy at all — hero suppression).
 - `Team.test.tsx`: inline `mockRaces.raceDate` is `'2024-03-09'` (past — would flip existing tests to awaitingResults); move it to the future for open-phase tests. Drop the picker `vi.mock`s and render the real pickers (plain props; add/edit affordances are `{!readOnly && ...}`; nothing fires network without interaction; `QueryClientProvider` already wrapped) — per web/CLAUDE.md, don't mock children to test wiring. Gating assertions target the user-visible affordance: add-driver/add-constructor controls present when open, absent when locked/awaiting. Add: locked → affordances absent + "Lineup Locked"; awaitingResults → "Awaiting results" + affordances absent; season-complete fallback → "Lineup Locked", not "Awaiting results".
+- `root-routing.integration.test.tsx`: its `RACE_WEEKENDS` fixture has `raceDate: '2026-05-31'` — already past against the real clock (that file uses no fake timers), so the new phase logic would silently render Home in the awaiting-results state. Assertions happen not to break, but bump `raceDate` to a far-future date past its `'2099-01-01'` lockDeadline (e.g. `'2099-01-03'`) so those tests keep exercising the open phase deliberately. `league-membership.integration.test.tsx` serves `[]` race weekends — unaffected.
 - No changes to `createMockRaceWeekend` (default raceDate `'2030-06-01'` stays open-phase). No e2e changes — "Lineup Locked" remains the locked-phase copy asserted by `e2e/tests/team.spec.ts`.
+- Implementation sanity check: confirm the API serializes `raceDate` with a timezone designator (`...Z`) — `Date.parse` on a zoneless string assumes local time, which would shift the awaiting-results flip by the client's UTC offset. It rides the same `DateTime` serialization path as `lockDeadline`, which the existing countdown already parses correctly in production, so this is a verify-not-build item.
 
 **Verify:** `npm run web:test`, `npm run web:lint`, `npm run web:format:check`, `npm run web:build`.
 
 ## End-to-end verification
 
-After both commits, against the dev stack (`npm run api:watch` + `npm run web:dev`): seed the current season so round N has `RaceDate` in the past and `ScoredAt` null. Team page shows round N, compact status "Awaiting results", pickers hidden; Home card eyebrow reads "Round N · Awaiting results" with the hero lock status suppressed. Score round N (or set `ScoredAt`), refresh: round N+1 is current and editable before its deadline. For the live flip, seed a raceDate a minute ahead and leave the tab open — it flips to awaiting results without a refresh.
+After both commits, against the dev stack (`npm run api:watch` + `npm run web:dev`). The dev database is already seeded — **do not insert new rows**; set up each state by updating existing ones. Put the earliest unscored round N into the run-but-unscored window (`UPDATE` its `RaceDate` to the past; leave `ScoredAt` null). Team page shows round N, compact status "Awaiting results", pickers hidden; Home card eyebrow reads "Round N · Awaiting results" with the hero lock status suppressed. Set round N's `ScoredAt` (or score it through the app), refresh: round N+1 is current and editable before its deadline. For the live flip, set round N's `RaceDate` a minute ahead and leave the tab open — it flips to awaiting results without a refresh. Restore any adjusted dates afterward.
