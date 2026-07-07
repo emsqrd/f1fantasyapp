@@ -198,7 +198,7 @@ Sentry.logger.error('Failed to load team data', { teamId, error });
 - **InlineError** - Uses `role="alert"` for immediate announcement
 - **InlineSuccess** - Uses `role="status"` for polite announcement
 
-## Path Aliases
+## Imports
 
-- `@/` maps to `src/` directory
-- Always use absolute imports: `import { Button } from '@/components/ui/button'`
+- Use `@/` imports to reach across top-level `src/` areas: `import { teamQueries } from '@/services/teamService'`
+- Use relative imports for nearby files: siblings (`./ErrorState`) and neighboring component folders (`../ui/button`)
