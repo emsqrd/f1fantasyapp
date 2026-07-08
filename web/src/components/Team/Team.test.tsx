@@ -96,6 +96,7 @@ describe('TeamView', () => {
     expect(screen.getByText('Lineup locks in')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /add driver/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('button', { name: /add constructor/i }).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/results are being scored/i)).not.toBeInTheDocument();
   });
 
   it('hides edit affordances on a read-only team even before the lock deadline', () => {
@@ -112,6 +113,38 @@ describe('TeamView', () => {
     expect(screen.getByText('Lineup Locked')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /add driver/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /add constructor/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/results are being scored/i)).not.toBeInTheDocument();
+  });
+
+  it('shows the race-complete banner with the next round while awaiting results', () => {
+    const [currentRace] = makeRaces({
+      raceDate: '2020-06-01',
+      lockDeadline: '2020-05-31T12:00:00Z',
+    });
+    const [nextRace] = makeRaces({
+      id: 2,
+      round: 3,
+      name: 'Australian Grand Prix',
+      isCurrent: false,
+      raceDate: '2099-02-01',
+      lockDeadline: '2099-01-30T00:00:00Z',
+    });
+    renderWithRaces([currentRace, nextRace]);
+
+    expect(screen.getByText('Saudi Arabian Grand Prix complete')).toBeInTheDocument();
+    expect(
+      screen.getByText('Your lineup reopens for Round 3 once results are in.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add driver/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add constructor/i })).not.toBeInTheDocument();
+  });
+
+  it('omits the reopens line when the current race is the last of the season', () => {
+    renderWithRaces(makeRaces({ raceDate: '2020-06-01', lockDeadline: '2020-05-31T12:00:00Z' }));
+
+    expect(screen.getByText('Saudi Arabian Grand Prix complete')).toBeInTheDocument();
+    expect(screen.getByText('Results are being scored.')).toBeInTheDocument();
+    expect(screen.queryByText(/reopens for Round/)).not.toBeInTheDocument();
   });
 
   it('hides the lock status and edit affordances once the race has run', () => {
@@ -129,5 +162,6 @@ describe('TeamView', () => {
     );
 
     expect(screen.getByText('Lineup Locked')).toBeInTheDocument();
+    expect(screen.queryByText(/results are being scored/i)).not.toBeInTheDocument();
   });
 });

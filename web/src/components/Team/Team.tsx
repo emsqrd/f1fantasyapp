@@ -17,6 +17,7 @@ import { ConstructorPicker } from '../ConstructorPicker/ConstructorPicker';
 import { DriverPicker } from '../DriverPicker/DriverPicker';
 import { InlineError } from '../InlineError/InlineError';
 import { LockCountdown } from '../LockCountdown/LockCountdown';
+import { RaceCompleteBanner } from './RaceCompleteBanner';
 
 const teamRouteApi = getRouteApi('/_authenticated/_team-required/team/$teamId');
 
@@ -127,6 +128,13 @@ export function TeamView({
           className="w-full sm:w-auto sm:shrink-0 sm:text-right"
         />
       </div>
+
+      {phase === 'awaitingResults' && currentRace && (
+        <RaceCompleteBanner
+          raceName={currentRace.name}
+          nextRound={races[races.indexOf(currentRace) + 1]?.round ?? null}
+        />
+      )}
 
       {captainError && (
         <div className="pb-4">
