@@ -383,10 +383,11 @@ export function createMockSeason(overrides: Partial<Season> = {}): Season {
 
 /**
  * Test utility: Creates a mock RaceWeekend with sensible defaults (a current,
- * not-yet-locked weekend). Pass past `raceDate`/`lockDeadline` for a locked one.
+ * not-yet-locked weekend). Pass a past `lockDeadline` for a locked one; a past
+ * `raceDate` puts it in the awaiting-results phase instead.
  *
  * @example
- * const locked = createMockRaceWeekend({ raceDate: '2020-06-01', lockDeadline: '2020-05-31T12:00:00Z' });
+ * const locked = createMockRaceWeekend({ lockDeadline: '2020-05-31T12:00:00Z' });
  */
 export function createMockRaceWeekend(overrides: Partial<RaceWeekend> = {}): RaceWeekend {
   return {

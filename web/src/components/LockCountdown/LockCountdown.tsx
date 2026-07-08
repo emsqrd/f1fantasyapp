@@ -1,9 +1,14 @@
-import type { LockCountdown as LockCountdownState } from '@/hooks/useLockCountdown';
+import {
+  type LockCountdown as LockCountdownState,
+  useLockCountdown,
+} from '@/hooks/useLockCountdown';
+import type { LockPhase } from '@/hooks/useLockPhase';
 import { cn } from '@/lib/utils';
 import { Lock } from 'lucide-react';
 
 interface LockCountdownProps {
-  state: LockCountdownState;
+  phase: LockPhase;
+  lockDeadline: string | null;
   variant?: 'hero' | 'compact';
   className?: string;
 }
@@ -25,18 +30,26 @@ const variantStyles = {
   },
 };
 
-export function LockCountdown({ state, variant = 'compact', className }: LockCountdownProps) {
-  const { isLocked, lockingImminently, lockDeadline, remaining } = state;
-  if (!lockDeadline) return null;
-
+export function LockCountdown({
+  phase,
+  lockDeadline,
+  variant = 'compact',
+  className,
+}: LockCountdownProps) {
+  const { lockingImminently, remaining } = useLockCountdown(lockDeadline);
   const v = variantStyles[variant];
+
+  // Once the race has run there's no lock to count down or announce.
+  if (phase === 'awaitingResults') return null;
+
+  if (!lockDeadline) return null;
 
   return (
     <div className={className}>
       <p className={cn('text-muted-foreground text-xs font-medium uppercase', v.label)}>
-        {isLocked ? 'Lineup' : 'Lineup locks in'}
+        {phase === 'locked' ? 'Lineup' : 'Lineup locks in'}
       </p>
-      {isLocked ? (
+      {phase === 'locked' ? (
         <div className={cn('text-muted-foreground', v.lockedRow)}>
           <Lock className="size-4" aria-hidden="true" />
           <span className={v.statusText}>Lineup Locked</span>

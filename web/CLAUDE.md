@@ -30,6 +30,8 @@ TanStack Router uses **guard-based route protection** with pathless layout route
 
 **Pattern:** Put state where its reader reaches it. `beforeLoad`/`loader` run outside React, so anything a guard or loader needs goes in **router context** — `{ auth, queryClient }`. `auth` is a live view over the auth store (reads evaluate at guard/loader execution time, never a render-time copy); `queryClient` reaches the TanStack Query cache, where reads live — each defined as a `queryOptions` in its service module. The component tree reads the same sources through hooks: `useAuth()` for the store, `useQuery`/`useSuspenseQuery` for the cache.
 
+Time-derived render state (countdowns, phase flips) reads the clock via `useSyncExternalStore` subscribed to `src/lib/clockTicker.ts`, with a **primitive** snapshot so a component re-renders only when its displayed value changes — not a `useState` + `setInterval` effect.
+
 ### API/Service Layer
 
 **File:** `src/lib/api.ts`

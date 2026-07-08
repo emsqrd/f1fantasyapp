@@ -1,7 +1,7 @@
 import type { RaceWeekend } from '@/contracts/RaceWeekend';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team } from '@/contracts/Team';
-import { useLockCountdown } from '@/hooks/useLockCountdown';
+import { useLockPhase } from '@/hooks/useLockPhase';
 import { useSetCaptain } from '@/hooks/useSetCaptain';
 import { formatBudget } from '@/lib/utils';
 import { constructorQueries } from '@/services/constructorService';
@@ -81,10 +81,13 @@ export function TeamView({
   const captainError = captainMutation.error
     ? captainMutation.error.message || 'Failed to update captain'
     : null;
-  const currentRace = races.find((r) => r.isCurrent) ?? races.at(-1);
+  const currentRace = races.find((r) => r.isCurrent) ?? null;
+  // With every round scored nothing is current; fall back to the final race and
+  // pass a null raceDate so the phase caps at 'locked', not 'awaitingResults'.
+  const displayRace = currentRace ?? races.at(-1);
 
-  const countdown = useLockCountdown(currentRace?.lockDeadline ?? null);
-  const isLocked = countdown.isLocked;
+  const phase = useLockPhase(displayRace?.lockDeadline ?? null, currentRace?.raceDate ?? null);
+  const editable = !readOnly && phase === 'open';
 
   const handleSetCaptain = (driverId: number | null) => captainMutation.mutate(driverId);
 
@@ -95,9 +98,9 @@ export function TeamView({
           <h1 className="text-2xl font-bold">{team.name}</h1>
           {readOnly && <span className="text-muted-foreground text-sm">{team.ownerName}</span>}
         </div>
-        {currentRace && (
+        {displayRace && (
           <p className="text-muted-foreground text-sm">
-            Round {currentRace.round} · {currentRace.name}
+            Round {displayRace.round} · {displayRace.name}
           </p>
         )}
       </div>
@@ -118,7 +121,8 @@ export function TeamView({
           </div>
         </div>
         <LockCountdown
-          state={countdown}
+          phase={phase}
+          lockDeadline={displayRace?.lockDeadline ?? null}
           variant="compact"
           className="w-full sm:w-auto sm:shrink-0 sm:text-right"
         />
@@ -133,15 +137,15 @@ export function TeamView({
         <DriverPicker
           activeDrivers={activeDrivers}
           teamDrivers={team.drivers}
-          readOnly={readOnly || isLocked}
+          readOnly={!editable}
           remainingBudget={team.remainingBudget}
           captainDriverId={captainDriverId}
-          onSetCaptain={readOnly || isLocked ? undefined : handleSetCaptain}
+          onSetCaptain={editable ? handleSetCaptain : undefined}
         />
         <ConstructorPicker
           activeConstructors={activeConstructors}
           teamConstructors={team.constructors}
-          readOnly={readOnly || isLocked}
+          readOnly={!editable}
           remainingBudget={team.remainingBudget}
         />
       </div>

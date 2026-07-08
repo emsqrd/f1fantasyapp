@@ -12,40 +12,29 @@ describe('useLockCountdown', () => {
   });
 
   afterEach(() => {
-    vi.runOnlyPendingTimers();
     vi.useRealTimers();
   });
 
   it('returns sane defaults when no deadline is provided', () => {
     const { result } = renderHook(() => useLockCountdown(null));
 
-    expect(result.current.isLocked).toBe(false);
     expect(result.current.lockingImminently).toBe(false);
-    expect(result.current.lockDeadline).toBeNull();
     expect(result.current.remaining).toBeNull();
   });
 
-  it('transitions from countdown to imminent to locked as the deadline passes', () => {
+  it('transitions from countdown to imminent as the deadline approaches', () => {
     const deadline = new Date(START.getTime() + 2 * 60 * 1000);
 
     const { result } = renderHook(() => useLockCountdown(deadline.toISOString()));
 
-    expect(result.current.isLocked).toBe(false);
     expect(result.current.lockingImminently).toBe(false);
     expect(result.current.remaining).toEqual({ days: 0, hours: 0, minutes: 2 });
 
     act(() => {
       vi.advanceTimersByTime(61_000);
     });
-    expect(result.current.isLocked).toBe(false);
     expect(result.current.lockingImminently).toBe(true);
-
-    act(() => {
-      vi.advanceTimersByTime(60_000);
-    });
-    expect(result.current.isLocked).toBe(true);
-    expect(result.current.lockingImminently).toBe(false);
-    expect(result.current.remaining).toBeNull();
+    expect(result.current.remaining).toEqual({ days: 0, hours: 0, minutes: 0 });
   });
 
   it('breaks remaining time into days, hours, and minutes for a multi-day deadline', () => {

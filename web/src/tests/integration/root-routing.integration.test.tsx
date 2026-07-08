@@ -37,7 +37,7 @@ const RACE_WEEKENDS = [
       location: 'Monte Carlo',
       country: 'Monaco',
     },
-    raceDate: '2026-05-31',
+    raceDate: '2099-01-03',
     lockDeadline: '2099-01-01T00:00:00Z',
     isCurrent: true,
     weekendFormat: 0,
