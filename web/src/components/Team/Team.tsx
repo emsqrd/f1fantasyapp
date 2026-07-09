@@ -1,7 +1,7 @@
 import type { RaceWeekend } from '@/contracts/RaceWeekend';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team } from '@/contracts/Team';
-import { useLockPhase } from '@/hooks/useLockPhase';
+import { useLockState } from '@/hooks/useLockState';
 import { useSetCaptain } from '@/hooks/useSetCaptain';
 import { formatBudget } from '@/lib/utils';
 import { constructorQueries } from '@/services/constructorService';
@@ -87,8 +87,8 @@ export function TeamView({
   // pass a null raceDate so the phase caps at 'locked', not 'awaitingResults'.
   const displayRace = currentRace ?? races.at(-1);
 
-  const phase = useLockPhase(displayRace?.lockDeadline ?? null, currentRace?.raceDate ?? null);
-  const editable = !readOnly && phase === 'open';
+  const lockState = useLockState(displayRace?.lockDeadline ?? null, currentRace?.raceDate ?? null);
+  const editable = !readOnly && lockState.phase === 'open';
 
   const handleSetCaptain = (driverId: number | null) => captainMutation.mutate(driverId);
 
@@ -122,14 +122,13 @@ export function TeamView({
           </div>
         </div>
         <LockCountdown
-          phase={phase}
-          lockDeadline={displayRace?.lockDeadline ?? null}
+          state={lockState}
           variant="compact"
           className="w-full sm:w-auto sm:shrink-0 sm:text-right"
         />
       </div>
 
-      {phase === 'awaitingResults' && currentRace && (
+      {lockState.phase === 'awaitingResults' && currentRace && (
         <RaceCompleteBanner
           raceName={currentRace.name}
           nextRound={races[races.indexOf(currentRace) + 1]?.round ?? null}

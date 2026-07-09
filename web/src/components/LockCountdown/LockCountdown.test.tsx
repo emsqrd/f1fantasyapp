@@ -1,36 +1,34 @@
 import { render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { LockCountdown } from './LockCountdown';
 
-const NOW = new Date('2026-05-29T12:00:00Z');
-const DEADLINE = '2026-05-31T17:09:00Z';
-
 describe('LockCountdown', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-    vi.setSystemTime(NOW);
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it('renders nothing when there is no deadline', () => {
-    const { container } = render(<LockCountdown phase="open" lockDeadline={null} />);
+  it('renders nothing for an open lineup with no deadline', () => {
+    const { container } = render(
+      <LockCountdown state={{ phase: 'open', remaining: null, lockingImminently: false }} />,
+    );
 
     expect(container).toBeEmptyDOMElement();
   });
 
   it('renders the locked state', () => {
-    render(<LockCountdown phase="locked" lockDeadline="2026-05-29T11:00:00Z" />);
+    render(<LockCountdown state={{ phase: 'locked' }} />);
 
     expect(screen.getByText('Lineup Locked')).toBeInTheDocument();
     expect(screen.queryByText('Lineup locks in')).not.toBeInTheDocument();
   });
 
   it('renders the imminent state inside the final minute', () => {
-    render(<LockCountdown phase="open" lockDeadline="2026-05-29T12:00:30Z" />);
+    render(
+      <LockCountdown
+        state={{
+          phase: 'open',
+          remaining: { days: 0, hours: 0, minutes: 0 },
+          lockingImminently: true,
+        }}
+      />,
+    );
 
     expect(screen.getByText('Less than 1 minute')).toBeInTheDocument();
   });
@@ -38,7 +36,16 @@ describe('LockCountdown', () => {
   it.each(['hero', 'compact'] as const)(
     'exposes an accessible countdown duration for the %s variant',
     (variant) => {
-      render(<LockCountdown phase="open" lockDeadline={DEADLINE} variant={variant} />);
+      render(
+        <LockCountdown
+          state={{
+            phase: 'open',
+            remaining: { days: 2, hours: 5, minutes: 9 },
+            lockingImminently: false,
+          }}
+          variant={variant}
+        />,
+      );
 
       expect(screen.getByText('Lineup locks in')).toBeInTheDocument();
       expect(screen.getByText('2 days, 5 hours, 9 minutes')).toBeInTheDocument();
@@ -49,7 +56,7 @@ describe('LockCountdown', () => {
     'renders nothing for the %s variant while awaiting results',
     (variant) => {
       const { container } = render(
-        <LockCountdown phase="awaitingResults" lockDeadline={DEADLINE} variant={variant} />,
+        <LockCountdown state={{ phase: 'awaitingResults' }} variant={variant} />,
       );
 
       expect(container).toBeEmptyDOMElement();

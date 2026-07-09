@@ -1,5 +1,5 @@
 import type { RaceWeekend } from '@/contracts/RaceWeekend';
-import { type LockPhase, useLockPhase } from '@/hooks/useLockPhase';
+import { type LockState, useLockState } from '@/hooks/useLockState';
 import { Calendar, MapPin } from 'lucide-react';
 
 import { LockCountdown } from '../LockCountdown/LockCountdown';
@@ -42,21 +42,21 @@ export function NextRaceCard({ races }: NextRaceCardProps) {
   return <NextRaceCardActive race={currentRace} />;
 }
 
-const phaseEyebrows: Record<LockPhase, string> = {
+const phaseEyebrows: Record<LockState['phase'], string> = {
   open: 'Next up',
   locked: 'Current',
   awaitingResults: 'Awaiting results',
 };
 
 function NextRaceCardActive({ race }: { race: RaceWeekend }) {
-  const phase = useLockPhase(race.lockDeadline, race.raceDate);
+  const lockState = useLockState(race.lockDeadline, race.raceDate);
 
   return (
     <section className="bg-card rounded-[0.65rem] border p-4 md:p-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-6">
         <div className="min-w-0 flex-1">
           <p className="mb-1 text-xs font-semibold tracking-[0.14em] text-[color-mix(in_oklab,var(--primary)_70%,var(--muted-foreground))] uppercase">
-            Round {race.round} <span aria-hidden="true">·</span> {phaseEyebrows[phase]}
+            Round {race.round} <span aria-hidden="true">·</span> {phaseEyebrows[lockState.phase]}
           </p>
           <h2 className="text-foreground truncate text-2xl font-bold tracking-tight md:text-3xl">
             {race.name}
@@ -74,8 +74,7 @@ function NextRaceCardActive({ race }: { race: RaceWeekend }) {
         </div>
 
         <LockCountdown
-          phase={phase}
-          lockDeadline={race.lockDeadline}
+          state={lockState}
           variant="hero"
           className="border-border border-t pt-4 md:border-t-0 md:pt-0 md:text-right"
         />

@@ -1,14 +1,11 @@
-import {
-  type LockCountdown as LockCountdownState,
-  useLockCountdown,
-} from '@/hooks/useLockCountdown';
-import type { LockPhase } from '@/hooks/useLockPhase';
+import type { LockState } from '@/hooks/useLockState';
 import { cn } from '@/lib/utils';
 import { Lock } from 'lucide-react';
 
+type Remaining = NonNullable<Extract<LockState, { phase: 'open' }>['remaining']>;
+
 interface LockCountdownProps {
-  phase: LockPhase;
-  lockDeadline: string | null;
+  state: LockState;
   variant?: 'hero' | 'compact';
   className?: string;
 }
@@ -30,35 +27,30 @@ const variantStyles = {
   },
 };
 
-export function LockCountdown({
-  phase,
-  lockDeadline,
-  variant = 'compact',
-  className,
-}: LockCountdownProps) {
-  const { lockingImminently, remaining } = useLockCountdown(lockDeadline);
+export function LockCountdown({ state, variant = 'compact', className }: LockCountdownProps) {
   const v = variantStyles[variant];
 
   // Once the race has run there's no lock to count down or announce.
-  if (phase === 'awaitingResults') return null;
+  if (state.phase === 'awaitingResults') return null;
 
-  if (!lockDeadline) return null;
+  // Open with no deadline has nothing to show.
+  if (state.phase === 'open' && state.remaining == null) return null;
 
   return (
     <div className={className}>
       <p className={cn('text-muted-foreground text-xs font-medium uppercase', v.label)}>
-        {phase === 'locked' ? 'Lineup' : 'Lineup locks in'}
+        {state.phase === 'locked' ? 'Lineup' : 'Lineup locks in'}
       </p>
-      {phase === 'locked' ? (
+      {state.phase === 'locked' ? (
         <div className={cn('text-muted-foreground', v.lockedRow)}>
           <Lock className="size-4" aria-hidden="true" />
           <span className={v.statusText}>Lineup Locked</span>
         </div>
-      ) : lockingImminently ? (
+      ) : state.lockingImminently ? (
         <p className={v.imminent}>Less than 1 minute</p>
       ) : (
-        remaining && (
-          <CountdownValue remaining={remaining} variant={variant} className={v.countdown} />
+        state.remaining && (
+          <CountdownValue remaining={state.remaining} variant={variant} className={v.countdown} />
         )
       )}
     </div>
@@ -70,7 +62,7 @@ function CountdownValue({
   variant,
   className,
 }: {
-  remaining: NonNullable<LockCountdownState['remaining']>;
+  remaining: Remaining;
   variant: 'hero' | 'compact';
   className?: string;
 }) {
