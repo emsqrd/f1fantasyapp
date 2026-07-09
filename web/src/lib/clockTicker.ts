@@ -1,12 +1,22 @@
 type Listener = () => void;
 
 const listeners = new Set<Listener>();
-let intervalId: ReturnType<typeof setInterval> | null = null;
+let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
 function notifyAll(): void {
   for (const listener of listeners) {
     listener();
   }
+}
+
+function scheduleTickAtNextSecond(): void {
+  timeoutId = setTimeout(tick, 1000 - (Date.now() % 1000));
+}
+
+function tick(): void {
+  // Schedule before notifying so a throwing listener can't kill the chain.
+  scheduleTickAtNextSecond();
+  notifyAll();
 }
 
 function onVisibilityChange(): void {
@@ -21,15 +31,15 @@ function onVisibilityChange(): void {
 export function subscribe(listener: Listener): () => void {
   listeners.add(listener);
   if (listeners.size === 1) {
-    intervalId = setInterval(notifyAll, 1000);
+    scheduleTickAtNextSecond();
     document.addEventListener('visibilitychange', onVisibilityChange);
   }
 
   return () => {
     listeners.delete(listener);
-    if (listeners.size === 0 && intervalId != null) {
-      clearInterval(intervalId);
-      intervalId = null;
+    if (listeners.size === 0 && timeoutId != null) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
       document.removeEventListener('visibilitychange', onVisibilityChange);
     }
   };

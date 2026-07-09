@@ -10,7 +10,10 @@ function setVisibilityState(state: DocumentVisibilityState): void {
 
 describe('clockTicker', () => {
   beforeEach(() => {
+    // Tick scheduling depends on time-of-day; unpinned fake timers start at
+    // the real clock, making tick timing nondeterministic.
     vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-07T12:00:00.000Z'));
   });
 
   afterEach(() => {
@@ -31,6 +34,23 @@ describe('clockTicker', () => {
 
     unsubscribeA();
     unsubscribeB();
+  });
+
+  it('aligns ticks to wall-clock second boundaries', () => {
+    vi.setSystemTime(new Date('2026-03-07T12:00:00.400Z'));
+    const a = vi.fn();
+    const unsubscribeA = subscribe(a);
+
+    vi.advanceTimersByTime(599);
+    expect(a).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(a).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(1000);
+    expect(a).toHaveBeenCalledTimes(2);
+
+    unsubscribeA();
   });
 
   it('keeps ticking for remaining subscribers when one unsubscribes', () => {
