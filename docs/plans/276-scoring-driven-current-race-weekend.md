@@ -109,6 +109,95 @@ After commit 2 the Team page shows nothing about the awaiting-results state (the
 
 **Verify:** `npm run web:test`, `npm run web:lint`, `npm run web:format:check`, `npm run web:build`.
 
+## Commit 4 — `fix(web): align clock ticks to wall-clock seconds`
+
+Hardening from the lock-display review. `setInterval(…, 1000)` phases off whatever moment the first subscriber mounts, so a minute rollover or phase flip is noticed up to ~1s after the true boundary. Production deadlines are whole-hour timestamps (`api/supabase/seed.sql`), so ticks aligned to wall-clock seconds land exactly on every flip instant — the lag drops from ≤1s to timer-fire jitter.
+
+**`web/src/lib/clockTicker.ts`** — replace the interval with a chained timeout aligned to the next second boundary: each fire schedules the next via `setTimeout(tick, 1000 - (Date.now() % 1000))` *before* notifying (a throwing listener can't kill the chain), then fans out. Recomputing the remainder each fire self-corrects drift and realigns after background-tab throttling. Teardown clears the *latest* pending timeout id — unlike an interval id, it changes on every fire. The `visibilitychange` notify stays as-is; correctness on refocus never depended on tick cadence.
+
+**Tests:**
+
+- `clockTicker.test.ts`: pin `vi.setSystemTime` explicitly — the schedule now depends on time-of-day, and Vitest's fake clock defaults to the real `Date.now()`, so an unpinned start makes tick timing nondeterministic. The ref-count/fan-out tests carry over. Add one alignment test: subscribe mid-second (e.g. `…T12:00:00.400Z`) and assert the first notification lands at the next whole second, not 1000ms after subscribing.
+
+**Verify:** `npm run web:test`, `npm run web:lint`, `npm run web:format:check`, `npm run web:build`.
+
+## Commit 5 — `refactor(web): one clock read for lock phase and countdown`
+
+Revises commit 2's two-hook split. As shipped, phase and countdown derive from two separate `Date.now()` reads in two components, and `useLockCountdown`'s `Math.max(0, …)` clamp makes `lockingImminently` true forever past the deadline with `remaining` stuck at zeros — the display is right only because `LockCountdown`'s phase branches shadow those values. Reordering the branches, or consuming `lockingImminently` on a new surface without the phase guard, would show "Less than 1 minute" indefinitely post-lock. Merging onto one read per surface makes the invalid states unrepresentable instead of hidden.
+
+**New `web/src/hooks/useLockState.ts`** (replaces `useLockPhase.ts` + `useLockCountdown.ts`, both deleted):
+
+```ts
+export type LockState =
+  | {
+      phase: 'open';
+      remaining: { days: number; hours: number; minutes: number } | null;
+      lockingImminently: boolean;
+    }
+  | { phase: 'locked' }
+  | { phase: 'awaitingResults' };
+```
+
+- Pure exported `computeLockState(lockDeadline, raceDate, now)` keeps `computeLockPhase`'s precedence — raceDate checked before deadline, so `awaitingResults` wins even with a null deadline.
+- getSnapshot reads `Date.now()` **once** and returns a primitive string — `'locked'`, `'awaitingResults'`, `` `open:${minutes}` `` with a deadline, `'open:'` without one — so `Object.is` keeps re-renders coupled to displayed-value changes (commit 2's house rule survives the merge). The hook parses the snapshot into the union; the `remaining` decomposition and `lockingImminently` (`minutes === 0`, deadline present) are pure math on the parsed value.
+- With one `now`, `phase === 'open'` implies `now < deadline`, so minutes are non-negative by construction — the clamp and the states it manufactured are gone.
+- Reading `remaining` requires narrowing to the `'open'` arm — misuse is a compile error, not a branch-ordering convention.
+
+**`web/src/components/LockCountdown/LockCountdown.tsx`** — becomes a pure leaf: props `{ state: LockState; variant; className }`, no hook, no clock. Rendering is unchanged (awaitingResults → null, locked → "Lineup Locked", open → imminent/countdown, open with null `remaining` → null), but each branch now renders values that can only exist in that phase.
+
+**`web/src/components/Home/NextRaceCard.tsx`** — `const lockState = useLockState(race.lockDeadline, race.raceDate)` in `NextRaceCardActive`; eyebrow keys off `lockState.phase`; passes `state` to the leaf. The `LockPhase` type import moves to `LockState['phase']`.
+
+**`web/src/components/Team/Team.tsx`** — `useLockState(displayRace?.lockDeadline ?? null, currentRace?.raceDate ?? null)`, arg-for-arg with today's call; `editable` and the banner key off `.phase`. The season-complete fallback now yields a bare `{ phase: 'locked' }` — its latent perpetual `lockingImminently: true` disappears with the clamp.
+
+Accepted trade-off: the surfaces re-render once per minute while the phase is open (previously confined to the leaf). The pass is a few hundred fiber nodes committing a single text node, and any picker growth heavy enough to change that verdict shows up first on interaction paths (captain click, sheet open) where it's loud and profilable — the minute tick can't be the first symptom.
+
+**Tests:**
+
+- New `useLockState.test.ts`: `computeLockState` ports the full pure matrix — the eight phase boundary cases from `useLockPhase.test.ts`, the day/hour/minute decompositions from `useLockCountdown.test.ts` (asserted on the open arm), open with no deadline → `remaining: null`, under a minute → `lockingImminently: true`, and at/past deadline → bare `locked` arm (no countdown fields exist to leak). One fake-timer `renderHook` test keeps the live open → locked → awaitingResults flip. `useLockPhase.test.ts` and `useLockCountdown.test.ts` go with their hooks.
+- `LockCountdown.test.tsx`: pure props, drops fake timers entirely; the "no deadline" case becomes the open arm with null `remaining`.
+- `NextRaceCard.test.tsx` / `Team.test.tsx`: assertions unchanged — they pin DOM outcomes (eyebrows, "Lineup Locked", banner, affordances) through the real hook. NextRaceCard keeps its fake-timer setup; Team keeps pinning phases with fixed past/future fixture dates against the real clock.
+
+**Verify:** `npm run web:test`, `npm run web:lint`, `npm run web:format:check`, `npm run web:build`.
+
+## Commit 6 — `fix(web): correct and owner-gate the awaiting-results banner`
+
+Three small, independent fixes from the lock-display review, grouped because each is a few lines and two of them land in `Team.test.tsx`. Independent of commits 4–5.
+
+**Finding #1 — the banner stops claiming the race is "complete."** `computeLockPhase` flips to `awaitingResults` at `now >= raceDate`, which is the race *start*, not its finish, so `{raceName} complete` is wrong copy for the whole time the race is running (the whole race day for date-only timestamps).
+
+`web/src/components/Team/RaceCompleteBanner.tsx` → **rename to `web/src/components/Team/AwaitingResultsAlert.tsx`** (the name now matches the "Awaiting Results" copy and the shadcn `Alert` primitive it renders):
+
+- Rename the component `RaceCompleteBanner` → `AwaitingResultsAlert` and its props type `RaceCompleteBannerProps` → `AwaitingResultsAlertProps`.
+- Title becomes the static `Awaiting Results`; swap the hand-rolled checkered `<svg>` icon for lucide `<Timer />` (`import { Timer } from 'lucide-react'`).
+- `raceName` is now unused in the component — drop it from `AwaitingResultsAlertProps` and the destructure.
+- Description is unchanged (`Your lineup reopens for Round {nextRound} once results are in.` / `Results are being scored.`). The reopens-promise-accuracy problem (finding #3) is a separate fix, not folded in.
+
+`web/src/components/Team/Team.tsx`:
+
+- Update the import (line 20) to `import { AwaitingResultsAlert } from './AwaitingResultsAlert'` and the JSX tag (line 133) to `<AwaitingResultsAlert …>`.
+- Remove the now-dead `raceName={currentRace.name}` argument from that call (~line 134).
+
+**Finding #2 — the banner is owner-only.** Its copy is possessive ("Your lineup reopens…"); on a read-only view of another user's team during the awaiting window it narrates the viewer's own lineup state on someone else's page.
+
+`web/src/components/Team/Team.tsx`:
+
+- Gate the render on `!readOnly` (~line 132): `{!readOnly && phase === 'awaitingResults' && currentRace && (…)}`.
+- Consequence, accepted here: a read-only team in the awaiting window shows no lock indicator (the sticky-bar corner is already empty then — `LockCountdown` returns null for `awaitingResults`). The viewer can't edit a rival's lineup, so there's nothing owner-neutral to add; restoring a "Lineup Locked" line for the read-only awaiting case is a display decision left out of scope.
+
+**Finding #11 — the test drops its hand-rolled `RaceWeekend` mock.** `Team.test.tsx`'s local `makeRaces` helper (lines 14–34) duplicates `createMockRaceWeekend` from `@/tests/test-utils` — whose defaults this branch already updated for the new phase semantics — and returns a one-element array callers immediately destructure.
+
+`web/src/components/Team/Team.test.tsx`:
+
+- Delete `makeRaces`; import `createMockRaceWeekend` (alongside the existing `createMock*` imports) and call it directly. It returns a single `RaceWeekend`, so wrap in `[…]` where `renderWithRaces` wants an array, and replace `const [currentRace] = makeRaces({…})` / `const [nextRace] = makeRaces({…})` (~lines 120, 124) with plain `const currentRace = createMockRaceWeekend({…})`. Keep the `import type { RaceWeekend }` — `renderWithRaces`'s signature still uses it.
+- The factory's defaults differ from the helper's (round 5 / "Spanish Grand Prix" / future locked deadline vs round 2 / "Saudi Arabian Grand Prix" / null deadline). Adopt the factory defaults rather than re-encoding the old ones — that's the point of the finding: update the subtitle assertion at ~line 90 from `'Round 2 · Saudi Arabian Grand Prix'` to `'Round 5 · Spanish Grand Prix'`. Call sites that need a specific round/date already pass explicit overrides and carry over unchanged. In the awaiting-results test, pass `round: 2` on the current race so it stays below the next race's `round: 3` (the factory's default of 5 would invert the order the `indexOf`-based next-round lookup reads).
+
+**Banner-copy tests (also `web/src/components/Team/Team.test.tsx`):**
+
+- The two awaiting-results tests assert `getByText('Saudi Arabian Grand Prix complete')` (~lines 134, 145) — retarget both to `getByText('Awaiting Results')`. The description assertions ("… reopens for Round 3 …", "Results are being scored.") are unchanged.
+- Add a read-only awaiting case via the existing helper: `renderWithRaces([createMockRaceWeekend({ raceDate: <past>, lockDeadline: <past> })], { readOnly: true })`; assert the banner is absent (`queryByText('Awaiting Results')` and `queryByText(/reopens for Round/)` both null) and edit affordances are absent.
+
+**Verify:** `npm run web:test`, `npm run web:lint`, `npm run web:format:check`, `npm run web:build`.
+
 ## End-to-end verification
 
-After all three commits, against the dev stack (`npm run api:watch` + `npm run web:dev`). The dev database is already seeded — **do not insert new rows**; set up each state by updating existing ones. Put the earliest unscored round N into the run-but-unscored window (`UPDATE` its `RaceDate` to the past; leave `ScoredAt` null). Team page shows round N with the race-complete banner ("… complete — results are being scored" / "Your lineup reopens for Round N+1 once points are in."), the bar's status corner empty, pickers hidden; Home card eyebrow reads "Round N · Awaiting results" with the hero lock status suppressed. Set round N's `ScoredAt` (or score it through the app), refresh: round N+1 is current and editable before its deadline. For the live flip, set round N's `RaceDate` a minute ahead and leave the tab open — it flips to awaiting results without a refresh. Restore any adjusted dates afterward.
+After all five commits, against the dev stack (`npm run api:watch` + `npm run web:dev`). The dev database is already seeded — **do not insert new rows**; set up each state by updating existing ones. Put the earliest unscored round N into the run-but-unscored window (`UPDATE` its `RaceDate` to the past; leave `ScoredAt` null). Team page shows round N with the race-complete banner ("… complete — results are being scored" / "Your lineup reopens for Round N+1 once points are in."), the bar's status corner empty, pickers hidden; Home card eyebrow reads "Round N · Awaiting results" with the hero lock status suppressed. Set round N's `ScoredAt` (or score it through the app), refresh: round N+1 is current and editable before its deadline. For the live flip, set round N's `RaceDate` a minute ahead and leave the tab open — it flips to awaiting results without a refresh. After commits 4–5, also navigate between Home and the team page around a minute boundary and confirm both show the same countdown value on arrival. Restore any adjusted dates afterward.
