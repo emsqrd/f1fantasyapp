@@ -51,8 +51,9 @@ public class RaceWeekendService : IRaceWeekendService
             seasonId
         );
 
-        var now = DateTime.UtcNow;
-        var currentRaceWeekendId = raceWeekends.FirstOrDefault(r => r.RaceDate >= now)?.Id;
+        var currentRaceWeekendId = CurrentRaceWeekendSelector
+            .GetCurrentRaceWeekend(raceWeekends)
+            ?.Id;
 
         return raceWeekends.ToResponseModel(currentRaceWeekendId);
     }
@@ -72,9 +73,8 @@ public class RaceWeekendService : IRaceWeekendService
         if (raceWeekend is null)
             return null;
 
-        var now = DateTime.UtcNow;
         var currentRaceWeekendId = await _dbContext
-            .RaceWeekends.Where(r => r.SeasonId == seasonId && r.RaceDate >= now)
+            .RaceWeekends.Where(r => r.SeasonId == seasonId && r.ScoredAt == null)
             .OrderBy(r => r.Round)
             .Select(r => (int?)r.Id)
             .FirstOrDefaultAsync();
@@ -104,9 +104,10 @@ public class RaceWeekendService : IRaceWeekendService
         if (currentSeason is null)
             return null;
 
-        return await _dbContext
-            .RaceWeekends.Where(r => r.SeasonId == currentSeason.Id && r.ScoredAt == null)
-            .OrderBy(r => r.Round)
-            .FirstOrDefaultAsync();
+        var raceWeekends = await _dbContext
+            .RaceWeekends.Where(r => r.SeasonId == currentSeason.Id)
+            .ToListAsync();
+
+        return CurrentRaceWeekendSelector.GetCurrentRaceWeekend(raceWeekends);
     }
 }

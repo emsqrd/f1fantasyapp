@@ -1,51 +1,37 @@
 import type { RaceWeekend } from '@/contracts/RaceWeekend';
 import type { Constructor, Driver } from '@/contracts/Role';
-import { createMockConstructor, createMockDriver, createMockTeam } from '@/tests/test-utils';
+import {
+  createMockConstructor,
+  createMockDriver,
+  createMockRaceWeekend,
+  createMockTeam,
+} from '@/tests/test-utils';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { TeamView } from './Team';
 
-vi.mock('../DriverPicker/DriverPicker', () => ({
-  DriverPicker: () => null,
-}));
-
-vi.mock('../ConstructorPicker/ConstructorPicker', () => ({
-  ConstructorPicker: () => null,
-}));
-
 const mockActiveDrivers: Driver[] = [createMockDriver({ id: 1 })];
 const mockActiveConstructors: Constructor[] = [createMockConstructor({ id: 1 })];
-
-const mockRaces: RaceWeekend[] = [
-  {
-    id: 1,
-    seasonId: 1,
-    round: 2,
-    name: 'Saudi Arabian Grand Prix',
-    circuit: {
-      id: 1,
-      name: 'Jeddah Corniche Circuit',
-      location: 'Jeddah',
-      country: 'Saudi Arabia',
-    },
-    raceDate: '2024-03-09',
-    lockDeadline: null,
-    isCurrent: true,
-    weekendFormat: 0,
-  },
-];
-
-function makeRacesWithDeadline(deadline: string | null): RaceWeekend[] {
-  return mockRaces.map((race) => ({ ...race, lockDeadline: deadline }));
-}
 
 // TeamView reaches the Query cache through `useSetCaptain`, so it needs a client.
 function renderTeamView(ui: ReactElement) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
+function renderWithRaces(races: RaceWeekend[], { readOnly = false } = {}) {
+  return renderTeamView(
+    <TeamView
+      team={createMockTeam()}
+      activeDrivers={mockActiveDrivers}
+      activeConstructors={mockActiveConstructors}
+      races={races}
+      readOnly={readOnly}
+    />,
+  );
 }
 
 describe('TeamView', () => {
@@ -57,7 +43,7 @@ describe('TeamView', () => {
         team={team}
         activeDrivers={mockActiveDrivers}
         activeConstructors={mockActiveConstructors}
-        races={mockRaces}
+        races={[createMockRaceWeekend()]}
         readOnly={true}
       />,
     );
@@ -73,7 +59,7 @@ describe('TeamView', () => {
         team={team}
         activeDrivers={mockActiveDrivers}
         activeConstructors={mockActiveConstructors}
-        races={mockRaces}
+        races={[createMockRaceWeekend()]}
         readOnly={false}
       />,
     );
@@ -82,30 +68,106 @@ describe('TeamView', () => {
   });
 
   it('shows current race round and name in subtitle', () => {
-    renderTeamView(
-      <TeamView
-        team={createMockTeam()}
-        activeDrivers={mockActiveDrivers}
-        activeConstructors={mockActiveConstructors}
-        races={mockRaces}
-        readOnly={false}
-      />,
-    );
+    renderWithRaces([createMockRaceWeekend()]);
 
-    expect(screen.getByText('Round 2 · Saudi Arabian Grand Prix')).toBeInTheDocument();
+    expect(screen.getByText('Round 5 · Spanish Grand Prix')).toBeInTheDocument();
   });
 
-  it('renders the lock countdown for the current race', () => {
-    renderTeamView(
-      <TeamView
-        team={createMockTeam()}
-        activeDrivers={mockActiveDrivers}
-        activeConstructors={mockActiveConstructors}
-        races={makeRacesWithDeadline('2099-01-01T00:00:00Z')}
-        readOnly={false}
-      />,
-    );
+  it('shows the countdown and lineup edit affordances before the lock deadline', () => {
+    renderWithRaces([createMockRaceWeekend({ lockDeadline: '2099-01-01T00:00:00Z' })]);
 
     expect(screen.getByText('Lineup locks in')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /add driver/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: /add constructor/i }).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/results are being scored/i)).not.toBeInTheDocument();
+  });
+
+  it('hides edit affordances on a read-only team even before the lock deadline', () => {
+    renderWithRaces([createMockRaceWeekend({ lockDeadline: '2099-01-01T00:00:00Z' })], {
+      readOnly: true,
+    });
+
+    expect(screen.getByText('Lineup locks in')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add driver/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add constructor/i })).not.toBeInTheDocument();
+  });
+
+  it('shows Lineup Locked and hides edit affordances once the deadline passes', () => {
+    renderWithRaces([createMockRaceWeekend({ lockDeadline: '2020-05-31T12:00:00Z' })]);
+
+    expect(screen.getByText('Lineup Locked')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add driver/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add constructor/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/results are being scored/i)).not.toBeInTheDocument();
+  });
+
+  it('shows the awaiting-results banner with the next round while awaiting results', () => {
+    const currentRace = createMockRaceWeekend({
+      round: 2,
+      raceDate: '2020-06-01',
+      lockDeadline: '2020-05-31T12:00:00Z',
+    });
+    const nextRace = createMockRaceWeekend({
+      id: 2,
+      round: 3,
+      name: 'Australian Grand Prix',
+      isCurrent: false,
+      raceDate: '2099-02-01',
+      lockDeadline: '2099-01-30T00:00:00Z',
+    });
+    renderWithRaces([currentRace, nextRace]);
+
+    expect(screen.getByText('Awaiting Results')).toBeInTheDocument();
+    expect(
+      screen.getByText('Your lineup reopens for Round 3 once results are in.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add driver/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add constructor/i })).not.toBeInTheDocument();
+  });
+
+  it('omits the reopens line when the current race is the last of the season', () => {
+    renderWithRaces([
+      createMockRaceWeekend({ raceDate: '2020-06-01', lockDeadline: '2020-05-31T12:00:00Z' }),
+    ]);
+
+    expect(screen.getByText('Awaiting Results')).toBeInTheDocument();
+    expect(screen.getByText('Results are being scored.')).toBeInTheDocument();
+    expect(screen.queryByText(/reopens for Round/)).not.toBeInTheDocument();
+  });
+
+  it('does not render the banner on a read-only team while awaiting results', () => {
+    renderWithRaces(
+      [createMockRaceWeekend({ raceDate: '2020-06-01', lockDeadline: '2020-05-31T12:00:00Z' })],
+      { readOnly: true },
+    );
+
+    expect(screen.queryByText('Awaiting Results')).not.toBeInTheDocument();
+    expect(screen.queryByText(/reopens for Round/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add driver/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add constructor/i })).not.toBeInTheDocument();
+  });
+
+  it('hides the lock status and edit affordances once the race has run', () => {
+    renderWithRaces([
+      createMockRaceWeekend({ raceDate: '2020-06-01', lockDeadline: '2020-05-31T12:00:00Z' }),
+    ]);
+
+    expect(screen.queryByText('Lineup Locked')).not.toBeInTheDocument();
+    expect(screen.queryByText('Lineup locks in')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add driver/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add constructor/i })).not.toBeInTheDocument();
+  });
+
+  it('falls back to Lineup Locked on the final race when the season is complete', () => {
+    renderWithRaces([
+      createMockRaceWeekend({
+        isCurrent: false,
+        raceDate: '2020-06-01',
+        lockDeadline: '2020-05-31T12:00:00Z',
+      }),
+    ]);
+
+    expect(screen.getByText('Lineup Locked')).toBeInTheDocument();
+    expect(screen.queryByText(/results are being scored/i)).not.toBeInTheDocument();
   });
 });

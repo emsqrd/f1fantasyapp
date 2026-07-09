@@ -46,7 +46,28 @@ describe('NextRaceCard', () => {
 
     expect(screen.getByRole('heading', { name: 'Monaco Grand Prix' })).toBeInTheDocument();
     expect(screen.getByText(/Round 7/)).toBeInTheDocument();
+    expect(screen.getByText(/Next up/)).toBeInTheDocument();
     expect(screen.getByText('Lineup locks in')).toBeInTheDocument();
+  });
+
+  it('renders the locked state once the deadline has passed', () => {
+    const races = [makeRace({ lockDeadline: '2026-05-24T11:00:00Z' })];
+
+    render(<NextRaceCard races={races} />);
+
+    expect(screen.getByText(/Current/)).toBeInTheDocument();
+    expect(screen.getByText('Lineup Locked')).toBeInTheDocument();
+    expect(screen.queryByText(/Next up/)).not.toBeInTheDocument();
+  });
+
+  it('renders the awaiting-results eyebrow with no lock copy once the race has run', () => {
+    const races = [makeRace({ raceDate: '2026-05-23', lockDeadline: '2026-05-22T11:00:00Z' })];
+
+    render(<NextRaceCard races={races} />);
+
+    expect(screen.getByText(/Awaiting results/)).toBeInTheDocument();
+    expect(screen.queryByText('Lineup Locked')).not.toBeInTheDocument();
+    expect(screen.queryByText('Lineup locks in')).not.toBeInTheDocument();
   });
 
   it('renders the season-complete fallback when no race is current', () => {

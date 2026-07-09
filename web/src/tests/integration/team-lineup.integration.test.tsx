@@ -82,10 +82,7 @@ const allDrivers = createMockDriverList([
 ]);
 
 const futureRace = createMockRaceWeekend();
-const lockedRace = createMockRaceWeekend({
-  raceDate: '2020-06-01',
-  lockDeadline: '2020-05-31T12:00:00Z',
-});
+const lockedRace = createMockRaceWeekend({ lockDeadline: '2020-05-31T12:00:00Z' });
 
 function teamHandlers(team: Team) {
   return [
