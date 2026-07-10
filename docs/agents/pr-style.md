@@ -1,40 +1,14 @@
-# Issue & PR writing
+# PR writing
 
-How to write issue and PR bodies for this repo.
-
-## Issues
-
-### Title
-
-Lead with a verb, or state the symptom. ~6–10 words. No conventional-commit prefix. Make it specific enough to recognise in a backlog; put detail in the body. Name one concern.
-
-| Off-the-cuff          | Template-shaped                                    |
-| --------------------- | -------------------------------------------------- |
-| `fix: lock bug`       | `Lineup picker stays editable after lock deadline` |
-| `Countdown`           | `Add live countdown to lineup lock deadline`       |
-| `Issue with leagues`  | `Private league invite link returns 404`           |
-| `feat: scoring stuff` | `Add captain multiplier to scoring engine`         |
-
-### Body
-
-Each part below is its own `##` section header. Include a section only when it has real content.
-
-- **`## Problem`** — state the gap as a problem, not a solution: _When &lt;situation&gt;, &lt;what happens&gt; — which is a problem because &lt;impact&gt;._
-- **`## Outcome`** — give the resolved state in one line.
-- **`## Acceptance criteria`** — list the checkable conditions that prove the outcome; map each to a test or an observation.
-- **`## Scope`** — state what's in and what's explicitly out.
-- **`## Pointers`** — link relevant files, docs (`docs/research/…`, `docs/adr/…`), related issues.
-- **`## Reproduction`** (bugs only) — give numbered steps, then **Expected**, **Actual**, **Environment**.
-
-## Pull requests
+How to write pull request titles and bodies for this repo.
 
 Keep the body lean: include only what the diff, CI, the linked issue, and the commit messages don't already carry. Put anything you want acted on — a constraint, a convention, the intent behind an odd line — in the commit message, a code comment, or CLAUDE.md, not the body.
 
-### Title
+## Title
 
 Imperative. No conventional-commit prefix. ≤70 characters. What, not how.
 
-### Body
+## Body
 
 Under **`## Summary`**, give 1–2 sentences of the why that isn't visible in the diff, plus `Closes #N`. Add a section below only when it has real content:
 
@@ -69,9 +43,9 @@ Backfill migration runs once over existing seasons; idempotent upsert, safe to r
 if it fails midway. Doesn't touch sprint scoring — that's #58.
 ```
 
-## Shared style
+## Style
 
 - Imperative, present tense, plain. No business jargon.
-- Be concise. One concern per artifact.
+- Be concise. One concern per PR.
 - Describe the state, not the diff or the history.
 - Link, don't repeat.

@@ -1,7 +1,7 @@
 <!--
 Title: imperative, no conventional-commit prefix, ≤70 chars, what-not-how.
 Keep this body lean — say only what the diff, CI, the linked issue, and commits don't.
-See docs/agents/issue-pr-style.md.
+See docs/agents/pr-style.md.
 -->
 
 ## Summary

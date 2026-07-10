@@ -6,7 +6,7 @@ labels: needs-triage
 
 <!--
 Title: verb-first or a symptom, ~6–10 words, no conventional-commit prefix.
-See docs/agents/issue-pr-style.md.
+See docs/agents/issue-style.md.
 -->
 
 ## Problem

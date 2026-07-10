@@ -276,9 +276,13 @@ Hosted on Fly.io + Supabase (free tier).
 
 GitHub issues in `emsqrd/f1fantasyapp` via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
-### Issue & PR writing
+### Issue writing
 
-Title and body conventions for issues and PRs; create new issues labeled `needs-triage`. See `docs/agents/issue-pr-style.md`.
+Title and body conventions for issues; create new issues labeled `needs-triage`. See `docs/agents/issue-style.md`.
+
+### PR writing
+
+Title and body conventions for pull requests. See `docs/agents/pr-style.md`.
 
 ### Triage labels
 
