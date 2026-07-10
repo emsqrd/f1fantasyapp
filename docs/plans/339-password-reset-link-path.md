@@ -19,7 +19,7 @@ The codebase has strong precedent from the email-confirmation work (#164/#189): 
 
 ## Commits
 
-### Commit 1 — `feat(auth): add password recovery email template and identity glossary`
+### Commit 1 — `feat(auth): add password recovery email template`
 
 Everything outside the SPA.
 
@@ -30,7 +30,6 @@ Everything outside the SPA.
   subject = "Reset your password"
   content_path = "./supabase/templates/password-reset.html"
   ```
-- **Modify `CONTEXT.md`** — new `### Identity & access` under `## Language`, house style (`**Term**:` + `_Avoid_:`): **Forgot password** (request step), **Recovery** (authenticating by proving email possession via the emailed token), **Reset** (setting a new password via recovery), **Change password** (rotating a known password; future Account feature, not built here — avoid conflating with reset).
 
 **Tests:** none new; `e2e/tests/_infra/config-sync.spec.ts` is the drift guard (identical blocks pass without `IGNORED_KEY_RE` changes).
 **Verify:** restart dev Supabase; `curl -X POST .../auth/v1/recover` for a seeded user; inspect Mailpit (54324): branding, `/auth/recover?token_hash=...&type=recovery` link, no 6-digit code, 60-minute copy. Confirm 200 for a nonexistent email. Run the config-sync spec.
