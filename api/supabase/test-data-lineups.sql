@@ -1,7 +1,7 @@
 -- ============================================================================
 -- Test Data Generation: Lineups for Rounds 1-5 of the 2026 Season
 -- ============================================================================
--- Creates persistent rosters (TeamDrivers + TeamConstructors) and per-race
+-- Creates persistent lineups (TeamDrivers + TeamConstructors) and per-race
 -- LineupEntry rows for the first five RaceWeekends of the 2026 season for:
 --   - The 10 generated test teams from test-data-teams.sql
 --   - 'Sainz of Trouble' (created externally with a real user)
@@ -25,8 +25,8 @@
 --   - Driver slot positions: 0-4. Constructor slot positions: 0-1.
 --     (Matches the API's TeamService validation, which is zero-indexed.)
 --   - Exactly one IsCaptain = true per team per race; constructors are never captain.
---   - TeamDrivers (the "current roster") reflects each team's round-5 driver per
---     slot, since the roster naturally tracks the most recent lineup.
+--   - TeamDrivers (the "current lineup") reflects each team's round-5 driver per
+--     slot, since it naturally tracks the most recent lineup.
 --
 -- Implementation notes:
 --   - Names/abbreviations are resolved to IDs once via lookup temp tables at the
@@ -448,7 +448,7 @@ INNER JOIN team_lookup tl ON tl.team_name = v.team_name
 INNER JOIN driver_lookup dl ON dl.abbreviation = v.driver_abbr;
 
 -- ============================================================================
--- Step 3: TeamDrivers (current roster = each team's round-5 driver per slot)
+-- Step 3: TeamDrivers (current lineup = each team's round-5 driver per slot)
 -- ============================================================================
 INSERT INTO "TeamDrivers" ("TeamId", "DriverId", "SlotPosition", "CreatedBy", "CreatedAt", "IsDeleted")
 SELECT
@@ -463,7 +463,7 @@ INNER JOIN team_lookup tl ON tl.team_id = dl.team_id
 WHERE dl.round = (SELECT MAX(round) FROM driver_lineups);
 
 -- ============================================================================
--- Step 4: Constructor rosters (stable across all 5 rounds)
+-- Step 4: Constructor slots (stable across all 5 rounds)
 -- ============================================================================
 CREATE TEMP TABLE constructor_data ON COMMIT DROP AS
 SELECT tl.team_id, v.slot, cl.constructor_id
@@ -522,7 +522,7 @@ FROM driver_lineups dl
 INNER JOIN race_weekend_lookup rwl ON rwl.round = dl.round;
 
 -- Constructor entries (EntityType = 1). Constructors are never captain and don't
--- vary by round in this draft, so we expand the stable roster across every
+-- vary by round in this draft, so we expand the stable lineup across every
 -- race weekend in race_weekend_lookup.
 INSERT INTO "LineupEntries" ("TeamId", "RaceWeekendId", "EntityId", "EntityType", "SlotPosition", "IsCaptain", "CreatedAt")
 SELECT
@@ -540,7 +540,7 @@ CROSS JOIN race_weekend_lookup rwl;
 -- Verification queries (uncomment to inspect)
 -- ============================================================================
 
--- Roster cost check on the current roster (round-5 effective). Should be <= 100,000,000.
+-- Lineup cost check on the current lineup (round-5 effective). Should be <= 100,000,000.
 SELECT
   t."Name",
   (SELECT COALESCE(SUM(d."Price"), 0)

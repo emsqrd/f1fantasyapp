@@ -6,7 +6,7 @@
 --   - 10 fake teams with synthetic Supabase auth users
 --
 -- Also seeds:
---   - TeamDrivers + TeamConstructors for all 14 teams (each roster <= $100M)
+--   - TeamDrivers + TeamConstructors for all 14 teams (each lineup <= $100M)
 --   - LineupEntries for all 14 teams across rounds 1..4
 --     (the rounds completed as of 2026-05-07)
 --
@@ -18,7 +18,7 @@
 -- to load real F1 results and compute scores + standings.
 --
 -- IDEMPOTENT: safe to re-run. Uses ON CONFLICT DO NOTHING throughout.
--- Never deletes existing data. To regenerate rosters, delete the affected
+-- Never deletes existing data. To regenerate lineups, delete the affected
 -- TeamDriver / TeamConstructor / LineupEntry rows first.
 -- =============================================================================
 
@@ -184,7 +184,7 @@ ON CONFLICT ("LeagueId", "TeamId") DO NOTHING;
 -- =============================================================================
 -- Stage 5: TeamDrivers + TeamConstructors for all 14 teams.
 --
--- Roster table:
+-- Lineup table:
 --   team key             drivers (slot 0..4)              constructors (slot 0..1)  captain  total
 --   real:1               NOR HAM ALB HUL GAS              MCL CAD                   NOR      $95.6M
 --   demo01               VER LEC ALB BEA STR              RBR AMR                   VER      $92.6M
@@ -204,7 +204,7 @@ ON CONFLICT ("LeagueId", "TeamId") DO NOTHING;
 
 -- A temp table mapping a team key to its actual TeamId, captain abbreviation,
 -- driver slot 0..4, and constructor slot 0..1.
-CREATE TEMP TABLE _roster (
+CREATE TEMP TABLE _lineup (
   team_key TEXT,
   team_id INT,
   d0 TEXT, d1 TEXT, d2 TEXT, d3 TEXT, d4 TEXT,
@@ -212,7 +212,7 @@ CREATE TEMP TABLE _roster (
   captain TEXT
 ) ON COMMIT DROP;
 
-INSERT INTO _roster VALUES
+INSERT INTO _lineup VALUES
   ('real:1', 1,
    'NOR', 'HAM', 'ALB', 'HUL', 'GAS', 'MCL', 'CAD', 'NOR'),
   ('demo01', NULL,
@@ -243,45 +243,45 @@ INSERT INTO _roster VALUES
    'NOR', 'ANT', 'HUL', 'OCO', 'GAS', 'MCL', 'CAD', 'NOR');
 
 -- Resolve team_id for each demo row by email lookup.
-UPDATE _roster SET team_id = (
+UPDATE _lineup SET team_id = (
   SELECT t."Id"
   FROM "Teams" t
   JOIN "UserProfiles" up ON up."Id" = t."UserId"
   WHERE up."Email" = 'demo01@f1fantasy.local'
 ) WHERE team_key = 'demo01';
-UPDATE _roster SET team_id = (
+UPDATE _lineup SET team_id = (
   SELECT t."Id" FROM "Teams" t JOIN "UserProfiles" up ON up."Id" = t."UserId"
   WHERE up."Email" = 'demo02@f1fantasy.local'
 ) WHERE team_key = 'demo02';
-UPDATE _roster SET team_id = (
+UPDATE _lineup SET team_id = (
   SELECT t."Id" FROM "Teams" t JOIN "UserProfiles" up ON up."Id" = t."UserId"
   WHERE up."Email" = 'demo03@f1fantasy.local'
 ) WHERE team_key = 'demo03';
-UPDATE _roster SET team_id = (
+UPDATE _lineup SET team_id = (
   SELECT t."Id" FROM "Teams" t JOIN "UserProfiles" up ON up."Id" = t."UserId"
   WHERE up."Email" = 'demo04@f1fantasy.local'
 ) WHERE team_key = 'demo04';
-UPDATE _roster SET team_id = (
+UPDATE _lineup SET team_id = (
   SELECT t."Id" FROM "Teams" t JOIN "UserProfiles" up ON up."Id" = t."UserId"
   WHERE up."Email" = 'demo05@f1fantasy.local'
 ) WHERE team_key = 'demo05';
-UPDATE _roster SET team_id = (
+UPDATE _lineup SET team_id = (
   SELECT t."Id" FROM "Teams" t JOIN "UserProfiles" up ON up."Id" = t."UserId"
   WHERE up."Email" = 'demo06@f1fantasy.local'
 ) WHERE team_key = 'demo06';
-UPDATE _roster SET team_id = (
+UPDATE _lineup SET team_id = (
   SELECT t."Id" FROM "Teams" t JOIN "UserProfiles" up ON up."Id" = t."UserId"
   WHERE up."Email" = 'demo07@f1fantasy.local'
 ) WHERE team_key = 'demo07';
-UPDATE _roster SET team_id = (
+UPDATE _lineup SET team_id = (
   SELECT t."Id" FROM "Teams" t JOIN "UserProfiles" up ON up."Id" = t."UserId"
   WHERE up."Email" = 'demo08@f1fantasy.local'
 ) WHERE team_key = 'demo08';
-UPDATE _roster SET team_id = (
+UPDATE _lineup SET team_id = (
   SELECT t."Id" FROM "Teams" t JOIN "UserProfiles" up ON up."Id" = t."UserId"
   WHERE up."Email" = 'demo09@f1fantasy.local'
 ) WHERE team_key = 'demo09';
-UPDATE _roster SET team_id = (
+UPDATE _lineup SET team_id = (
   SELECT t."Id" FROM "Teams" t JOIN "UserProfiles" up ON up."Id" = t."UserId"
   WHERE up."Email" = 'demo10@f1fantasy.local'
 ) WHERE team_key = 'demo10';
@@ -289,12 +289,12 @@ UPDATE _roster SET team_id = (
 -- Insert TeamDrivers (slot 0..4).
 INSERT INTO "TeamDrivers" ("TeamId", "DriverId", "SlotPosition",
                            "CreatedBy", "CreatedAt", "IsDeleted")
-SELECT r.team_id, d."Id", slot.slot_pos,
-       (SELECT "UserId" FROM "Teams" WHERE "Id" = r.team_id),
+SELECT l.team_id, d."Id", slot.slot_pos,
+       (SELECT "UserId" FROM "Teams" WHERE "Id" = l.team_id),
        NOW() AT TIME ZONE 'UTC', false
-FROM _roster r
+FROM _lineup l
 CROSS JOIN LATERAL (VALUES
-  (0, r.d0), (1, r.d1), (2, r.d2), (3, r.d3), (4, r.d4)
+  (0, l.d0), (1, l.d1), (2, l.d2), (3, l.d3), (4, l.d4)
 ) AS slot(slot_pos, abbr)
 JOIN "Drivers" d ON d."Abbreviation" = slot.abbr
 ON CONFLICT DO NOTHING;
@@ -302,33 +302,33 @@ ON CONFLICT DO NOTHING;
 -- Insert TeamConstructors (slot 0..1).
 INSERT INTO "TeamConstructors" ("TeamId", "ConstructorId", "SlotPosition",
                                 "CreatedBy", "CreatedAt", "IsDeleted")
-SELECT r.team_id, c."Id", slot.slot_pos,
-       (SELECT "UserId" FROM "Teams" WHERE "Id" = r.team_id),
+SELECT l.team_id, c."Id", slot.slot_pos,
+       (SELECT "UserId" FROM "Teams" WHERE "Id" = l.team_id),
        NOW() AT TIME ZONE 'UTC', false
-FROM _roster r
+FROM _lineup l
 CROSS JOIN LATERAL (VALUES
-  (0, r.c0), (1, r.c1)
+  (0, l.c0), (1, l.c1)
 ) AS slot(slot_pos, abbr)
 JOIN "Constructors" c ON c."Abbreviation" = slot.abbr
 ON CONFLICT DO NOTHING;
 
 -- =============================================================================
 -- Stage 6: LineupEntries for all 14 teams across rounds 1..4.
--- Static rosters: each round gets the same lineup.
+-- Every round gets the same lineup.
 -- =============================================================================
 INSERT INTO "LineupEntries" ("TeamId", "RaceWeekendId", "EntityId", "EntityType",
                              "SlotPosition", "IsCaptain", "CreatedAt")
 SELECT
-  r.team_id,
+  l.team_id,
   rw."Id",
   d."Id",
   0,                            -- LineupEntityType.Driver
   slot.slot_pos,
-  (slot.abbr = r.captain),      -- one captain per team per race
+  (slot.abbr = l.captain),      -- one captain per team per race
   NOW() AT TIME ZONE 'UTC'
-FROM _roster r
+FROM _lineup l
 CROSS JOIN LATERAL (VALUES
-  (0, r.d0), (1, r.d1), (2, r.d2), (3, r.d3), (4, r.d4)
+  (0, l.d0), (1, l.d1), (2, l.d2), (3, l.d3), (4, l.d4)
 ) AS slot(slot_pos, abbr)
 JOIN "Drivers" d ON d."Abbreviation" = slot.abbr
 JOIN "RaceWeekends" rw ON rw."Round" IN (1, 2, 3, 4)
@@ -338,16 +338,16 @@ ON CONFLICT DO NOTHING;
 INSERT INTO "LineupEntries" ("TeamId", "RaceWeekendId", "EntityId", "EntityType",
                              "SlotPosition", "IsCaptain", "CreatedAt")
 SELECT
-  r.team_id,
+  l.team_id,
   rw."Id",
   c."Id",
   1,                            -- LineupEntityType.Constructor
   slot.slot_pos,
   false,                        -- captains are drivers only
   NOW() AT TIME ZONE 'UTC'
-FROM _roster r
+FROM _lineup l
 CROSS JOIN LATERAL (VALUES
-  (0, r.c0), (1, r.c1)
+  (0, l.c0), (1, l.c1)
 ) AS slot(slot_pos, abbr)
 JOIN "Constructors" c ON c."Abbreviation" = slot.abbr
 JOIN "RaceWeekends" rw ON rw."Round" IN (1, 2, 3, 4)
