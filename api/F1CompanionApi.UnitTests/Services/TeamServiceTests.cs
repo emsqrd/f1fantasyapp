@@ -307,10 +307,10 @@ public class TeamServiceTests
         Assert.Equal(1, teamCount);
     }
 
-    #region Roster Lock Tests
+    #region Lineup Lock Tests
 
     [Fact]
-    public async Task AddDriverToTeamAsync_WhenRosterLocked_ThrowsRosterLockedException()
+    public async Task AddDriverToTeamAsync_WhenLineupLocked_ThrowsLineupLockedException()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -326,7 +326,7 @@ public class TeamServiceTests
         );
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<RosterLockedException>(() =>
+        var exception = await Assert.ThrowsAsync<LineupLockedException>(() =>
             service.AddDriverToTeamAsync(team.Id, driver.Id, 0, user.Id)
         );
         Assert.Equal("Test Grand Prix", exception.RaceName);
@@ -381,7 +381,7 @@ public class TeamServiceTests
     }
 
     [Fact]
-    public async Task RemoveDriverFromTeamAsync_WhenRosterLocked_ThrowsRosterLockedException()
+    public async Task RemoveDriverFromTeamAsync_WhenLineupLocked_ThrowsLineupLockedException()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -396,14 +396,14 @@ public class TeamServiceTests
         );
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<RosterLockedException>(() =>
+        var exception = await Assert.ThrowsAsync<LineupLockedException>(() =>
             service.RemoveDriverFromTeamAsync(team.Id, 0, user.Id)
         );
         Assert.Equal("Test Grand Prix", exception.RaceName);
     }
 
     [Fact]
-    public async Task AddConstructorToTeamAsync_WhenRosterLocked_ThrowsRosterLockedException()
+    public async Task AddConstructorToTeamAsync_WhenLineupLocked_ThrowsLineupLockedException()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -419,14 +419,14 @@ public class TeamServiceTests
         );
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<RosterLockedException>(() =>
+        var exception = await Assert.ThrowsAsync<LineupLockedException>(() =>
             service.AddConstructorToTeamAsync(team.Id, constructor.Id, 0, user.Id)
         );
         Assert.Equal("Test Grand Prix", exception.RaceName);
     }
 
     [Fact]
-    public async Task RemoveConstructorFromTeamAsync_WhenRosterLocked_ThrowsRosterLockedException()
+    public async Task RemoveConstructorFromTeamAsync_WhenLineupLocked_ThrowsLineupLockedException()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -441,7 +441,7 @@ public class TeamServiceTests
         );
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<RosterLockedException>(() =>
+        var exception = await Assert.ThrowsAsync<LineupLockedException>(() =>
             service.RemoveConstructorFromTeamAsync(team.Id, 0, user.Id)
         );
         Assert.Equal("Test Grand Prix", exception.RaceName);
@@ -1452,7 +1452,7 @@ public class TeamServiceTests
     }
 
     [Fact]
-    public async Task SetCaptainAsync_ThrowsIfRosterLocked()
+    public async Task SetCaptainAsync_ThrowsIfLineupLocked()
     {
         // Arrange
         using var context = CreateInMemoryContext();
@@ -1467,7 +1467,7 @@ public class TeamServiceTests
         );
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<RosterLockedException>(() =>
+        var exception = await Assert.ThrowsAsync<LineupLockedException>(() =>
             service.SetCaptainAsync(team.Id, 1, user.Id)
         );
         Assert.Equal("Test Grand Prix", exception.RaceName);

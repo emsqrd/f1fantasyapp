@@ -128,9 +128,9 @@ public class GlobalExceptionHandler : IExceptionHandler
                 ex.Message
             ),
 
-            RosterLockedException ex => (
+            LineupLockedException ex => (
                 StatusCodes.Status409Conflict,
-                "Roster Locked",
+                "Lineup Locked",
                 ex.Message
             ),
 

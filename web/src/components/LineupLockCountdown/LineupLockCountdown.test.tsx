@@ -1,19 +1,21 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { LockCountdown } from './LockCountdown';
+import { LineupLockCountdown } from './LineupLockCountdown';
 
-describe('LockCountdown', () => {
+describe('LineupLockCountdown', () => {
   it('renders nothing for an open lineup with no deadline', () => {
     const { container } = render(
-      <LockCountdown state={{ phase: 'open', remaining: null, lockingImminently: false }} />,
+      <LineupLockCountdown
+        lineupPhase={{ phase: 'open', remaining: null, lockingImminently: false }}
+      />,
     );
 
     expect(container).toBeEmptyDOMElement();
   });
 
   it('renders the locked state', () => {
-    render(<LockCountdown state={{ phase: 'locked' }} />);
+    render(<LineupLockCountdown lineupPhase={{ phase: 'locked' }} />);
 
     expect(screen.getByText('Lineup Locked')).toBeInTheDocument();
     expect(screen.queryByText('Lineup locks in')).not.toBeInTheDocument();
@@ -21,8 +23,8 @@ describe('LockCountdown', () => {
 
   it('renders the imminent state inside the final minute', () => {
     render(
-      <LockCountdown
-        state={{
+      <LineupLockCountdown
+        lineupPhase={{
           phase: 'open',
           remaining: { days: 0, hours: 0, minutes: 0 },
           lockingImminently: true,
@@ -37,8 +39,8 @@ describe('LockCountdown', () => {
     'exposes an accessible countdown duration for the %s variant',
     (variant) => {
       render(
-        <LockCountdown
-          state={{
+        <LineupLockCountdown
+          lineupPhase={{
             phase: 'open',
             remaining: { days: 2, hours: 5, minutes: 9 },
             lockingImminently: false,
@@ -56,7 +58,7 @@ describe('LockCountdown', () => {
     'renders nothing for the %s variant while awaiting results',
     (variant) => {
       const { container } = render(
-        <LockCountdown state={{ phase: 'awaitingResults' }} variant={variant} />,
+        <LineupLockCountdown lineupPhase={{ phase: 'awaitingResults' }} variant={variant} />,
       );
 
       expect(container).toBeEmptyDOMElement();

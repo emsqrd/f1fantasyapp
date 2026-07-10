@@ -110,7 +110,7 @@ However, the pace of change should not punish inattention on a race-by-race basi
 
 A player who actively manages transfers — buying rising assets before they peak, selling declining ones before they bottom — should accumulate more budget headroom than a passive player over a full season. This is the intended reward for engagement.
 
-The advantage must be bounded: a passive player with a well-chosen initial team should remain competitive through scoring alone. The active manager's edge is better value-for-money across the roster, not a fundamentally different team that a passive player could never afford. If the budget gap grows large enough to afford an extra elite asset, transfers have become too dominant relative to pick quality.
+The advantage must be bounded: a passive player with a well-chosen initial team should remain competitive through scoring alone. The active manager's edge is better value-for-money across the lineup, not a fundamentally different team that a passive player could never afford. If the budget gap grows large enough to afford an extra elite asset, transfers have become too dominant relative to pick quality.
 
 ---
 

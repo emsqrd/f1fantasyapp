@@ -635,7 +635,7 @@ public class TeamService : ITeamService
 
         var now = DateTime.UtcNow;
         if (currentRaceWeekend?.LockDeadline is not null && now >= currentRaceWeekend.LockDeadline)
-            throw new RosterLockedException(
+            throw new LineupLockedException(
                 currentRaceWeekend.Name,
                 currentRaceWeekend.LockDeadline.Value
             );

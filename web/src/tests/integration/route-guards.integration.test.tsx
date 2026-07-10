@@ -72,13 +72,13 @@ describe('route guard wiring', () => {
   it('round-trips a deep link query string through the redirect param', async () => {
     const { router } = renderWithRouter({
       routeTree: buildGuardRouteTree(),
-      initialEntry: '/league/5?tab=roster',
+      initialEntry: '/league/5?tab=standings',
       auth: createUnauthAuth(),
     });
 
     expect(await screen.findByRole('heading', { name: 'Sign In Page' })).toBeInTheDocument();
     expect((router.state.location.search as { redirect?: string }).redirect).toBe(
-      '/league/5?tab=roster',
+      '/league/5?tab=standings',
     );
   });
 

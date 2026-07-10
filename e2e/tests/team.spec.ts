@@ -24,7 +24,7 @@ test.describe('team', () => {
 
     await expect(page).toHaveURL('/my-team');
     await expect(page.getByRole('heading', { name: teamName })).toBeVisible();
-    // Freshly-created team has an empty roster — all 5 slots show Add Driver.
+    // Freshly-created team has an empty lineup — all 5 slots show Add Driver.
     await expect(page.getByRole('button', { name: 'Add Driver' })).toHaveCount(5);
   });
 
@@ -55,7 +55,7 @@ test.describe('team', () => {
 
     // Swap Alex for Fabio in slot 0: remove, then pick from the sheet.
     // Wait for the DELETE to settle before adding Fabio, otherwise the
-    // server's budget check for the add can still see Alex on the roster.
+    // server's budget check for the add can still see Alex in the lineup.
     const removeResponse = page.waitForResponse(
       (res) => /\/me\/team\/drivers\/\d+$/.test(res.url()) && res.request().method() === 'DELETE',
     );

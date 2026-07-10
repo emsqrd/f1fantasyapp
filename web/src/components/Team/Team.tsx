@@ -1,7 +1,7 @@
 import type { RaceWeekend } from '@/contracts/RaceWeekend';
 import type { Constructor, Driver } from '@/contracts/Role';
 import type { Team } from '@/contracts/Team';
-import { useLockState } from '@/hooks/useLockState';
+import { useLineupPhase } from '@/hooks/useLineupPhase';
 import { useSetCaptain } from '@/hooks/useSetCaptain';
 import { formatBudget } from '@/lib/utils';
 import { constructorQueries } from '@/services/constructorService';
@@ -16,7 +16,7 @@ import { AppContainer } from '../AppContainer/AppContainer';
 import { ConstructorPicker } from '../ConstructorPicker/ConstructorPicker';
 import { DriverPicker } from '../DriverPicker/DriverPicker';
 import { InlineError } from '../InlineError/InlineError';
-import { LockCountdown } from '../LockCountdown/LockCountdown';
+import { LineupLockCountdown } from '../LineupLockCountdown/LineupLockCountdown';
 import { AwaitingResultsAlert } from './AwaitingResultsAlert';
 
 const teamRouteApi = getRouteApi('/_authenticated/_team-required/team/$teamId');
@@ -87,8 +87,11 @@ export function TeamView({
   // pass a null raceDate so the phase caps at 'locked', not 'awaitingResults'.
   const displayRace = currentRace ?? races.at(-1);
 
-  const lockState = useLockState(displayRace?.lockDeadline ?? null, currentRace?.raceDate ?? null);
-  const editable = !readOnly && lockState.phase === 'open';
+  const lineupPhase = useLineupPhase(
+    displayRace?.lockDeadline ?? null,
+    currentRace?.raceDate ?? null,
+  );
+  const editable = !readOnly && lineupPhase.phase === 'open';
 
   const handleSetCaptain = (driverId: number | null) => captainMutation.mutate(driverId);
 
@@ -121,14 +124,14 @@ export function TeamView({
             <p className="text-sm font-bold">3/3</p>
           </div>
         </div>
-        <LockCountdown
-          state={lockState}
+        <LineupLockCountdown
+          lineupPhase={lineupPhase}
           variant="compact"
           className="w-full sm:w-auto sm:shrink-0 sm:text-right"
         />
       </div>
 
-      {!readOnly && lockState.phase === 'awaitingResults' && currentRace && (
+      {!readOnly && lineupPhase.phase === 'awaitingResults' && currentRace && (
         <AwaitingResultsAlert nextRound={races[races.indexOf(currentRace) + 1]?.round ?? null} />
       )}
 

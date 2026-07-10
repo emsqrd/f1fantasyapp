@@ -10,8 +10,8 @@ Lead with a verb, or state the symptom. ~6–10 words. No conventional-commit pr
 
 | Off-the-cuff          | Template-shaped                                    |
 | --------------------- | -------------------------------------------------- |
-| `fix: lock bug`       | `Roster picker stays editable after lock deadline` |
-| `Countdown`           | `Add live countdown to roster lock deadline`       |
+| `fix: lock bug`       | `Lineup picker stays editable after lock deadline` |
+| `Countdown`           | `Add live countdown to lineup lock deadline`       |
 | `Issue with leagues`  | `Private league invite link returns 404`           |
 | `feat: scoring stuff` | `Add captain multiplier to scoring engine`         |
 

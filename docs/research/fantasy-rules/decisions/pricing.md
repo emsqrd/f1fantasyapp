@@ -62,7 +62,7 @@ PPM is classified into four bands around the neutral point (band width ±0.80). 
 | ≥ 0.20–< 1.0 | Poor     | −$0.1M         | −$0.2M         |
 | < 0.20       | Terrible | −$0.3M         | −$0.6M         |
 
-- **A-tier entities move at half the rate of B-tier.** Elite assets serve as stable roster foundations; cheaper assets provide more volatile price action for active management.
+- **A-tier entities move at half the rate of B-tier.** Elite assets serve as stable lineup foundations; cheaper assets provide more volatile price action for active management.
 - **Inner steps (Good/Poor) are one-third of outer steps (Great/Terrible).** Entities near fair value drift slowly; entities far from fair value correct faster.
 - **Step sizes are fixed dollars, not percentages.** This avoids compounding — percentage-based movement produces catastrophic drops over consecutive negative rounds.
 

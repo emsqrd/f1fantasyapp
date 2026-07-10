@@ -16,7 +16,7 @@ export interface SeedTeamForUserOptions {
 }
 
 /**
- * Creates a team for the given test user via the real API, then fills roster
+ * Creates a team for the given test user via the real API, then fills lineup
  * slots if provided. Each driver/constructor is added through the endpoint the
  * UI hits (`/api/me/team/drivers`, `/api/me/team/constructors`), exercising
  * the same auth + budget path as production.
