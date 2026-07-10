@@ -7,6 +7,7 @@ import { LeagueList } from '@/components/LeagueList/LeagueList';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import { MyTeamRoute, TeamRoute } from '@/components/Team/Team';
 import { ConfirmEmailNotice } from '@/components/auth/ConfirmEmailNotice/ConfirmEmailNotice';
+import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm/ForgotPasswordForm';
 import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import { Button } from '@/components/ui/button';
@@ -175,6 +176,20 @@ const signUpRoute = createRoute({
   validateSearch: signUpSearchSchema,
   beforeLoad: ({ context, search }) => redirectIfAuthenticated(context, search.redirect),
   component: SignUpForm,
+});
+
+const forgotPasswordSearchSchema = z.object({
+  error: z.enum(['expired']).optional().catch(undefined),
+});
+
+// No `beforeLoad` authed-bounce: an expired recovery link redirects here with
+// `?error=expired`, and a signed-in user who lands on it must still see that
+// banner rather than being sent to `/`.
+const forgotPasswordRoute = createRoute({
+  getParentRoute: () => unauthenticatedLayoutRoute,
+  path: '/forgot-password',
+  validateSearch: forgotPasswordSearchSchema,
+  component: ForgotPasswordForm,
 });
 
 const authConfirmSearchSchema = z.object({
@@ -583,7 +598,7 @@ const myTeamRoute = createRoute({
  */
 const routeTree = rootRoute.addChildren([
   indexRoute,
-  unauthenticatedLayoutRoute.addChildren([signInRoute, signUpRoute]),
+  unauthenticatedLayoutRoute.addChildren([signInRoute, signUpRoute, forgotPasswordRoute]),
   authConfirmRoute,
   joinInviteRoute,
   authenticatedLayoutRoute.addChildren([

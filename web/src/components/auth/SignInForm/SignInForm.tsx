@@ -63,13 +63,19 @@ export function SignInForm() {
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <Button variant="link" asChild className="h-auto p-0 text-sm">
+                    <Link to="/forgot-password">Forgot password?</Link>
+                  </Button>
+                </div>
                 <Input
                   id="password"
                   type="password"
