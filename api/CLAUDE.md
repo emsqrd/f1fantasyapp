@@ -118,7 +118,9 @@ instance.
 4. Add request/response DTOs in `Api/Models/`
 5. Add mapper extension method in `Api/Mappers/` (see "Mapper file organization" below)
 
-**Read-endpoint 404 pattern.** When a read targets a single resource that may not exist, the service returns a nullable response (`Task<XxxResponse?>`) and the handler maps `null → 404`: `LogWarning(...)` then `Results.Problem(detail: "...", statusCode: StatusCodes.Status404NotFound)`. Reference: `SeasonEndpoints.GetCurrentSeasonAsync`, `DriverEndpoints`, `ConstructorEndpoints`. Don't throw a `*NotFoundException` from a read — those are write-side guards (see "Adding a New Exception" below).
+**Read-endpoint 404 pattern.** When an unguarded read targets a single resource that may not exist, the service returns a nullable response (`Task<XxxResponse?>`) and the handler maps `null → 404`: `LogWarning(...)` then `Results.Problem(detail: "...", statusCode: StatusCodes.Status404NotFound)`. Reference: `SeasonEndpoints.GetCurrentSeasonAsync`, `DriverEndpoints`, `ConstructorEndpoints`.
+
+**Access-controlled reads guard first.** When the caller must be authorized to see the resource, a guard call precedes the read and throws for both absence (404) and denial (403); a nullable return cannot express the second. The read that follows is total, so the handler does no null check. Reference: `LeagueEndpoints.GetLeagueByIdAsync`.
 
 **Required-resource guards in services.** When a service needs a resource that must exist for the work to be meaningful (e.g., the current season for a season-scoped read), guard at the service boundary with `?? throw new InvalidOperationException("...")`. Surfaces as a 500, distinct from "the resource the caller asked for doesn't exist" (404). Reference: `LeagueStandingsService.cs:147`, `LineupService.cs:39`, `ScoringService.cs:218`.
 
@@ -146,6 +148,8 @@ RLS is auto-enabled on new public tables via the `auto_enable_rls_public` Supaba
 
 ### Adding a New Exception
 
-- **Custom exceptions are for write-side business-rule violations only** — `DuplicateTeamException`, `TeamOwnershipException`, `RosterLockedException`, `BudgetExceededException` etc. Reads use the null-return + handler-side 404 pattern from "Adding a New Endpoint" above. Several existing `*NotFoundException` types map to **400**, not 404 (e.g., `TeamNotFoundException` → 400 with a league-creation-flavored message) — check `GlobalExceptionHandler.cs` before assuming an exception name implies a status code.
+- **Create a custom exception when the failure needs its own ProblemDetails response:** a distinct status code, title, and detail. `GlobalExceptionHandler.cs` maps each type to exactly that triple. If `null → 404` from the endpoint already says everything, don't add a type.
+- **Custom exceptions are not restricted to write paths.** Access guards throw them on reads, because a nullable return cannot express 403.
+- **An exception's name does not predict its status code**, and a `*NotFoundException` does not necessarily map to 404. Read the switch in `GlobalExceptionHandler.cs` before adding or reusing a type.
 - Use standard HTTP status codes only — avoid WebDAV-specific codes (e.g. use 409 Conflict, not 423 Locked)
 - The class `<summary>` should explain both what triggers the exception and why it's considered exceptional (what it implies about the caller). See `SlotOccupiedException` as the reference example.
