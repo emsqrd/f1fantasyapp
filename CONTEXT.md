@@ -18,10 +18,17 @@ The race weekend a team is currently playing: the earliest unscored round of the
 _Avoid_: "next race" / "upcoming race" — those read as the next calendar date, which diverges during the awaiting-results window
 
 **Team**:
-A user's fantasy entry for a season — a set of drivers and constructors whose combined prices must stay within the budget cap. Each user fields exactly one team per season.
+A user's fantasy entry for a season — a named identity that fields a lineup and earns points from scored races. Each user fields exactly one team per season.
 
-**Roster lock**:
-The freeze on team changes once the current race weekend's lock deadline passes: drivers and constructors cannot be added or removed until the weekend is scored.
+**Lineup**:
+The set of drivers and constructors a team fields.
+_Avoid_: "roster" — not a concept in this app
+
+**Lineup lock**:
+The freeze on lineup changes once the current race weekend's lock deadline passes: drivers and constructors cannot be added or removed until the weekend is scored.
+
+**Budget cap**:
+The spending limit a lineup's combined driver and constructor prices must stay within, the same for every team. A lineup that exceeds it is invalid.
 
 **League**:
 A group of teams competing against each other; a team can belong to multiple leagues, and a league that has reached its team cap is full. Public leagues are open to browse and join; private leagues are joinable only by invite.

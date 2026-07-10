@@ -109,7 +109,7 @@ Ask: **"What's the smallest test that could catch this bug?"** Write that one.
 Overlap is correct when each layer catches a distinct failure mode. It's waste when it doesn't.
 
 - Cover branch logic at the **lowest** layer that can see it. Don't re-walk the same matrix higher up.
-- Higher layers get **one happy path** per flow, plus one representative failure only if that interaction is load-bearing (e.g., roster-locked message, auth redirect).
+- Higher layers get **one happy path** per flow, plus one representative failure only if that interaction is load-bearing (e.g., lineup-locked message, auth redirect).
 - If an integration test passes/fails in lockstep with an E2E on the same path with the same assertions, one of them is redundant — keep the faster one unless the slower one proves something the faster can't.
 
 ### Anti-patterns
