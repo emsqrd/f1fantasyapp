@@ -1,11 +1,11 @@
-import type { LockState } from '@/hooks/useLockState';
+import type { LineupPhase } from '@/hooks/useLineupPhase';
 import { cn } from '@/lib/utils';
 import { Lock } from 'lucide-react';
 
-type Remaining = NonNullable<Extract<LockState, { phase: 'open' }>['remaining']>;
+type Remaining = NonNullable<Extract<LineupPhase, { phase: 'open' }>['remaining']>;
 
-interface LockCountdownProps {
-  state: LockState;
+interface LineupLockCountdownProps {
+  lineupPhase: LineupPhase;
   variant?: 'hero' | 'compact';
   className?: string;
 }
@@ -27,30 +27,38 @@ const variantStyles = {
   },
 };
 
-export function LockCountdown({ state, variant = 'compact', className }: LockCountdownProps) {
+export function LineupLockCountdown({
+  lineupPhase,
+  variant = 'compact',
+  className,
+}: LineupLockCountdownProps) {
   const v = variantStyles[variant];
 
   // Once the race has run there's no lock to count down or announce.
-  if (state.phase === 'awaitingResults') return null;
+  if (lineupPhase.phase === 'awaitingResults') return null;
 
   // Open with no deadline has nothing to show.
-  if (state.phase === 'open' && state.remaining == null) return null;
+  if (lineupPhase.phase === 'open' && lineupPhase.remaining == null) return null;
 
   return (
     <div className={className}>
       <p className={cn('text-muted-foreground text-xs font-medium uppercase', v.label)}>
-        {state.phase === 'locked' ? 'Lineup' : 'Lineup locks in'}
+        {lineupPhase.phase === 'locked' ? 'Lineup' : 'Lineup locks in'}
       </p>
-      {state.phase === 'locked' ? (
+      {lineupPhase.phase === 'locked' ? (
         <div className={cn('text-muted-foreground', v.lockedRow)}>
           <Lock className="size-4" aria-hidden="true" />
           <span className={v.statusText}>Lineup Locked</span>
         </div>
-      ) : state.lockingImminently ? (
+      ) : lineupPhase.lockingImminently ? (
         <p className={v.imminent}>Less than 1 minute</p>
       ) : (
-        state.remaining && (
-          <CountdownValue remaining={state.remaining} variant={variant} className={v.countdown} />
+        lineupPhase.remaining && (
+          <CountdownValue
+            remaining={lineupPhase.remaining}
+            variant={variant}
+            className={v.countdown}
+          />
         )
       )}
     </div>

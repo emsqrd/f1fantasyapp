@@ -28,7 +28,7 @@ function onVisibilityChange(): void {
  * Background tabs throttle timers and burst on refocus; polling belongs to
  * TanStack Query's `refetchInterval`.
  */
-export function subscribe(listener: Listener): () => void {
+export function subscribeClock(listener: Listener): () => void {
   listeners.add(listener);
   if (listeners.size === 1) {
     scheduleTickAtNextSecond();

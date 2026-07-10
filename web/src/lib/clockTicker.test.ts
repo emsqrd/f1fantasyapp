@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { subscribe } from './clockTicker';
+import { subscribeClock } from './clockTicker';
 
 // jsdom never changes visibility on its own; shadow the prototype getter per
 // test and remove the override in afterEach.
@@ -24,8 +24,8 @@ describe('clockTicker', () => {
   it('fans each tick out to every subscriber', () => {
     const a = vi.fn();
     const b = vi.fn();
-    const unsubscribeA = subscribe(a);
-    const unsubscribeB = subscribe(b);
+    const unsubscribeA = subscribeClock(a);
+    const unsubscribeB = subscribeClock(b);
 
     vi.advanceTimersByTime(1000);
 
@@ -39,7 +39,7 @@ describe('clockTicker', () => {
   it('aligns ticks to wall-clock second boundaries', () => {
     vi.setSystemTime(new Date('2026-03-07T12:00:00.400Z'));
     const a = vi.fn();
-    const unsubscribeA = subscribe(a);
+    const unsubscribeA = subscribeClock(a);
 
     vi.advanceTimersByTime(599);
     expect(a).not.toHaveBeenCalled();
@@ -56,8 +56,8 @@ describe('clockTicker', () => {
   it('keeps ticking for remaining subscribers when one unsubscribes', () => {
     const a = vi.fn();
     const b = vi.fn();
-    const unsubscribeA = subscribe(a);
-    const unsubscribeB = subscribe(b);
+    const unsubscribeA = subscribeClock(a);
+    const unsubscribeB = subscribeClock(b);
 
     unsubscribeA();
     vi.advanceTimersByTime(1000);
@@ -70,7 +70,7 @@ describe('clockTicker', () => {
 
   it('stops ticking when the last subscriber unsubscribes', () => {
     const a = vi.fn();
-    const unsubscribeA = subscribe(a);
+    const unsubscribeA = subscribeClock(a);
 
     unsubscribeA();
     vi.advanceTimersByTime(3000);
@@ -81,10 +81,10 @@ describe('clockTicker', () => {
 
   it('restarts after teardown when a new subscriber arrives', () => {
     const a = vi.fn();
-    subscribe(a)();
+    subscribeClock(a)();
 
     const b = vi.fn();
-    const unsubscribeB = subscribe(b);
+    const unsubscribeB = subscribeClock(b);
     vi.advanceTimersByTime(1000);
 
     expect(b).toHaveBeenCalledTimes(1);
@@ -94,7 +94,7 @@ describe('clockTicker', () => {
 
   it('notifies subscribers when the tab becomes visible', () => {
     const a = vi.fn();
-    const unsubscribeA = subscribe(a);
+    const unsubscribeA = subscribeClock(a);
 
     setVisibilityState('visible');
     document.dispatchEvent(new Event('visibilitychange'));
@@ -106,7 +106,7 @@ describe('clockTicker', () => {
 
   it('does not notify on visibility changes while the tab stays hidden', () => {
     const a = vi.fn();
-    const unsubscribeA = subscribe(a);
+    const unsubscribeA = subscribeClock(a);
 
     setVisibilityState('hidden');
     document.dispatchEvent(new Event('visibilitychange'));
@@ -117,10 +117,10 @@ describe('clockTicker', () => {
   });
 
   it('still notifies on refocus after a teardown and resubscribe cycle', () => {
-    subscribe(vi.fn())();
+    subscribeClock(vi.fn())();
 
     const b = vi.fn();
-    const unsubscribeB = subscribe(b);
+    const unsubscribeB = subscribeClock(b);
     setVisibilityState('visible');
     document.dispatchEvent(new Event('visibilitychange'));
 

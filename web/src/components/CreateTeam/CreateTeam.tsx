@@ -47,7 +47,7 @@ export function CreateTeam() {
       });
 
       // POST /teams returns a slimmer team than GET /me/team (id/name/owner only —
-      // no budget or roster), so it must not be cached as the team query's value.
+      // no budget or lineup), so it must not be cached as the team query's value.
       // Evict the whole team namespace — the `null` cached for a no-team user
       // and the no-team Home summary — so the destination's requireTeam refetches
       // the full team and Home refetches the now-present summary. The profile
