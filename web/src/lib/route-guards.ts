@@ -33,6 +33,21 @@ export function redirectIfAuthenticated(context: RouterContext, redirectTo?: str
 }
 
 /**
+ * Route guard for the password-reset surface. A recovery session presents as
+ * an ordinary signed-in user, so a present user is the whole authorization.
+ * A session-less visit means the recovery link lapsed: send them to
+ * /forgot-password for a fresh one, not /sign-in.
+ */
+export function requireRecoverySession(context: RouterContext): void {
+  if (context.auth.user) return;
+
+  throw redirect({
+    to: '/forgot-password',
+    replace: true,
+  });
+}
+
+/**
  * Route guard for team-gated routes. Auth is enforced by the enclosing
  * `_authenticated` layout, so this guard does not re-check it.
  *

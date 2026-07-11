@@ -8,10 +8,16 @@ import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteError
 import { MyTeamRoute, TeamRoute } from '@/components/Team/Team';
 import { ConfirmEmailNotice } from '@/components/auth/ConfirmEmailNotice/ConfirmEmailNotice';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm/ForgotPasswordForm';
+import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm/ResetPasswordForm';
 import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import { Button } from '@/components/ui/button';
-import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-guards';
+import {
+  redirectIfAuthenticated,
+  requireAuth,
+  requireRecoverySession,
+  requireTeam,
+} from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
 import { leagueQueries } from '@/services/leagueService';
@@ -198,9 +204,9 @@ const authConfirmSearchSchema = z.object({
   next: z.string().optional().catch(undefined),
 });
 
-// Not under the `_unauthenticated` layout, which redirects signed-in users
-// away: a re-clicked or back-navigated confirmation link must still reach
-// this route, since the user is already signed in by then.
+// A re-clicked or back-navigated confirmation link lands here after the
+// user is already signed in, so this route must not bounce authenticated
+// visitors the way sign-in and sign-up do.
 const authConfirmRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/auth/confirm',
@@ -217,6 +223,13 @@ const authConfirmRoute = createRoute({
       throw redirect({ to: '/sign-up', replace: true });
     }
   },
+});
+
+const resetPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/reset-password',
+  beforeLoad: ({ context }) => requireRecoverySession(context),
+  component: ResetPasswordForm,
 });
 
 /**
@@ -600,6 +613,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   unauthenticatedLayoutRoute.addChildren([signInRoute, signUpRoute, forgotPasswordRoute]),
   authConfirmRoute,
+  resetPasswordRoute,
   joinInviteRoute,
   authenticatedLayoutRoute.addChildren([
     accountRoute,

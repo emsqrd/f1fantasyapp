@@ -1,4 +1,6 @@
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm/ForgotPasswordForm';
+import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm/ResetPasswordForm';
+import { requireRecoverySession } from '@/lib/route-guards';
 import { supabase } from '@/lib/supabase';
 import {
   buildRootRoute,
@@ -51,6 +53,33 @@ function buildForgotPasswordRouteTree() {
   return rootRoute.addChildren([
     unauthLayout.addChildren([forgotPasswordRoute]),
     signInRoute,
+    homeRoute,
+  ]);
+}
+
+function buildResetPasswordRouteTree() {
+  const rootRoute = buildRootRoute();
+  const unauthLayout = buildUnauthenticatedLayout(rootRoute);
+
+  const resetPasswordRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/reset-password',
+    beforeLoad: ({ context }) => requireRecoverySession(context),
+    component: ResetPasswordForm,
+  });
+
+  const forgotPasswordRoute = createRoute({
+    getParentRoute: () => unauthLayout,
+    path: '/forgot-password',
+    validateSearch: forgotPasswordSearchSchema,
+    component: ForgotPasswordForm,
+  });
+
+  const homeRoute = buildStubRoute(rootRoute, { path: '/', heading: 'Home Stub' });
+
+  return rootRoute.addChildren([
+    resetPasswordRoute,
+    unauthLayout.addChildren([forgotPasswordRoute]),
     homeRoute,
   ]);
 }
@@ -139,5 +168,99 @@ describe('/forgot-password route', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/no longer valid/i);
     expect(screen.queryByRole('heading', { name: 'Home Stub' })).not.toBeInTheDocument();
+  });
+});
+
+describe('/reset-password route', () => {
+  afterEach(() => {
+    vi.mocked(supabase.auth.updateUser).mockReset();
+  });
+
+  it('bounces a session-less visit to the forgot-password form', async () => {
+    renderWithRouter({
+      routeTree: buildResetPasswordRouteTree(),
+      initialEntry: '/reset-password',
+      auth: createUnauthAuth(),
+    });
+
+    expect(await screen.findByRole('button', { name: /send reset link/i })).toBeInTheDocument();
+  });
+
+  it('shows an error and skips the update when the passwords do not match', async () => {
+    const user = userEvent.setup();
+
+    renderWithRouter({
+      routeTree: buildResetPasswordRouteTree(),
+      initialEntry: '/reset-password',
+      auth: createAuthedAuth(),
+    });
+
+    await user.type(await screen.findByLabelText(/new password/i), 'password123');
+    await user.type(screen.getByLabelText(/confirm password/i), 'password124');
+    await user.click(screen.getByRole('button', { name: /update password/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/passwords do not match/i);
+    expect(supabase.auth.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('shows an error and skips the update when the password is too short', async () => {
+    const user = userEvent.setup();
+
+    renderWithRouter({
+      routeTree: buildResetPasswordRouteTree(),
+      initialEntry: '/reset-password',
+      auth: createAuthedAuth(),
+    });
+
+    await user.type(await screen.findByLabelText(/new password/i), '123');
+    await user.type(screen.getByLabelText(/confirm password/i), '123');
+    await user.click(screen.getByRole('button', { name: /update password/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /password must be at least 6 characters/i,
+    );
+    expect(supabase.auth.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('surfaces the update error inline and stays on the form when the update fails', async () => {
+    vi.mocked(supabase.auth.updateUser).mockResolvedValue({
+      data: { user: null },
+      error: new AuthApiError('New password is too weak', 422, 'weak_password'),
+    });
+    const user = userEvent.setup();
+
+    renderWithRouter({
+      routeTree: buildResetPasswordRouteTree(),
+      initialEntry: '/reset-password',
+      auth: createAuthedAuth(),
+    });
+
+    await user.type(await screen.findByLabelText(/new password/i), 'password123');
+    await user.type(screen.getByLabelText(/confirm password/i), 'password123');
+    await user.click(screen.getByRole('button', { name: /update password/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/new password is too weak/i);
+    expect(screen.queryByRole('heading', { name: 'Home Stub' })).not.toBeInTheDocument();
+  });
+
+  it('updates the password and lands on home when the recovery session submits', async () => {
+    vi.mocked(supabase.auth.updateUser).mockResolvedValue({
+      data: { user: {} },
+      error: null,
+    } as Awaited<ReturnType<typeof supabase.auth.updateUser>>);
+    const user = userEvent.setup();
+
+    renderWithRouter({
+      routeTree: buildResetPasswordRouteTree(),
+      initialEntry: '/reset-password',
+      auth: createAuthedAuth(),
+    });
+
+    await user.type(await screen.findByLabelText(/new password/i), 'newpassword123');
+    await user.type(screen.getByLabelText(/confirm password/i), 'newpassword123');
+    await user.click(screen.getByRole('button', { name: /update password/i }));
+
+    expect(supabase.auth.updateUser).toHaveBeenCalledWith({ password: 'newpassword123' });
+    expect(await screen.findByRole('heading', { name: 'Home Stub' })).toBeInTheDocument();
   });
 });
