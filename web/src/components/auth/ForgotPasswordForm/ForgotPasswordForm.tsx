@@ -1,4 +1,3 @@
-import { InlineError } from '@/components/InlineError/InlineError';
 import { LoadingButton } from '@/components/LoadingButton/LoadingButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { sendPasswordResetEmail } from '@/lib/auth-password';
 import * as Sentry from '@sentry/react';
 import { isAuthApiError } from '@supabase/supabase-js';
-import { Link, useSearch } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { Mail } from 'lucide-react';
 import { type SyntheticEvent, useState } from 'react';
 
@@ -15,7 +14,6 @@ export function ForgotPasswordForm() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const search = useSearch({ from: '/_unauthenticated/forgot-password' });
 
   const handleSubmit = async (e: SyntheticEvent) => {
     e.preventDefault();
@@ -81,11 +79,6 @@ export function ForgotPasswordForm() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {search.error === 'expired' && (
-              <div className="mb-4">
-                <InlineError message="That reset link is no longer valid. Enter your email to request a new one." />
-              </div>
-            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>

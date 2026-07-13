@@ -1,9 +1,4 @@
-import {
-  redirectIfAuthenticated,
-  requireAuth,
-  requireRecoverySession,
-  requireTeam,
-} from '@/lib/route-guards';
+import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { teamQueries } from '@/services/teamService';
 import { createAuthedAuth, createMockTeam } from '@/tests/test-utils';
@@ -117,31 +112,6 @@ describe('route-guards', () => {
       };
 
       expect(() => redirectIfAuthenticated(context)).not.toThrow();
-      expect(redirect).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('requireRecoverySession', () => {
-    it('throws redirect to /forgot-password when there is no recovery session', () => {
-      const context: RouterContext = {
-        auth: { user: null },
-        queryClient,
-      };
-
-      expect(() => requireRecoverySession(context)).toThrow();
-      expect(redirect).toHaveBeenCalledWith({
-        to: '/forgot-password',
-        replace: true,
-      });
-    });
-
-    it('does not throw when a recovery session is present', () => {
-      const context: RouterContext = {
-        auth: { user: createMockUser() },
-        queryClient,
-      };
-
-      expect(() => requireRecoverySession(context)).not.toThrow();
       expect(redirect).not.toHaveBeenCalled();
     });
   });

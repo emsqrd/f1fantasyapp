@@ -1,21 +1,53 @@
 import { InlineError } from '@/components/InlineError/InlineError';
 import { LiveRegion } from '@/components/LiveRegion/LiveRegion';
 import { LoadingButton } from '@/components/LoadingButton/LoadingButton';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
-import { updatePassword } from '@/lib/auth-password';
-import { useNavigate } from '@tanstack/react-router';
-import { type SyntheticEvent, useState } from 'react';
+import { updatePassword, verifyRecoveryToken } from '@/lib/auth-password';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { type SyntheticEvent, useRef, useState } from 'react';
 
 export function ResetPasswordForm() {
+  const search = useSearch({ from: '/reset-password' });
+  // What this reset attempt holds, not a live read of the URL: the first submit
+  // spends the token, so the params keep carrying one long after it is dead.
+  const [recoveryToken] = useState(() =>
+    search.type === 'recovery' ? (search.token_hash ?? null) : null,
+  );
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tokenRejected, setTokenRejected] = useState(false);
+  const hasSpentToken = useRef(false);
   const navigate = useNavigate();
   const { message, announce } = useLiveRegion();
+
+  // A link that carried nothing spendable and one gotrue refused are the same
+  // dead end with the same remedy, so they read the same.
+  if (!recoveryToken || tokenRejected) {
+    return (
+      <div className="flex w-full items-center justify-center p-4 sm:p-8 md:min-h-screen">
+        <Card className="w-full max-w-md" role="alert">
+          <CardHeader>
+            <CardTitle>We couldn't use that reset link</CardTitle>
+            <CardDescription>
+              Reset links can only be used once, and they expire 60 minutes after they're sent.
+              Request a new one to finish resetting your password.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <Link to="/forgot-password">Request a new link</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: SyntheticEvent) => {
     e.preventDefault();
@@ -36,6 +68,20 @@ export function ResetPasswordForm() {
       announce(errorMessage);
       setIsLoading(false);
       return;
+    }
+
+    if (!hasSpentToken.current) {
+      try {
+        await verifyRecoveryToken(recoveryToken);
+      } catch {
+        setTokenRejected(true);
+        setIsLoading(false);
+        return;
+      }
+      // Verifying spends the token — the account is now signed in. A second
+      // submit (after a rejected password below) must reuse that session rather
+      // than verify again, which would fail on the spent token.
+      hasSpentToken.current = true;
     }
 
     try {

@@ -357,6 +357,37 @@ describe('authStore', () => {
     });
   });
 
+  describe('password recovery', () => {
+    it('keeps the store signed out when a recovery token mints a session', async () => {
+      const onUserChange = vi.fn();
+      initAuthStore({ onUserChange });
+      await vi.waitFor(() => {
+        expect(getAuthSnapshot().loading).toBe(false);
+      });
+
+      authCallback!('PASSWORD_RECOVERY', mockSession);
+
+      expect(getAuthSnapshot().user).toBeNull();
+      expect(getAuthSnapshot().session).toBeNull();
+      expect(onUserChange).not.toHaveBeenCalled();
+    });
+
+    it('signs the store in once USER_UPDATED reports the completed reset', async () => {
+      const onUserChange = vi.fn();
+      initAuthStore({ onUserChange });
+      await vi.waitFor(() => {
+        expect(getAuthSnapshot().loading).toBe(false);
+      });
+
+      authCallback!('PASSWORD_RECOVERY', mockSession);
+      authCallback!('USER_UPDATED', mockSession);
+
+      expect(getAuthSnapshot().user).toEqual(mockUser);
+      expect(getAuthSnapshot().session).toEqual(mockSession);
+      expect(onUserChange).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('test seams', () => {
     it('seedAuthStore sets state fields and swaps in provided actions', async () => {
       const fakeSignOut = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);

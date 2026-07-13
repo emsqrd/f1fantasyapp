@@ -1,6 +1,7 @@
 import type { ApiError } from '@/utils/errors';
 import * as Sentry from '@sentry/react';
 
+import { getAuthSnapshot } from './authStore';
 import { supabase } from './supabase';
 
 type RequestConfig<D = unknown> = {
@@ -28,10 +29,15 @@ class ApiClient {
       data: { session },
     } = await supabase.auth.getSession();
 
+    // getSession() reads storage, which can lag the cross-tab auth event that
+    // triggered this fetch; the store holds what the event delivered.
+    // getSession() goes first because it refreshes an expired token on read.
+    const accessToken = session?.access_token ?? getAuthSnapshot().session?.access_token;
+
     return {
       'Content-Type': 'application/json',
-      ...(session?.access_token && {
-        Authorization: `Bearer ${session.access_token}`,
+      ...(accessToken && {
+        Authorization: `Bearer ${accessToken}`,
       }),
     };
   }

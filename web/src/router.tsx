@@ -12,12 +12,7 @@ import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm/ResetPass
 import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import { Button } from '@/components/ui/button';
-import {
-  redirectIfAuthenticated,
-  requireAuth,
-  requireRecoverySession,
-  requireTeam,
-} from '@/lib/route-guards';
+import { redirectIfAuthenticated, requireAuth, requireTeam } from '@/lib/route-guards';
 import type { RouterContext } from '@/lib/router-context';
 import { safeInternalPath } from '@/lib/safeInternalPath';
 import { leagueQueries } from '@/services/leagueService';
@@ -184,17 +179,10 @@ const signUpRoute = createRoute({
   component: SignUpForm,
 });
 
-const forgotPasswordSearchSchema = z.object({
-  error: z.enum(['expired']).optional().catch(undefined),
-});
-
-// No `beforeLoad` authed-bounce: an expired recovery link redirects here with
-// `?error=expired`, and a signed-in user who lands on it must still see that
-// banner rather than being sent to `/`.
 const forgotPasswordRoute = createRoute({
   getParentRoute: () => unauthenticatedLayoutRoute,
   path: '/forgot-password',
-  validateSearch: forgotPasswordSearchSchema,
+  beforeLoad: ({ context }) => redirectIfAuthenticated(context),
   component: ForgotPasswordForm,
 });
 
@@ -225,10 +213,28 @@ const authConfirmRoute = createRoute({
   },
 });
 
+// `.catch(undefined)` keeps the schema total: a mangled `type` (a forwarded or
+// link-scanner-rewritten reset URL) would otherwise throw a SearchParamError and
+// render the error boundary, turning a broken reset link into "something went
+// wrong". Every URL shape reaches the component, which explains the bad link.
+const resetPasswordSearchSchema = z.object({
+  token_hash: z.string().optional().catch(undefined),
+  type: z.literal('recovery').optional().catch(undefined),
+});
+
+// No `beforeLoad`, deliberately: an unusable link always has something to tell
+// the visitor, and a guard can only redirect. The form also spends the token
+// mid-submit, which flips the auth store and re-runs every guard on the match —
+// a guard reading these params would fire against a token it just burned.
+// Spending the token also signs the user in, so `publicShell` holds Layout on
+// the signed-out branch rather than growing a sidebar around the open form.
 const resetPasswordRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/reset-password',
-  beforeLoad: ({ context }) => requireRecoverySession(context),
+  validateSearch: resetPasswordSearchSchema,
+  staticData: {
+    publicShell: true,
+  },
   component: ResetPasswordForm,
 });
 

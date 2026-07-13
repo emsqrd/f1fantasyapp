@@ -115,8 +115,8 @@ let teardownInit: (() => void) | null = null;
 let lastUserId: string | null | undefined;
 
 /**
- * Wires the store to Supabase: seeds from `getSession()` and tracks every
- * subsequent auth event. Called once from `main.tsx`; calling again returns the
+ * Wires the store to Supabase: seeds from `getSession()` and tracks
+ * subsequent auth events. Called once from `main.tsx`; calling again returns the
  * existing teardown. Supabase awaits its auth listeners inside `signIn`/`signOut`,
  * so the snapshot is already current when those calls resolve — readers never
  * see a stale user after an awaited auth call.
@@ -149,7 +149,11 @@ export function initAuthStore(options?: { onUserChange?: () => void }): () => vo
 
   const {
     data: { subscription },
-  } = supabase.auth.onAuthStateChange((_event, session) => {
+  } = supabase.auth.onAuthStateChange((event, session) => {
+    // Verifying a recovery token mints a session before the password actually
+    // changes; the store acknowledges the user on USER_UPDATED, once the reset
+    // has completed.
+    if (event === 'PASSWORD_RECOVERY') return;
     applySession(session);
   });
 
