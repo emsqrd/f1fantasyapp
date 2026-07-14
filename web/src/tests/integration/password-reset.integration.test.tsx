@@ -319,6 +319,38 @@ describe('/reset-password route', () => {
     expect(supabase.auth.updateUser).toHaveBeenCalledTimes(2);
   });
 
+  it('spends the token once when the button is double-clicked mid-verify', async () => {
+    let releaseVerify!: () => void;
+    vi.mocked(supabase.auth.verifyOtp).mockReturnValue(
+      new Promise((resolve) => {
+        releaseVerify = () => resolve({ data: { user: null, session: null }, error: null });
+      }),
+    );
+    mockUpdateUserSuccess();
+    const user = userEvent.setup();
+
+    renderWithRouter({
+      routeTree: buildResetPasswordRouteTree(),
+      initialEntry: RECOVERY_ENTRY,
+      auth: createUnauthAuth(),
+    });
+
+    await user.type(await screen.findByLabelText(/new password/i), 'newpassword123');
+    await user.type(screen.getByLabelText(/confirm password/i), 'newpassword123');
+
+    const submit = screen.getByRole('button', { name: /update password/i });
+    await user.click(submit);
+    await user.click(submit);
+
+    expect(supabase.auth.verifyOtp).toHaveBeenCalledOnce();
+
+    releaseVerify();
+
+    expect(await screen.findByRole('heading', { name: 'Home Stub' })).toBeInTheDocument();
+    expect(supabase.auth.verifyOtp).toHaveBeenCalledOnce();
+    expect(supabase.auth.updateUser).toHaveBeenCalledOnce();
+  });
+
   it('shows an error and verifies nothing when the passwords do not match', async () => {
     const user = userEvent.setup();
 

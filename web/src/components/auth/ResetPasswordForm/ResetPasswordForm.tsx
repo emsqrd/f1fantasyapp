@@ -51,6 +51,7 @@ export function ResetPasswordForm() {
 
   const handleSubmit = async (e: SyntheticEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     setIsLoading(true);
     setError(null);
 
