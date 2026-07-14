@@ -149,11 +149,7 @@ export function initAuthStore(options?: { onUserChange?: () => void }): () => vo
 
   const {
     data: { subscription },
-  } = supabase.auth.onAuthStateChange((event, session) => {
-    // Verifying a recovery token mints a session before the password actually
-    // changes; the store acknowledges the user on USER_UPDATED, once the reset
-    // has completed.
-    if (event === 'PASSWORD_RECOVERY') return;
+  } = supabase.auth.onAuthStateChange((_event, session) => {
     applySession(session);
   });
 

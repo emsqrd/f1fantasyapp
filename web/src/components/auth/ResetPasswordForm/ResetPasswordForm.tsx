@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
-import { updatePassword, verifyRecoveryToken } from '@/lib/auth-password';
+import { completePasswordReset, verifyRecoveryToken } from '@/lib/auth-password';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { type SyntheticEvent, useRef, useState } from 'react';
 
@@ -79,14 +79,13 @@ export function ResetPasswordForm() {
         setIsLoading(false);
         return;
       }
-      // Verifying spends the token — the account is now signed in. A second
-      // submit (after a rejected password below) must reuse that session rather
-      // than verify again, which would fail on the spent token.
+
+      // Don't re-verify a rejected password
       hasSpentToken.current = true;
     }
 
     try {
-      await updatePassword(password);
+      await completePasswordReset(password);
       // Send them into the app, not to sign-in, after a successful reset.
       await navigate({ to: '/', replace: true });
     } catch (error) {

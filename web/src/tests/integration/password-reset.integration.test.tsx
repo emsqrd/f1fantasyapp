@@ -4,6 +4,7 @@ import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm/ResetPass
 import { seedAuthStore } from '@/lib/authStore';
 import { redirectIfAuthenticated } from '@/lib/route-guards';
 import { supabase } from '@/lib/supabase';
+import { supabaseRecovery } from '@/lib/supabaseRecovery';
 import {
   buildRootRoute,
   buildStubRoute,
@@ -25,8 +26,18 @@ vi.mock('@/lib/supabase', () => ({
   supabase: {
     auth: {
       resetPasswordForEmail: vi.fn(),
+      setSession: vi.fn(),
+    },
+  },
+}));
+
+vi.mock('@/lib/supabaseRecovery', () => ({
+  supabaseRecovery: {
+    auth: {
       verifyOtp: vi.fn(),
       updateUser: vi.fn(),
+      getSession: vi.fn(),
+      signOut: vi.fn(),
     },
   },
 }));
@@ -95,17 +106,26 @@ function buildResetPasswordRouteTree({ rootComponent }: { rootComponent?: () => 
 const RECOVERY_ENTRY = '/reset-password?token_hash=recovery-token&type=recovery';
 
 function mockVerifyOtpSuccess() {
-  vi.mocked(supabase.auth.verifyOtp).mockResolvedValue({
+  vi.mocked(supabaseRecovery.auth.verifyOtp).mockResolvedValue({
     data: { user: null, session: null },
     error: null,
   });
 }
 
 function mockUpdateUserSuccess() {
-  vi.mocked(supabase.auth.updateUser).mockResolvedValue({
+  vi.mocked(supabaseRecovery.auth.updateUser).mockResolvedValue({
     data: { user: {} },
     error: null,
-  } as Awaited<ReturnType<typeof supabase.auth.updateUser>>);
+  } as Awaited<ReturnType<typeof supabaseRecovery.auth.updateUser>>);
+  vi.mocked(supabaseRecovery.auth.getSession).mockResolvedValue({
+    data: { session: { access_token: 'access-token', refresh_token: 'refresh-token' } },
+    error: null,
+  } as unknown as Awaited<ReturnType<typeof supabaseRecovery.auth.getSession>>);
+  vi.mocked(supabaseRecovery.auth.signOut).mockResolvedValue({ error: null });
+  vi.mocked(supabase.auth.setSession).mockResolvedValue({
+    data: { user: null, session: null },
+    error: null,
+  });
 }
 
 async function submitNewPassword(
@@ -127,7 +147,10 @@ describe('/forgot-password route', () => {
   });
 
   it('sends a reset email for the typed address and shows the check-email state', async () => {
-    vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValue({ data: {}, error: null });
+    vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValue({
+      data: {},
+      error: null,
+    });
     const user = userEvent.setup();
 
     renderWithRouter({
@@ -199,8 +222,11 @@ describe('/forgot-password route', () => {
 
 describe('/reset-password route', () => {
   afterEach(() => {
-    vi.mocked(supabase.auth.verifyOtp).mockReset();
-    vi.mocked(supabase.auth.updateUser).mockReset();
+    vi.mocked(supabaseRecovery.auth.verifyOtp).mockReset();
+    vi.mocked(supabaseRecovery.auth.updateUser).mockReset();
+    vi.mocked(supabaseRecovery.auth.getSession).mockReset();
+    vi.mocked(supabaseRecovery.auth.signOut).mockReset();
+    vi.mocked(supabase.auth.setSession).mockReset();
   });
 
   it('leaves the token unspent on page load', async () => {
@@ -217,7 +243,7 @@ describe('/reset-password route', () => {
     await expect(
       waitFor(
         () => {
-          expect(supabase.auth.verifyOtp).toHaveBeenCalled();
+          expect(supabaseRecovery.auth.verifyOtp).toHaveBeenCalled();
         },
         { timeout: 200 },
       ),
@@ -233,7 +259,7 @@ describe('/reset-password route', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't use that reset link/i);
     expect(screen.queryByLabelText(/new password/i)).not.toBeInTheDocument();
-    expect(supabase.auth.verifyOtp).not.toHaveBeenCalled();
+    expect(supabaseRecovery.auth.verifyOtp).not.toHaveBeenCalled();
   });
 
   it('shows the same notice, not the error boundary, when the link carries the wrong type', async () => {
@@ -244,7 +270,7 @@ describe('/reset-password route', () => {
     });
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't use that reset link/i);
-    expect(supabase.auth.verifyOtp).not.toHaveBeenCalled();
+    expect(supabaseRecovery.auth.verifyOtp).not.toHaveBeenCalled();
   });
 
   it('verifies the token, updates the password, and lands on home', async () => {
@@ -260,16 +286,61 @@ describe('/reset-password route', () => {
 
     await submitNewPassword(user);
 
-    expect(supabase.auth.verifyOtp).toHaveBeenCalledWith({
+    expect(supabaseRecovery.auth.verifyOtp).toHaveBeenCalledWith({
       token_hash: 'recovery-token',
       type: 'recovery',
     });
-    expect(supabase.auth.updateUser).toHaveBeenCalledWith({ password: 'newpassword123' });
+    expect(supabaseRecovery.auth.updateUser).toHaveBeenCalledWith({
+      password: 'newpassword123',
+    });
     expect(await screen.findByRole('heading', { name: 'Home Stub' })).toBeInTheDocument();
   });
 
+  it('signs the user in only once the password change succeeds', async () => {
+    mockVerifyOtpSuccess();
+    mockUpdateUserSuccess();
+    const user = userEvent.setup();
+
+    renderWithRouter({
+      routeTree: buildResetPasswordRouteTree(),
+      initialEntry: RECOVERY_ENTRY,
+      auth: createUnauthAuth(),
+    });
+
+    await submitNewPassword(user);
+
+    expect(await screen.findByRole('heading', { name: 'Home Stub' })).toBeInTheDocument();
+    expect(supabase.auth.setSession).toHaveBeenCalledWith({
+      access_token: 'access-token',
+      refresh_token: 'refresh-token',
+    });
+    expect(supabaseRecovery.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+  });
+
+  it('leaves the recovery session out of the default client when the password change fails', async () => {
+    mockVerifyOtpSuccess();
+    vi.mocked(supabaseRecovery.auth.updateUser).mockResolvedValue({
+      data: { user: null },
+      error: new AuthApiError('New password is too weak', 422, 'weak_password'),
+    });
+    const user = userEvent.setup();
+
+    renderWithRouter({
+      routeTree: buildResetPasswordRouteTree(),
+      initialEntry: RECOVERY_ENTRY,
+      auth: createUnauthAuth(),
+    });
+
+    await submitNewPassword(user);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/new password is too weak/i);
+    // Reopening the app must not restore a signed-in session for a password that
+    // never changed.
+    expect(supabase.auth.setSession).not.toHaveBeenCalled();
+  });
+
   it('replaces the form with the unusable-link notice when the token no longer verifies', async () => {
-    vi.mocked(supabase.auth.verifyOtp).mockResolvedValue({
+    vi.mocked(supabaseRecovery.auth.verifyOtp).mockResolvedValue({
       data: { user: null, session: null },
       error: new AuthApiError('Email link is invalid or has expired', 403, 'otp_expired'),
     });
@@ -286,16 +357,16 @@ describe('/reset-password route', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't use that reset link/i);
     expect(screen.queryByLabelText(/new password/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Home Stub' })).not.toBeInTheDocument();
-    expect(supabase.auth.updateUser).not.toHaveBeenCalled();
+    expect(supabaseRecovery.auth.updateUser).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('link', { name: /request a new link/i }));
 
     expect(await screen.findByRole('button', { name: /send reset link/i })).toBeInTheDocument();
   });
 
-  it('retries a rejected password against the session the spent token already minted', async () => {
+  it('retries a rejected password against the session the spent token already created', async () => {
     mockVerifyOtpSuccess();
-    vi.mocked(supabase.auth.updateUser).mockResolvedValue({
+    vi.mocked(supabaseRecovery.auth.updateUser).mockResolvedValue({
       data: { user: null },
       error: new AuthApiError('New password is too weak', 422, 'weak_password'),
     });
@@ -315,13 +386,13 @@ describe('/reset-password route', () => {
     await user.click(screen.getByRole('button', { name: /update password/i }));
 
     expect(await screen.findByRole('heading', { name: 'Home Stub' })).toBeInTheDocument();
-    expect(supabase.auth.verifyOtp).toHaveBeenCalledOnce();
-    expect(supabase.auth.updateUser).toHaveBeenCalledTimes(2);
+    expect(supabaseRecovery.auth.verifyOtp).toHaveBeenCalledOnce();
+    expect(supabaseRecovery.auth.updateUser).toHaveBeenCalledTimes(2);
   });
 
   it('spends the token once when the button is double-clicked mid-verify', async () => {
     let releaseVerify!: () => void;
-    vi.mocked(supabase.auth.verifyOtp).mockReturnValue(
+    vi.mocked(supabaseRecovery.auth.verifyOtp).mockReturnValue(
       new Promise((resolve) => {
         releaseVerify = () => resolve({ data: { user: null, session: null }, error: null });
       }),
@@ -342,13 +413,13 @@ describe('/reset-password route', () => {
     await user.click(submit);
     await user.click(submit);
 
-    expect(supabase.auth.verifyOtp).toHaveBeenCalledOnce();
+    expect(supabaseRecovery.auth.verifyOtp).toHaveBeenCalledOnce();
 
     releaseVerify();
 
     expect(await screen.findByRole('heading', { name: 'Home Stub' })).toBeInTheDocument();
-    expect(supabase.auth.verifyOtp).toHaveBeenCalledOnce();
-    expect(supabase.auth.updateUser).toHaveBeenCalledOnce();
+    expect(supabaseRecovery.auth.verifyOtp).toHaveBeenCalledOnce();
+    expect(supabaseRecovery.auth.updateUser).toHaveBeenCalledOnce();
   });
 
   it('shows an error and verifies nothing when the passwords do not match', async () => {
@@ -363,8 +434,8 @@ describe('/reset-password route', () => {
     await submitNewPassword(user, { password: 'password123', confirmation: 'password124' });
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/passwords do not match/i);
-    expect(supabase.auth.verifyOtp).not.toHaveBeenCalled();
-    expect(supabase.auth.updateUser).not.toHaveBeenCalled();
+    expect(supabaseRecovery.auth.verifyOtp).not.toHaveBeenCalled();
+    expect(supabaseRecovery.auth.updateUser).not.toHaveBeenCalled();
   });
 
   it('shows an error and verifies nothing when the password is too short', async () => {
@@ -381,8 +452,8 @@ describe('/reset-password route', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       /password must be at least 6 characters/i,
     );
-    expect(supabase.auth.verifyOtp).not.toHaveBeenCalled();
-    expect(supabase.auth.updateUser).not.toHaveBeenCalled();
+    expect(supabaseRecovery.auth.verifyOtp).not.toHaveBeenCalled();
+    expect(supabaseRecovery.auth.updateUser).not.toHaveBeenCalled();
   });
 
   it('keeps the form mounted under the real Layout when the store picks up a session mid-flow', async () => {
@@ -392,7 +463,7 @@ describe('/reset-password route', () => {
     // form and dropping both the typed passwords and the record that the
     // token was already spent.
     mockVerifyOtpSuccess();
-    vi.mocked(supabase.auth.updateUser).mockImplementationOnce(() => {
+    vi.mocked(supabaseRecovery.auth.updateUser).mockImplementationOnce(() => {
       seedAuthStore(createAuthedAuth());
       return Promise.resolve({
         data: { user: null },
@@ -417,8 +488,8 @@ describe('/reset-password route', () => {
     await user.click(screen.getByRole('button', { name: /update password/i }));
 
     await waitFor(() => {
-      expect(supabase.auth.updateUser).toHaveBeenCalledTimes(2);
+      expect(supabaseRecovery.auth.updateUser).toHaveBeenCalledTimes(2);
     });
-    expect(supabase.auth.verifyOtp).toHaveBeenCalledOnce();
+    expect(supabaseRecovery.auth.verifyOtp).toHaveBeenCalledOnce();
   });
 });
