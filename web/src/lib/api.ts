@@ -29,9 +29,10 @@ class ApiClient {
       data: { session },
     } = await supabase.auth.getSession();
 
-    // getSession() reads storage, which can lag the cross-tab auth event that
-    // triggered this fetch; the store holds what the event delivered.
-    // getSession() goes first because it refreshes an expired token on read.
+    // Another tab may have just signed this user in (e.g. a password reset).
+    // The Supabase session read above may not reflect that in this tab yet,
+    // so fall back to our auth store. Supabase goes first because it
+    // refreshes an expired token.
     const accessToken = session?.access_token ?? getAuthSnapshot().session?.access_token;
 
     return {
