@@ -157,7 +157,7 @@ User is signed in with the app open in two tabs. In tab B they sign out: `supaba
 
 **Not fixing.** The fallback is load-bearing in the other direction: a tab signed in by another tab — completing the reset in the emailed tab, which bounces this one home — fires its first authenticated requests before this tab's `getSession()` reflects the new sign-in, and the store supplies the token in that gap. Removing the fallback reintroduces those 401s; `api.test.ts:148` goes red on removal and the post-reset home load reproduces them. The sign-out fail-open above is the accepted cost: it exposes only the signed-out user's own data, for the BroadcastChannel propagation delay in a modern browser or until the JWT expires where no BroadcastChannel exists. The reason lives in a comment at the call site; no ADR, since the decision did not clear the significance gate and `api.test.ts:148` already guards removal.
 
-### 4. `ResetPasswordForm.tsx:76` — correctness — CONFIRMED
+### 4. `ResetPasswordForm.tsx:76` — correctness — CONFIRMED — Fixed
 
 The bare `catch` around `verifyRecoveryToken` treats every failure — network blip, DNS failure, 500, CORS — as a spent/expired token and renders the terminal "link is dead" card.
 

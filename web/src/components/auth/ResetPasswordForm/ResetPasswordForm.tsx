@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
 import { completePasswordReset, verifyRecoveryToken } from '@/lib/auth-password';
+import * as Sentry from '@sentry/react';
+import { isAuthApiError } from '@supabase/supabase-js';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { type SyntheticEvent, useRef, useState } from 'react';
 
@@ -74,8 +76,22 @@ export function ResetPasswordForm() {
     if (!hasSpentToken.current) {
       try {
         await verifyRecoveryToken(recoveryToken);
-      } catch {
-        setTokenRejected(true);
+      } catch (verifyError) {
+        // Only an explicit expired/invalid verdict means the token is truly
+        // dead. A network or server failure leaves it unspent, so keep the form
+        // for a retry instead of sending them to request a new link.
+        if (isAuthApiError(verifyError) && verifyError.code === 'otp_expired') {
+          setTokenRejected(true);
+          setIsLoading(false);
+          return;
+        }
+
+        Sentry.captureException(verifyError, {
+          tags: { component: 'ResetPasswordForm', operation: 'verifyRecoveryToken' },
+        });
+        const errorMessage = "Couldn't verify your reset link. Please try again.";
+        setError(errorMessage);
+        announce(errorMessage);
         setIsLoading(false);
         return;
       }

@@ -14,7 +14,7 @@ import {
   renderWithRouter,
 } from '@/tests/test-utils';
 import * as Sentry from '@sentry/react';
-import { AuthApiError } from '@supabase/supabase-js';
+import { AuthApiError, AuthRetryableFetchError } from '@supabase/supabase-js';
 import { createRoute } from '@tanstack/react-router';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -227,6 +227,7 @@ describe('/reset-password route', () => {
     vi.mocked(supabaseRecovery.auth.getSession).mockReset();
     vi.mocked(supabaseRecovery.auth.signOut).mockReset();
     vi.mocked(supabase.auth.setSession).mockReset();
+    vi.mocked(Sentry.captureException).mockClear();
   });
 
   it('leaves the token unspent on page load', async () => {
@@ -362,6 +363,60 @@ describe('/reset-password route', () => {
     await user.click(screen.getByRole('link', { name: /request a new link/i }));
 
     expect(await screen.findByRole('button', { name: /send reset link/i })).toBeInTheDocument();
+  });
+
+  it('keeps the form for a retry and reports the failure when verification hits a transient error', async () => {
+    const transientError = new AuthRetryableFetchError('Failed to fetch', 0);
+    vi.mocked(supabaseRecovery.auth.verifyOtp).mockResolvedValue({
+      data: { user: null, session: null },
+      error: transientError,
+    });
+    const user = userEvent.setup();
+
+    renderWithRouter({
+      routeTree: buildResetPasswordRouteTree(),
+      initialEntry: RECOVERY_ENTRY,
+      auth: createUnauthAuth(),
+    });
+
+    await submitNewPassword(user);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't verify your reset link/i);
+    expect(screen.getByLabelText(/new password/i)).toBeInTheDocument();
+    expect(screen.queryByText(/couldn't use that reset link/i)).not.toBeInTheDocument();
+    expect(supabaseRecovery.auth.updateUser).not.toHaveBeenCalled();
+    expect(Sentry.captureException).toHaveBeenCalledWith(transientError, {
+      tags: { component: 'ResetPasswordForm', operation: 'verifyRecoveryToken' },
+    });
+
+    // The token was never spent, so a retry can verify it and finish.
+    mockVerifyOtpSuccess();
+    mockUpdateUserSuccess();
+    await user.click(screen.getByRole('button', { name: /update password/i }));
+
+    expect(await screen.findByRole('heading', { name: 'Home Stub' })).toBeInTheDocument();
+    expect(supabaseRecovery.auth.verifyOtp).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the form and captures when verification fails with an unexpected server error', async () => {
+    vi.mocked(supabaseRecovery.auth.verifyOtp).mockResolvedValue({
+      data: { user: null, session: null },
+      error: new AuthApiError('Internal server error', 500, undefined),
+    });
+    const user = userEvent.setup();
+
+    renderWithRouter({
+      routeTree: buildResetPasswordRouteTree(),
+      initialEntry: RECOVERY_ENTRY,
+      auth: createUnauthAuth(),
+    });
+
+    await submitNewPassword(user);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't verify your reset link/i);
+    expect(screen.getByLabelText(/new password/i)).toBeInTheDocument();
+    expect(screen.queryByText(/couldn't use that reset link/i)).not.toBeInTheDocument();
+    expect(Sentry.captureException).toHaveBeenCalled();
   });
 
   it('retries a rejected password against the session the spent token already created', async () => {
