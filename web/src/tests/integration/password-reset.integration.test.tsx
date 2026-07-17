@@ -188,9 +188,15 @@ describe('/forgot-password route', () => {
     expect(Sentry.captureException).not.toHaveBeenCalled();
   });
 
-  it('still shows the check-email state but captures unexpected send failures', async () => {
-    const unexpected = new Error('network down');
-    vi.mocked(supabase.auth.resetPasswordForEmail).mockRejectedValue(unexpected);
+  it('keeps the check-email state and captures when the server responds with an error', async () => {
+    // GoTrue answers 500 only for an address that exists but whose send failed;
+    // an unknown address gets 200. Showing this any differently would reveal
+    // which accounts exist, so it must look identical to a successful send.
+    const serverError = new AuthApiError('Error sending recovery email', 500, undefined);
+    vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValue({
+      data: null,
+      error: serverError,
+    });
     const user = userEvent.setup();
 
     renderWithRouter({
@@ -203,9 +209,34 @@ describe('/forgot-password route', () => {
     await user.click(screen.getByRole('button', { name: /send reset link/i }));
 
     expect(await screen.findByText(/check your email/i)).toBeInTheDocument();
-    expect(Sentry.captureException).toHaveBeenCalledWith(unexpected, {
+    expect(Sentry.captureException).toHaveBeenCalledWith(serverError, {
       tags: { component: 'ForgotPasswordForm', operation: 'sendPasswordResetEmail' },
     });
+  });
+
+  it('surfaces a retryable error without leaving the form when the request never reaches the server', async () => {
+    // No HTTP status came back, so unlike a server error this can't leak whether
+    // the account exists — safe to surface. Not captured: it's the user's
+    // network, not an app fault.
+    vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValue({
+      data: null,
+      error: new AuthRetryableFetchError('Failed to fetch', 0),
+    });
+    const user = userEvent.setup();
+
+    renderWithRouter({
+      routeTree: buildForgotPasswordRouteTree(),
+      initialEntry: '/forgot-password',
+      auth: createUnauthAuth(),
+    });
+
+    await user.type(await screen.findByLabelText(/email/i), 'racer@example.com');
+    await user.click(screen.getByRole('button', { name: /send reset link/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't reach the server/i);
+    expect(screen.getByRole('button', { name: /send reset link/i })).toBeInTheDocument();
+    expect(screen.queryByText(/check your email/i)).not.toBeInTheDocument();
+    expect(Sentry.captureException).not.toHaveBeenCalled();
   });
 
   it('bounces a signed-in visitor home', async () => {

@@ -1,11 +1,14 @@
+import { InlineError } from '@/components/InlineError/InlineError';
+import { LiveRegion } from '@/components/LiveRegion/LiveRegion';
 import { LoadingButton } from '@/components/LoadingButton/LoadingButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useLiveRegion } from '@/hooks/useLiveRegion';
 import { sendPasswordResetEmail } from '@/lib/auth-password';
 import * as Sentry from '@sentry/react';
-import { isAuthApiError } from '@supabase/supabase-js';
+import { isAuthApiError, isAuthRetryableFetchError } from '@supabase/supabase-js';
 import { Link } from '@tanstack/react-router';
 import { Mail } from 'lucide-react';
 import { type SyntheticEvent, useState } from 'react';
@@ -14,27 +17,35 @@ export function ForgotPasswordForm() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { message, announce } = useLiveRegion();
 
   const handleSubmit = async (e: SyntheticEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
       await sendPasswordResetEmail(email);
+      setSubmitted(true);
     } catch (err) {
-      // Surface nothing either way: an unknown address never sends, so it never
-      // hits the rate limit — showing a rate-limit error would leak account
-      // existence. Rate limit stays silent; unexpected failures are captured but
-      // still look like success to the user.
-      const isRateLimit = isAuthApiError(err) && err.code === 'over_email_send_rate_limit';
-      if (!isRateLimit) {
-        Sentry.captureException(err, {
-          tags: { component: 'ForgotPasswordForm', operation: 'sendPasswordResetEmail' },
-        });
+      // A no-response failure is account-independent, so it's safe to show. Any
+      // HTTP status could reveal the account exists so every status looks like
+      // a successful send.
+      if (isAuthRetryableFetchError(err) && err.status === 0) {
+        const failure = "We couldn't reach the server. Check your connection and try again.";
+        setError(failure);
+        announce(failure);
+      } else {
+        if (!(isAuthApiError(err) && err.code === 'over_email_send_rate_limit')) {
+          Sentry.captureException(err, {
+            tags: { component: 'ForgotPasswordForm', operation: 'sendPasswordResetEmail' },
+          });
+        }
+        setSubmitted(true);
       }
     } finally {
       setIsLoading(false);
-      setSubmitted(true);
     }
   };
 
@@ -80,6 +91,8 @@ export function ForgotPasswordForm() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <LiveRegion message={message} />
+              {error && <InlineError message={error} />}
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <Input
