@@ -179,11 +179,13 @@ User is offline, behind a captive portal, or Supabase auth returns a 500. `sendP
 
 **Fixed, with a narrower remedy than the finding assumed.** The finding lumps a server 500 in with transport failures as safe to surface; it isn't. GoTrue returns 200 for an unknown address but 500 (or a rate limit) for a real one whose send fails, so _any_ HTTP status is an enumeration oracle (verified against `internal/api/recover.go` + `mail.go`: the missing-user branch short-circuits to 200 before the send, so non-200 responses fire only for real accounts). The success transition moved out of `finally`; a retryable error now shows only when no response came back (`isAuthRetryableFetchError(err) && err.status === 0`, which is account-independent and not captured to Sentry). Every HTTP status stays on the indistinguishable check-email state, still capturing unexpected ones. This closes #6's UX complaint for the one case that's provably safe and leaves the server-error case as-is by design.
 
-### 7. `api.test.ts:58` — test-coverage — CONFIRMED
+### 7. `api.test.ts:58` — test-coverage — CONFIRMED — Not fixing (accepted)
 
 The entire `describe('constructor')` block — the only test covering `ApiClient`'s startup guard that throws "VITE_F1_FANTASY_API environment variable is not set" (`api.ts:18-24`) — was deleted with no replacement anywhere; the guard itself still exists but is now completely untested, and nothing in the diff or the plan explains the removal.
 
 A future change renames the env var, reorders the constructor, or drops the `if (!envBaseUrl) throw` after a refactor of `getBaseHeaders` (the very method this diff touched). No test fails. The app builds and deploys with `this.baseUrl = undefined`, so every request becomes `fetch('undefined/api/me/profile')` — the user sees a blank page or a cascade of opaque network errors on load, instead of the loud, actionable startup error the guard was written to produce. `grep` confirms no other test in `web/src` asserts on that message.
+
+**Not fixing (accepted).** A one-line fail-fast guard whose only failure mode — the env var unset at deploy — surfaces loudly at first boot and in the CI e2e run doesn't earn a `resetModules` + dynamic-import change-detector; the equivalent `supabase.ts` guard tests were deleted for symmetry, so both config guards are now held to the same untested standard. The real fix is a single validated `env.ts` consumed by both and tested as a pure function, out of scope for #339.
 
 ### 8. `ForgotPasswordForm.tsx:41` — accessibility — CONFIRMED
 
