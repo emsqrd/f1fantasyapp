@@ -21,8 +21,14 @@ export function Layout() {
     .find((match) => (match.staticData as { pageTitle?: string })?.pageTitle);
   const pageTitle = (matchWithTitle?.staticData as { pageTitle?: string })?.pageTitle;
 
-  // Render simple layout for unauthenticated users
-  if (!user) {
+  // A route can ask for the signed-out shell even when a session exists: the
+  // password reset page signs the user in as it submits, and growing a sidebar
+  // around the card mid-submit is disorienting.
+  const forcesPublicShell = matches.some(
+    (match) => (match.staticData as { publicShell?: boolean })?.publicShell,
+  );
+
+  if (!user || forcesPublicShell) {
     return (
       <>
         <header className="flex h-16 shrink-0 items-center justify-between border-b px-4">
