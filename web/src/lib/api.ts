@@ -1,6 +1,7 @@
 import type { ApiError } from '@/utils/errors';
 import * as Sentry from '@sentry/react';
 
+import { getAuthSnapshot } from './authStore';
 import { supabase } from './supabase';
 
 type RequestConfig<D = unknown> = {
@@ -28,10 +29,16 @@ class ApiClient {
       data: { session },
     } = await supabase.auth.getSession();
 
+    // Another tab may have just signed this user in (e.g. a password reset).
+    // The Supabase session read above may not reflect that in this tab yet,
+    // so fall back to our auth store. Supabase goes first because it
+    // refreshes an expired token.
+    const accessToken = session?.access_token ?? getAuthSnapshot().session?.access_token;
+
     return {
       'Content-Type': 'application/json',
-      ...(session?.access_token && {
-        Authorization: `Bearer ${session.access_token}`,
+      ...(accessToken && {
+        Authorization: `Bearer ${accessToken}`,
       }),
     };
   }

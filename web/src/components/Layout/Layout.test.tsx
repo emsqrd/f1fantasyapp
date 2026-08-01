@@ -7,7 +7,8 @@ import { Layout } from './Layout';
 
 // Mock TanStack Router
 const mockNavigate = vi.fn();
-const mockUseMatches = vi.fn<() => { routeId: string; staticData: { pageTitle?: string } }[]>();
+const mockUseMatches =
+  vi.fn<() => { routeId: string; staticData: { pageTitle?: string; publicShell?: boolean } }[]>();
 const mockOutlet = vi.fn(() => <div>Page Content</div>);
 
 vi.mock('@tanstack/react-router', () => ({
@@ -179,6 +180,21 @@ describe('Layout', () => {
       expect(screen.getByRole('heading', { level: 1, name: 'Child Title' })).toBeInTheDocument();
       expect(screen.queryByText('Root Title')).not.toBeInTheDocument();
       expect(screen.queryByText('Parent Title')).not.toBeInTheDocument();
+    });
+
+    it('renders the signed-out header instead of the sidebar on a publicShell route', () => {
+      mockUseMatches.mockReturnValue([
+        {
+          routeId: 'reset-password',
+          staticData: { publicShell: true },
+        },
+      ]);
+
+      render(<Layout />);
+
+      expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+      expect(screen.queryByTestId('app-sidebar')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('sidebar-provider')).not.toBeInTheDocument();
     });
 
     it('does not display page title when no route has staticData.pageTitle', () => {
