@@ -42,6 +42,14 @@ export async function getConfirmationUrl(email: string): Promise<string> {
   return match[0];
 }
 
+export async function getRecoveryUrl(email: string): Promise<string> {
+  const search = await searchByRecipient(email);
+  const message = await getMessage(search.messages[0].ID);
+  const match = message.Text.match(/https?:\/\/\S*\/reset-password\S*/);
+  if (!match) throw new Error(`No recovery URL in email to ${email}`);
+  return match[0];
+}
+
 export async function getOtpCode(email: string): Promise<string> {
   const search = await searchByRecipient(email);
   const message = await getMessage(search.messages[0].ID);

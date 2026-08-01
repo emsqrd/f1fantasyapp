@@ -7,6 +7,8 @@ import { LeagueList } from '@/components/LeagueList/LeagueList';
 import { RouteErrorComponent } from '@/components/RouteErrorComponent/RouteErrorComponent';
 import { MyTeamRoute, TeamRoute } from '@/components/Team/Team';
 import { ConfirmEmailNotice } from '@/components/auth/ConfirmEmailNotice/ConfirmEmailNotice';
+import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm/ForgotPasswordForm';
+import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm/ResetPasswordForm';
 import { SignInForm } from '@/components/auth/SignInForm/SignInForm';
 import { SignUpForm } from '@/components/auth/SignUpForm/SignUpForm';
 import { Button } from '@/components/ui/button';
@@ -177,15 +179,22 @@ const signUpRoute = createRoute({
   component: SignUpForm,
 });
 
+const forgotPasswordRoute = createRoute({
+  getParentRoute: () => unauthenticatedLayoutRoute,
+  path: '/forgot-password',
+  beforeLoad: ({ context }) => redirectIfAuthenticated(context),
+  component: ForgotPasswordForm,
+});
+
 const authConfirmSearchSchema = z.object({
   token_hash: z.string().optional(),
   type: z.literal('signup').optional(),
   next: z.string().optional().catch(undefined),
 });
 
-// Not under the `_unauthenticated` layout, which redirects signed-in users
-// away: a re-clicked or back-navigated confirmation link must still reach
-// this route, since the user is already signed in by then.
+// A re-clicked or back-navigated confirmation link lands here after the
+// user is already signed in, so this route must not bounce authenticated
+// visitors the way sign-in and sign-up do.
 const authConfirmRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/auth/confirm',
@@ -202,6 +211,31 @@ const authConfirmRoute = createRoute({
       throw redirect({ to: '/sign-up', replace: true });
     }
   },
+});
+
+// `.catch(undefined)` keeps the schema total: a mangled `type` (a forwarded or
+// link-scanner-rewritten reset URL) would otherwise throw a SearchParamError and
+// render the error boundary, turning a broken reset link into "something went
+// wrong". Every URL shape reaches the component, which explains the bad link.
+const resetPasswordSearchSchema = z.object({
+  token_hash: z.string().optional().catch(undefined),
+  type: z.literal('recovery').optional().catch(undefined),
+});
+
+// No `beforeLoad`, deliberately: an unusable link always has something to tell
+// the visitor, and a guard can only redirect. The form also spends the token
+// mid-submit, which flips the auth store and re-runs every guard on the match —
+// a guard reading these params would fire against a token it just burned.
+// Spending the token also signs the user in, so `publicShell` holds Layout on
+// the signed-out branch rather than growing a sidebar around the open form.
+const resetPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/reset-password',
+  validateSearch: resetPasswordSearchSchema,
+  staticData: {
+    publicShell: true,
+  },
+  component: ResetPasswordForm,
 });
 
 /**
@@ -583,8 +617,9 @@ const myTeamRoute = createRoute({
  */
 const routeTree = rootRoute.addChildren([
   indexRoute,
-  unauthenticatedLayoutRoute.addChildren([signInRoute, signUpRoute]),
+  unauthenticatedLayoutRoute.addChildren([signInRoute, signUpRoute, forgotPasswordRoute]),
   authConfirmRoute,
+  resetPasswordRoute,
   joinInviteRoute,
   authenticatedLayoutRoute.addChildren([
     accountRoute,
