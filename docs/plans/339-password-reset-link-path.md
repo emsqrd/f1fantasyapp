@@ -187,43 +187,45 @@ A future change renames the env var, reorders the constructor, or drops the `if 
 
 **Not fixing (accepted).** A one-line fail-fast guard whose only failure mode — the env var unset at deploy — surfaces loudly at first boot and in the CI e2e run doesn't earn a `resetModules` + dynamic-import change-detector; the equivalent `supabase.ts` guard tests were deleted for symmetry, so both config guards are now held to the same untested standard. The real fix is a single validated `env.ts` consumed by both and tested as a pure function, out of scope for #339.
 
-### 8. `ForgotPasswordForm.tsx:41` — accessibility — CONFIRMED
+**Findings 8–14: not fixing.** They all seem minor and I don't want to take the time to deal with them now. I also don't want to clutter the backlog with issues that I may or may not get to.
+
+### 8. `ForgotPasswordForm.tsx:41` — accessibility — CONFIRMED — Not fixing
 
 The submit → "Check your email" transition replaces the entire card with no live-region announcement and no focus management: the focused submit button is unmounted, focus falls back to `<body>`, and nothing is announced. Every other auth form in the codebase (`SignInForm`, `SignUpForm`, and the sibling `ResetPasswordForm` added in this same diff) wires `useLiveRegion`/`LiveRegion`; this form imports neither.
 
 A screen-reader user tabs to "Send reset link" and presses Enter. `setSubmitted(true)` unmounts the form (including the focused button), so focus resets to the document body and no live region announces the new state. The user hears silence and has no indication whether the request went through; re-navigating with the virtual cursor is the only way to discover the "Check your email" card. This is a WCAG 2.1 AA status-message failure on the primary path, not an edge case.
 
-### 9. `ResetPasswordForm.tsx:57` — simplification — CONFIRMED
+### 9. `ResetPasswordForm.tsx:57` — simplification — CONFIRMED — Not fixing
 
 The password rules (mismatch + min-length, including the exact message strings and the `setError`/announce/`setIsLoading` trio) are copy-pasted from `SignUpForm.tsx` lines 71-85, and `minLength={6}` is duplicated in both forms.
 
 Changing the password policy (e.g. raising Supabase's minimum from 6 to 8, or adding a strength rule) requires finding and editing two identical blocks plus two `minLength` literals. Miss one and sign-up rejects a 6-character password client-side while password reset still accepts it and only fails on the gotrue round trip — with the recovery token already spent, so the user cannot retry from a fresh link. A shared `validateNewPassword(password, confirmPassword): string | null` (next to the other `lib/auth-*` helpers) removes the divergence.
 
-### 10. `ResetPasswordForm.tsx:91` — correctness — PLAUSIBLE
+### 10. `ResetPasswordForm.tsx:91` — correctness — PLAUSIBLE — Not fixing
 
 The raw GoTrue error message is rendered straight into the `InlineError`, surfacing internal auth strings to the user.
 
 `error instanceof Error ? error.message : …` passes `AuthApiError.message` through verbatim. If the user leaves the form open for more than an hour after the token is spent (or their recovery session is otherwise gone), `supabase.auth.updateUser` throws `AuthSessionMissingError` and the page displays the literal string "Auth session missing!" in a `role="alert"` box. The user is given a gotrue implementation detail with no remedy — the reset link they hold is already spent, so the correct guidance ("request a new link") is exactly what they are not told.
 
-### 11. `ForgotPasswordForm.tsx:29` — correctness — PLAUSIBLE
+### 11. `ForgotPasswordForm.tsx:29` — correctness — PLAUSIBLE — Not fixing
 
 The rate-limit check depends on a `code` field GoTrue does not always populate, so throttled requests can still be reported to Sentry.
 
 `err.code === 'over_email_send_rate_limit'` is the only recognised throttle. GoTrue's generic request limiter returns 429 with `over_request_rate_limit`, and older/self-hosted GoTrue returns 429 with no `code` at all (only the message "For security purposes, you can only request this after N seconds"). Because the submit button is not disabled during the in-flight request (`LoadingButton` only sets `aria-busy`), an impatient user clicking "Send reset link" twice trips the throttle on the second call, which then falls through the `!isRateLimit` branch and is captured as an unexpected exception. Sentry fills with 429 noise from ordinary double-clicks, drowning the genuine send failures this capture exists to surface.
 
-### 12. `ResetPasswordForm.tsx:34` — accessibility — PLAUSIBLE
+### 12. `ResetPasswordForm.tsx:34` — accessibility — PLAUSIBLE — Not fixing
 
 `role="alert"` is put on the whole dead-link Card, but in the `!recoveryToken` case that card is present on first paint — live regions only announce content that changes _after_ the region exists, so nothing is announced and focus is never moved; the project convention reserves `role="alert"` for `InlineError`, and here it wraps a heading, a paragraph, and a link.
 
 A screen-reader user opens a reset link whose `type` param was mangled by a link scanner (a case the totalized Zod schema exists to support). The component renders the alert Card as the initial page content, so assistive tech treats it as ordinary static content and announces nothing; the user, expecting a password form, hears only whatever the shell reads and never learns the link is dead. In the token-rejected transition the same role fires the opposite way — the entire card, including the "Request a new link" link text, is read as an assertive interruption.
 
-### 13. `ResetPasswordForm.tsx:106` — correctness — PLAUSIBLE
+### 13. `ResetPasswordForm.tsx:106` — correctness — PLAUSIBLE — Not fixing
 
 The reset form has two `autocomplete="new-password"` fields and no username/email field, so password managers have nothing to bind the new credential to; Chrome/Safari guidance for password-change forms is to include a hidden or readonly `autocomplete="username"` field carrying the account email.
 
 User completes the reset in Chrome. The save/update prompt fires on a form with no username field, so the manager either saves an entry with an empty username or updates the wrong stored credential for the site. On the next visit the saved password no longer autofills against their email, and the user is pushed back through the reset flow. The email is recoverable for the form (it is on the recovery session `verifyOtp` mints, or could be carried in the link), so nothing prevents rendering the username field.
 
-### 14. `router.tsx:235` — correctness — PLAUSIBLE
+### 14. `router.tsx:235` — correctness — PLAUSIBLE — Not fixing
 
 `staticData.publicShell` is untyped — `Layout` reads it through an `as { publicShell?: boolean }` cast — so a typo in the flag compiles clean and silently reverts the route to the authenticated shell.
 
