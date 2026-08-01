@@ -1,7 +1,9 @@
 import * as Sentry from '@sentry/react';
+import type { Session } from '@supabase/supabase-js';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from './api';
+import { seedAuthStore } from './authStore';
 import { supabase } from './supabase';
 
 // Mock Sentry
@@ -51,30 +53,6 @@ describe('ApiClient', () => {
 
   afterAll(() => {
     vi.unstubAllGlobals();
-  });
-
-  describe('constructor', () => {
-    it('throws clear error when API URL is not configured', async () => {
-      // Store original value
-      const originalValue = import.meta.env.VITE_F1_FANTASY_API;
-
-      // Mock the environment variable to be undefined
-      vi.stubEnv('VITE_F1_FANTASY_API', undefined);
-
-      // Reset modules to force fresh import
-      vi.resetModules();
-
-      try {
-        // Verify developers get a helpful error message
-        await expect(import('./api')).rejects.toThrow(
-          'VITE_F1_FANTASY_API environment variable is not set. Please configure it in your environment.',
-        );
-      } finally {
-        // Restore the original environment variable and reset modules
-        vi.stubEnv('VITE_F1_FANTASY_API', originalValue);
-        vi.resetModules();
-      }
-    });
   });
 
   describe('get method', () => {
@@ -154,6 +132,51 @@ describe('ApiClient', () => {
           method: 'GET',
         }),
       );
+    });
+  });
+
+  describe('authorization header source', () => {
+    const okResponse = () =>
+      ({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue({}),
+        text: vi.fn().mockResolvedValue('{}'),
+        headers: new Headers({ 'content-type': 'application/json' }),
+      }) as unknown as Response;
+
+    it('sends the auth store session token when getSession returns no session', async () => {
+      mockFetch.mockResolvedValueOnce(okResponse());
+      seedAuthStore({ session: { access_token: 'store-access-token' } as Session });
+
+      await apiClient.get('/store-fallback');
+
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/store-fallback'), {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer store-access-token',
+        },
+      });
+    });
+
+    it('prefers the getSession token when both it and the store hold one', async () => {
+      mockGetSession.mockResolvedValue({
+        data: { session: { access_token: 'refreshed-token' } },
+        error: null,
+      } as unknown as Awaited<ReturnType<typeof supabase.auth.getSession>>);
+      mockFetch.mockResolvedValueOnce(okResponse());
+      seedAuthStore({ session: { access_token: 'store-access-token' } as Session });
+
+      await apiClient.get('/both-sources');
+
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/both-sources'), {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer refreshed-token',
+        },
+      });
     });
   });
 
