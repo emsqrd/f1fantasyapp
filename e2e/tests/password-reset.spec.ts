@@ -49,6 +49,15 @@ test.describe('password reset', () => {
     await expect(page).toHaveURL('/');
     await expect(page.getByRole('heading', { name: `Welcome, ${user.displayName}` })).toBeVisible();
 
+    await expect
+      .poll(
+        async () =>
+          (await searchByRecipient(user.email, { subject: 'Your F1 Fantasy password was changed' }))
+            .count,
+        { timeout: 10_000 },
+      )
+      .toBe(1);
+
     await page.getByRole('button', { name: 'Account menu' }).click();
     await page.getByRole('menuitem', { name: 'Sign Out' }).click();
     await expect(page.getByRole('heading', { name: /race to glory/i })).toBeVisible();
