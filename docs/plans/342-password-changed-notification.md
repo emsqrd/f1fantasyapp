@@ -33,7 +33,8 @@ Supersedes the implementation notes on the issue: the rate limits go to 100 (not
   [auth.email.notification.password_changed]
   enabled = true
   subject = "Your F1 Fantasy password was changed"
-  content_path = "./supabase/templates/password-changed.html"
+  # Unlike [auth.email.template.*], this path resolves from supabase/, not the project root.
+  content_path = "./templates/password-changed.html"
   ```
 
   In the same edit, `email_sent = 2` → `100` (dev) and `email_sent = 30` → `100` (e2e); scaffold comment untouched.
@@ -42,17 +43,22 @@ Supersedes the implementation notes on the issue: the rate limits go to 100 (not
 - **Modify `e2e/tests/password-reset.spec.ts`** — in the first happy path, after the reset lands on `/` (after the welcome-heading assertion, before the sign-out section):
 
   ```ts
+  const notificationSubject = 'Your F1 Fantasy password was changed';
+
   await expect
     .poll(
-      async () =>
-        (await searchByRecipient(user.email, { subject: 'Your F1 Fantasy password was changed' }))
-          .count,
+      async () => (await searchByRecipient(user.email, { subject: notificationSubject })).count,
       { timeout: 10_000 },
     )
     .toBe(1);
+
+  // The subject comes from config, so only the body proves the template rendered.
+  const notification = await searchByRecipient(user.email, { subject: notificationSubject });
+  const notificationBody = (await getMessage(notification.messages[0].ID)).Text;
+  expect(notificationBody).toContain(user.email);
   ```
 
-  The pre-link `.toBe(1)` poll stays (the notification cannot exist before the reset completes); the two-tabs test is untouched.
+  The subject alone would pass on a template that never rendered, since it comes from `config.toml` rather than the template. The body assertion on the substituted `{{ .Email }}` is what makes this a real check. The pre-link `.toBe(1)` poll stays (the notification cannot exist before the reset completes); the two-tabs test is untouched.
 - **Modify `CLAUDE.md`** — Production Infrastructure table gains a row: Email delivery → Resend (Supabase custom SMTP).
 
 **Tests:** the e2e assertion above is the test — no unit or backend-integration layer can see a gotrue config change. `config-sync.spec.ts` guards the config drift, now covering `email_sent` too.
