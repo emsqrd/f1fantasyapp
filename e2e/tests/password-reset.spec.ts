@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 
 import { createTestUser } from '../fixtures/auth';
-import { clearAll, getRecoveryUrl, searchByRecipient } from '../fixtures/mailpit';
+import { clearAll, getMessage, getRecoveryUrl, searchByRecipient } from '../fixtures/mailpit';
 import { resetDb } from '../fixtures/reset';
 import { signInAs } from '../fixtures/session';
 
@@ -49,14 +49,19 @@ test.describe('password reset', () => {
     await expect(page).toHaveURL('/');
     await expect(page.getByRole('heading', { name: `Welcome, ${user.displayName}` })).toBeVisible();
 
+    const notificationSubject = 'Your F1 Fantasy password was changed';
+
     await expect
       .poll(
-        async () =>
-          (await searchByRecipient(user.email, { subject: 'Your F1 Fantasy password was changed' }))
-            .count,
+        async () => (await searchByRecipient(user.email, { subject: notificationSubject })).count,
         { timeout: 10_000 },
       )
       .toBe(1);
+
+    // The subject comes from config, so only the body proves the template rendered.
+    const notification = await searchByRecipient(user.email, { subject: notificationSubject });
+    const notificationBody = (await getMessage(notification.messages[0].ID)).Text;
+    expect(notificationBody).toContain(user.email);
 
     await page.getByRole('button', { name: 'Account menu' }).click();
     await page.getByRole('menuitem', { name: 'Sign Out' }).click();
