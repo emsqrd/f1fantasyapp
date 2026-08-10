@@ -17,8 +17,12 @@ export interface MailpitMessage {
   HTML: string;
 }
 
-export async function searchByRecipient(email: string): Promise<MailpitSearchResult> {
-  const url = `${MAILPIT_BASE_URL}/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`;
+export async function searchByRecipient(
+  email: string,
+  opts?: { subject?: string },
+): Promise<MailpitSearchResult> {
+  const query = opts?.subject ? `to:${email} subject:"${opts.subject}"` : `to:${email}`;
+  const url = `${MAILPIT_BASE_URL}/api/v1/search?query=${encodeURIComponent(query)}`;
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`Mailpit search failed (${res.status}): ${await res.text()}`);

@@ -245,12 +245,13 @@ See [Local Services Topology](README.md#local-services-topology) in the README f
 
 Hosted on Fly.io + Supabase (free tier).
 
-| Resource                | Identifier                            |
-| ----------------------- | ------------------------------------- |
-| Fly.io app name         | `f1fantasyapp`                        |
-| Fly.io region           | `iad` (Virginia)                      |
-| Supabase project ref    | `cfuccajsckqzecbfyqrv`                |
-| Supabase direct DB host | `db.cfuccajsckqzecbfyqrv.supabase.co` |
+| Resource                | Identifier                                              |
+| ----------------------- | ------------------------------------------------------- |
+| Fly.io app name         | `f1fantasyapp`                                          |
+| Fly.io region           | `iad` (Virginia)                                        |
+| Supabase project ref    | `cfuccajsckqzecbfyqrv`                                  |
+| Supabase direct DB host | `db.cfuccajsckqzecbfyqrv.supabase.co`                   |
+| Email delivery          | Resend via Supabase custom SMTP, from `team@emsqrd.dev` |
 
 **MCP servers available for investigation:**
 
