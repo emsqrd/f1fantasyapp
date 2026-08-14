@@ -69,6 +69,10 @@ How a wait is shown:
 
 Delay-gating the loader avoids that flash: route loaders get it from `pendingMs`/`pendingMinMs`.
 
+### Form Validation
+
+Zod form schemas live in `src/validations/`, one file per form (`<name>FormSchema.ts`); rule fragments shared by multiple forms sit alongside them.
+
 ### Error Handling
 
 **Multi-level error boundary strategy:**
