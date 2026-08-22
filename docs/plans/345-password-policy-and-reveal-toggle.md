@@ -10,23 +10,23 @@ All dependencies are already installed: `react-hook-form`, `zod` (v4), `@hookfor
 - Errors are inline per field, all at once, additive to the hint. The password hint is always visible; an error renders below it. The form-level `InlineError` callout is reserved for server/submission failures only.
 - Inline field errors self-announce via `role="alert"`; manual `announce()` calls remain only for server errors.
 - Reveal toggles: per-field, independent, `type="button"`, `aria-pressed={visible}` with stable `aria-label="Show password"`, lucide `Eye`/`EyeOff`. Toggling never moves focus or submits.
-- SignInForm never enforces the policy (accounts created under the 6-char default must sign in); it gets the toggle only.
+- SignInForm validates presence only. Commit 2 adds the toggle; commit 6 adds RHF presence checks. No hint, no length rules.
 - Max 72 is enforced as a validation error, never a `maxLength` attribute; the hint does not mention it.
 
 ### Copy table (single source of truth)
 
-| Field        | Condition           | Message                                    |
-| ------------ | ------------------- | ------------------------------------------ |
-| Display name | empty (after trim)  | Enter a display name                       |
-| Display name | over 50 chars       | Display name must be 50 characters or fewer |
-| Email        | empty (after trim)  | Enter your email                           |
-| Email        | malformed           | Enter a valid email address                |
-| Password     | hint (always shown) | Password must be at least 8 characters     |
-| Password     | empty               | Enter a password                           |
-| Password     | 1–7 chars           | Password is too short                      |
-| Password     | over 72 chars       | Password must be 72 characters or fewer    |
-| Confirm      | empty               | Confirm your password                      |
-| Confirm      | differs from password | Passwords do not match                   |
+| Field        | Condition             | Message                                     |
+| ------------ | --------------------- | ------------------------------------------- |
+| Display name | empty (after trim)    | Enter a display name                        |
+| Display name | over 50 chars         | Display name must be 50 characters or fewer |
+| Email        | empty (after trim)    | Enter your email                            |
+| Email        | malformed             | Enter a valid email address                 |
+| Password     | hint (always shown)   | Password must be at least 8 characters      |
+| Password     | empty                 | Enter a password                            |
+| Password     | 1–7 chars             | Password is too short                       |
+| Password     | over 72 chars         | Password must be 72 characters or fewer     |
+| Confirm      | empty                 | Confirm your password                       |
+| Confirm      | differs from password | Passwords do not match                      |
 
 No trailing periods. Reset form reuses the password/confirm rows verbatim. Empty confirm shows "Confirm your password" only (the mismatch refinement does not stack on it). Trimmed display name and email are what get submitted.
 
@@ -101,8 +101,39 @@ Tests: update `web/src/tests/integration/password-reset.integration.test.tsx` �
 - E2e fixtures already comply: every fixture password is `'e2e-password'` (12 chars, in `e2e/fixtures/auth.ts` and `auth.spec.ts`) — verified, no changes needed.
 - Local stacks pick the value up on next `supabase start`/restart.
 
+### Commit 6 — SignInForm migration to RHF; FormField label slot
+
+Consolidation enabled by this branch: `PasswordInput` exists only because `SignInForm` drives it with manual `useState` and so cannot use `FormFieldPassword`, which takes `register`. Migrating sign-in removes that constraint. Commit 7 then deletes the component, so the branch's net diff against `main` never introduces it.
+
+`web/src/components/FormField/FormField.tsx`
+
+- Add `labelAction?: ReactNode` to `FormFieldProps`. `FormField` renders the label row as `flex items-center justify-between` with `{labelAction}` after the `<Label>`. Undefined renders identically to today, so existing consumers are visually unchanged.
+- `FormFieldInput`, `FormFieldPassword`, and `FormFieldTextarea` forward it. `FormFieldSwitch` builds its own label row and ignores it; if that silent drop is unacceptable, split the base interface rather than leaving the prop accepted-and-dropped.
+
+`web/src/validations/signInFormSchema.ts` (new)
+
+- Presence only, no length rule: `email` ("Enter your email" + "Enter a valid email address"), `password` ("Enter a password").
+- Needed because the migration drops native validation: `SignInForm` blocks empty submits today via the `required` attribute on its inputs plus the absence of `noValidate`, and `FormFieldInput`/`FormFieldPassword` pass `required` to the label only, never to the control.
+
+`SignInForm.tsx`
+
+- `useForm` + `zodResolver(signInFormSchema)`. Drops the `email`, `password`, and `isLoading` state; `isLoading` becomes `formState.isSubmitting`. The `error` state and its `InlineError` + `announce` server-failure path stay as they are.
+- Email renders through `FormFieldInput`, password through `FormFieldPassword` with `autoComplete="current-password"` and `labelAction={<Button variant="link" asChild>…Forgot password?…</Button>}`.
+- Labels stay exactly `Email` and `Password`. Five e2e specs reach this form by label text and the `Sign In` button's accessible name (`e2e/fixtures/session.ts`, `auth.spec.ts`), and all of them keep matching as long as the label strings hold.
+
+Tests: rewrite `SignInForm.test.tsx` onto `userEvent` following `SignUpForm.test.tsx`'s shape. Empty submit reports both presence errors and does not call `signIn`; a failed sign-in still renders in the callout and announces; the existing redirect and navigation assertions carry over. Keep the `current-password`/`email` autofill assertion. Run the e2e suite by hand for this commit (`cd e2e/supabase && supabase start`, then `npm run e2e`); it is not part of `npm run test:all`.
+
+### Commit 7 — Fold PasswordInput into FormFieldPassword
+
+`web/src/components/FormField/FormField.tsx`
+
+- Move the masking behavior inline: the `visible` state, the `Eye`/`EyeOff` swap, the `type="button"` toggle with `aria-pressed` and `aria-label="Show password"`, the `relative` container, and the `pr-9` clearance. The two `cn()` calls that currently merge `className` across the seam collapse into one.
+- Delete `web/src/components/PasswordInput/`. With no consumer outside the FormField family, the `Omit<ComponentProps<typeof Input>, 'type'>` contract goes with it, so `autoComplete?: AutoFill` now covers every password field with no exception for sign-in.
+
+Tests: move `PasswordInput.test.tsx`'s three behavioral cases (toggle flips `type` and `aria-pressed`, keyboard activation, toggling does not submit the surrounding form) into `FormField.test.tsx` under `FormFieldPassword`, rendering the field instead of the bare control. Drop the ref/registration-forwarding case: it tested the hand-off between the two components, which no longer exists. `SignUpForm.test.tsx` and `SignInForm.test.tsx` need no changes; their `Show password` button assertions hold either way.
+
 ## After the final commit
 
-**Manual browser verification** (dev stack, per root CLAUDE.md): sign up a throwaway user — hint visible from first render, submit-empty shows all errors inline with focus on display name, keystroke revalidation, both toggles independent and keyboard-operable with focus staying put on activation, confirmation code lands in the mail catcher; run the reset flow end to end; sign-in toggle works in an isolated context. Spot-check existing FormField surfaces that pass `helpText` for the coexistence change.
+**Manual browser verification** (dev stack, per root CLAUDE.md): sign up a throwaway user — hint visible from first render, submit-empty shows all errors inline with focus on display name, keystroke revalidation, both toggles independent and keyboard-operable with focus staying put on activation, confirmation code lands in the mail catcher; run the reset flow end to end; sign-in toggle works in an isolated context, with the forgot-password link still on the label row and empty-submit reporting inline errors. Spot-check existing FormField surfaces that pass `helpText` for the coexistence change.
 
 **Prod rollout** (manual, after deploy): Supabase dashboard → Authentication → min password length 8, no required characters — mirrors ADR 011. Existing users are unaffected (set-time enforcement); ignore the dashboard's weak-password sign-in notices for legacy 6-char accounts.
