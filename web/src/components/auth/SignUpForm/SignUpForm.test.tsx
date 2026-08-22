@@ -1,6 +1,7 @@
 import type { Auth } from '@/lib/authStore';
 import type { Session } from '@supabase/supabase-js';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import { userEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SignUpForm } from './SignUpForm';
@@ -32,6 +33,30 @@ vi.mock('@tanstack/react-router', () => ({
     <a href={to}>{children}</a>
   ),
 }));
+
+type User = ReturnType<typeof userEvent.setup>;
+
+const displayNameInput = () => screen.getByLabelText('Display Name');
+const emailInput = () => screen.getByLabelText('Email');
+const passwordInput = () => screen.getByLabelText('Password');
+const confirmPasswordInput = () => screen.getByLabelText('Confirm Password');
+
+const VALID_INPUT = {
+  displayName: 'Test User',
+  email: 'test@example.com',
+  password: 'password123',
+  confirmPassword: 'password123',
+};
+
+async function fillForm(user: User, overrides: Partial<typeof VALID_INPUT> = {}) {
+  const values = { ...VALID_INPUT, ...overrides };
+  if (values.displayName) await user.type(displayNameInput(), values.displayName);
+  if (values.email) await user.type(emailInput(), values.email);
+  if (values.password) await user.type(passwordInput(), values.password);
+  if (values.confirmPassword) await user.type(confirmPasswordInput(), values.confirmPassword);
+}
+
+const submit = (user: User) => user.click(screen.getByRole('button', { name: /sign up/i }));
 
 describe('SignUpForm', () => {
   let mockSignUp: ReturnType<typeof vi.fn<Auth['signUp']>>;
@@ -66,78 +91,183 @@ describe('SignUpForm', () => {
     render(<SignUpForm />);
   };
 
-  it('renders all form fields and submit button', () => {
+  it('renders all form fields, the password hint, and the submit button', () => {
     setup();
-    expect(screen.getByLabelText(/display name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
+    expect(displayNameInput()).toBeInTheDocument();
+    expect(emailInput()).toBeInTheDocument();
+    expect(passwordInput()).toBeInTheDocument();
+    expect(confirmPasswordInput()).toBeInTheDocument();
+    expect(screen.getByText('Password must be at least 8 characters')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sign up/i })).toBeInTheDocument();
   });
 
-  it('shows error if passwords do not match', async () => {
+  it('marks every field for password-manager autofill', () => {
     setup();
-    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password1' } });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: 'password2' },
+    expect(displayNameInput()).toHaveAttribute('autocomplete', 'name');
+    expect(emailInput()).toHaveAttribute('autocomplete', 'email');
+    expect(passwordInput()).toHaveAttribute('autocomplete', 'new-password');
+    expect(confirmPasswordInput()).toHaveAttribute('autocomplete', 'new-password');
+  });
+
+  describe('validation', () => {
+    it('reports every empty field at once and keeps the hint alongside the password error', async () => {
+      const user = userEvent.setup();
+      setup();
+
+      await submit(user);
+
+      expect(await screen.findByText('Enter a display name')).toBeInTheDocument();
+      expect(screen.getByText('Enter your email')).toBeInTheDocument();
+      expect(screen.getByText('Enter a password')).toBeInTheDocument();
+      expect(screen.getByText('Confirm your password')).toBeInTheDocument();
+      expect(screen.getByText('Password must be at least 8 characters')).toBeInTheDocument();
+      expect(mockSignUp).not.toHaveBeenCalled();
     });
-    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
-    const errorAlert = await screen.findByRole('alert');
-    expect(errorAlert).toHaveTextContent(/passwords do not match/i);
+
+    it('rejects a display name longer than 50 characters', async () => {
+      const user = userEvent.setup();
+      setup();
+
+      await fillForm(user, { displayName: 'a'.repeat(51) });
+      await submit(user);
+
+      expect(
+        await screen.findByText('Display name must be 50 characters or fewer'),
+      ).toBeInTheDocument();
+    });
+
+    it('rejects a whitespace-only display name', async () => {
+      const user = userEvent.setup();
+      setup();
+
+      await fillForm(user, { displayName: '   ' });
+      await submit(user);
+
+      expect(await screen.findByText('Enter a display name')).toBeInTheDocument();
+    });
+
+    it('rejects a malformed email', async () => {
+      const user = userEvent.setup();
+      setup();
+
+      await fillForm(user, { email: 'not-an-email' });
+      await submit(user);
+
+      expect(await screen.findByText('Enter a valid email address')).toBeInTheDocument();
+    });
+
+    it('rejects a password below the minimum length', async () => {
+      const user = userEvent.setup();
+      setup();
+
+      await fillForm(user, { password: '1234567', confirmPassword: '1234567' });
+      await submit(user);
+
+      expect(await screen.findByText('Password is too short')).toBeInTheDocument();
+    });
+
+    it('rejects a password above the maximum length', async () => {
+      const user = userEvent.setup();
+      setup();
+
+      const tooLong = 'a'.repeat(73);
+      await fillForm(user, { password: tooLong, confirmPassword: tooLong });
+      await submit(user);
+
+      expect(
+        await screen.findByText('Password must be 72 characters or fewer'),
+      ).toBeInTheDocument();
+    });
+
+    it('reports a confirmation that differs from the password', async () => {
+      const user = userEvent.setup();
+      setup();
+
+      await fillForm(user, { confirmPassword: 'password456' });
+      await submit(user);
+
+      expect(await screen.findByText('Passwords do not match')).toBeInTheDocument();
+    });
+
+    it('reports an empty confirmation without stacking the mismatch message', async () => {
+      const user = userEvent.setup();
+      setup();
+
+      await fillForm(user, { confirmPassword: '' });
+      await submit(user);
+
+      expect(await screen.findByText('Confirm your password')).toBeInTheDocument();
+      expect(screen.queryByText('Passwords do not match')).not.toBeInTheDocument();
+    });
+
+    it('stays quiet until the first submit, then revalidates while typing', async () => {
+      const user = userEvent.setup();
+      setup();
+
+      await user.type(emailInput(), 'not-an-email');
+      expect(screen.queryByText('Enter a valid email address')).not.toBeInTheDocument();
+
+      await submit(user);
+      expect(await screen.findByText('Enter a valid email address')).toBeInTheDocument();
+
+      await user.type(emailInput(), '@example.com');
+      await waitFor(() =>
+        expect(screen.queryByText('Enter a valid email address')).not.toBeInTheDocument(),
+      );
+    });
+
+    it('submits the display name and email trimmed', async () => {
+      const user = userEvent.setup();
+      mockSignUp.mockResolvedValueOnce({ session: mockSession });
+      setup();
+
+      await fillForm(user, { displayName: '  Test User  ', email: '  test@example.com  ' });
+      await submit(user);
+
+      await waitFor(() => {
+        expect(mockSignUp).toHaveBeenCalledWith(
+          'test@example.com',
+          'password123',
+          { displayName: 'Test User' },
+          { emailRedirectTo: `${window.location.origin}/` },
+        );
+      });
+    });
   });
 
-  it('shows error if password is too short', async () => {
-    setup();
-    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: '123' } });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: '123' } });
-    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
-    const errorAlert = await screen.findByRole('alert');
-    expect(errorAlert).toHaveTextContent(/password must be at least 6 characters/i);
-  });
-
-  it('shows error if signUp throws', async () => {
+  it('renders a signUp failure in the form callout rather than on a field', async () => {
+    const user = userEvent.setup();
     mockSignUp.mockRejectedValue(new Error('Sign up failed'));
     setup();
-    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: 'password123' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
-    const errorAlert = await screen.findByRole('alert');
-    expect(errorAlert).toHaveTextContent(/sign up failed/i);
+
+    await fillForm(user);
+    await submit(user);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Sign up failed');
+    expect(screen.getByRole('status')).toHaveTextContent('Sign up failed');
+    expect(passwordInput()).toHaveAttribute('aria-invalid', 'false');
   });
 
-  it('shows generic error message if signUp throws non-Error object', async () => {
+  it('renders a generic message when signUp rejects with a non-Error value', async () => {
+    const user = userEvent.setup();
     mockSignUp.mockRejectedValue('Network error');
     setup();
-    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: 'password123' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
-    const errorAlert = await screen.findByRole('alert');
-    expect(errorAlert).toHaveTextContent('Sign up failed');
+
+    await fillForm(user);
+    await submit(user);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Sign up failed');
   });
 
-  it('disables submit button while loading', async () => {
+  it('marks the submit button busy while signUp is in flight', async () => {
+    const user = userEvent.setup();
     // Pending forever so the post-submit branch can't race the next test.
     mockSignUp.mockImplementation(() => new Promise(() => {}));
     setup();
-    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: 'password123' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    await fillForm(user);
+    await submit(user);
+
     expect(screen.getByRole('button', { name: /creating account/i })).toHaveAttribute(
       'aria-busy',
       'true',
@@ -146,16 +276,13 @@ describe('SignUpForm', () => {
   });
 
   it('navigates to redirect path when redirect search parameter is provided', async () => {
+    const user = userEvent.setup();
     mockSignUp.mockResolvedValueOnce({ session: mockSession });
     mockUseSearch.mockReturnValue({ redirect: '/leagues' });
     setup();
-    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: 'password123' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    await fillForm(user);
+    await submit(user);
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith({ to: '/leagues' });
@@ -163,17 +290,12 @@ describe('SignUpForm', () => {
   });
 
   it('renders the check-email pending UI when signUp returns no session', async () => {
+    const user = userEvent.setup();
     mockSignUp.mockResolvedValueOnce({ session: null });
     setup();
-    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: 'pending@example.com' },
-    });
-    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: 'password123' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    await fillForm(user, { email: 'pending@example.com' });
+    await submit(user);
 
     expect(await screen.findByRole('heading', { name: /check your email/i })).toBeInTheDocument();
     expect(screen.getByText('pending@example.com')).toBeInTheDocument();
@@ -181,15 +303,12 @@ describe('SignUpForm', () => {
   });
 
   it('navigates to default destination when signUp returns a session (auto-confirm)', async () => {
+    const user = userEvent.setup();
     mockSignUp.mockResolvedValueOnce({ session: mockSession });
     setup();
-    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: 'password123' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    await fillForm(user);
+    await submit(user);
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith({ to: '/' });
@@ -197,16 +316,13 @@ describe('SignUpForm', () => {
   });
 
   it('clears the auth transition flag even if post-signup navigation rejects', async () => {
+    const user = userEvent.setup();
     mockSignUp.mockResolvedValueOnce({ session: mockSession });
     mockNavigate.mockRejectedValueOnce(new Error('navigation cancelled'));
     setup();
-    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: 'password123' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    await fillForm(user);
+    await submit(user);
 
     await waitFor(() => {
       expect(mockStartAuthTransition).toHaveBeenCalledTimes(1);
@@ -216,38 +332,14 @@ describe('SignUpForm', () => {
     });
   });
 
-  it('passes emailRedirectTo for the site origin into signUp', async () => {
-    mockSignUp.mockResolvedValueOnce({ session: mockSession });
-    setup();
-    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: 'password123' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
-
-    await waitFor(() => {
-      expect(mockSignUp).toHaveBeenCalledWith(
-        'test@example.com',
-        'password123',
-        { displayName: 'Test User' },
-        { emailRedirectTo: `${window.location.origin}/` },
-      );
-    });
-  });
-
   it('threads search.redirect through emailRedirectTo when present', async () => {
+    const user = userEvent.setup();
     mockSignUp.mockResolvedValueOnce({ session: mockSession });
     mockUseSearch.mockReturnValue({ redirect: '/join/abc-123' });
     setup();
-    fireEvent.change(screen.getByLabelText(/display name/i), { target: { value: 'Test User' } });
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: 'password123' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
+
+    await fillForm(user);
+    await submit(user);
 
     await waitFor(() => {
       expect(mockSignUp).toHaveBeenCalledWith(

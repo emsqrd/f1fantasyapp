@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import type { UseFormRegisterReturn } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 
-import { FormField, FormFieldInput, FormFieldSwitch } from './FormField';
+import { FormField, FormFieldInput, FormFieldPassword, FormFieldSwitch } from './FormField';
 
 function stubRegister(name: string): UseFormRegisterReturn {
   return { name, onChange: vi.fn(), onBlur: vi.fn(), ref: vi.fn() };
@@ -84,6 +84,37 @@ describe('FormField', () => {
       render(<FormFieldInput label="Email" id="email" register={stubRegister('email')} />);
 
       expect(screen.getByLabelText('Email')).not.toHaveAttribute('aria-describedby');
+    });
+  });
+
+  describe('FormFieldPassword', () => {
+    it('renders a masked input with a reveal toggle', () => {
+      render(
+        <FormFieldPassword label="Password" id="password" register={stubRegister('password')} />,
+      );
+
+      expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'password');
+      expect(screen.getByRole('button', { name: 'Show password' })).toBeInTheDocument();
+    });
+
+    it('describes the password input by both help text and error when invalid', () => {
+      render(
+        <FormFieldPassword
+          label="Password"
+          id="password"
+          error="Password is too short"
+          helpText="Password must be at least 8 characters"
+          register={stubRegister('password')}
+        />,
+      );
+
+      const input = screen.getByLabelText('Password');
+      expect(input).toHaveAttribute('aria-invalid', 'true');
+      expect(describedElements(input).map((el) => el?.textContent)).toEqual([
+        'Password must be at least 8 characters',
+        'Password is too short',
+      ]);
+      expect(screen.getByRole('alert')).toHaveTextContent('Password is too short');
     });
   });
 

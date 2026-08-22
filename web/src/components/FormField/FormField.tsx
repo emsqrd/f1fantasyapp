@@ -1,7 +1,8 @@
 import { cn } from '@/lib/utils';
-import type { ReactNode } from 'react';
+import type { AutoFill, ReactNode } from 'react';
 import type { UseFormRegisterReturn } from 'react-hook-form';
 
+import { PasswordInput } from '../PasswordInput/PasswordInput';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
@@ -19,7 +20,13 @@ interface FormFieldProps {
 interface FormFieldInputProps extends FormFieldProps {
   type?: string;
   placeholder?: string;
+  autoComplete?: AutoFill;
   register: UseFormRegisterReturn; // react-hook-form register
+}
+
+interface FormFieldPasswordProps extends FormFieldProps {
+  autoComplete?: AutoFill;
+  register: UseFormRegisterReturn;
 }
 
 interface FormFieldTextareaProps extends FormFieldProps {
@@ -35,6 +42,15 @@ interface FormFieldSwitchProps extends FormFieldProps {
 function describedBy(id: string, error?: string, helpText?: string) {
   const ids = [helpText && `${id}-help`, error && `${id}-error`].filter(Boolean);
   return ids.length > 0 ? ids.join(' ') : undefined;
+}
+
+function controlProps(id: string, error?: string, helpText?: string) {
+  return {
+    id,
+    'aria-invalid': !!error,
+    'aria-describedby': describedBy(id, error, helpText),
+    className: cn(error && 'border-destructive focus-visible:border-destructive'),
+  };
 }
 
 function FieldMessages({ id, error, helpText }: Pick<FormFieldProps, 'id' | 'error' | 'helpText'>) {
@@ -74,17 +90,36 @@ export function FormFieldInput({
   required,
   type = 'text',
   placeholder,
+  autoComplete,
   register,
 }: FormFieldInputProps) {
   return (
     <FormField label={label} id={id} error={error} helpText={helpText} required={required}>
       <Input
-        id={id}
         type={type}
         placeholder={placeholder}
-        aria-invalid={!!error}
-        aria-describedby={describedBy(id, error, helpText)}
-        className={cn(error && 'border-destructive focus-visible:border-destructive')}
+        autoComplete={autoComplete}
+        {...controlProps(id, error, helpText)}
+        {...register}
+      />
+    </FormField>
+  );
+}
+
+export function FormFieldPassword({
+  label,
+  id,
+  error,
+  helpText,
+  required,
+  autoComplete,
+  register,
+}: FormFieldPasswordProps) {
+  return (
+    <FormField label={label} id={id} error={error} helpText={helpText} required={required}>
+      <PasswordInput
+        autoComplete={autoComplete}
+        {...controlProps(id, error, helpText)}
         {...register}
       />
     </FormField>
@@ -102,14 +137,7 @@ export function FormFieldTextarea({
 }: FormFieldTextareaProps) {
   return (
     <FormField label={label} id={id} error={error} helpText={helpText} required={required}>
-      <Textarea
-        id={id}
-        placeholder={placeholder}
-        aria-invalid={!!error}
-        aria-describedby={describedBy(id, error, helpText)}
-        className={cn(error && 'border-destructive focus-visible:border-destructive')}
-        {...register}
-      />
+      <Textarea placeholder={placeholder} {...controlProps(id, error, helpText)} {...register} />
     </FormField>
   );
 }

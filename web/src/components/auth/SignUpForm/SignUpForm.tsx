@@ -1,16 +1,19 @@
+import { FormFieldInput, FormFieldPassword } from '@/components/FormField/FormField';
 import { InlineError } from '@/components/InlineError/InlineError';
 import { LiveRegion } from '@/components/LiveRegion/LiveRegion';
 import { LoadingButton } from '@/components/LoadingButton/LoadingButton';
 import { CheckEmailNotice } from '@/components/auth/CheckEmailNotice/CheckEmailNotice';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
 import { resendConfirmation } from '@/lib/auth-resend';
+import { PASSWORD_HINT } from '@/validations/passwordPolicy';
+import { type SignUpFormData, signUpFormSchema } from '@/validations/signUpFormSchema';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { type FormEvent, useState } from 'react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 
 const CONFIRMATION_ERROR_MESSAGES = {
   expired: 'This confirmation link is no longer valid. Sign up again to receive a new one.',
@@ -18,13 +21,8 @@ const CONFIRMATION_ERROR_MESSAGES = {
 } as const;
 
 export function SignUpForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const { signUp, startAuthTransition, completeAuthTransition } = useAuth();
 
   const navigate = useNavigate();
@@ -34,6 +32,20 @@ export function SignUpForm() {
     confirmationError && CONFIRMATION_ERROR_MESSAGES[confirmationError];
   const destination = search.redirect ?? '/';
   const emailRedirectTo = `${window.location.origin}${destination}`;
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignUpFormData>({
+    resolver: zodResolver(signUpFormSchema),
+    defaultValues: {
+      displayName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+  });
 
   const completeSignUp = async () => {
     startAuthTransition();
@@ -46,49 +58,19 @@ export function SignUpForm() {
 
   const { message, announce } = useLiveRegion();
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const onSubmit = async (formData: SignUpFormData) => {
     setError(null);
 
-    // Client-side validation
-    if (!displayName.trim()) {
-      const errorMessage = 'Display name is required';
-      setError(errorMessage);
-      announce(errorMessage);
-      setIsLoading(false);
-      return;
-    }
-
-    if (displayName.trim().length > 50) {
-      const errorMessage = 'Display name must be less than 50 characters';
-      setError(errorMessage);
-      announce(errorMessage);
-      setIsLoading(false);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      const errorMessage = 'Passwords do not match';
-      setError(errorMessage);
-      announce(errorMessage);
-      setIsLoading(false);
-      return;
-    }
-
-    if (password.length < 6) {
-      const errorMessage = 'Password must be at least 6 characters';
-      setError(errorMessage);
-      announce(errorMessage);
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const { session } = await signUp(email, password, { displayName }, { emailRedirectTo });
+      const { session } = await signUp(
+        formData.email,
+        formData.password,
+        { displayName: formData.displayName },
+        { emailRedirectTo },
+      );
 
       if (!session) {
-        setAwaitingConfirmation(true);
+        setPendingEmail(formData.email);
         return;
       }
 
@@ -97,19 +79,17 @@ export function SignUpForm() {
       const errorMessage = error instanceof Error ? error.message : 'Sign up failed';
       setError(errorMessage);
       announce(errorMessage);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
     <div className="flex w-full items-center justify-center p-4 sm:p-8 md:min-h-screen">
       <div className="w-full max-w-md space-y-4">
-        {awaitingConfirmation ? (
+        {pendingEmail !== null ? (
           <CheckEmailNotice
-            email={email}
+            email={pendingEmail}
             onVerified={completeSignUp}
-            onResend={() => resendConfirmation(email, { emailRedirectTo })}
+            onResend={() => resendConfirmation(pendingEmail, { emailRedirectTo })}
           />
         ) : (
           <Card className="w-full max-w-md">
@@ -118,65 +98,49 @@ export function SignUpForm() {
               <CardDescription>Join the F1 Fantasy Sports App</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
                 <LiveRegion message={message} />
                 {confirmationErrorMessage && <InlineError message={confirmationErrorMessage} />}
                 {error && <InlineError message={error} />}
 
-                <div className="space-y-2">
-                  <Label htmlFor="display-name">Display Name</Label>
-                  <Input
-                    id="display-name"
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    required
-                    autoComplete="name"
-                  />
-                </div>
+                <FormFieldInput
+                  label="Display Name"
+                  id="display-name"
+                  autoComplete="name"
+                  error={errors.displayName?.message}
+                  register={register('displayName')}
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                  />
-                </div>
+                <FormFieldInput
+                  label="Email"
+                  id="signup-email"
+                  type="email"
+                  autoComplete="email"
+                  error={errors.email?.message}
+                  register={register('email')}
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    autoComplete="new-password"
-                  />
-                </div>
+                <FormFieldPassword
+                  label="Password"
+                  id="signup-password"
+                  autoComplete="new-password"
+                  helpText={PASSWORD_HINT}
+                  error={errors.password?.message}
+                  register={register('password')}
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    autoComplete="new-password"
-                  />
-                </div>
+                <FormFieldPassword
+                  label="Confirm Password"
+                  id="confirm-password"
+                  autoComplete="new-password"
+                  error={errors.confirmPassword?.message}
+                  register={register('confirmPassword')}
+                />
 
                 <LoadingButton
                   type="submit"
                   className="w-full"
-                  isLoading={isLoading}
+                  isLoading={isSubmitting}
                   loadingText="Creating account..."
                 >
                   Sign Up
