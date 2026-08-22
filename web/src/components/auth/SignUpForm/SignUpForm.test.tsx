@@ -189,6 +189,22 @@ describe('SignUpForm', () => {
       expect(await screen.findByText('Passwords do not match')).toBeInTheDocument();
     });
 
+    it('clears the mismatch error when the password field is the one corrected', async () => {
+      const user = userEvent.setup();
+      setup();
+
+      await fillForm(user, { confirmPassword: 'password456' });
+      await submit(user);
+      expect(await screen.findByText('Passwords do not match')).toBeInTheDocument();
+
+      await user.clear(passwordInput());
+      await user.type(passwordInput(), 'password456');
+
+      await waitFor(() =>
+        expect(screen.queryByText('Passwords do not match')).not.toBeInTheDocument(),
+      );
+    });
+
     it('reports an empty confirmation without stacking the mismatch message', async () => {
       const user = userEvent.setup();
       setup();

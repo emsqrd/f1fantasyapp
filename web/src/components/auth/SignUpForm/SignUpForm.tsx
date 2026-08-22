@@ -126,7 +126,7 @@ export function SignUpForm() {
                   autoComplete="new-password"
                   helpText={PASSWORD_HINT}
                   error={errors.password?.message}
-                  register={register('password')}
+                  register={register('password', { deps: 'confirmPassword' })}
                 />
 
                 <FormFieldPassword
