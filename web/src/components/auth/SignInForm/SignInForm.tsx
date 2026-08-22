@@ -1,6 +1,7 @@
 import { InlineError } from '@/components/InlineError/InlineError';
 import { LiveRegion } from '@/components/LiveRegion/LiveRegion';
 import { LoadingButton } from '@/components/LoadingButton/LoadingButton';
+import { PasswordInput } from '@/components/PasswordInput/PasswordInput';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -76,9 +77,8 @@ export function SignInForm() {
                     <Link to="/forgot-password">Forgot password?</Link>
                   </Button>
                 </div>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required

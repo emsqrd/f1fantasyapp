@@ -48,7 +48,8 @@ describe('SignInForm', () => {
   it('renders form fields and submit button', () => {
     render(<SignInForm />);
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText('Password')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show password' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
@@ -56,7 +57,9 @@ describe('SignInForm', () => {
     signInMock.mockRejectedValueOnce(new Error('Invalid credentials'));
     render(<SignInForm />);
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'fail@example.com' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'badpass' } });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'badpass' },
+    });
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
     const errorAlert = await screen.findByRole('alert');
     expect(errorAlert).toHaveTextContent(/login failed: invalid credentials/i);
@@ -73,7 +76,9 @@ describe('SignInForm', () => {
     );
     render(<SignInForm />);
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@example.com' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'password123' },
+    });
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
     expect(screen.getByRole('button', { name: /signing in/i })).toHaveAttribute(
       'aria-busy',
@@ -101,7 +106,9 @@ describe('SignInForm', () => {
     mockUseSearch.mockReturnValue({ redirect: '/team/123' });
     render(<SignInForm />);
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@example.com' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'password123' },
+    });
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
@@ -114,7 +121,9 @@ describe('SignInForm', () => {
     mockUseSearch.mockReturnValue({});
     render(<SignInForm />);
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@example.com' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'password123' },
+    });
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
