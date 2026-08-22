@@ -32,6 +32,28 @@ interface FormFieldSwitchProps extends FormFieldProps {
   onCheckedChange: (checked: boolean) => void;
 }
 
+function describedBy(id: string, error?: string, helpText?: string) {
+  const ids = [helpText && `${id}-help`, error && `${id}-error`].filter(Boolean);
+  return ids.length > 0 ? ids.join(' ') : undefined;
+}
+
+function FieldMessages({ id, error, helpText }: Pick<FormFieldProps, 'id' | 'error' | 'helpText'>) {
+  return (
+    <>
+      {helpText && (
+        <p className="text-muted-foreground text-sm" id={`${id}-help`}>
+          {helpText}
+        </p>
+      )}
+      {error && (
+        <p className="text-destructive text-sm font-medium" role="alert" id={`${id}-error`}>
+          {error}
+        </p>
+      )}
+    </>
+  );
+}
+
 export function FormField({ label, id, error, helpText, required, children }: FormFieldProps) {
   return (
     <div className="space-y-2">
@@ -39,20 +61,7 @@ export function FormField({ label, id, error, helpText, required, children }: Fo
         {label}
       </Label>
       {children}
-      {error && (
-        <p
-          className="text-destructive text-sm font-medium"
-          role="alert"
-          aria-describedby={`${id}-error`}
-        >
-          {error}
-        </p>
-      )}
-      {helpText && !error && (
-        <p className="text-muted-foreground text-sm" id={`${id}-help`}>
-          {helpText}
-        </p>
-      )}
+      <FieldMessages id={id} error={error} helpText={helpText} />
     </div>
   );
 }
@@ -74,7 +83,7 @@ export function FormFieldInput({
         type={type}
         placeholder={placeholder}
         aria-invalid={!!error}
-        aria-describedby={error ? `${id}-error` : helpText ? `${id}-help` : undefined}
+        aria-describedby={describedBy(id, error, helpText)}
         className={cn(error && 'border-destructive focus-visible:border-destructive')}
         {...register}
       />
@@ -97,7 +106,7 @@ export function FormFieldTextarea({
         id={id}
         placeholder={placeholder}
         aria-invalid={!!error}
-        aria-describedby={error ? `${id}-error` : helpText ? `${id}-help` : undefined}
+        aria-describedby={describedBy(id, error, helpText)}
         className={cn(error && 'border-destructive focus-visible:border-destructive')}
         {...register}
       />
@@ -123,7 +132,7 @@ export function FormFieldSwitch({
           checked={checked}
           onCheckedChange={onCheckedChange}
           aria-invalid={!!error}
-          aria-describedby={error ? `${id}-error` : helpText ? `${id}-help` : undefined}
+          aria-describedby={describedBy(id, error, helpText)}
         />
         <Label
           htmlFor={id}
@@ -132,20 +141,7 @@ export function FormFieldSwitch({
           {label}
         </Label>
       </div>
-      {error && (
-        <p
-          className="text-destructive text-sm font-medium"
-          role="alert"
-          aria-describedby={`${id}-error`}
-        >
-          {error}
-        </p>
-      )}
-      {helpText && !error && (
-        <p className="text-muted-foreground text-sm" id={`${id}-help`}>
-          {helpText}
-        </p>
-      )}
+      <FieldMessages id={id} error={error} helpText={helpText} />
     </div>
   );
 }

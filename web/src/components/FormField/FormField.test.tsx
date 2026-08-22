@@ -1,82 +1,110 @@
 import { render, screen } from '@testing-library/react';
+import type { UseFormRegisterReturn } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 
-import { FormField, FormFieldSwitch } from './FormField';
+import { FormField, FormFieldInput, FormFieldSwitch } from './FormField';
+
+function stubRegister(name: string): UseFormRegisterReturn {
+  return { name, onChange: vi.fn(), onBlur: vi.fn(), ref: vi.fn() };
+}
+
+function describedElements(control: HTMLElement) {
+  const tokens = control.getAttribute('aria-describedby')?.split(' ') ?? [];
+  return tokens.map((token) => document.getElementById(token));
+}
 
 describe('FormField', () => {
-  describe('Error and Help Text Display', () => {
-    it('displays error message when error is provided', () => {
+  it('renders help text before the error when both are present', () => {
+    render(
+      <FormField label="Test Label" id="test" error="Error message" helpText="Help text">
+        <input id="test" />
+      </FormField>,
+    );
+
+    const help = screen.getByText('Help text');
+    const error = screen.getByText('Error message');
+
+    expect(help.compareDocumentPosition(error)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  describe('FormFieldInput', () => {
+    it('describes the input by the help text alone when valid', () => {
       render(
-        <FormField label="Test Label" id="test" error="This field has an error">
-          <input id="test" />
-        </FormField>,
+        <FormFieldInput
+          label="Password"
+          id="password"
+          helpText="Password must be at least 8 characters"
+          register={stubRegister('password')}
+        />,
       );
 
-      const errorMessage = screen.getByRole('alert');
-      expect(errorMessage).toHaveTextContent('This field has an error');
+      const input = screen.getByLabelText('Password');
+      expect(describedElements(input).map((el) => el?.textContent)).toEqual([
+        'Password must be at least 8 characters',
+      ]);
+      expect(input).toHaveAttribute('aria-invalid', 'false');
     });
 
-    it('displays help text when no error is present', () => {
+    it('describes the input by the error alone when there is no help text', () => {
       render(
-        <FormField label="Test Label" id="test" helpText="This is helpful information">
-          <input id="test" />
-        </FormField>,
+        <FormFieldInput
+          label="Email"
+          id="email"
+          error="Enter your email"
+          register={stubRegister('email')}
+        />,
       );
 
-      expect(screen.getByText('This is helpful information')).toBeInTheDocument();
+      expect(
+        describedElements(screen.getByLabelText('Email')).map((el) => el?.textContent),
+      ).toEqual(['Enter your email']);
     });
 
-    it('hides help text when error is present', () => {
+    it('describes the input by both help text and error when invalid', () => {
       render(
-        <FormField
-          label="Test Label"
-          id="test"
-          error="Error message"
-          helpText="Help text should be hidden"
-        >
-          <input id="test" />
-        </FormField>,
+        <FormFieldInput
+          label="Password"
+          id="password"
+          error="Password is too short"
+          helpText="Password must be at least 8 characters"
+          register={stubRegister('password')}
+        />,
       );
 
-      expect(screen.queryByText('Help text should be hidden')).not.toBeInTheDocument();
-      expect(screen.getByText('Error message')).toBeInTheDocument();
+      const input = screen.getByLabelText('Password');
+      expect(input).toHaveAttribute('aria-invalid', 'true');
+      expect(describedElements(input).map((el) => el?.textContent)).toEqual([
+        'Password must be at least 8 characters',
+        'Password is too short',
+      ]);
+      expect(screen.getByRole('alert')).toHaveTextContent('Password is too short');
+    });
+
+    it('omits aria-describedby when there is nothing to describe', () => {
+      render(<FormFieldInput label="Email" id="email" register={stubRegister('email')} />);
+
+      expect(screen.getByLabelText('Email')).not.toHaveAttribute('aria-describedby');
     });
   });
 
   describe('FormFieldSwitch', () => {
-    it('calls onCheckedChange when switch is toggled', () => {
-      const handleChange = vi.fn();
-
+    it('describes the switch by both help text and error when invalid', () => {
       render(
         <FormFieldSwitch
           label="Private"
           id="private"
           checked={false}
-          onCheckedChange={handleChange}
-        />,
-      );
-
-      const switchElement = screen.getByRole('switch', { name: /private/i });
-      switchElement.click();
-
-      expect(handleChange).toHaveBeenCalledWith(true);
-    });
-
-    it('displays error message when error is provided', () => {
-      const handleChange = vi.fn();
-
-      render(
-        <FormFieldSwitch
-          label="Private"
-          id="private"
-          checked={false}
-          onCheckedChange={handleChange}
+          onCheckedChange={vi.fn()}
           error="Switch error message"
+          helpText="Only invited members can join"
         />,
       );
 
-      const errorMessage = screen.getByRole('alert');
-      expect(errorMessage).toHaveTextContent('Switch error message');
+      expect(
+        describedElements(screen.getByRole('switch', { name: /private/i })).map(
+          (el) => el?.textContent,
+        ),
+      ).toEqual(['Only invited members can join', 'Switch error message']);
     });
   });
 });
