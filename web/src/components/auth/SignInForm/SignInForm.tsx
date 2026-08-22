@@ -79,6 +79,7 @@ export function SignInForm() {
                 </div>
                 <PasswordInput
                   id="password"
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required

@@ -53,6 +53,12 @@ describe('SignInForm', () => {
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
+  it('marks the credential fields for password-manager autofill', () => {
+    render(<SignInForm />);
+    expect(screen.getByLabelText(/email/i)).toHaveAttribute('autocomplete', 'email');
+    expect(screen.getByLabelText('Password')).toHaveAttribute('autocomplete', 'current-password');
+  });
+
   it('shows error message on failed login', async () => {
     signInMock.mockRejectedValueOnce(new Error('Invalid credentials'));
     render(<SignInForm />);
