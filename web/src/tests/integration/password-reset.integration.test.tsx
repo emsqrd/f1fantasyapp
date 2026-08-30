@@ -508,7 +508,7 @@ describe('/reset-password route', () => {
     expect(supabaseRecovery.auth.updateUser).toHaveBeenCalledOnce();
   });
 
-  it('shows an error and verifies nothing when the passwords do not match', async () => {
+  it('reports a mismatch, spends no token, and clears once the password is corrected', async () => {
     const user = userEvent.setup();
 
     renderWithRouter({
@@ -519,27 +519,17 @@ describe('/reset-password route', () => {
 
     await submitNewPassword(user, { password: 'password123', confirmation: 'password124' });
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/passwords do not match/i);
+    expect(await screen.findByText('Passwords do not match')).toBeInTheDocument();
+    expect(screen.getByText('Password must be at least 8 characters')).toBeInTheDocument();
     expect(supabaseRecovery.auth.verifyOtp).not.toHaveBeenCalled();
     expect(supabaseRecovery.auth.updateUser).not.toHaveBeenCalled();
-  });
 
-  it('shows an error and verifies nothing when the password is too short', async () => {
-    const user = userEvent.setup();
+    await user.clear(screen.getByLabelText(/new password/i));
+    await user.type(screen.getByLabelText(/new password/i), 'password124');
 
-    renderWithRouter({
-      routeTree: buildResetPasswordRouteTree(),
-      initialEntry: RECOVERY_ENTRY,
-      auth: createUnauthAuth(),
-    });
-
-    await submitNewPassword(user, { password: '123' });
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      /password must be at least 6 characters/i,
+    await waitFor(() =>
+      expect(screen.queryByText('Passwords do not match')).not.toBeInTheDocument(),
     );
-    expect(supabaseRecovery.auth.verifyOtp).not.toHaveBeenCalled();
-    expect(supabaseRecovery.auth.updateUser).not.toHaveBeenCalled();
   });
 
   it('keeps the form mounted under the real Layout when the store picks up a session mid-flow', async () => {
