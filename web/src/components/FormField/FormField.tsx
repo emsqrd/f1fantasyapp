@@ -1,8 +1,9 @@
 import { cn } from '@/lib/utils';
-import type { AutoFill, ReactNode } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
+import { type AutoFill, type ReactNode, useState } from 'react';
 import type { UseFormRegisterReturn } from 'react-hook-form';
 
-import { PasswordInput } from '../PasswordInput/PasswordInput';
+import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
@@ -48,12 +49,12 @@ function describedBy(id: string, error?: string, helpText?: string) {
   return ids.length > 0 ? ids.join(' ') : undefined;
 }
 
-function controlProps(id: string, error?: string, helpText?: string) {
+function controlProps(id: string, error?: string, helpText?: string, className?: string) {
   return {
     id,
     'aria-invalid': !!error,
     'aria-describedby': describedBy(id, error, helpText),
-    className: cn(error && 'border-destructive focus-visible:border-destructive'),
+    className: cn(className, error && 'border-destructive focus-visible:border-destructive'),
   };
 }
 
@@ -146,6 +147,9 @@ export function FormFieldPassword({
   autoComplete,
   register,
 }: FormFieldPasswordProps) {
+  const [visible, setVisible] = useState(false);
+  const ToggleIcon = visible ? EyeOff : Eye;
+
   return (
     <FormField
       label={label}
@@ -155,11 +159,25 @@ export function FormFieldPassword({
       required={required}
       labelAction={labelAction}
     >
-      <PasswordInput
-        autoComplete={autoComplete}
-        {...controlProps(id, error, helpText)}
-        {...register}
-      />
+      <div className="relative">
+        <Input
+          type={visible ? 'text' : 'password'}
+          autoComplete={autoComplete}
+          {...controlProps(id, error, helpText, 'pr-9')}
+          {...register}
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Show password"
+          aria-pressed={visible}
+          onClick={() => setVisible((current) => !current)}
+          className="text-muted-foreground hover:text-foreground absolute top-0 right-0 hover:bg-transparent"
+        >
+          <ToggleIcon className="h-4 w-4" />
+        </Button>
+      </div>
     </FormField>
   );
 }

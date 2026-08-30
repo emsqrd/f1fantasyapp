@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { userEvent } from '@testing-library/user-event';
 import type { UseFormRegisterReturn } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -101,13 +102,60 @@ describe('FormField', () => {
   });
 
   describe('FormFieldPassword', () => {
-    it('renders a masked input with a reveal toggle', () => {
+    const passwordInput = () => screen.getByLabelText('Password');
+    const toggle = () => screen.getByRole('button', { name: 'Show password' });
+
+    it('masks the value until the reveal toggle is activated', async () => {
+      const user = userEvent.setup();
       render(
         <FormFieldPassword label="Password" id="password" register={stubRegister('password')} />,
       );
 
-      expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'password');
-      expect(screen.getByRole('button', { name: 'Show password' })).toBeInTheDocument();
+      expect(passwordInput()).toHaveAttribute('type', 'password');
+      expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+
+      await user.click(toggle());
+
+      expect(passwordInput()).toHaveAttribute('type', 'text');
+      expect(toggle()).toHaveAttribute('aria-pressed', 'true');
+
+      await user.click(toggle());
+
+      expect(passwordInput()).toHaveAttribute('type', 'password');
+      expect(toggle()).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('toggles when activated from the keyboard', async () => {
+      const user = userEvent.setup();
+      render(
+        <FormFieldPassword label="Password" id="password" register={stubRegister('password')} />,
+      );
+
+      toggle().focus();
+      await user.keyboard('{Enter}');
+
+      expect(passwordInput()).toHaveAttribute('type', 'text');
+    });
+
+    it('does not submit the surrounding form when toggled', async () => {
+      const user = userEvent.setup();
+      const onSubmit = vi.fn();
+      render(
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSubmit();
+          }}
+        >
+          <FormFieldPassword label="Password" id="password" register={stubRegister('password')} />
+          <button type="submit">Sign In</button>
+        </form>,
+      );
+
+      await user.click(toggle());
+
+      expect(onSubmit).not.toHaveBeenCalled();
+      expect(passwordInput()).toHaveAttribute('type', 'text');
     });
 
     it('describes the password input by both help text and error when invalid', () => {
