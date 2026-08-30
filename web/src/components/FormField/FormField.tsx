@@ -8,12 +8,16 @@ import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { Textarea } from '../ui/textarea';
 
-interface FormFieldProps {
+interface FormFieldBaseProps {
   label: string;
   id: string;
   error?: string;
   helpText?: string;
   required?: boolean;
+}
+
+interface FormFieldProps extends FormFieldBaseProps {
+  labelAction?: ReactNode;
   children?: ReactNode;
 }
 
@@ -34,7 +38,7 @@ interface FormFieldTextareaProps extends FormFieldProps {
   register: UseFormRegisterReturn;
 }
 
-interface FormFieldSwitchProps extends FormFieldProps {
+interface FormFieldSwitchProps extends FormFieldBaseProps {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
 }
@@ -53,7 +57,11 @@ function controlProps(id: string, error?: string, helpText?: string) {
   };
 }
 
-function FieldMessages({ id, error, helpText }: Pick<FormFieldProps, 'id' | 'error' | 'helpText'>) {
+function FieldMessages({
+  id,
+  error,
+  helpText,
+}: Pick<FormFieldBaseProps, 'id' | 'error' | 'helpText'>) {
   return (
     <>
       {helpText && (
@@ -70,12 +78,26 @@ function FieldMessages({ id, error, helpText }: Pick<FormFieldProps, 'id' | 'err
   );
 }
 
-export function FormField({ label, id, error, helpText, required, children }: FormFieldProps) {
+export function FormField({
+  label,
+  id,
+  error,
+  helpText,
+  required,
+  labelAction,
+  children,
+}: FormFieldProps) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className={cn(required && "after:text-destructive after:content-['*']")}>
-        {label}
-      </Label>
+      <div className="flex items-center justify-between">
+        <Label
+          htmlFor={id}
+          className={cn(required && "after:text-destructive after:content-['*']")}
+        >
+          {label}
+        </Label>
+        {labelAction}
+      </div>
       {children}
       <FieldMessages id={id} error={error} helpText={helpText} />
     </div>
@@ -88,13 +110,21 @@ export function FormFieldInput({
   error,
   helpText,
   required,
+  labelAction,
   type = 'text',
   placeholder,
   autoComplete,
   register,
 }: FormFieldInputProps) {
   return (
-    <FormField label={label} id={id} error={error} helpText={helpText} required={required}>
+    <FormField
+      label={label}
+      id={id}
+      error={error}
+      helpText={helpText}
+      required={required}
+      labelAction={labelAction}
+    >
       <Input
         type={type}
         placeholder={placeholder}
@@ -112,11 +142,19 @@ export function FormFieldPassword({
   error,
   helpText,
   required,
+  labelAction,
   autoComplete,
   register,
 }: FormFieldPasswordProps) {
   return (
-    <FormField label={label} id={id} error={error} helpText={helpText} required={required}>
+    <FormField
+      label={label}
+      id={id}
+      error={error}
+      helpText={helpText}
+      required={required}
+      labelAction={labelAction}
+    >
       <PasswordInput
         autoComplete={autoComplete}
         {...controlProps(id, error, helpText)}
@@ -132,11 +170,19 @@ export function FormFieldTextarea({
   error,
   helpText,
   required,
+  labelAction,
   placeholder,
   register,
 }: FormFieldTextareaProps) {
   return (
-    <FormField label={label} id={id} error={error} helpText={helpText} required={required}>
+    <FormField
+      label={label}
+      id={id}
+      error={error}
+      helpText={helpText}
+      required={required}
+      labelAction={labelAction}
+    >
       <Textarea placeholder={placeholder} {...controlProps(id, error, helpText)} {...register} />
     </FormField>
   );

@@ -27,6 +27,19 @@ describe('FormField', () => {
     expect(help.compareDocumentPosition(error)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
+  it('renders the label action after the label', () => {
+    render(
+      <FormField label="Password" id="password" labelAction={<a href="/reset">Forgot?</a>}>
+        <input id="password" />
+      </FormField>,
+    );
+
+    const label = screen.getByText('Password');
+    const action = screen.getByRole('link', { name: 'Forgot?' });
+
+    expect(label.compareDocumentPosition(action)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   describe('FormFieldInput', () => {
     it('describes the input by the help text alone when valid', () => {
       render(
