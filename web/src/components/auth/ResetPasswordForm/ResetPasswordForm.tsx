@@ -1,16 +1,22 @@
+import { FormFieldPassword } from '@/components/FormField/FormField';
 import { InlineError } from '@/components/InlineError/InlineError';
 import { LiveRegion } from '@/components/LiveRegion/LiveRegion';
 import { LoadingButton } from '@/components/LoadingButton/LoadingButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useLiveRegion } from '@/hooks/useLiveRegion';
 import { completePasswordReset, verifyRecoveryToken } from '@/lib/auth-password';
+import { PASSWORD_HINT } from '@/validations/passwordPolicy';
+import {
+  type ResetPasswordFormData,
+  resetPasswordFormSchema,
+} from '@/validations/resetPasswordFormSchema';
+import { zodResolver } from '@hookform/resolvers/zod';
 import * as Sentry from '@sentry/react';
 import { isAuthApiError } from '@supabase/supabase-js';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { type SyntheticEvent, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
 
 export function ResetPasswordForm() {
   const search = useSearch({ from: '/reset-password' });
@@ -19,14 +25,23 @@ export function ResetPasswordForm() {
   const [recoveryToken] = useState(() =>
     search.type === 'recovery' ? (search.token_hash ?? null) : null,
   );
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tokenRejected, setTokenRejected] = useState(false);
   const hasSpentToken = useRef(false);
   const navigate = useNavigate();
-  const { message, announce } = useLiveRegion();
+  const { message, announce, clear: clearAnnouncement } = useLiveRegion();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordFormSchema),
+    defaultValues: {
+      password: '',
+      confirmPassword: '',
+    },
+  });
 
   // A link that carried nothing spendable and one gotrue refused are the same
   // dead end with the same remedy, so they read the same.
@@ -51,28 +66,7 @@ export function ResetPasswordForm() {
     );
   }
 
-  const handleSubmit = async (e: SyntheticEvent) => {
-    e.preventDefault();
-    if (isLoading) return;
-    setIsLoading(true);
-    setError(null);
-
-    if (password !== confirmPassword) {
-      const errorMessage = 'Passwords do not match';
-      setError(errorMessage);
-      announce(errorMessage);
-      setIsLoading(false);
-      return;
-    }
-
-    if (password.length < 6) {
-      const errorMessage = 'Password must be at least 6 characters';
-      setError(errorMessage);
-      announce(errorMessage);
-      setIsLoading(false);
-      return;
-    }
-
+  const onSubmit = async (formData: ResetPasswordFormData) => {
     if (!hasSpentToken.current) {
       try {
         await verifyRecoveryToken(recoveryToken);
@@ -82,7 +76,6 @@ export function ResetPasswordForm() {
         // for a retry instead of sending them to request a new link.
         if (isAuthApiError(verifyError) && verifyError.code === 'otp_expired') {
           setTokenRejected(true);
-          setIsLoading(false);
           return;
         }
 
@@ -92,7 +85,6 @@ export function ResetPasswordForm() {
         const errorMessage = "Couldn't verify your reset link. Please try again.";
         setError(errorMessage);
         announce(errorMessage);
-        setIsLoading(false);
         return;
       }
 
@@ -101,15 +93,13 @@ export function ResetPasswordForm() {
     }
 
     try {
-      await completePasswordReset(password);
+      await completePasswordReset(formData.password);
       // Send them into the app, not to sign-in, after a successful reset.
       await navigate({ to: '/', replace: true });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Password reset failed';
       setError(errorMessage);
       announce(errorMessage);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -121,40 +111,44 @@ export function ResetPasswordForm() {
           <CardDescription>Choose a new password for your account.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <form
+            onSubmit={(event) => {
+              if (isSubmitting) {
+                event.preventDefault();
+                return;
+              }
+
+              setError(null);
+              clearAnnouncement();
+              void handleSubmit(onSubmit)(event);
+            }}
+            className="space-y-4"
+            noValidate
+          >
             <LiveRegion message={message} />
             {error && <InlineError message={error} />}
 
-            <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
-              <Input
-                id="new-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                autoComplete="new-password"
-              />
-            </div>
+            <FormFieldPassword
+              label="New Password"
+              id="new-password"
+              autoComplete="new-password"
+              helpText={PASSWORD_HINT}
+              error={errors.password?.message}
+              register={register('password', { deps: 'confirmPassword' })}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm Password</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={6}
-                autoComplete="new-password"
-              />
-            </div>
+            <FormFieldPassword
+              label="Confirm Password"
+              id="confirm-password"
+              autoComplete="new-password"
+              error={errors.confirmPassword?.message}
+              register={register('confirmPassword')}
+            />
 
             <LoadingButton
               type="submit"
               className="w-full"
-              isLoading={isLoading}
+              isLoading={isSubmitting}
               loadingText="Updating password..."
             >
               Update password

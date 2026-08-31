@@ -11,7 +11,7 @@ import type { TestUser } from './auth';
 export async function signInAs(page: Page, user: TestUser): Promise<void> {
   await page.goto('/sign-in');
   await page.getByLabel('Email').fill(user.email);
-  await page.getByLabel('Password').fill(user.password);
+  await page.getByLabel('Password', { exact: true }).fill(user.password);
   await page.locator('form').getByRole('button', { name: 'Sign In' }).click();
   // SignInForm awaits navigate() but the helper's caller may `goto` the
   // very next tick and race the redirect. Block here until the URL has
