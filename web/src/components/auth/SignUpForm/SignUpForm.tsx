@@ -56,11 +56,9 @@ export function SignUpForm() {
     }
   };
 
-  const { message, announce } = useLiveRegion();
+  const { message, announce, clear: clearAnnouncement } = useLiveRegion();
 
   const onSubmit = async (formData: SignUpFormData) => {
-    setError(null);
-
     try {
       const { session } = await signUp(
         formData.email,
@@ -98,7 +96,15 @@ export function SignUpForm() {
               <CardDescription>Join the F1 Fantasy Sports App</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+              <form
+                onSubmit={(event) => {
+                  setError(null);
+                  clearAnnouncement();
+                  void handleSubmit(onSubmit)(event);
+                }}
+                className="space-y-4"
+                noValidate
+              >
                 <LiveRegion message={message} />
                 {confirmationErrorMessage && <InlineError message={confirmationErrorMessage} />}
                 {error && <InlineError message={error} />}

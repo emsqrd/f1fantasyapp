@@ -29,7 +29,7 @@ export function ResetPasswordForm() {
   const [tokenRejected, setTokenRejected] = useState(false);
   const hasSpentToken = useRef(false);
   const navigate = useNavigate();
-  const { message, announce } = useLiveRegion();
+  const { message, announce, clear: clearAnnouncement } = useLiveRegion();
 
   const {
     register,
@@ -119,6 +119,7 @@ export function ResetPasswordForm() {
               }
 
               setError(null);
+              clearAnnouncement();
               void handleSubmit(onSubmit)(event);
             }}
             className="space-y-4"

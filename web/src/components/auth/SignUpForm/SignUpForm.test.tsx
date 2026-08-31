@@ -264,6 +264,24 @@ describe('SignUpForm', () => {
     expect(passwordInput()).toHaveAttribute('aria-invalid', 'false');
   });
 
+  it('clears a signUp failure when the next submit is blocked by validation', async () => {
+    const user = userEvent.setup();
+    mockSignUp.mockRejectedValue(new Error('User already registered'));
+    setup();
+
+    await fillForm(user);
+    await submit(user);
+    expect(await screen.findByRole('alert')).toHaveTextContent('User already registered');
+
+    await user.clear(displayNameInput());
+    await submit(user);
+
+    expect(await screen.findByText('Enter a display name')).toBeInTheDocument();
+    expect(screen.queryByText('User already registered')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(mockSignUp).toHaveBeenCalledTimes(1);
+  });
+
   it('renders a generic message when signUp rejects with a non-Error value', async () => {
     const user = userEvent.setup();
     mockSignUp.mockRejectedValue('Network error');

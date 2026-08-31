@@ -171,6 +171,26 @@ describe('SignInForm', () => {
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
+  it('clears a signIn failure when the next submit is blocked by validation', async () => {
+    const user = userEvent.setup();
+    signInMock.mockRejectedValueOnce(new Error('Invalid credentials'));
+    render(<SignInForm />);
+
+    await fillForm(user);
+    await submit(user);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /login failed: invalid credentials/i,
+    );
+
+    await user.clear(emailInput());
+    await submit(user);
+
+    expect(await screen.findByText('Enter your email')).toBeInTheDocument();
+    expect(screen.queryByText(/login failed: invalid credentials/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(signInMock).toHaveBeenCalledTimes(1);
+  });
+
   it('renders a generic message when signIn rejects with a non-Error value', async () => {
     const user = userEvent.setup();
     signInMock.mockRejectedValueOnce('Network error');

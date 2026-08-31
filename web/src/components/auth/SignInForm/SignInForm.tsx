@@ -18,7 +18,7 @@ export function SignInForm() {
   const navigate = useNavigate();
   const search = useSearch({ from: '/_unauthenticated/sign-in' });
 
-  const { message, announce } = useLiveRegion();
+  const { message, announce, clear: clearAnnouncement } = useLiveRegion();
 
   const {
     register,
@@ -33,8 +33,6 @@ export function SignInForm() {
   });
 
   const onSubmit = async (formData: SignInFormData) => {
-    setError(null);
-
     try {
       await signIn(formData.email, formData.password);
       startAuthTransition();
@@ -62,7 +60,15 @@ export function SignInForm() {
             <CardDescription>Sign in to access your F1 fantasy league</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+            <form
+              onSubmit={(event) => {
+                setError(null);
+                clearAnnouncement();
+                void handleSubmit(onSubmit)(event);
+              }}
+              className="space-y-4"
+              noValidate
+            >
               <LiveRegion message={message} />
               {error && <InlineError message={error} />}
 
