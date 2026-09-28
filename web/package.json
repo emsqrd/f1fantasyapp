@@ -38,7 +38,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@sentry/react": "^10.75.0",
     "@sentry/vite-plugin": "^5.4.0",
-    "@supabase/supabase-js": "^2.112.2",
+    "@supabase/supabase-js": "^2.117.2",
     "@tailwindcss/vite": "^4.3.0",
     "@tanstack/react-query": "^5.103.1",
     "@tanstack/react-router": "^1.170.4",
