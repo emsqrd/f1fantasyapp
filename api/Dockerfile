@@ -4,7 +4,7 @@ WORKDIR /app
 EXPOSE 8080
 
 # Use the .NET 10 SDK for building the application
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS deps
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS deps
 WORKDIR /src
 
 # Copy the project file and restore dependencies
